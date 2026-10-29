@@ -1,0 +1,12 @@
+{
+  "evidenceVersion": "1.0",
+  "status": "NOT_READY",
+  "scmRemoteRepository": "",
+  "branchProtectionEvidence": "",
+  "negativeEnforcementPullRequest": "",
+  "policyApprovalReference": "",
+  "mergeChecklistApprovalReference": "",
+  "verifiedBy": "",
+  "verifiedAtUtc": "",
+  "note": "Keep status NOT_READY until each referenced artifact has been inspected and the remote required checks have been proven to block merge. Do not set g1Authorized=true without evidence."
+}

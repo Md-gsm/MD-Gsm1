@@ -1,0 +1,34 @@
+{
+  "registryVersion": "1.0",
+  "module": "Persons",
+  "ownerPaths": [
+    "src/MDGsm.Domain/Persons",
+    "src/MDGsm.Application/Persons",
+    "src/MDGsm.Infrastructure/Persons",
+    "src/MDGsm.Api/Endpoints/Persons"
+  ],
+  "registeredConsumers": [],
+  "registryPolicy": {
+    "anyNonOwnerPersonIdReferenceRequiresRegistration": true,
+    "unknownConsumerCountMustBeZero": true,
+    "registrationRequiredBeforeMerge": true,
+    "registrationRequiredBeforeRelease": true
+  },
+  "plannedNotYetImplemented": [
+    {
+      "module": "RepairWorkflow",
+      "status": "PLANNED",
+      "condition": "Register only when the module is implemented and stores or transports PersonId."
+    },
+    {
+      "module": "Finance",
+      "status": "PLANNED",
+      "condition": "Register only when a reviewed Finance contract stores or transports PersonId."
+    },
+    {
+      "module": "PurchasingSales",
+      "status": "PLANNED",
+      "condition": "Register only when implemented and stores or transports PersonId."
+    }
+  ]
+}

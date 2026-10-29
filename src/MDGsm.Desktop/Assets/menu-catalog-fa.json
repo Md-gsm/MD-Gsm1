@@ -1,0 +1,2457 @@
+{
+  "catalogVersion": "1.2",
+  "mainMenus": [
+    {
+      "id": "sales",
+      "title": "خرید و فروش",
+      "groups": [
+        {
+          "title": "اسناد و گزارش‌ها",
+          "displayMode": "direct",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "SAL-001",
+              "title": "فاکتور فروش",
+              "ownerDomain": "فروش/صورتحساب",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "Ctrl+I",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-002",
+              "title": "فاکتور خرید",
+              "ownerDomain": "خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "Ctrl+P",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-003",
+              "title": "فاکتور برگشت از خرید",
+              "ownerDomain": "مرجوعی خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "Ctrl+4",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-004",
+              "title": "فاکتور برگشت از فروش",
+              "ownerDomain": "مرجوعی فروش",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "Ctrl+3",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-005",
+              "title": "پیش‌فاکتور",
+              "ownerDomain": "فروش/صورتحساب",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "Ctrl+5",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-006",
+              "title": "صدور سایر فاکتورها",
+              "ownerDomain": "صورتحساب",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "Ctrl+F",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-007",
+              "title": "چاپ گروهی فاکتورها",
+              "ownerDomain": "چاپ و صورتحساب",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-008",
+              "title": "لیست فاکتورها",
+              "ownerDomain": "فروش/خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "SAL-009",
+              "title": "جست‌وجوی فاکتورها",
+              "ownerDomain": "فروش/خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-010",
+              "title": "لیست فاکتورهای فروش تسویه‌نشده",
+              "ownerDomain": "فروش و خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-011",
+              "title": "گزارش فروش روزانه",
+              "ownerDomain": "گزارش‌گیری فروش",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "Shift+R",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-012",
+              "title": "گزارش فروش روزانه کالا و خدمات",
+              "ownerDomain": "گزارش‌گیری فروش",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-013",
+              "title": "گزارش خاص فروش ـ خرید",
+              "ownerDomain": "گزارش‌گیری فروش/خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-014",
+              "title": "گزارش‌ساز مدیریتی کالاها",
+              "ownerDomain": "گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "محدود به اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "سایر گزارشات",
+          "displayMode": "submenu",
+          "separatorBefore": true,
+          "items": [
+            {
+              "id": "SAL-R-01",
+              "title": "گزارش فروش، خرید و کالا",
+              "ownerDomain": "گزارش‌گیری فروش/خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "بر اساس مجوز و دامنهٔ داده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-R-02",
+              "title": "گزارش کالاهای خریداری‌شده از شخص",
+              "ownerDomain": "گزارش‌گیری فروش/خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "بر اساس مجوز و دامنهٔ داده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-R-03",
+              "title": "گزارش اشخاص ـ کالا",
+              "ownerDomain": "گزارش‌گیری فروش/خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "بر اساس مجوز و دامنهٔ داده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-R-04",
+              "title": "صورت وضعیت اشخاص در فاکتور",
+              "ownerDomain": "گزارش‌گیری فروش/خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "بر اساس مجوز و دامنهٔ داده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-R-05",
+              "title": "لیست اشخاص فاکتور نشده",
+              "ownerDomain": "گزارش‌گیری فروش/خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "بر اساس مجوز و دامنهٔ داده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-R-06",
+              "title": "خالص فاکتور فروش اشخاص",
+              "ownerDomain": "گزارش‌گیری فروش/خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "بر اساس مجوز و دامنهٔ داده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-R-07",
+              "title": "گزارش کالا/گروه برای اشخاص",
+              "ownerDomain": "گزارش‌گیری فروش/خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "بر اساس مجوز و دامنهٔ داده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-R-08",
+              "title": "لیست کالا و اسناد اشخاص",
+              "ownerDomain": "گزارش‌گیری فروش/خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "بر اساس مجوز و دامنهٔ داده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SAL-R-09",
+              "title": "قیمت کالاها در فاکتورها",
+              "ownerDomain": "گزارش‌گیری فروش/خرید",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185509.png",
+              "securityScope": "بر اساس مجوز و دامنهٔ داده",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "treasury",
+      "title": "دریافت و پرداخت",
+      "groups": [
+        {
+          "title": "رسیدها",
+          "displayMode": "direct",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "TRE-001",
+              "title": "رسید دریافت",
+              "ownerDomain": "خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به حساب‌ها و اسناد مجاز",
+              "shortcut": "Ctrl+D",
+              "separatorBefore": false
+            },
+            {
+              "id": "TRE-002",
+              "title": "رسید پرداخت",
+              "ownerDomain": "خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به حساب‌ها و اسناد مجاز",
+              "shortcut": "Ctrl+P",
+              "separatorBefore": false
+            },
+            {
+              "id": "TRE-003",
+              "title": "لیست رسیدهای دریافتی",
+              "ownerDomain": "خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به حساب‌ها و اسناد مجاز",
+              "shortcut": "Alt+D",
+              "separatorBefore": false
+            },
+            {
+              "id": "TRE-004",
+              "title": "لیست رسیدهای پرداختی",
+              "ownerDomain": "خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به حساب‌ها و اسناد مجاز",
+              "shortcut": "Alt+P",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "عملیات چک‌ها",
+          "displayMode": "submenu",
+          "separatorBefore": true,
+          "items": [
+            {
+              "id": "CHK-OP-01",
+              "title": "وصول چک‌های دریافتی",
+              "ownerDomain": "خزانه‌داری/عملیات چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به چک‌ها و اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-OP-02",
+              "title": "در جریان وصول گذاشتن چک‌ها",
+              "ownerDomain": "خزانه‌داری/عملیات چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به چک‌ها و اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-OP-03",
+              "title": "واگذاری چک‌های دریافتی",
+              "ownerDomain": "خزانه‌داری/عملیات چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به چک‌ها و اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-OP-04",
+              "title": "برگشت چک‌های دریافتی",
+              "ownerDomain": "خزانه‌داری/عملیات چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به چک‌ها و اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-OP-05",
+              "title": "عودت چک‌های دریافتی",
+              "ownerDomain": "خزانه‌داری/عملیات چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به چک‌ها و اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "CHK-OP-06",
+              "title": "عودت چک‌ها در جریان وصول",
+              "ownerDomain": "خزانه‌داری/عملیات چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به چک‌ها و اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-OP-07",
+              "title": "عودت چک‌های واگذارشده",
+              "ownerDomain": "خزانه‌داری/عملیات چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به چک‌ها و اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-OP-08",
+              "title": "پاس چک پرداختنی",
+              "ownerDomain": "خزانه‌داری/عملیات چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به چک‌ها و اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "CHK-OP-09",
+              "title": "برگشت چک پرداختنی",
+              "ownerDomain": "خزانه‌داری/عملیات چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به چک‌ها و اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-OP-10",
+              "title": "عودت چک پرداختنی",
+              "ownerDomain": "خزانه‌داری/عملیات چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "محدود به چک‌ها و اسناد مجاز کاربر",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "اصلاح چک‌ها",
+          "displayMode": "submenu",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "CHK-EDIT-01",
+              "title": "اصلاح چک‌های دریافتی",
+              "ownerDomain": "خزانه‌داری/چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "فقط با مجوز اصلاح",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-EDIT-02",
+              "title": "اصلاح چک‌های پرداختی",
+              "ownerDomain": "خزانه‌داری/چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "فقط با مجوز اصلاح",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "گزارش چک‌ها",
+          "displayMode": "submenu",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "CHK-R-01",
+              "title": "لیست چک‌های نزد صندوق",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-R-02",
+              "title": "لیست چک‌های دریافتی",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "Ctrl+W",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-R-03",
+              "title": "لیست چک‌های سررسیدشده",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-R-04",
+              "title": "لیست چک‌های دریافتی وصول‌شده",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-R-05",
+              "title": "لیست چک‌های واگذارشده",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-R-06",
+              "title": "لیست چک‌های دریافتی برگشتی",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-R-07",
+              "title": "لیست چک‌های دریافتی عودت‌شده",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-R-08",
+              "title": "لیست اسناد دریافتی عودت از واگذاری",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "CHK-R-09",
+              "title": "لیست اسناد دریافتی عودت از سررسید",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-R-10",
+              "title": "لیست چک‌های پرداختنی",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "Shift+P",
+              "separatorBefore": true
+            },
+            {
+              "id": "CHK-R-11",
+              "title": "لیست چک‌های پرداختنی پاس‌شده",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-R-12",
+              "title": "لیست چک‌های پرداختنی عودت‌شده",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-R-13",
+              "title": "لیست چک‌های پرداختنی برگشتی",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-R-14",
+              "title": "گردش چک‌های دریافتی و پرداختنی به‌صورت ماهانه",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "CHK-R-15",
+              "title": "گردش چک‌های دریافتی و پرداختنی",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-R-16",
+              "title": "نمایش چک‌های چند روز قبل از سررسید",
+              "ownerDomain": "گزارش‌گیری خزانه‌داری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png, 185540.png, 185552.png",
+              "securityScope": "بر اساس مجوز و مالکیت حساب",
+              "shortcut": "Ctrl+F13",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "جست‌وجو و ابزارهای چک",
+          "displayMode": "direct",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "CHK-Q-01",
+              "title": "جستجوی چک‌ها",
+              "ownerDomain": "خزانه‌داری/جست‌وجوی چک",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png",
+              "securityScope": "جست‌وجو فقط در چک‌های مجاز",
+              "shortcut": "F9",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-Q-02",
+              "title": "راس‌گیری چک‌ها",
+              "ownerDomain": "خزانه‌داری/راس‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png",
+              "securityScope": "محدود به اسناد مجاز",
+              "shortcut": "F8",
+              "separatorBefore": false
+            },
+            {
+              "id": "CHK-Q-03",
+              "title": "سامانه راس‌گیری هوشمند",
+              "ownerDomain": "خزانه‌داری/راس‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png",
+              "securityScope": "محدود به اسناد مجاز",
+              "shortcut": "Ctrl+FA",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "سامانه اقساط",
+          "displayMode": "submenu",
+          "separatorBefore": true,
+          "items": [
+            {
+              "id": "TRE-SUB-51",
+              "title": "گروه دارای زیرمنو؛ گزینه‌های سطح بعدی در تصاویر قابل‌خواندن نبود",
+              "ownerDomain": "خزانه‌داری/اقساط",
+              "catalogStatus": "سطح بعد نامشخص",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png",
+              "securityScope": "بر اساس مجوز خزانه‌داری",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "چک‌های تضمینی",
+          "displayMode": "submenu",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "TRE-SUB-52",
+              "title": "گروه دارای زیرمنو؛ گزینه‌های سطح بعدی در تصاویر قابل‌خواندن نبود",
+              "ownerDomain": "خزانه‌داری/چک تضمینی",
+              "catalogStatus": "سطح بعد نامشخص",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185526.png",
+              "securityScope": "بر اساس مجوز خزانه‌داری",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inventory",
+      "title": "انبارداری",
+      "groups": [
+        {
+          "title": "ورود/خروج به انبار",
+          "displayMode": "submenu",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "STK-DOC-01",
+              "title": "رسید انبار",
+              "ownerDomain": "انبارداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز سند انبار",
+              "shortcut": "Alt+1",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-DOC-02",
+              "title": "حواله انبار",
+              "ownerDomain": "انبارداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز سند انبار",
+              "shortcut": "Alt+2",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-DOC-03",
+              "title": "انتقال بین انبارها",
+              "ownerDomain": "انبارداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز سند انبار",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-DOC-04",
+              "title": "امانات پرداختنی",
+              "ownerDomain": "انبارداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز سند انبار",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-DOC-05",
+              "title": "امانات دریافتی",
+              "ownerDomain": "انبارداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز سند انبار",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-DOC-06",
+              "title": "فاکتور اضافات",
+              "ownerDomain": "انبارداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز سند انبار",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-DOC-07",
+              "title": "فاکتور کسورات",
+              "ownerDomain": "انبارداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز سند انبار",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-DOC-08",
+              "title": "فاکتور ضایعات",
+              "ownerDomain": "انبارداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز سند انبار",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-DOC-09",
+              "title": "حواله تجمیعی",
+              "ownerDomain": "انبارداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز سند انبار",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "تولید",
+          "displayMode": "submenu",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "STK-PROD-00",
+              "title": "گروه دارای زیرمنو؛ گزینه‌های سطح بعد در تصویر دیده نمی‌شوند",
+              "ownerDomain": "انبار/تولید",
+              "catalogStatus": "سطح بعد نامشخص",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png",
+              "securityScope": "مجوز تولید",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "جست‌وجو و گزارش موجودی",
+          "displayMode": "direct",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "STK-01",
+              "title": "جست‌وجوی کالا/خدمات",
+              "ownerDomain": "کاتالوگ کالا",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "بر اساس مجوز انبار و دامنهٔ داده",
+              "shortcut": "F3",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-02",
+              "title": "گزارش موجودی کالا",
+              "ownerDomain": "انبارداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "بر اساس مجوز انبار و دامنهٔ داده",
+              "shortcut": "Ctrl+M",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "سایر گزارشات موجودی",
+          "displayMode": "submenu",
+          "separatorBefore": true,
+          "items": [
+            {
+              "id": "STK-R-01",
+              "title": "موجودی کالا در هر انبار",
+              "ownerDomain": "گزارش‌گیری انبار",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز مشاهدهٔ انبار/محدوده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-R-02",
+              "title": "موجودی کالا در سطح‌ها",
+              "ownerDomain": "گزارش‌گیری انبار",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185619.png",
+              "securityScope": "مجوز مشاهدهٔ انبار/محدوده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-R-03",
+              "title": "کالاها با موجودی زیر نقطه سفارش",
+              "ownerDomain": "گزارش‌گیری انبار",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز مشاهدهٔ انبار/محدوده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-R-04",
+              "title": "کالاها با موجودی منفی",
+              "ownerDomain": "گزارش‌گیری انبار",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز مشاهدهٔ انبار/محدوده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-R-05",
+              "title": "کالاهای با موجودی صفر",
+              "ownerDomain": "گزارش‌گیری انبار",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "مجوز مشاهدهٔ انبار/محدوده",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "کاردکس و عملیات انبار",
+          "displayMode": "direct",
+          "separatorBefore": true,
+          "items": [
+            {
+              "id": "STK-03",
+              "title": "کاردکس کالا و خدمات",
+              "ownerDomain": "انبارداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "بر اساس مجوز انبار و دامنهٔ داده",
+              "shortcut": "Ctrl+X",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-04",
+              "title": "کاردکس اشخاص",
+              "ownerDomain": "اشخاص",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "بر اساس مجوز انبار و دامنهٔ داده",
+              "shortcut": "Ctrl+A",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-05",
+              "title": "کارت انبار",
+              "ownerDomain": "انبارداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "بر اساس مجوز انبار و دامنهٔ داده",
+              "shortcut": "Ctrl+K",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-06",
+              "title": "موجودی ریالی کالا (میانگین موزون، دائمی و ...)",
+              "ownerDomain": "انبارداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "بر اساس مجوز انبار و دامنهٔ داده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-07",
+              "title": "گردش تعدادی و ریالی کالا",
+              "ownerDomain": "انبارداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "بر اساس مجوز انبار و دامنهٔ داده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-08",
+              "title": "گزارش کالاهای امانی",
+              "ownerDomain": "انبارداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "بر اساس مجوز انبار و دامنهٔ داده",
+              "shortcut": "Ctrl+A",
+              "separatorBefore": false
+            },
+            {
+              "id": "STK-09",
+              "title": "انبارگردانی",
+              "ownerDomain": "انبارداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185607.png, 185619.png",
+              "securityScope": "بر اساس مجوز انبار و دامنهٔ داده",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accounting",
+      "title": "حسابداری",
+      "groups": [
+        {
+          "title": "اسناد، حساب‌ها و گزارش‌های مستقیم",
+          "displayMode": "direct",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "ACC-001",
+              "title": "صدور/اصلاح سند حسابداری",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "Ctrl+S",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-002",
+              "title": "لیست اسناد حسابداری",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "Ctrl+Y",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-003",
+              "title": "چاپ اسناد حسابداری",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-004",
+              "title": "جست‌وجوی اسناد حسابداری",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-005",
+              "title": "جست‌وجوی حساب‌ها",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "Ctrl+H",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-006",
+              "title": "کارت حساب",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "F4",
+              "separatorBefore": true
+            },
+            {
+              "id": "ACC-007",
+              "title": "ریز گردش حساب",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "F2",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-008",
+              "title": "کارکرد حساب",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-009",
+              "title": "کارت حساب گروهی",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-010",
+              "title": "لیست بدهکاران",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "Ctrl+B",
+              "separatorBefore": true
+            },
+            {
+              "id": "ACC-011",
+              "title": "لیست بستانکاران",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "Ctrl+E",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-012",
+              "title": "لیست بدهکاران و بستانکاران",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "Ctrl+L",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-013",
+              "title": "لیست افراد به حساب",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-014",
+              "title": "گزارش‌ساز مدیریتی حساب‌ها",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز مالی و دامنهٔ شخص/حساب",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "تراز آزمایشی",
+          "displayMode": "submenu",
+          "separatorBefore": true,
+          "items": [
+            {
+              "id": "ACC-TB-01",
+              "title": "تراز آزمایشی کل",
+              "ownerDomain": "حسابداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز گزارش مالی",
+              "shortcut": "Ctrl+T",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-TB-02",
+              "title": "چاپ تراز کل، معین و تفصیلی اول و دوم",
+              "ownerDomain": "حسابداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز گزارش مالی",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-TB-03",
+              "title": "انتقال تراز کل، معین و تفصیلی اول و دوم به اکسل",
+              "ownerDomain": "حسابداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز گزارش مالی",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "دفاتر حسابداری",
+          "displayMode": "submenu",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "ACC-LED-01",
+              "title": "دفتر روزنامه در سطح کل (خلاصه اسناد)",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز دفترکل",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-LED-02",
+              "title": "دفتر روزنامه در سطح معین/تفصیلی",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز دفترکل",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-LED-03",
+              "title": "دفتر کل",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز دفترکل",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-LED-04",
+              "title": "دفتر حساب‌های کل",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز دفترکل",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "سایر گزارشات",
+          "displayMode": "submenu",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "ACC-R-01",
+              "title": "ارسال سرفصل حساب‌ها به اکسل",
+              "ownerDomain": "حسابداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز گزارش مالی",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-R-02",
+              "title": "چاپ حساب‌ها",
+              "ownerDomain": "حسابداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز گزارش مالی",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-R-03",
+              "title": "تراز مراکز هزینه",
+              "ownerDomain": "حسابداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز گزارش مالی",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-R-04",
+              "title": "تراز گروه حساب‌ها",
+              "ownerDomain": "حسابداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز گزارش مالی",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "ACC-R-05",
+              "title": "لیست اسناد بدون مرکز هزینه",
+              "ownerDomain": "حسابداری/گزارش‌گیری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185634.png, 185646.png, 185659.png",
+              "securityScope": "مجوز گزارش مالی",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "payroll",
+      "title": "حقوق و دستمزد",
+      "groups": [
+        {
+          "title": "عملیات حقوق و دستمزد",
+          "displayMode": "direct",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "PAY-01",
+              "title": "تعریف کارگاه",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-02",
+              "title": "تعریف پرسنل و احکام حقوق",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-03",
+              "title": "ثبت کارکرد ماهانه",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-04",
+              "title": "محاسبه حقوق",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "PAY-05",
+              "title": "چاپ فیش حقوقی",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-06",
+              "title": "گزارش جامع حقوق و دستمزد",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-07",
+              "title": "تهیه دیسکت بیمه",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "PAY-08",
+              "title": "تهیه فایل مالیات حقوق",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-09",
+              "title": "محاسبه عیدی",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "PAY-10",
+              "title": "محاسبه سنوات",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-11",
+              "title": "محاسبه مرخصی",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-12",
+              "title": "ثبت مساعده",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "PAY-13",
+              "title": "ثبت وام پرسنلی",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "محرمانگی پرسنلی؛ محدود به مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "تنظیمات",
+          "displayMode": "submenu",
+          "separatorBefore": true,
+          "items": [
+            {
+              "id": "PAY-SET-01",
+              "title": "تعریف آیتم‌های حقوقی",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "مجوز تنظیمات حقوق",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-SET-02",
+              "title": "تعریف آیتم‌های کارکرد",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "مجوز تنظیمات حقوق",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-SET-03",
+              "title": "لیست مشاغل",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "مجوز تنظیمات حقوق",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-SET-04",
+              "title": "حوزه‌های مالیاتی",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "مجوز تنظیمات حقوق",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-SET-05",
+              "title": "لیست محل خدمت",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "مجوز تنظیمات حقوق",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "PAY-SET-06",
+              "title": "تنظیمات حقوق و دستمزد",
+              "ownerDomain": "حقوق و دستمزد",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185714.png",
+              "securityScope": "مجوز تنظیمات حقوق",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tax",
+      "title": "سامانه‌های مالیاتی",
+      "groups": [
+        {
+          "title": "صورتحساب و گزارش",
+          "displayMode": "hidden",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "TAX-01",
+              "title": "ارسال مستقیم به سامانه مؤدیان",
+              "ownerDomain": "مالیات",
+              "catalogStatus": "از HTML؛ منوی واقعی در تصاویر باز نشده",
+              "sourceType": "HTML مرجع",
+              "evidence": "MD-Gsm.html؛ تصاویر پارسیان فقط عنوان منوی اصلی را نشان می‌دهند",
+              "securityScope": "مجوز مالیاتی",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "TAX-02",
+              "title": "گزارش‌های ارزش افزوده و فصلی",
+              "ownerDomain": "مالیات",
+              "catalogStatus": "از HTML؛ منوی واقعی در تصاویر باز نشده",
+              "sourceType": "HTML مرجع",
+              "evidence": "MD-Gsm.html؛ تصاویر پارسیان فقط عنوان منوی اصلی را نشان می‌دهند",
+              "securityScope": "مجوز مالیاتی",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "distribution",
+      "title": "پخش مویرگی",
+      "groups": [
+        {
+          "title": "تعریف پایه",
+          "displayMode": "submenu",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "DST-DEF-01",
+              "title": "تعریف پورسانت برای کالا یا خدمات",
+              "ownerDomain": "پخش/قیمت‌گذاری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "مجوز تعریف قواعد پخش",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-DEF-02",
+              "title": "تعریف تخفیفات برای کالا یا خدمات",
+              "ownerDomain": "پخش/قیمت‌گذاری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "مجوز تعریف قواعد پخش",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-DEF-03",
+              "title": "تعریف کالای جایزه (اشانتیون)",
+              "ownerDomain": "پخش/قیمت‌گذاری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "مجوز تعریف قواعد پخش",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "عملیات پخش مویرگی",
+          "displayMode": "direct",
+          "separatorBefore": true,
+          "items": [
+            {
+              "id": "DST-01",
+              "title": "حواله تجمیعی",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-02",
+              "title": "گزارش راننده",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-03",
+              "title": "گزارش حواله راننده",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-04",
+              "title": "عملکرد بازاریاب",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-05",
+              "title": "کاردکس بازاریاب",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-06",
+              "title": "مرجوع کالای فروش‌رفته توسط بازاریاب",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "DST-07",
+              "title": "سود ناخالص بازاریاب‌ها",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-08",
+              "title": "فروش کالا برای بازاریاب‌ها",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-09",
+              "title": "گزارش لیست زیرکالاهای ثبت‌شده در فاکتور",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-10",
+              "title": "مانده حساب مشتریان بازاریاب‌ها",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "DST-11",
+              "title": "فاکتورهای فروش مشتریان",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-12",
+              "title": "گزارش مشتریان دارای بازاریاب",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-13",
+              "title": "گزارش کاربر بازاریاب‌ها",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "DST-14",
+              "title": "گزارش فروش کالای بازاریاب‌ها",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "DST-15",
+              "title": "گزارش فروش گروهی کالای بازاریاب‌ها",
+              "ownerDomain": "پخش مویرگی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185741.png",
+              "securityScope": "محدود به مسیر/بازاریاب و مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "base-data",
+      "title": "اطلاعات پایه",
+      "groups": [
+        {
+          "title": "تعریف‌ها",
+          "displayMode": "direct",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "BAS-01",
+              "title": "تعریف کدینگ (کل، معین، تفصیلی)",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185755.png",
+              "securityScope": "مدیر/مجوز اطلاعات پایه",
+              "shortcut": "Ctrl+C",
+              "separatorBefore": false
+            },
+            {
+              "id": "BAS-02",
+              "title": "تعریف تفصیلی‌های شناور",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185755.png",
+              "securityScope": "مدیر/مجوز اطلاعات پایه",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "BAS-03",
+              "title": "تعریف کالا و خدمات",
+              "ownerDomain": "کاتالوگ کالا و خدمات",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185755.png",
+              "securityScope": "مدیر/مجوز اطلاعات پایه",
+              "shortcut": "Ctrl+K",
+              "separatorBefore": true
+            },
+            {
+              "id": "BAS-04",
+              "title": "تعریف انبارها",
+              "ownerDomain": "انبارداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185755.png",
+              "securityScope": "مدیر/مجوز اطلاعات پایه",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "BAS-05",
+              "title": "تعریف واحدهای اندازه‌گیری",
+              "ownerDomain": "کاتالوگ کالا و خدمات",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185755.png",
+              "securityScope": "مدیر/مجوز اطلاعات پایه",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "BAS-06",
+              "title": "تعریف مراکز هزینه",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185755.png",
+              "securityScope": "مدیر/مجوز اطلاعات پایه",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "BAS-07",
+              "title": "تعریف مناطق",
+              "ownerDomain": "اطلاعات پایه",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185755.png",
+              "securityScope": "مدیر/مجوز اطلاعات پایه",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "BAS-08",
+              "title": "عملیات ابتدای دوره",
+              "ownerDomain": "حسابداری/افتتاحیه",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185755.png",
+              "securityScope": "مدیر/مجوز اطلاعات پایه",
+              "shortcut": "",
+              "separatorBefore": true
+            }
+          ]
+        },
+        {
+          "title": "ثبت و فهرست اشخاص",
+          "displayMode": "direct",
+          "separatorBefore": true,
+          "items": [
+            {
+              "id": "BASE-P-06",
+              "title": "ثبت و فهرست اشخاص",
+              "ownerDomain": "اشخاص / پیش‌نمایش MD-Gsm",
+              "catalogStatus": "پیش‌نمایش",
+              "sourceType": "افزودهٔ MD-Gsm",
+              "evidence": "افزوده پس از منوی اطلاعات پایه مرجع؛ ماژول اشخاص هنوز نمایشی است",
+              "securityScope": "صرفاً داده نمایشی، بدون ذخیره پایدار",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "پیشنهادهای آینده؛ فعلاً پنهان",
+          "displayMode": "hidden",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "BASE-P-01",
+              "title": "ثبت و فهرست کالاها و خدمات",
+              "ownerDomain": "کاتالوگ کالا و خدمات",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "پیشنهاد MD-Gsm",
+              "securityScope": "بر اساس مجوز حوزه",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "BASE-P-02",
+              "title": "تعریف برندها و مدل‌های گوشی",
+              "ownerDomain": "کاتالوگ دستگاه",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "پیشنهاد MD-Gsm",
+              "securityScope": "بر اساس مجوز حوزه",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "BASE-P-03",
+              "title": "تعریف تکنسین‌ها و تعمیرکاران",
+              "ownerDomain": "اشخاص/کارکنان",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "پیشنهاد MD-Gsm",
+              "securityScope": "بر اساس مجوز حوزه",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "BASE-P-04",
+              "title": "نرخ‌نامه اجرت و تعرفه خدمات",
+              "ownerDomain": "کاتالوگ خدمات/قیمت‌گذاری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "پیشنهاد MD-Gsm",
+              "securityScope": "بر اساس مجوز حوزه",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "BASE-P-05",
+              "title": "پنج فهرست قیمت قابل پیکربندی",
+              "ownerDomain": "موتور قیمت‌گذاری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "پیشنهاد MD-Gsm",
+              "securityScope": "بر اساس مجوز حوزه",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "BASE-P-07",
+              "title": "ثبت و فهرست انبارها",
+              "ownerDomain": "انبارداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "پیشنهاد MD-Gsm",
+              "securityScope": "بر اساس مجوز حوزه",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "title": "امکانات",
+      "groups": [
+        {
+          "title": "تهیه و بازیابی پشتیبان",
+          "displayMode": "direct",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "FEA-01",
+              "title": "تهیه کپی پشتیبان",
+              "ownerDomain": "عملیات/امنیت/نگهداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185808.png, 185818.png",
+              "securityScope": "مدیر/مجوز مشخص؛ عملیات حساس audit شود",
+              "shortcut": "Alt+S",
+              "separatorBefore": false
+            },
+            {
+              "id": "FEA-02",
+              "title": "بازیابی کپی پشتیبان",
+              "ownerDomain": "عملیات/امنیت/نگهداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185808.png, 185818.png",
+              "securityScope": "مدیر/مجوز مشخص؛ عملیات حساس audit شود",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "انتقال اطلاعات و کاربران",
+          "displayMode": "direct",
+          "separatorBefore": true,
+          "items": [
+            {
+              "id": "FEA-03",
+              "title": "انتقال اطلاعات از Excel",
+              "ownerDomain": "عملیات/امنیت/نگهداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185808.png, 185818.png",
+              "securityScope": "مدیر/مجوز مشخص؛ عملیات حساس audit شود",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "FEA-04",
+              "title": "تعریف کاربران نرم‌افزار",
+              "ownerDomain": "عملیات/امنیت/نگهداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185808.png, 185818.png",
+              "securityScope": "مدیر/مجوز مشخص؛ عملیات حساس audit شود",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "FEA-05",
+              "title": "تغییر کلمه عبور",
+              "ownerDomain": "عملیات/امنیت/نگهداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185808.png, 185818.png",
+              "securityScope": "مدیر/مجوز مشخص؛ عملیات حساس audit شود",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "نمایش تاریخچه اصلاح و حذف",
+          "displayMode": "submenu",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "FEA-AUD-01",
+              "title": "اسناد حسابداری",
+              "ownerDomain": "audit",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185808.png, 185818.png",
+              "securityScope": "فقط خواندن تاریخچه با مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "FEA-AUD-02",
+              "title": "فاکتورها",
+              "ownerDomain": "audit",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185808.png, 185818.png",
+              "securityScope": "فقط خواندن تاریخچه با مجوز",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "ابزارها",
+          "displayMode": "direct",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "FEA-07",
+              "title": "اضافه نمودن سایر قفل‌ها",
+              "ownerDomain": "عملیات/امنیت/نگهداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185808.png, 185818.png",
+              "securityScope": "مدیر/مجوز مشخص؛ عملیات حساس audit شود",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "FEA-08",
+              "title": "دفتر تلفن",
+              "ownerDomain": "عملیات/امنیت/نگهداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185808.png, 185818.png",
+              "securityScope": "مدیر/مجوز مشخص؛ عملیات حساس audit شود",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "FEA-09",
+              "title": "ایجاد شرکت یا فروشگاه جدید (ویژه حسابدارها)",
+              "ownerDomain": "عملیات/امنیت/نگهداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185808.png, 185818.png",
+              "securityScope": "مدیر/مجوز مشخص؛ عملیات حساس audit شود",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "FEA-10",
+              "title": "انتقال اطلاعات از SQL2000",
+              "ownerDomain": "عملیات/امنیت/نگهداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185808.png, 185818.png",
+              "securityScope": "مدیر/مجوز مشخص؛ عملیات حساس audit شود",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "title": "تنظیمات",
+      "groups": [
+        {
+          "title": "تنظیمات اصلی",
+          "displayMode": "direct",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "SET-01",
+              "title": "تغییر سال مالی",
+              "ownerDomain": "حسابداری/دورهٔ مالی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185830.png",
+              "securityScope": "مدیر یا مجوز مشخص",
+              "shortcut": "Alt+T",
+              "separatorBefore": false
+            },
+            {
+              "id": "SET-02",
+              "title": "تغییر کاربر سیستم (F12)",
+              "ownerDomain": "امنیت",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185830.png",
+              "securityScope": "مدیر یا مجوز مشخص",
+              "shortcut": "F12",
+              "separatorBefore": false
+            },
+            {
+              "id": "SET-03",
+              "title": "تنظیم مشخصات شرکت یا فروشگاه",
+              "ownerDomain": "تنظیمات مجموعه",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185830.png",
+              "securityScope": "مدیر یا مجوز مشخص",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "SET-04",
+              "title": "تنظیم کدهای حسابداری",
+              "ownerDomain": "حسابداری",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185830.png",
+              "securityScope": "مدیر یا مجوز مشخص",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SET-05",
+              "title": "تنظیمات فاکتورها",
+              "ownerDomain": "صورتحساب",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185830.png",
+              "securityScope": "مدیر یا مجوز مشخص",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "SET-06",
+              "title": "اتصال به سرور",
+              "ownerDomain": "عملیات/اتصال",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185830.png",
+              "securityScope": "مدیر یا مجوز مشخص",
+              "shortcut": "",
+              "separatorBefore": true
+            },
+            {
+              "id": "SET-07",
+              "title": "ایجاد سال مالی جدید",
+              "ownerDomain": "حسابداری/دورهٔ مالی",
+              "catalogStatus": "مشاهده‌شده",
+              "sourceType": "تصویر مرجع",
+              "evidence": "Screenshots(2).zip / 185830.png",
+              "securityScope": "مدیر یا مجوز مشخص",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        },
+        {
+          "title": "گزینه‌های تکمیلی HTML؛ فعلاً پنهان",
+          "displayMode": "hidden",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "HTML-SET-01",
+              "title": "تعریف اطلاعات و لوگوی تعمیرگاه",
+              "ownerDomain": "تنظیمات/امنیت/نگهداری",
+              "catalogStatus": "از HTML؛ در تصویر منو مشاهده نشده",
+              "sourceType": "HTML مرجع",
+              "evidence": "MD-Gsm.html (مرجع بصری/نام‌گذاری؛ در تصویر منوی پارسیان مشاهده نشد)",
+              "securityScope": "مدیر/مجوز مشخص",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "HTML-SET-02",
+              "title": "تعیین سطوح دسترسی کاربرها",
+              "ownerDomain": "تنظیمات/امنیت/نگهداری",
+              "catalogStatus": "از HTML؛ در تصویر منو مشاهده نشده",
+              "sourceType": "HTML مرجع",
+              "evidence": "MD-Gsm.html (مرجع بصری/نام‌گذاری؛ در تصویر منوی پارسیان مشاهده نشد)",
+              "securityScope": "مدیر/مجوز مشخص",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "HTML-SET-03",
+              "title": "پشتیبان‌گیری و بازیابی اطلاعات",
+              "ownerDomain": "تنظیمات/امنیت/نگهداری",
+              "catalogStatus": "از HTML؛ در تصویر منو مشاهده نشده",
+              "sourceType": "HTML مرجع",
+              "evidence": "MD-Gsm.html (مرجع بصری/نام‌گذاری؛ در تصویر منوی پارسیان مشاهده نشد)",
+              "securityScope": "مدیر/مجوز مشخص",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "help",
+      "title": "راهنما",
+      "groups": [
+        {
+          "title": "راهنما و پشتیبانی",
+          "displayMode": "hidden",
+          "separatorBefore": false,
+          "items": [
+            {
+              "id": "HELP-01",
+              "title": "مرکز راهنما و پشتیبانی فنی",
+              "ownerDomain": "راهنما/پشتیبانی",
+              "catalogStatus": "از HTML؛ منوی واقعی در تصاویر باز نشده",
+              "sourceType": "HTML مرجع",
+              "evidence": "MD-Gsm.html؛ تصاویر پارسیان فقط عنوان منوی اصلی را نشان می‌دهند",
+              "securityScope": "اطلاعات پشتیبانی؛ بدون افشای داده",
+              "shortcut": "",
+              "separatorBefore": false
+            },
+            {
+              "id": "HELP-02",
+              "title": "تماس با پشتیبانی",
+              "ownerDomain": "راهنما/پشتیبانی",
+              "catalogStatus": "از HTML؛ منوی واقعی در تصاویر باز نشده",
+              "sourceType": "HTML مرجع",
+              "evidence": "MD-Gsm.html؛ تصاویر پارسیان فقط عنوان منوی اصلی را نشان می‌دهند",
+              "securityScope": "اطلاعات پشتیبانی؛ بدون افشای داده",
+              "shortcut": "",
+              "separatorBefore": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "quickActions": [
+    {
+      "id": "QCK-01",
+      "title": "پذیرش جدید",
+      "ownerDomain": "گردش کار تعمیرات",
+      "catalogStatus": "فقط در HTML مشاهده‌شده",
+      "sourceType": "HTML مرجع",
+      "securityScope": "طبق مجوز"
+    },
+    {
+      "id": "QCK-02",
+      "title": "پذیرش همکار",
+      "ownerDomain": "گردش کار تعمیرات",
+      "catalogStatus": "فقط در HTML مشاهده‌شده",
+      "sourceType": "HTML مرجع",
+      "securityScope": "طبق مجوز"
+    },
+    {
+      "id": "QCK-03",
+      "title": "ماشین‌حساب",
+      "ownerDomain": "ابزارهای عمومی",
+      "catalogStatus": "فقط در HTML مشاهده‌شده",
+      "sourceType": "HTML مرجع",
+      "securityScope": "طبق مجوز"
+    },
+    {
+      "id": "QSB-01",
+      "title": "فاکتور فروش",
+      "ownerDomain": "فروش",
+      "catalogStatus": "مشاهده‌شده در نوار کناری",
+      "sourceType": "تصویر مرجع",
+      "securityScope": "مجوز حوزه"
+    },
+    {
+      "id": "QSB-02",
+      "title": "رسید دریافت",
+      "ownerDomain": "خزانه‌داری",
+      "catalogStatus": "مشاهده‌شده در نوار کناری",
+      "sourceType": "تصویر مرجع",
+      "securityScope": "مجوز حوزه"
+    },
+    {
+      "id": "QSB-03",
+      "title": "کارت حساب",
+      "ownerDomain": "حسابداری",
+      "catalogStatus": "مشاهده‌شده در نوار کناری",
+      "sourceType": "تصویر مرجع",
+      "securityScope": "مجوز حوزه"
+    },
+    {
+      "id": "QSB-04",
+      "title": "ریزگردش حساب",
+      "ownerDomain": "حسابداری",
+      "catalogStatus": "مشاهده‌شده در نوار کناری",
+      "sourceType": "تصویر مرجع",
+      "securityScope": "مجوز حوزه"
+    },
+    {
+      "id": "QSB-05",
+      "title": "جست‌وجوی چک",
+      "ownerDomain": "خزانه‌داری/چک",
+      "catalogStatus": "مشاهده‌شده در نوار کناری",
+      "sourceType": "تصویر مرجع",
+      "securityScope": "مجوز حوزه"
+    },
+    {
+      "id": "QSB-06",
+      "title": "سامانه مؤدیان",
+      "ownerDomain": "مالیات",
+      "catalogStatus": "مشاهده‌شده در نوار کناری",
+      "sourceType": "تصویر مرجع",
+      "securityScope": "مجوز حوزه"
+    },
+    {
+      "id": "QSB-07",
+      "title": "CRM",
+      "ownerDomain": "CRM",
+      "catalogStatus": "مشاهده‌شده در نوار کناری",
+      "sourceType": "تصویر مرجع",
+      "securityScope": "مجوز حوزه"
+    },
+    {
+      "id": "QSB-08",
+      "title": "رسید پرداخت",
+      "ownerDomain": "خزانه‌داری",
+      "catalogStatus": "مشاهده‌شده در نوار کناری",
+      "sourceType": "تصویر مرجع",
+      "securityScope": "مجوز حوزه"
+    },
+    {
+      "id": "QSB-09",
+      "title": "پنل اندروید (نمایش غیرفعال)",
+      "ownerDomain": "یکپارچه‌سازی/موبایل",
+      "catalogStatus": "مشاهده‌شده در نوار کناری",
+      "sourceType": "تصویر مرجع",
+      "securityScope": "مجوز حوزه"
+    }
+  ]
+}

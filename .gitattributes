@@ -1,0 +1,3 @@
+# Preserve source bytes exactly across ZIP packaging and Git checkout.
+# In particular, do not normalize the imported Stage9 baseline line endings.
+* -text

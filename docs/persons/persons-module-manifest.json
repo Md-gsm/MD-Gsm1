@@ -1,0 +1,30 @@
+{
+  "manifestVersion": "1.0",
+  "module": "Persons",
+  "repositoryStage": "G0_PREPARATION_ONLY",
+  "implementationState": "NOT_IMPLEMENTED",
+  "g1Authorized": false,
+  "personsApiImplemented": false,
+  "temporaryDataRuntimeImplemented": false,
+  "mergeExecutionImplemented": false,
+  "securityRuntimeImplemented": false,
+  "personsBusinessMigrationsPresent": false,
+  "currentPolicy": {
+    "temporaryDataTtlDefaultDays": 7,
+    "temporaryDataMaxAgeDays": 30,
+    "temporaryDataWorkerIntervalMinutes": 15,
+    "temporaryDataPurgeDeadlineMinutes": 30,
+    "temporaryDataFailureAlertDeadlineMinutes": 5,
+    "temporaryDataMaxRenewals": 1,
+    "autoMergeAllowed": false
+  },
+  "g1Prerequisites": {
+    "temporaryDataPolicyApproved": false,
+    "mergeChecklistApproved": false,
+    "requiredStatusChecksConfiguredInScm": false,
+    "negativeCiEnforcementTestPassed": false,
+    "jobOwnersAssigned": false,
+    "acceptanceCriteriaAc31ToAc49Mapped": true
+  },
+  "note": "This manifest describes source preparation only. It must not be marked implemented or G1-authorized until runtime code, automated tests, SCM protections, and evidence satisfy the architecture document v1.1."
+}

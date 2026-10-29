@@ -1,0 +1,215 @@
+name: MD-Gsm Persons Module Gates
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  foundation-build-test:
+    name: foundation-build-test
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore
+        run: dotnet restore .\MDGsm.sln
+      - name: Build Release
+        run: dotnet build .\MDGsm.sln --configuration Release --no-restore
+      - name: Test Release
+        run: dotnet test .\MDGsm.sln --configuration Release --no-build --logger "trx;LogFileName=mdgsm-tests.trx"
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundation-test-results
+          path: '**/TestResults/*.trx'
+          if-no-files-found: warn
+
+  persons-spec-lint:
+    name: persons-spec-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/ci/validate_persons_gates.py --gate spec
+
+  persons-architecture-boundary:
+    name: persons-architecture-boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/ci/validate_persons_gates.py --gate architecture
+
+  persons-consumer-registry:
+    name: persons-consumer-registry
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/ci/validate_persons_gates.py --gate registry
+
+  persons-api-contract:
+    name: persons-api-contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/ci/validate_persons_gates.py --gate api
+
+  persons-temporary-data-retention:
+    name: persons-temporary-data-retention
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/ci/validate_persons_gates.py --gate retention
+
+  persons-merge-contract:
+    name: persons-merge-contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/ci/validate_persons_gates.py --gate merge
+
+  persons-postgres-migrations:
+    name: persons-postgres-migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mdgsm_ci_only_password
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      PGPASSWORD: mdgsm_ci_only_password
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create uniquely named disposable database and apply Stage9 infrastructure migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          db="mdgsm_ci_disposable_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          [[ "$db" =~ ^mdgsm_ci_disposable_[0-9]+_[0-9]+$ ]]
+          psql -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$db\";"
+          psql -d postgres -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE \"$db\" IS 'MDGSM_DISPOSABLE_TEST_DB; created by GitHub CI workflow';"
+          psql -d "$db" -v ON_ERROR_STOP=1 -f database/migrations/0001_infrastructure_schema_version.sql
+          psql -d "$db" -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN IF (SELECT count(*) FROM mdgsm_schema_version WHERE version=1 AND migration_name='0001_infrastructure_schema_version') <> 1 THEN RAISE EXCEPTION 'migration verification failed'; END IF; END \$\$;"
+          # Replay demonstrates migration idempotence on a disposable database only.
+          psql -d "$db" -v ON_ERROR_STOP=1 -f database/migrations/0001_infrastructure_schema_version.sql
+          count="$(psql -d "$db" -tA -v ON_ERROR_STOP=1 -c 'SELECT count(*) FROM mdgsm_schema_version;')"
+          test "$count" = '1'
+          sha256sum database/migrations/0001_infrastructure_schema_version.sql
+          echo "PASS: only current Stage9 infrastructure migration tested in $db; no Persons business schema exists yet."
+
+  persons-security-tests:
+    name: persons-security-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/ci/validate_persons_gates.py --gate security
+
+  persons-e2e-disposable:
+    name: persons-e2e-disposable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/ci/validate_persons_gates.py --gate e2e
+
+  persons-ci-enforcement-test:
+    name: persons-ci-enforcement-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test fail-closed gate policy
+        run: python -m unittest discover -s scripts/ci -p 'test_*.py' -v
+      - name: Verify required gate manifest and mappings
+        run: python scripts/ci/validate_persons_gates.py --gate ci-enforcement
+
+  persons-ci-evidence:
+    name: persons-ci-evidence
+    if: always()
+    needs:
+      - foundation-build-test
+      - persons-spec-lint
+      - persons-architecture-boundary
+      - persons-consumer-registry
+      - persons-api-contract
+      - persons-temporary-data-retention
+      - persons-merge-contract
+      - persons-postgres-migrations
+      - persons-security-tests
+      - persons-e2e-disposable
+      - persons-ci-enforcement-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download .NET TRX summary source when available
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          name: foundation-test-results
+          path: artifacts/test-results
+        continue-on-error: true
+      - name: Build commit-bound redacted evidence
+        if: always()
+        env:
+          GATE_NEEDS_JSON: ${{ toJSON(needs) }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: python scripts/ci/write_ci_evidence.py --root . --out artifacts/persons-ci-evidence.json
+      - name: Upload CI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: persons-ci-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/persons-ci-evidence.json
+          if-no-files-found: error
+      - name: Enforce every required gate and test passed
+        if: always()
+        run: python scripts/ci/write_ci_evidence.py --root . --out artifacts/persons-ci-evidence.json --enforce
