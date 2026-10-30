@@ -286,7 +286,7 @@
             <TextBlock Text="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل"
                        Foreground="#FBBF24" FontSize="15.4" FontWeight="Black" TextAlignment="Right"/>
             <StackPanel Orientation="Horizontal" FlowDirection="RightToLeft" HorizontalAlignment="Right" Margin="0,3,0,0">
-              <TextBlock Text="نسخه پیش‌نمایش ۰٫۲٫۱۰" Foreground="#94A3B8" FontSize="13.2"/>
+              <TextBlock Text="نسخه پیش‌نمایش ۰٫۲٫۱۱" Foreground="#94A3B8" FontSize="13.2"/>
               <TextBlock Text="  •  " Foreground="#475569" FontSize="13.2"/>
               <TextBlock x:Name="LiveDateTimeText" Text="محیط نمایشی" Foreground="#CBD5E1" FontSize="13.2"/>
             </StackPanel>
@@ -792,7 +792,7 @@
       <DockPanel VerticalAlignment="Center" FlowDirection="RightToLeft">
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
           <TextBlock Text="سال مالی: ۱۴۰۵" Foreground="#CBD5E1" FontSize="13.2" VerticalAlignment="Center" Margin="0,0,15,0"/>
-          <TextBlock Text="نسخه پیش‌نمایش ۰٫۲٫۶" Foreground="#94A3B8" FontSize="13.2" VerticalAlignment="Center" Margin="0,0,15,0"/>
+          <TextBlock Text="نسخه پیش‌نمایش ۰٫۲٫۱۱" Foreground="#94A3B8" FontSize="13.2" VerticalAlignment="Center" Margin="0,0,15,0"/>
           <TextBlock Text="شرکت: داده نمونه" Foreground="#CBD5E1" FontSize="13.2" VerticalAlignment="Center"/>
         </StackPanel>
         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center" FlowDirection="RightToLeft">
