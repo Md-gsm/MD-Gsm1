@@ -23,7 +23,9 @@
 | آزمون منفی قفل CI | باز | PR آزمایشی با یک check شکست‌خورده واقعاً مسدود شود؛ نتیجه مستند شود |
 | مالک هر CI job | باز | اختصاص نام/مسئول واقعی و ثبت در سند عملیات |
 | نگاشت AC-31..AC-49 | انجام در سورس | `acceptance-gate-map.json` و lint خودکار |
-| Build/Test واقعی روی Windows | انجام‌شده در CI Windows در 2026-10-30 | run `41081078694`: Release build با 0 Warning / 0 Error و 16 تست .NET موفق |
+| Build/Test واقعی روی Windows | انجام‌شده در CI Windows در 2026-10-30 | Release build با 0 Warning / 0 Error و 16 تست .NET موفق؛ شواهد اجراها در CI مربوط به هر commit نگهداری می‌شود |
+| نصب و راه‌اندازی دستی Preview | تأیید کاربر در 2026-10-30 | نصب و اجرای برنامه موفق گزارش شد؛ تنها ایراد گزارش‌شده پیام Unknown Publisher برای installer unsigned بود |
+| امضای ناشر برای نسخه انتشار | pipeline آماده؛ گواهی باز | گواهی معتبر Code Signing در GitHub Secrets و verification امضای EXE برنامه و installer |
 
 **G1 نباید شروع شود** تا شروط بالا با شواهد قابل ردیابی بسته شوند. اجرای موفق lint در این بسته به‌تنهایی هیچ کدام از تأییدهای خارجی/سازمانی را ادعا نمی‌کند.
 
@@ -49,4 +51,4 @@
 
 `foundation-build-test`, `persons-spec-lint`, `persons-architecture-boundary`, `persons-consumer-registry`, `persons-api-contract`, `persons-temporary-data-retention`, `persons-merge-contract`, `persons-postgres-migrations`, `persons-security-tests`, `persons-e2e-disposable`, `persons-ci-enforcement-test`, `persons-ci-evidence`.
 
-این نام‌ها در Workflow تعریف می‌شوند، ولی Required بودن آن‌ها فقط با تنظیم مخزن remote قابل اثبات است. این محیط به remote repository متصل نیست و ادعای فعال بودن branch protection نمی‌شود.
+این نام‌ها در Workflow تعریف می‌شوند، ولی Required بودن آن‌ها فقط با تنظیم و مشاهده تنظیمات مخزن remote و اجرای آزمون منفی Merge-blocking قابل اثبات است. در وضعیت فعلی، فعال بودن branch protection و Required Status Checks تأیید نشده و مقدار manifest باید `false` بماند.
