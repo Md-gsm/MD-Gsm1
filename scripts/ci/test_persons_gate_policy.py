@@ -232,7 +232,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
             bad_owners = dst / "docs/persons/CI_JOB_OWNERS_TEMPLATE.md"
             bad_text = bad_owners.read_text(encoding="utf-8")
             row = next(line for line in bad_text.splitlines() if "`persons-ci-evidence`" in line)
-            bad_owners.write_text(bad_text.replace(row + "\\n", "", 1), encoding="utf-8")
+            bad_owners.write_text(bad_text.replace(row + "\n", "", 1), encoding="utf-8")
             with self.assertRaisesRegex(gates.GateFailure, "missing ownership rows"):
                 gates.run_spec(dst)
 
