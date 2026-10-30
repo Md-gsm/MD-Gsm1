@@ -142,6 +142,46 @@ public sealed class PersonsPreviewInstallerTests
         Assert.False(buildScript.Contains("python scripts", StringComparison.OrdinalIgnoreCase));
     }
 
+
+    [Fact]
+    public void Windows_installer_supports_optional_Authenticode_signing_and_verified_timestamps()
+    {
+        var root = FindSolutionRoot();
+        var buildScript = File.ReadAllText(Path.Combine(root, "scripts", "Build-Windows-Installer.ps1"));
+        var signingScript = File.ReadAllText(Path.Combine(root, "scripts", "Sign-Windows-Authenticode.ps1"));
+
+        Assert.Contains("WINDOWS_CODESIGN_CERTIFICATE_BASE64", buildScript);
+        Assert.Contains("WINDOWS_CODESIGN_CERTIFICATE_PASSWORD", buildScript);
+        Assert.Contains("RequireAuthenticodeSignature", buildScript);
+        Assert.Contains("'UNSIGNED'", buildScript);
+        Assert.Contains("Unknown Publisher", buildScript);
+        Assert.Contains("'1.3.6.1.5.5.7.3.3'", signingScript);
+        Assert.Contains("'sign'", signingScript);
+        Assert.Contains("'/fd', 'SHA256'", signingScript);
+        Assert.Contains("'/tr', $TimestampServer", signingScript);
+        Assert.Contains("'/td', 'SHA256'", signingScript);
+        Assert.Contains("'/pa', '/all', '/tw'", signingScript);
+    }
+
+    [Fact]
+    public void Preview_version_metadata_is_consistent_at_v0_2_11()
+    {
+        var root = FindSolutionRoot();
+        var project = File.ReadAllText(Path.Combine(root, "src", "MDGsm.Desktop", "MDGsm.Desktop.csproj"));
+        var xaml = File.ReadAllText(Path.Combine(root, "src", "MDGsm.Desktop", "MainWindow.xaml"));
+        var iss = File.ReadAllText(Path.Combine(root, "installer", "MDGsm-Persons-Preview.iss"));
+        var buildScript = File.ReadAllText(Path.Combine(root, "scripts", "Build-Windows-Installer.ps1"));
+        var workflow = File.ReadAllText(Path.Combine(root, ".github", "workflows", "windows-preview-installer.yml"));
+
+        Assert.Contains("<Version>0.2.11</Version>", project);
+        Assert.Contains("<AssemblyVersion>0.2.11.0</AssemblyVersion>", project);
+        Assert.Contains("<FileVersion>0.2.11.0</FileVersion>", project);
+        Assert.Contains("MD-Gsm v0.2.11", xaml);
+        Assert.Contains("AppVersion \"0.2.11\"", iss);
+        Assert.Contains("Setup-v0.2.11.exe", buildScript);
+        Assert.Contains("Preview-Installer-v0.2.11", workflow);
+    }
+
     private static string FindSolutionRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
