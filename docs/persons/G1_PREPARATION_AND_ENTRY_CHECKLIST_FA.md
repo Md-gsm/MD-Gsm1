@@ -1,7 +1,7 @@
 # آماده‌سازی G1 — ماژول اشخاص MD-Gsm
 
 **وضعیت فعلی:** آماده‌سازی سورس؛ G1 هنوز مجاز نشده است.
-**پایه مجاز:** `MD-Gsm_Phase1_CleanFoundation_Stage9_CSharpShell_MenuNavigation`
+**پایه مجاز:** `MD-Gsm_Phase1_CleanFoundation_Stage9_CSharpShell_MenuNavigation` با بسته آماده‌سازی v0.2.11؛ این نسخه هنوز G0 است و مجوز G1 محسوب نمی‌شود.
 **مرحله 10:** صریحاً خارج از دامنه است.
 
 ## آنچه در این بسته انجام شده است
