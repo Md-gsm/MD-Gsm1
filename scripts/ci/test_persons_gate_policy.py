@@ -154,6 +154,8 @@ class PersonsGatePolicyTests(unittest.TestCase):
         self.assertIn("RequireAuthenticodeSignature", builder)
         self.assertIn("Unknown Publisher", builder)
         self.assertIn("Sign-Windows-Authenticode.ps1", builder)
+        self.assertIn("http://timestamp.digicert.com", builder)
+        self.assertIn("http://timestamp.digicert.com", signer)
         self.assertIn("verify", signer)
         self.assertIn("SHA256", signer)
 
