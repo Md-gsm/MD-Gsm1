@@ -23,12 +23,29 @@
 | آزمون منفی قفل CI | باز | PR آزمایشی با یک check شکست‌خورده واقعاً مسدود شود؛ نتیجه مستند شود |
 | مالک هر CI job | باز | اختصاص نام/مسئول واقعی و ثبت در سند عملیات |
 | نگاشت AC-31..AC-49 | انجام در سورس | `acceptance-gate-map.json` و lint خودکار |
-| Build/Test واقعی روی Windows | انجام‌شده در CI Windows در 2026-10-30 | Release build با 0 Warning / 0 Error و 16 تست .NET موفق؛ شواهد اجراها در CI مربوط به هر commit نگهداری می‌شود |
+| Build/Test واقعی روی Windows | انجام‌شده در CI Windows در 2026-10-30 | run `41087151790`: Release build با 0 Warning / 0 Error و 18 تست .NET موفق؛ suite پایتون 31 تست موفق؛ هر 12 job سبز |
 | نصب و راه‌اندازی دستی Preview | تأیید کاربر در 2026-10-30 | نصب و اجرای برنامه موفق گزارش شد؛ تنها ایراد گزارش‌شده پیام Unknown Publisher برای installer unsigned بود |
 | امضای ناشر برای نسخه انتشار | pipeline آماده؛ گواهی باز | گواهی معتبر Code Signing در GitHub Secrets و verification امضای EXE برنامه و installer |
 
 **G1 نباید شروع شود** تا شروط بالا با شواهد قابل ردیابی بسته شوند. اجرای موفق lint در این بسته به‌تنهایی هیچ کدام از تأییدهای خارجی/سازمانی را ادعا نمی‌کند.
 
+
+## ممیزی واقعی پیش‌نیازها — 2026-10-30
+
+| مورد | نتیجه ممیزی | توضیح |
+|---|---|---|
+| Temporary Data Retention Policy | تصویب‌نشده | سند پیشنهادی موجود است؛ امضای مالک محصول و مسئول امنیت/حریم خصوصی ثبت نشده است. |
+| Merge Contract Checklist | تصویب‌نشده | معیار فنی موجود است؛ امضای مالک معماری و مالکان مصرف‌کنندگان ثبت نشده است. |
+| Required Status Checks در SCM | مسدود / انجام‌نشده | فهرست شاخه‌های GitHub مقدار `main.protected=false` را نشان داد. مخزن خصوصی است؛ GitHub برای protected branches و rulesets روی مخزن خصوصی Pro/Team/Enterprise می‌خواهد. API rulesets صریحاً upgrade to GitHub Pro یا public شدن repo را اعلام کرد. مخزن عمومی نشده و نباید بدون تصمیم مالک عمومی شود. |
+| آزمون منفی Merge-blocking | انجام‌نشده | تا وقتی Required Status Checks واقعاً فعال نباشد، این آزمون معنا ندارد؛ فقط unit test سیاست fail-closed موفق است و جایگزین آن نیست. |
+| CI job owners و alternates | انجام‌نشده | هر 12 ردیف مالک اصلی و جایگزین خالی است. هیچ فردی به‌صورت حدسی تعیین نشده است. |
+| نگاشت AC-31..AC-49 | انجام‌شده | فایل `acceptance-gate-map.json` و gate lint در CI بررسی شده‌اند. |
+| CI ماژول اشخاص | موفق | run `41087151790`، هر 12 job موفق؛ .NET: 18/18؛ Python policy/UI: 31/31؛ PostgreSQL 18 disposable موفق. |
+| ساخت Installer v0.2.11 | موفق، ولی unsigned | run `41087151900` موفق و artifact ساخته شد. امضای Authenticode جداگانه به گواهی نیاز دارد؛ این موضوع به‌تنهایی G1 gate نیست. |
+
+### نتیجه
+
+**G1 هنوز مجاز نیست.** Manifest باید `g1Authorized=false` بماند و `g1-entry-evidence.json` در وضعیت `NOT_READY` باقی بماند. دو تصویب انسانی، حفاظت واقعی شاخه، آزمون Merge-blocking و انتساب مسئولان CI هنوز شواهد معتبر ندارند.
 ## ترتیب ساخت پیشنهادی پس از بسته‌شدن شروط
 
 1. G1: قراردادهای مفهومی، API و مالکیت؛ بدون migration عملیاتی.
