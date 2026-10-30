@@ -21,7 +21,7 @@
 | تصویب چک‌لیست قرارداد ادغام | تأیید مشروط مالک معماری ثبت شد | برای هر مصرف‌کننده‌ای که بعداً ثبت شود، تأیید مالک همان مصرف‌کننده و قرارداد اختصاصی لازم است |
 | Required Status Checks در SCM | باز | تنظیم واقعی branch protection / ruleset روی remote repo |
 | آزمون منفی قفل CI | باز | PR آزمایشی با یک check شکست‌خورده واقعاً مسدود شود؛ نتیجه مستند شود |
-| مالک هر CI job | باز | گروه نرم‌افزاری مشاور مجموعه به‌عنوان مسئولیت سازمانی تعیین شد؛ نام Primary و Alternate انسانی برای هر Job با اعلام مالک پروژه ثبت خواهد شد |
+| مالک هر CI job | انجام‌شده در سطح گروه | گروه نرم‌افزاری مشاور مجموعه مالک پاسخ‌گو برای هر ۱۲ Job است؛ به علت تغییر اعضا، ثبت نام افراد لازم نیست و گروه باید پوشش عملیاتی را حفظ کند |
 | نگاشت AC-31..AC-49 | انجام در سورس | `acceptance-gate-map.json` و lint خودکار |
 | Build/Test واقعی روی Windows | انجام‌شده در CI Windows در 2026-10-30 | run `41087151790`: Release build با 0 Warning / 0 Error و 18 تست .NET موفق؛ suite پایتون 31 تست موفق؛ هر 12 job سبز |
 | نصب و راه‌اندازی دستی Preview | تأیید کاربر در 2026-10-30 | نصب و اجرای برنامه موفق گزارش شد؛ تنها ایراد گزارش‌شده پیام Unknown Publisher برای installer unsigned بود |
@@ -37,7 +37,7 @@
 | Merge Contract Checklist | تأیید مشروط | مالک معماری `@Md-gsm` چارچوب را تأیید کرد. Registry مصرف‌کنندگان خالی است؛ مصرف‌کننده آینده باید پیش از استفاده از PersonId قرارداد خود را ثبت و تأیید کند. |
 | Required Status Checks در SCM | مسدود / انجام‌نشده | فهرست شاخه‌های GitHub مقدار `main.protected=false` را نشان داد. مخزن خصوصی است؛ GitHub برای protected branches و rulesets روی مخزن خصوصی Pro/Team/Enterprise می‌خواهد. |
 | آزمون منفی Merge-blocking | انجام‌نشده | تا وقتی Required Status Checks واقعاً فعال نباشد، این آزمون معنا ندارد؛ فقط unit test سیاست fail-closed موفق است و جایگزین آن نیست. |
-| CI job owners و alternates | مسئولیت تیمی تعیین شد؛ انتساب فردی باز | گروه نرم‌افزاری مشاور مجموعه مسئول تیمی هر 12 Job است؛ نام Primary و Alternate انسانی را مالک پروژه بعداً اعلام می‌کند. تا ثبت و پذیرش نام‌ها، `jobOwnersAssigned=false` می‌ماند. |
+| CI job ownership | تکمیل شد | گروه نرم‌افزاری مشاور مجموعه برای هر ۱۲ Job به‌عنوان مالک پاسخ‌گو ثبت شده است؛ roster اشخاص در مخزن لازم نیست و `jobOwnersAssigned=true` است. |
 | نگاشت AC-31..AC-49 | انجام‌شده | فایل `acceptance-gate-map.json` و gate lint در CI بررسی شده‌اند. |
 | CI ماژول اشخاص | موفق | run `41087151790`، هر 12 job موفق؛ .NET: 18/18؛ Python policy/UI: 31/31؛ PostgreSQL 18 disposable موفق. |
 | ساخت Installer v0.2.11 | موفق، ولی unsigned | run `41087151900` موفق و artifact ساخته شد. امضای Authenticode جداگانه به گواهی نیاز دارد؛ این موضوع به‌تنهایی G1 gate نیست. |
@@ -46,6 +46,7 @@
 
 - `mergeChecklistApproved=true`: فقط برای چارچوب معماری تأییدشده و محدوده فعلی بدون مصرف‌کننده ثبت‌شده.
 - `temporaryDataPolicyApproved=true`: مالک پروژه سیاست را هم در ظرفیت Product Owner و هم Security/Privacy Owner تأیید کرده است؛ این self-approval دو‌نقشی است و تأیید شخص ثالث مستقل ادعا نمی‌شود.
+- `jobOwnersAssigned=true`: مسئولیت تمام ۱۲ کنترل CI به گروه نرم‌افزاری مشاور مجموعه واگذار شده است؛ ثبت نام اشخاص در مخزن لازم نیست و تغییر اعضا، مالکیت گروهی را تغییر نمی‌دهد.
 - `g1Authorized=false` و `repositoryStage=G0_PREPARATION_ONLY`: بدون تغییر.
 
 ## ترتیب ساخت پیشنهادی پس از بسته‌شدن شروط

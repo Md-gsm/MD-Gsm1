@@ -143,8 +143,24 @@ def run_spec(root: Path) -> None:
                 raise GateFailure(f"Registered consumer is missing '{key}': {consumer}")
     owners_doc = root / "docs/persons/CI_JOB_OWNERS_TEMPLATE.md"
     prereqs_file = root / "docs/persons/g1-entry-evidence.json"
-    if prereqs.get("jobOwnersAssigned") is True and "تکمیل شود" in owners_doc.read_text(encoding="utf-8"):
-        raise GateFailure("jobOwnersAssigned is true but the CI job owner template still contains unassigned placeholders.")
+    owners_text = owners_doc.read_text(encoding="utf-8")
+    ci_ownership = manifest.get("ciOwnership", {})
+    if prereqs.get("jobOwnersAssigned") is True:
+        if ci_ownership.get("model") != "ACCOUNTABLE_TEAM":
+            raise GateFailure("jobOwnersAssigned is true but the CI ownership model is not ACCOUNTABLE_TEAM.")
+        if ci_ownership.get("individualNamesRequiredInRepository") is not False:
+            raise GateFailure("Team-owned CI must explicitly declare that individual roster names are not required in the repository.")
+        if ci_ownership.get("membershipMayRotate") is not True:
+            raise GateFailure("Team-owned CI must explicitly allow membership rotation.")
+        group_name = str(ci_ownership.get("groupDisplayName", "")).strip()
+        if not group_name:
+            raise GateFailure("CI accountable group display name is missing.")
+        missing_job_rows = [
+            job for job in REQUIRED_JOBS
+            if not any(f"| `{job}` | {group_name} |" in line for line in owners_text.splitlines())
+        ]
+        if missing_job_rows:
+            raise GateFailure(f"CI accountable group is missing ownership rows for: {sorted(missing_job_rows)}.")
     evidence = load_json(prereqs_file)
     if prereqs.get("requiredStatusChecksConfiguredInScm") is True and not str(evidence.get("branchProtectionEvidence", "")).strip():
         raise GateFailure("SCM Required Status Checks are claimed active but branch-protection evidence is empty.")
@@ -154,6 +170,8 @@ def run_spec(root: Path) -> None:
         raise GateFailure("Temporary-data policy approval reference is missing.")
     if prereqs.get("mergeChecklistApproved") is True and not str(evidence.get("mergeChecklistApprovalReference", "")).strip():
         raise GateFailure("Merge checklist approval reference is missing.")
+    if prereqs.get("jobOwnersAssigned") is True and not str(evidence.get("ciOwnershipApprovalReference", "")).strip():
+        raise GateFailure("CI accountable-team approval reference is missing.")
     workflow = root / ".github/workflows/persons-module-gates.yml"
     if not workflow.exists():
         raise GateFailure("Required CI workflow missing: .github/workflows/persons-module-gates.yml")

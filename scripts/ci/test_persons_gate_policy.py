@@ -209,5 +209,32 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaises(gates.GateFailure):
                 gates.run_api(dst)
 
+
+    def test_ci_ownership_is_assigned_to_stable_consulting_group_not_individual_names(self):
+        gates.run_spec(ROOT)
+        manifest = json.loads((ROOT / "docs/persons/persons-module-manifest.json").read_text(encoding="utf-8"))
+        owners_path = ROOT / "docs/persons/CI_JOB_OWNERS_TEMPLATE.md"
+        owners_text = owners_path.read_text(encoding="utf-8")
+        group_name = manifest["ciOwnership"]["groupDisplayName"]
+        self.assertTrue(manifest["g1Prerequisites"]["jobOwnersAssigned"])
+        self.assertEqual("ACCOUNTABLE_TEAM", manifest["ciOwnership"]["model"])
+        self.assertFalse(manifest["ciOwnership"]["individualNamesRequiredInRepository"])
+        self.assertTrue(manifest["ciOwnership"]["membershipMayRotate"])
+        for job in gates.REQUIRED_JOBS:
+            self.assertTrue(any(f"| `{job}` | {group_name} |" in line for line in owners_text.splitlines()))
+        self.assertNotIn("Primary", owners_text)
+        self.assertNotIn("Alternate", owners_text)
+
+        # The static gate must fail when even one required job loses its accountable group.
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            bad_owners = dst / "docs/persons/CI_JOB_OWNERS_TEMPLATE.md"
+            bad_text = bad_owners.read_text(encoding="utf-8")
+            row = next(line for line in bad_text.splitlines() if "`persons-ci-evidence`" in line)
+            bad_owners.write_text(bad_text.replace(row + "\\n", "", 1), encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "missing ownership rows"):
+                gates.run_spec(dst)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

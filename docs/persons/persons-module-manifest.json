@@ -23,8 +23,38 @@
     "mergeChecklistApproved": true,
     "requiredStatusChecksConfiguredInScm": false,
     "negativeCiEnforcementTestPassed": false,
-    "jobOwnersAssigned": false,
+    "jobOwnersAssigned": true,
     "acceptanceCriteriaAc31ToAc49Mapped": true
   },
-  "note": "Source preparation only. The merge-contract framework has conditional architecture-owner approval on 2026-10-30 while the consumer registry is empty; future consumers require their own review/approval before using PersonId. The temporary-data policy is approved by the same project owner acting in both Product Owner and Security/Privacy Owner capacities; this is a declared dual-role self-approval, not an independent third-party review. The software consulting group's software team is designated as CI accountability group, but named human primary/alternate owners remain pending. No runtime implementation or G1 authorization is claimed."
+  "note": "Source preparation only. The merge-contract framework has conditional architecture-owner approval on 2026-10-30 while the consumer registry is empty; future consumers require their own review/approval before using PersonId. The temporary-data policy is approved by the project owner acting in both Product Owner and Security/Privacy Owner capacities; this is a declared dual-role self-approval, not an independent third-party review. CI ownership is assigned to the stable accountable group CONSULTING_SOFTWARE_TEAM (گروه نرم‌افزاری مشاور مجموعه); individual roster names are intentionally not required because membership may rotate. Required branch protection and the real negative merge-blocking test remain incomplete. No runtime implementation or G1 authorization is claimed.",
+  "ciOwnership": {
+    "model": "ACCOUNTABLE_TEAM",
+    "groupId": "CONSULTING_SOFTWARE_TEAM",
+    "groupDisplayName": "گروه نرم‌افزاری مشاور مجموعه",
+    "individualNamesRequiredInRepository": false,
+    "membershipMayRotate": true,
+    "scope": [
+      "foundation-build-test",
+      "persons-spec-lint",
+      "persons-architecture-boundary",
+      "persons-consumer-registry",
+      "persons-api-contract",
+      "persons-temporary-data-retention",
+      "persons-merge-contract",
+      "persons-postgres-migrations",
+      "persons-security-tests",
+      "persons-e2e-disposable",
+      "persons-ci-enforcement-test",
+      "persons-ci-evidence"
+    ],
+    "responsibilities": [
+      "monitor_required_checks",
+      "triage_ci_failures",
+      "review_job_logs_and_artifacts",
+      "track_remediation_in_pull_requests",
+      "maintain_operational_coverage_when_members_rotate"
+    ],
+    "approvedBy": "@Md-gsm",
+    "approvedAt": "2026-10-30"
+  }
 }

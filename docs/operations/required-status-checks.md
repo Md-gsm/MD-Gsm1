@@ -49,3 +49,8 @@ Unit test مربوط به سیاست fail-closed، رفتار خود validator �
 5. پس از مشاهده ذخیره‌شدن rule، یک PR آزمایشی با check عمداً ناموفق ایجاد کنید و ثابت کنید GitHub Merge را مسدود می‌کند. سپس PR آزمایشی را ببندید و شواهد آن را در `g1-entry-evidence.json` درج کنید.
 
 **تا زمان مشاهده واقعی rule و انجام آزمون منفی، `requiredStatusChecksConfiguredInScm=false` و `negativeCiEnforcementTestPassed=false` باقی می‌مانند.**
+
+
+## مالکیت اجرایی CI
+
+مالکیت عملیاتی هر ۱۲ Job در Manifest و `CI_JOB_OWNERS_TEMPLATE.md` به گروه **گروه نرم‌افزاری مشاور مجموعه** واگذار شده است. به دلیل تغییر ترکیب گروه در مراحل مختلف پروژه، ثبت نام اشخاص ثابت در مخزن الزامی نیست. گروه مسئول حفظ پوشش عملیاتی، triage و پیگیری اصلاح است. این مالکیت گروهی جایگزین مسئولیت تنظیم branch protection در حساب GitHub نیست.
