@@ -9,7 +9,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string] $CertificatePassword,
 
-    [string] $TimestampServer = 'https://timestamp.digicert.com'
+    [string] $TimestampServer = 'http://timestamp.digicert.com'
 )
 
 $ErrorActionPreference = 'Stop'
