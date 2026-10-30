@@ -1,12 +1,15 @@
 {
   "evidenceVersion": "1.0",
   "status": "NOT_READY",
-  "scmRemoteRepository": "",
-  "branchProtectionEvidence": "",
+  "scmRemoteRepository": "https://github.com/Md-gsm/MD-Gsm1",
+  "branchProtectionEvidence": "https://api.github.com/repos/Md-gsm/MD-Gsm1/branches?per_page=100 — observed 2026-10-30: main.protected=false. GET /repos/Md-gsm/MD-Gsm1/rulesets returned 403: upgrade to GitHub Pro or make the repository public. Repository remains private.",
   "negativeEnforcementPullRequest": "",
-  "policyApprovalReference": "",
-  "mergeChecklistApprovalReference": "",
+  "policyApprovalReference": "https://github.com/Md-gsm/MD-Gsm1/blob/work/g1-prerequisite-audit-2026-10-30/docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md — Approved 2026-10-30 by @Md-gsm acting in both Product Owner and Security/Privacy Owner capacities; explicit dual-role self-approval, not an independent third-party review. Backup retention duration remains a pre-runtime design parameter to be specified before backup implementation.",
+  "policyProductOwnerApprovalReference": "https://github.com/Md-gsm/MD-Gsm1/blob/work/g1-prerequisite-audit-2026-10-30/docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md — Product Owner approval recorded 2026-10-30; GitHub login @Md-gsm.",
+  "policySecurityApprovalReference": "https://github.com/Md-gsm/MD-Gsm1/blob/work/g1-prerequisite-audit-2026-10-30/docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md — Security/Privacy Owner approval recorded 2026-10-30 by the same @Md-gsm in a separate role capacity; no additional reviewer is part of the project's staffing model.",
+  "mergeChecklistApprovalReference": "https://github.com/Md-gsm/MD-Gsm1/blob/work/g1-prerequisite-audit-2026-10-30/docs/persons/MERGE_CONTRACT_CHECKLIST_FA.md — Architecture Owner approved the framework conditionally on 2026-10-30; registry contained zero registered consumers. Future consumer owners must approve their consumer contract before use.",
   "verifiedBy": "",
   "verifiedAtUtc": "",
-  "note": "Keep status NOT_READY until each referenced artifact has been inspected and the remote required checks have been proven to block merge. Do not set g1Authorized=true without evidence."
+  "note": "AUDIT RESULT: NOT_READY. Temporary-data policy is approved by the project owner acting in both Product Owner and Security/Privacy Owner capacities; this is not an independent third-party review. Architecture Owner conditionally approved the merge-contract framework while the consumer registry is empty; future consumers require separate owner review/approval. CI ownership is assigned at stable group level to CONSULTING_SOFTWARE_TEAM (گروه نرم‌افزاری مشاور مجموعه); individual roster names are intentionally not required because membership may rotate. main is unprotected and no real negative merge-blocking PR is verified. Keep g1Authorized=false.",
+  "ciOwnershipApprovalReference": "Group CI ownership approval: @Md-gsm designated گروه نرم‌افزاری مشاور مجموعه as the accountable CI owner for all 12 required jobs on 2026-10-30. No fixed individual roster is required; group membership may rotate while accountability remains with the group."
 }
