@@ -65,7 +65,7 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("SizeChanged=\"DashboardView_SizeChanged\"", xaml);
         Assert.Contains("MinHeight=\"600\"", xaml);
         Assert.DoesNotContain("Width=\"1075\"", xaml);
-        Assert.Contains("HorizontalAlignment=\"Stretch\" Margin=\"26,18,26,28\"", xaml);
+        Assert.Contains("<StackPanel x:Name=\"DashboardContentPanel\" HorizontalAlignment=\"Stretch\" Margin=\"0\">", xaml);
         Assert.Contains("DashboardView_SizeChanged", codeBehind);
         Assert.Contains("Math.Clamp(availableHeight * 0.39, 270d, 420d)", codeBehind);
         Assert.Contains("x:Name=\"TabDeliveryToday\" Tag=\"deliveryToday\"", xaml);
