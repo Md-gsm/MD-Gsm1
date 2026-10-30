@@ -31,25 +31,11 @@ The following checks have now been performed on GitHub-hosted Windows runners; t
 
 The CI evidence verifies compilation, automated tests, packaging, and artifact upload. It does **not** verify the visual appearance or interactive behavior of the installed WPF window.
 
-## Remaining manual acceptance on Windows
+## User-reported manual acceptance — 2026-10-30
 
-Install the preview package from the successful Windows installer workflow and verify:
-- the application launches and remains open without startup errors;
-- all eleven top-level menus open on hover, and the cascading submenus stay open while the pointer moves between levels;
-- Escape closes the menu and the window remains usable;
-- the dashboard layout, RTL alignment, fonts, content insets, and worklist markers are visually correct at the target screen resolution.
+The user installed and launched the v0.2.10 preview package and reported that installation, application startup, and the application itself were working correctly. The only reported issue was the Windows **Unknown Publisher** message shown during installation.
 
-For source-based launch without installing, run:
-
-```powershell
-.\scripts\Run-Persons-Preview.ps1 -Build
-```
-
-For a local rebuild of the complete installer pipeline:
-
-```powershell
-.\scripts\Build-Windows-Installer.ps1
-```
+This is consistent with the unsigned Authenticode state of v0.2.10. The Inno Setup `AppPublisher` metadata does not digitally sign the installer. Version v0.2.11 adds an optional signing pipeline for both the application EXE and installer EXE, with SHA-256 signing, RFC 3161 timestamping, and SignTool verification. A trusted code-signing PFX must first be configured in GitHub Actions secrets; without it, the workflow deliberately labels the output `UNSIGNED` and does not claim to have removed the publisher warning.
 
 ## Acceptance criterion
 
