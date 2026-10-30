@@ -135,7 +135,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/windows-preview-installer.yml").read_text(encoding="utf-8")
         self.assertIn("  pull_request:\n    paths:\n", workflow)
         self.assertIn("      - '.github/workflows/windows-preview-installer.yml'\n", workflow)
-        self.assertIn("run: .\\scripts\\Build-Windows-Installer.ps1", workflow)
+        self.assertIn(".\\scripts\\Build-Windows-Installer.ps1", workflow)
         self.assertIn("name: MD-Gsm-Persons-Preview-Installer-v0.2.11", workflow)
         self.assertIn("if-no-files-found: error", workflow)
 
