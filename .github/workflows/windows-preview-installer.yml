@@ -49,8 +49,8 @@ jobs:
         shell: pwsh
         run: |
           $paths = @(
-            '.\\scripts\\Build-Windows-Installer.ps1',
-            '.\\scripts\\Sign-Windows-Authenticode.ps1'
+            'scripts/Build-Windows-Installer.ps1',
+            'scripts/Sign-Windows-Authenticode.ps1'
           )
           foreach ($path in $paths) {
             $tokens = $null
