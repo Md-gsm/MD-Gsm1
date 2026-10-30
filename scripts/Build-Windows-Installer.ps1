@@ -4,7 +4,7 @@ param(
     [string] $InnoSetupPath,
     [string] $SigningCertificatePath,
     [string] $SigningCertificatePassword,
-    [string] $TimestampServer = 'https://timestamp.digicert.com',
+    [string] $TimestampServer = 'http://timestamp.digicert.com',
     [switch] $RequireAuthenticodeSignature
 )
 
