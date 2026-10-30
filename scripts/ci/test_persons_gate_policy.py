@@ -122,7 +122,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/persons-module-gates.yml").read_text(encoding="utf-8")
         marker = "      - name: Enforce every required gate and test passed"
         self.assertIn(marker, workflow)
-        enforcement_step = workflow.split(marker, 1)[1].split("\\n      - name:", 1)[0]
+        enforcement_step = workflow.split(marker, 1)[1].split("\n      - name:", 1)[0]
         for expected in (
             "GATE_NEEDS_JSON: ${{ toJSON(needs) }}",
             "GITHUB_SHA: ${{ github.sha }}",
