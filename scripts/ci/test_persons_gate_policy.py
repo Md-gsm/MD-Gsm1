@@ -53,7 +53,6 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaises(gates.GateFailure):
                 gates.run_registry(dst)
 
-
     def test_g1_authorization_without_external_evidence_fails(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
@@ -91,6 +90,54 @@ class PersonsGatePolicyTests(unittest.TestCase):
             bad.write_text(content.replace(marker, marker + "    if: false\n", 1), encoding="utf-8")
             with self.assertRaisesRegex(gates.GateFailure, "job-level condition"):
                 gates.run_spec(dst)
+
+    def test_architecture_gate_rejects_forbidden_project_dependency(self):
+        # Deliberately inject a forbidden Application -> Infrastructure reference
+        # into an isolated temporary copy. The tracked working tree is never changed.
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            project = dst / "src/MDGsm.Application/MDGsm.Application.csproj"
+            original = project.read_text(encoding="utf-8")
+            forbidden = '<ProjectReference Include="..\\MDGsm.Infrastructure\\MDGsm.Infrastructure.csproj" />'
+            self.assertNotIn(forbidden, original)
+            project.write_text(original.replace(
+                "</Project>",
+                f'  <ItemGroup>{forbidden}</ItemGroup>\n</Project>',
+            ), encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "Project reference boundary violated in MDGsm.Application"):
+                gates.run_architecture(dst)
+
+    def test_architecture_gate_rejects_direct_database_dependency_in_desktop(self):
+        # A second mutation verifies the UI/database boundary, independently.
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            source = dst / "src/MDGsm.Desktop/ArchitectureBoundaryProbe.cs"
+            source.write_text("using Npgsql;\ninternal sealed class ArchitectureBoundaryProbe {}\n", encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "must not directly use database persistence"):
+                gates.run_architecture(dst)
+
+    def test_ci_evidence_enforcement_step_receives_upstream_gate_context(self):
+        workflow = (ROOT / ".github/workflows/persons-module-gates.yml").read_text(encoding="utf-8")
+        marker = "      - name: Enforce every required gate and test passed"
+        self.assertIn(marker, workflow)
+        enforcement_step = workflow.split(marker, 1)[1].split("\n      - name:", 1)[0]
+        for expected in (
+            "GATE_NEEDS_JSON: ${{ toJSON(needs) }}",
+            "GITHUB_SHA: ${{ github.sha }}",
+            "GITHUB_RUN_ID: ${{ github.run_id }}",
+            "GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}",
+        ):
+            self.assertIn(expected, enforcement_step)
+
+    def test_windows_preview_installer_workflow_runs_for_relevant_pull_requests(self):
+        workflow = (ROOT / ".github/workflows/windows-preview-installer.yml").read_text(encoding="utf-8")
+        self.assertIn("  pull_request:\n    paths:\n", workflow)
+        self.assertIn("      - '.github/workflows/windows-preview-installer.yml'\n", workflow)
+        self.assertIn("run: .\\scripts\\Build-Windows-Installer.ps1", workflow)
+        self.assertIn("name: MD-Gsm-Persons-Preview-Installer-v0.2.10", workflow)
+        self.assertIn("if-no-files-found: error", workflow)
 
     def test_failed_gate_cannot_be_relabelled_pass_na(self):
         needs = {job: {"result": "success"} for job in evidence_writer.UPSTREAM_JOBS}
