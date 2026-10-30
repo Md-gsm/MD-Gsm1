@@ -18,19 +18,34 @@
 - Menu visibility is not security enforcement. Server-side authorization remains mandatory for future real endpoints.
 - User-specific dashboard widgets, drag/resize persistence and production charts remain future work.
 
-## Local validation in this preparation environment
+## Validation evidence (updated 2026-10-30)
 
-- `MainWindow.xaml` parses as well-formed XML, all declared XAML event handlers have matching code-behind methods, top-level nav is hover-only, and the generic destination workspace view is absent.
-- Persons static source gates and ten policy unit tests pass.
-- Windows WPF build, .NET unit tests, installer compilation and visual launch were not performed in this environment because Windows/.NET SDK/Inno Setup were unavailable. They remain mandatory on the user's Windows machine before accepting this version.
+The following checks have now been performed on GitHub-hosted Windows runners; this supersedes the earlier statement that Windows build/test and installer compilation were not yet performed.
 
-On Windows, run:
+- Persons Module Gates run `41081078694`: all 12 jobs succeeded.
+- Windows .NET 10 Release build: succeeded with 0 warnings and 0 errors.
+- .NET tests: 16 passed, 0 failed, 0 skipped.
+- Python CI policy suite: 30 tests passed, including the architecture negative tests, CI evidence environment guard, and Windows installer pull-request trigger regression test.
+- PostgreSQL 18 disposable migration gate succeeded.
+- Windows Preview Installer run `41081078775`: succeeded. Inno Setup 6 compiled the self-contained Windows x64 preview installer and uploaded artifact `MD-Gsm-Persons-Preview-Installer-v0.2.10` (artifact ID `12990690282`). The artifact archive SHA-256 is `9f9e7a3c66af1a83f1ab4f0c51253850953c74a85b4d9b1d3a4880734142622e`.
+
+The CI evidence verifies compilation, automated tests, packaging, and artifact upload. It does **not** verify the visual appearance or interactive behavior of the installed WPF window.
+
+## Remaining manual acceptance on Windows
+
+Install the preview package from the successful Windows installer workflow and verify:
+- the application launches and remains open without startup errors;
+- all eleven top-level menus open on hover, and the cascading submenus stay open while the pointer moves between levels;
+- Escape closes the menu and the window remains usable;
+- the dashboard layout, RTL alignment, fonts, content insets, and worklist markers are visually correct at the target screen resolution.
+
+For source-based launch without installing, run:
 
 ```powershell
 .\scripts\Run-Persons-Preview.ps1 -Build
 ```
 
-For the full build/test/self-contained installer pipeline:
+For a local rebuild of the complete installer pipeline:
 
 ```powershell
 .\scripts\Build-Windows-Installer.ps1
