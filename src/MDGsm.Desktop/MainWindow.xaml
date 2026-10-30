@@ -1,7 +1,7 @@
 <Window x:Class="MDGsm.Desktop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل | MD-Gsm v0.2.10 — پیش‌نمایش"
+        Title="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل | MD-Gsm v0.2.11 — پیش‌نمایش"
         Height="900" Width="1440" MinHeight="600" MinWidth="900" WindowState="Maximized"
         WindowStartupLocation="CenterScreen" Loaded="MainWindow_Loaded" UseLayoutRounding="True" SnapsToDevicePixels="True"
         FlowDirection="RightToLeft" Background="#F1F5F9" FontFamily="Segoe UI" FontSize="13.2"
@@ -286,7 +286,7 @@
             <TextBlock Text="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل"
                        Foreground="#FBBF24" FontSize="15.4" FontWeight="Black" TextAlignment="Right"/>
             <StackPanel Orientation="Horizontal" FlowDirection="RightToLeft" HorizontalAlignment="Right" Margin="0,3,0,0">
-              <TextBlock Text="نسخه پیش‌نمایش ۰٫۲٫۱۰" Foreground="#94A3B8" FontSize="13.2"/>
+              <TextBlock Text="نسخه پیش‌نمایش ۰٫۲٫۱۱" Foreground="#94A3B8" FontSize="13.2"/>
               <TextBlock Text="  •  " Foreground="#475569" FontSize="13.2"/>
               <TextBlock x:Name="LiveDateTimeText" Text="محیط نمایشی" Foreground="#CBD5E1" FontSize="13.2"/>
             </StackPanel>
@@ -792,7 +792,7 @@
       <DockPanel VerticalAlignment="Center" FlowDirection="RightToLeft">
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
           <TextBlock Text="سال مالی: ۱۴۰۵" Foreground="#CBD5E1" FontSize="13.2" VerticalAlignment="Center" Margin="0,0,15,0"/>
-          <TextBlock Text="نسخه پیش‌نمایش ۰٫۲٫۶" Foreground="#94A3B8" FontSize="13.2" VerticalAlignment="Center" Margin="0,0,15,0"/>
+          <TextBlock Text="نسخه پیش‌نمایش ۰٫۲٫۱۱" Foreground="#94A3B8" FontSize="13.2" VerticalAlignment="Center" Margin="0,0,15,0"/>
           <TextBlock Text="شرکت: داده نمونه" Foreground="#CBD5E1" FontSize="13.2" VerticalAlignment="Center"/>
         </StackPanel>
         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center" FlowDirection="RightToLeft">

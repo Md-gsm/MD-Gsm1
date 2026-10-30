@@ -135,9 +135,30 @@ class PersonsGatePolicyTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/windows-preview-installer.yml").read_text(encoding="utf-8")
         self.assertIn("  pull_request:\n    paths:\n", workflow)
         self.assertIn("      - '.github/workflows/windows-preview-installer.yml'\n", workflow)
-        self.assertIn("run: .\\scripts\\Build-Windows-Installer.ps1", workflow)
-        self.assertIn("name: MD-Gsm-Persons-Preview-Installer-v0.2.10", workflow)
+        self.assertIn(".\\scripts\\Build-Windows-Installer.ps1", workflow)
+        self.assertIn("name: MD-Gsm-Persons-Preview-Installer-v0.2.11", workflow)
         self.assertIn("if-no-files-found: error", workflow)
+
+
+    def test_windows_installer_workflow_uses_secrets_for_optional_code_signing(self):
+        workflow = (ROOT / ".github/workflows/windows-preview-installer.yml").read_text(encoding="utf-8")
+        builder = (ROOT / "scripts/Build-Windows-Installer.ps1").read_text(encoding="utf-8")
+        signer = (ROOT / "scripts/Sign-Windows-Authenticode.ps1").read_text(encoding="utf-8")
+        self.assertIn("WINDOWS_CODESIGN_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CODESIGN_CERTIFICATE_BASE64 }}", workflow)
+        self.assertIn("WINDOWS_CODESIGN_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_CERTIFICATE_PASSWORD }}", workflow)
+        self.assertIn("inputs.require_code_signing", workflow)
+        self.assertIn("Parse-check Windows PowerShell build and signing scripts", workflow)
+        self.assertIn("Parser]::ParseFile", workflow)
+        self.assertIn("-RequireAuthenticodeSignature", workflow)
+        self.assertIn("path: artifacts/installer/*", workflow)
+        self.assertIn("RequireAuthenticodeSignature", builder)
+        self.assertIn("Unknown Publisher", builder)
+        self.assertIn("Sign-Windows-Authenticode.ps1", builder)
+        self.assertIn("http://timestamp.digicert.com", builder)
+        self.assertIn("http://timestamp.digicert.com", signer)
+        self.assertIn("verify", signer)
+        self.assertIn("SHA256", signer)
+
 
     def test_failed_gate_cannot_be_relabelled_pass_na(self):
         needs = {job: {"result": "success"} for job in evidence_writer.UPSTREAM_JOBS}

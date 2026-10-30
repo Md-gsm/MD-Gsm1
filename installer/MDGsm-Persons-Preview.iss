@@ -7,7 +7,7 @@
 #endif
 
 #define AppName "نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل"
-#define AppVersion "0.2.10"
+#define AppVersion "0.2.11"
 #define AppPublisher "MD-Gsm"
 #define AppExeName "MDGsm.Desktop.exe"
 
@@ -24,7 +24,7 @@ PrivilegesRequired=lowest
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 OutputDir={#OutputDir}
-OutputBaseFilename=MD-Gsm-Persons-Preview-Setup-v0.2.10
+OutputBaseFilename=MD-Gsm-Persons-Preview-Setup-v0.2.11
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern

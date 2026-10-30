@@ -71,18 +71,18 @@ class DashboardUiContractTests(unittest.TestCase):
         self.assertIn('HorizontalAlignment="Left" VerticalAlignment="Center" FlowDirection="RightToLeft"', XAML[XAML.index('x:Name="QuickActionsBlock"'):XAML.index('</StackPanel>', XAML.index('x:Name="QuickActionsBlock"'))])
         self.assertIn('Text="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل"', XAML)
         self.assertIn('x:Name="LiveDateTimeText"', XAML)
-        self.assertIn('نسخه پیش‌نمایش ۰٫۲٫۱۰', XAML)
+        self.assertIn('نسخه پیش‌نمایش ۰٫۲٫۱۱', XAML)
         for action_id in ('QCK-01', 'QCK-02', 'QCK-03'):
             self.assertIn(f'Tag="{action_id}"', XAML)
-        self.assertIn('Title="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل | MD-Gsm v0.2.10 — پیش‌نمایش"', XAML)
+        self.assertIn('Title="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل | MD-Gsm v0.2.11 — پیش‌نمایش"', XAML)
         csproj = (ROOT / "src/MDGsm.Desktop/MDGsm.Desktop.csproj").read_text(encoding="utf-8")
         installer = (ROOT / "installer/MDGsm-Persons-Preview.iss").read_text(encoding="utf-8")
         build_script = (ROOT / "scripts/Build-Windows-Installer.ps1").read_text(encoding="utf-8")
-        self.assertIn('<Version>0.2.10</Version>', csproj)
+        self.assertIn('<Version>0.2.11</Version>', csproj)
         self.assertIn('#pragma codepage 65001', installer)
         self.assertIn('#define AppName "نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل"', installer)
-        self.assertIn('OutputBaseFilename=MD-Gsm-Persons-Preview-Setup-v0.2.10', installer)
-        self.assertIn('MD-Gsm-Persons-Preview-Setup-v0.2.10.exe', build_script)
+        self.assertIn('OutputBaseFilename=MD-Gsm-Persons-Preview-Setup-v0.2.11', installer)
+        self.assertIn('MD-Gsm-Persons-Preview-Setup-v0.2.11.exe', build_script)
 
 
     def test_dashboard_background_is_exact_requested_slate(self):
