@@ -18,6 +18,7 @@
 | `backup/main-baseline-v0.2.10-2026-10-30` | نسخه دقیق همان commit شاخه main | با compare تأیید شد؛ identical |
 | `stage0/architecture-negative-test` | ادامه Stage 0 و شاخه مقصد PR شماره 1 | شاخه توسعه اصلی فعلی |
 | `backup/stage0-ci-green-2026-10-30` | snapshot شاخه Stage 0 قبل از الحاق PR شماره 2 | با compare تأیید شد؛ identical با commit `07fe08b88397dd423322ffab5fd5c9a35d894c6d` |
+| `backup/stage0-post-phase9-2026-10-30` | snapshot پس از تکمیل شواهد Phase 9 و CI در commit `101dc100a9292b1767b89d7c854611a7d6f8f286` | با compare تأیید شد؛ identical هنگام ایجاد |
 | `work/phase9-installer-ci` | شاخه کاری PR شماره 2 | در PR شماره 2 ادغام شده؛ نگهداری می‌شود |
 
 PR شماره 2 با موفقیت در شاخه Stage 0 ادغام شد. PR شماره 1 همچنان باز است و مقصد آن `main` است؛ این PR تا بسته‌شدن پیش‌نیازهای SCM و تأییدهای انسانی ادغام نمی‌شود.
