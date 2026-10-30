@@ -20,11 +20,11 @@
   },
   "g1Prerequisites": {
     "temporaryDataPolicyApproved": false,
-    "mergeChecklistApproved": false,
+    "mergeChecklistApproved": true,
     "requiredStatusChecksConfiguredInScm": false,
     "negativeCiEnforcementTestPassed": false,
     "jobOwnersAssigned": false,
     "acceptanceCriteriaAc31ToAc49Mapped": true
   },
-  "note": "This manifest describes source preparation only. It must not be marked implemented or G1-authorized until runtime code, automated tests, SCM protections, and evidence satisfy the architecture document v1.1."
+  "note": "Source preparation only. The merge-contract framework has conditional architecture-owner approval on 2026-10-30 while the consumer registry is empty; future consumers require their own review/approval before using PersonId. Temporary-data policy has product-owner approval, but independent security/privacy approval is still pending, so temporaryDataPolicyApproved remains false. No runtime implementation or G1 authorization is claimed."
 }
