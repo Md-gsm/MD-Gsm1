@@ -147,6 +147,8 @@ class PersonsGatePolicyTests(unittest.TestCase):
         self.assertIn("WINDOWS_CODESIGN_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CODESIGN_CERTIFICATE_BASE64 }}", workflow)
         self.assertIn("WINDOWS_CODESIGN_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_CERTIFICATE_PASSWORD }}", workflow)
         self.assertIn("inputs.require_code_signing", workflow)
+        self.assertIn("Parse-check Windows PowerShell build and signing scripts", workflow)
+        self.assertIn("Parser]::ParseFile", workflow)
         self.assertIn("-RequireAuthenticodeSignature", workflow)
         self.assertIn("path: artifacts/installer/*", workflow)
         self.assertIn("RequireAuthenticodeSignature", builder)
