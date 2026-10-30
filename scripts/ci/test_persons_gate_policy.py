@@ -131,6 +131,14 @@ class PersonsGatePolicyTests(unittest.TestCase):
         ):
             self.assertIn(expected, enforcement_step)
 
+    def test_windows_preview_installer_workflow_runs_for_relevant_pull_requests(self):
+        workflow = (ROOT / ".github/workflows/windows-preview-installer.yml").read_text(encoding="utf-8")
+        self.assertIn("  pull_request:\n    paths:\n", workflow)
+        self.assertIn("      - '.github/workflows/windows-preview-installer.yml'\n", workflow)
+        self.assertIn("run: .\\scripts\\Build-Windows-Installer.ps1", workflow)
+        self.assertIn("name: MD-Gsm-Persons-Preview-Installer-v0.2.10", workflow)
+        self.assertIn("if-no-files-found: error", workflow)
+
     def test_failed_gate_cannot_be_relabelled_pass_na(self):
         needs = {job: {"result": "success"} for job in evidence_writer.UPSTREAM_JOBS}
         needs["persons-security-tests"] = {"result": "failure"}
