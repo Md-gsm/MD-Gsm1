@@ -160,6 +160,8 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("'/fd', 'SHA256'", signingScript);
         Assert.Contains("'/tr', $TimestampServer", signingScript);
         Assert.Contains("'/td', 'SHA256'", signingScript);
+        Assert.Contains("TimestampServer = 'http://timestamp.digicert.com'", buildScript);
+        Assert.Contains("TimestampServer = 'http://timestamp.digicert.com'", signingScript);
         Assert.Contains("'/pa', '/all', '/tw'", signingScript);
     }
 
