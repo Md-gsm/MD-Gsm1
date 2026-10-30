@@ -31,6 +31,13 @@ The following checks have now been performed on GitHub-hosted Windows runners; t
 
 The CI evidence verifies compilation, automated tests, packaging, and artifact upload. It does **not** verify the visual appearance or interactive behavior of the installed WPF window.
 
+## v0.2.11 — preparation for Persons module activation
+
+- The preview app, assembly, file, and installer metadata are aligned at version 0.2.11.
+- Authenticode signing support is wired for both the published Desktop EXE and the generated installer EXE. Signing uses a trusted Code Signing certificate, SHA-256, RFC 3161 timestamping, and post-sign verification.
+- The GitHub Actions workflow receives certificate material only through repository secrets. When no certificate is configured, the artifact is explicitly marked UNSIGNED; a manual build can require signing and fail closed if the certificate is absent.
+- This release is still G0 preparation. It does not add Persons business entities, endpoints, DbSets, tables, migrations, or persistence.
+
 ## User-reported manual acceptance — 2026-10-30
 
 The user installed and launched the v0.2.10 preview package and reported that installation, application startup, and the application itself were working correctly. The only reported issue was the Windows **Unknown Publisher** message shown during installation.
