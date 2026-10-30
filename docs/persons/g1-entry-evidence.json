@@ -1,12 +1,12 @@
 {
   "evidenceVersion": "1.0",
   "status": "NOT_READY",
-  "scmRemoteRepository": "",
-  "branchProtectionEvidence": "",
+  "scmRemoteRepository": "https://github.com/Md-gsm/MD-Gsm1",
+  "branchProtectionEvidence": "https://api.github.com/repos/Md-gsm/MD-Gsm1/branches?per_page=100 — observed 2026-10-30: main.protected=false. GET /repos/Md-gsm/MD-Gsm1/rulesets returned 403: upgrade to GitHub Pro or make the repository public. Repository remains private.",
   "negativeEnforcementPullRequest": "",
   "policyApprovalReference": "",
   "mergeChecklistApprovalReference": "",
   "verifiedBy": "",
   "verifiedAtUtc": "",
-  "note": "Keep status NOT_READY until each referenced artifact has been inspected and the remote required checks have been proven to block merge. Do not set g1Authorized=true without evidence."
+  "note": "AUDIT RESULT: NOT_READY. CI workflow run 41087151790 passed all 12 jobs, and installer run 41087151900 passed, but these do not enable branch protection. The main branch is observed unprotected. No real negative merge-blocking PR has been verified. Temporary-data and merge-checklist approvals have not been provided. CI primary/alternate human owners are unassigned. Keep g1Authorized=false."
 }
