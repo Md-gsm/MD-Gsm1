@@ -1,7 +1,7 @@
 <Window x:Class="MDGsm.Desktop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل | MD-Gsm v0.2.10 — پیش‌نمایش"
+        Title="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل | MD-Gsm v0.2.11 — پیش‌نمایش"
         Height="900" Width="1440" MinHeight="600" MinWidth="900" WindowState="Maximized"
         WindowStartupLocation="CenterScreen" Loaded="MainWindow_Loaded" UseLayoutRounding="True" SnapsToDevicePixels="True"
         FlowDirection="RightToLeft" Background="#F1F5F9" FontFamily="Segoe UI" FontSize="13.2"
