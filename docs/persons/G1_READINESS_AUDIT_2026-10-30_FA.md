@@ -90,7 +90,7 @@ Issue پیگیری این موارد: https://github.com/Md-gsm/MD-Gsm1/issues/4
 
 - PR شماره 1: Stage 0 architecture negative test؛ باز و ادغام‌نشده.
 - PR شماره 3: آماده‌سازی نسخه `v0.2.11`؛ باز، به شاخه `stage0/architecture-negative-test` متصل و ادغام‌نشده.
-- PR audit این گزارش از شاخه ممیزی به شاخه آماده‌سازی نسخه باز خواهد شد.
+- PR شماره 5: [G1 readiness audit](https://github.com/Md-gsm/MD-Gsm1/pull/5)؛ باز، بر پایه شاخه آماده‌سازی v0.2.11 و هنوز ادغام‌نشده است.
 - `main` همچنان روی baseline commit `2a1c925...` است.
 - شاخه پشتیبان `backup/persons-activation-prep-v0.2.11-2026-10-30` با head آماده‌سازی برابر است.
 
