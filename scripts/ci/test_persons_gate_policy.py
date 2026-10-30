@@ -63,7 +63,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest["g1Authorized"] = True
             manifest["g1Prerequisites"] = {key: True for key in manifest["g1Prerequisites"]}
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            with self.assertRaisesRegex(gates.GateFailure, r"evidence\\."):
+            with self.assertRaisesRegex(gates.GateFailure, r"evidence\."):
                 gates.run_spec(dst)
 
     def test_unknown_personid_in_contract_json_fails_registry_gate(self):
@@ -79,15 +79,15 @@ class PersonsGatePolicyTests(unittest.TestCase):
         workflow_path = ROOT / ".github/workflows/persons-module-gates.yml"
         workflow = workflow_path.read_text(encoding="utf-8")
         gates.run_spec(ROOT)
-        self.assertNotRegex(workflow, r"(?m)^\\s{4}paths(-ignore)?:")
+        self.assertNotRegex(workflow, r"(?m)^\s{4}paths(-ignore)?:")
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
             bad = dst / ".github/workflows/persons-module-gates.yml"
             content = bad.read_text(encoding="utf-8")
-            marker = "  persons-security-tests:\\n    name: persons-security-tests\\n"
+            marker = "  persons-security-tests:\n    name: persons-security-tests\n"
             self.assertIn(marker, content)
-            bad.write_text(content.replace(marker, marker + "    if: false\\n", 1), encoding="utf-8")
+            bad.write_text(content.replace(marker, marker + "    if: false\n", 1), encoding="utf-8")
             with self.assertRaisesRegex(gates.GateFailure, "job-level condition"):
                 gates.run_spec(dst)
 
@@ -99,11 +99,11 @@ class PersonsGatePolicyTests(unittest.TestCase):
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
             project = dst / "src/MDGsm.Application/MDGsm.Application.csproj"
             original = project.read_text(encoding="utf-8")
-            forbidden = '<ProjectReference Include="..\\\\MDGsm.Infrastructure\\\\MDGsm.Infrastructure.csproj" />'
+            forbidden = '<ProjectReference Include="..\\MDGsm.Infrastructure\\MDGsm.Infrastructure.csproj" />'
             self.assertNotIn(forbidden, original)
             project.write_text(original.replace(
                 "</Project>",
-                f'  <ItemGroup>{forbidden}</ItemGroup>\\n</Project>',
+                f'  <ItemGroup>{forbidden}</ItemGroup>\n</Project>',
             ), encoding="utf-8")
             with self.assertRaisesRegex(gates.GateFailure, "Project reference boundary violated in MDGsm.Application"):
                 gates.run_architecture(dst)
@@ -114,7 +114,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
             source = dst / "src/MDGsm.Desktop/ArchitectureBoundaryProbe.cs"
-            source.write_text("using Npgsql;\\ninternal sealed class ArchitectureBoundaryProbe {}\\n", encoding="utf-8")
+            source.write_text("using Npgsql;\ninternal sealed class ArchitectureBoundaryProbe {}\n", encoding="utf-8")
             with self.assertRaisesRegex(gates.GateFailure, "must not directly use database persistence"):
                 gates.run_architecture(dst)
 
