@@ -49,6 +49,9 @@ try {
     $codeSigningCertificates = @(
         Get-ChildItem -Path $storePath |
             Where-Object {
+                $_.Thumbprint.ToUpperInvariant() -in $importedThumbprints
+            } |
+            Where-Object {
                 $ekuOids = @(
                     $_.EnhancedKeyUsageList |
                         ForEach-Object {
