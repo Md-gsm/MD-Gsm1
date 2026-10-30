@@ -118,6 +118,19 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(gates.GateFailure, "must not directly use database persistence"):
                 gates.run_architecture(dst)
 
+    def test_ci_evidence_enforcement_step_receives_upstream_gate_context(self):
+        workflow = (ROOT / ".github/workflows/persons-module-gates.yml").read_text(encoding="utf-8")
+        marker = "      - name: Enforce every required gate and test passed"
+        self.assertIn(marker, workflow)
+        enforcement_step = workflow.split(marker, 1)[1].split("\\n      - name:", 1)[0]
+        for expected in (
+            "GATE_NEEDS_JSON: ${{ toJSON(needs) }}",
+            "GITHUB_SHA: ${{ github.sha }}",
+            "GITHUB_RUN_ID: ${{ github.run_id }}",
+            "GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}",
+        ):
+            self.assertIn(expected, enforcement_step)
+
     def test_failed_gate_cannot_be_relabelled_pass_na(self):
         needs = {job: {"result": "success"} for job in evidence_writer.UPSTREAM_JOBS}
         needs["persons-security-tests"] = {"result": "failure"}
