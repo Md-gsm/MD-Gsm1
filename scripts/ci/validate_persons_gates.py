@@ -180,6 +180,15 @@ def run_spec(root: Path) -> None:
                 raise GateFailure("persons-ci-evidence must run with exactly 'if: always()' so failures are still recorded.")
         elif job_conditions:
             raise GateFailure(f"Required CI job '{job}' has a job-level condition that may skip the required check: {job_conditions}.")
+    # Third-party actions must be pinned to immutable full commit SHAs.
+    action_refs = re.findall(r"(?m)^\\s+uses:\\s+([^\\s]+)", wf)
+    unpinned = [ref for ref in action_refs if not re.search(r"@[0-9a-f]{40}$", ref)]
+    if unpinned:
+        raise GateFailure(f"GitHub Actions must be pinned to full commit SHAs: {unpinned}")
+    if "concurrency:" not in wf or "cancel-in-progress: true" not in wf:
+        raise GateFailure("Required workflow must serialize/cancel superseded runs with concurrency.")
+    if not re.search(r"image:\\s+postgres:18\\.6-bookworm(?:@sha256:[0-9a-f]{64})?$", wf):
+        raise GateFailure("PostgreSQL integration smoke test must use the explicit PostgreSQL 18.6 Bookworm baseline.")
     # Do not allow PR/push path filters that could silently omit required checks.
     if re.search(r"(?m)^\s{4}paths(-ignore)?:", wf):
         raise GateFailure("Path-based workflow filters are prohibited for required Persons gates.")
