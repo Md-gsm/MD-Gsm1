@@ -165,7 +165,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
 
     def test_workflow_actions_are_sha_pinned_and_runs_are_serialized(self):
         workflow = (ROOT / ".github/workflows/persons-module-gates.yml").read_text(encoding="utf-8")
-        self.assertNotRegex(workflow, r"(?m)^\\s+uses:\\s+[^\\s]+@(v[0-9]+|main|master)\\s*$")
+        action_lines = [line.strip().split("uses:", 1)[1].strip() for line in workflow.splitlines() if "uses:" in line]\n        self.assertTrue(action_lines)\n        self.assertTrue(all("@" in action and len(action.rsplit("@", 1)[1]) == 40 for action in action_lines), action_lines)
         self.assertIn("concurrency:", workflow)
         self.assertIn("cancel-in-progress: true", workflow)
 
