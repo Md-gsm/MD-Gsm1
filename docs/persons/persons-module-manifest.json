@@ -11,6 +11,10 @@
   "personsBusinessMigrationsPresent": false,
   "applicationMigrationRunnerImplemented": true,
   "windowsPostgres18CiIntegrationConfigured": true,
+  "moduleContractsProjectsPresent": true,
+  "moduleContractsProjectsIncludedInSolution": true,
+  "apiReferencesModuleContracts": true,
+  "acceptanceCriteriaVerificationPlanPresent": true,
   "currentPolicy": {
     "temporaryDataTtlDefaultDays": 7,
     "temporaryDataMaxAgeDays": 30,
