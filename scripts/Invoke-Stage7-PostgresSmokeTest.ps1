@@ -22,7 +22,7 @@ if ([string]::IsNullOrWhiteSpace($scriptRoot)) {
     throw 'Could not resolve the script directory. Run this file directly with -File.'
 }
 if ([string]::IsNullOrWhiteSpace($ApiProjectPath)) {
-    $ApiProjectPath = Join-Path $scriptRoot '..\src\MDGsm.Api\MDGsm.Api.csproj'
+    $ApiProjectPath = Join-Path $scriptRoot '..\src\Host\Api\MDGsm.Api.csproj'
 }
 if ([string]::IsNullOrWhiteSpace($MigratorProjectPath)) {
     $MigratorProjectPath = Join-Path $scriptRoot '..\tools\MDGsm.DbMigrator\MDGsm.DbMigrator.csproj'
