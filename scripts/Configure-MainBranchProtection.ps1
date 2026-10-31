@@ -125,6 +125,9 @@ $payload = @{
         required_approving_review_count = 0
         require_last_push_approval = $false
     }
+    required_conversation_resolution = @{
+        enabled = $true
+    }
     restrictions = $null
     allow_force_pushes = $false
     allow_deletions = $false
@@ -136,7 +139,7 @@ $tempFile = Join-Path ([IO.Path]::GetTempPath()) ("mdgsm-main-protection-" + [Gu
 try {
     if (-not $Apply) {
         Write-Host 'PREVIEW COMPLETE — no GitHub settings were changed.' -ForegroundColor Green
-        Write-Host 'Planned policy: PR required; all 12 current CI jobs required; branch must be up to date; admin enforcement enabled; force-push and branch deletion disabled.'
+        Write-Host 'Planned policy: PR required; all 12 current CI jobs required; branch must be up to date; admin enforcement enabled; force-push and branch deletion disabled; conversation resolution required.'
         Write-Host 'Approval count is intentionally 0 because no independent reviewer account/team was confirmed. This can be raised after reviewer assignment.'
         Write-Host 'To apply after reviewing this report, run:'
         Write-Host ".\scripts\Configure-MainBranchProtection.ps1 -Apply"
@@ -149,7 +152,21 @@ try {
 
     $actual = @($verified.required_status_checks.contexts)
     $missingAfter = @($RequiredChecks | Where-Object { $_ -notin $actual })
-    if ($missingAfter.Count -gt 0 -or -not $verified.required_status_checks.strict -or -not $verified.enforce_admins.enabled -or $verified.allow_force_pushes.enabled -or $verified.allow_deletions.enabled) {
+    $unexpectedAfter = @($actual | Where-Object { $_ -notin $RequiredChecks })
+    $prReviewsEnabled = $null -ne $verified.required_pull_request_reviews
+    $conversationResolutionEnabled = $null -ne $verified.required_conversation_resolution -and $verified.required_conversation_resolution.enabled
+    if (
+        $missingAfter.Count -gt 0 -or
+        $unexpectedAfter.Count -gt 0 -or
+        $actual.Count -ne $RequiredChecks.Count -or
+        -not $verified.required_status_checks.strict -or
+        -not $verified.enforce_admins.enabled -or
+        -not $prReviewsEnabled -or
+        $verified.required_pull_request_reviews.required_approving_review_count -ne 0 -or
+        -not $conversationResolutionEnabled -or
+        $verified.allow_force_pushes.enabled -or
+        $verified.allow_deletions.enabled
+    ) {
         throw 'Post-apply verification failed. Review branch protection in GitHub immediately.'
     }
 
@@ -157,6 +174,8 @@ try {
     Write-Host "Required checks verified: $($actual.Count)"
     Write-Host "Strict/up-to-date: $($verified.required_status_checks.strict)"
     Write-Host "Admin enforcement: $($verified.enforce_admins.enabled)"
+    Write-Host "PR required (approvals): $($verified.required_pull_request_reviews.required_approving_review_count)"
+    Write-Host "Conversation resolution required: $($verified.required_conversation_resolution.enabled)"
     Write-Host "Force pushes allowed: $($verified.allow_force_pushes.enabled)"
     Write-Host "Branch deletion allowed: $($verified.allow_deletions.enabled)"
 } finally {
