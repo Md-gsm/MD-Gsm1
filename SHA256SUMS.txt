@@ -1,7 +1,7 @@
 # SHA-256 source integrity manifest for MD-Gsm Persons preparation v0.2.10
 465a5a332877532ad2797c0f3bfd78489ef274da8aeb487e25ef6118db45f6bc  .editorconfig
 8ac007f82aaded10bb1f268a1f6417d9eda31efbcba4a4ec125f10a900e3b85d  .gitattributes
-b3e90b0f9af95ba9a19ec3231db5916c3e52f6e469db288ea78f2b8e84ab9e72  .github/workflows/persons-module-gates.yml
+1f528eadaee5a0f91347d799e28b8578c9879b2344d3a1d5dafc1a179226b369  .github/workflows/persons-module-gates.yml
 641b59bf7bf8ce23ba6dd7e7fda924633499a51f3d682d10bed3b4968253393e  .github/workflows/windows-preview-installer.yml
 8d9e05f9540c4fb62679d616c6ab97f917175a35eafbe1b9c2cfed5e336a49f5  .gitignore
 36d1e76ab6a5d2bcd49a67604e14835640f00ca972543d35a02ae74ca28010b9  CHANGELOG_V0.1.1_FA.md
