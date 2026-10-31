@@ -125,7 +125,7 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - name: Restore application migrator
-        run: dotnet restore .\tools\MDGsm.DbMigrator\MDGsm.DbMigrator.csproj
+        run: dotnet restore tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj
       - name: Create marked disposable database (psql is used only for database bootstrap)
         shell: bash
         run: |

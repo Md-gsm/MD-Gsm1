@@ -188,7 +188,7 @@ def run_spec(root: Path) -> None:
         raise GateFailure(f"GitHub Actions must be pinned to full commit SHAs: {unpinned}")
     if "concurrency:" not in wf or "cancel-in-progress: true" not in wf:
         raise GateFailure("Required workflow must serialize/cancel superseded runs with concurrency.")
-    if not re.search(r"image:\s+postgres:18\.6-bookworm(?:@sha256:[0-9a-f]{64})?$", wf):
+    if not re.search(r"(?m)^\s*image:\s+postgres:18\.6-bookworm(?:@sha256:[0-9a-f]{64})?$", wf):
         raise GateFailure("PostgreSQL integration smoke test must use the explicit PostgreSQL 18.6 Bookworm baseline.")
     # Do not allow PR/push path filters that could silently omit required checks.
     if re.search(r"(?m)^\s{4}paths(-ignore)?:", wf):
