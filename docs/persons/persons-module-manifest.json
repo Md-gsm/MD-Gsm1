@@ -1,7 +1,7 @@
 {
   "manifestVersion": "1.1",
   "module": "Persons",
-  "repositoryStage": "G0_PREPARATION_ONLY",
+  "repositoryStage": "G0_CLOSED_G1_ENTRY_PREPARATION",
   "implementationState": "NOT_IMPLEMENTED",
   "g1Authorized": false,
   "personsApiImplemented": false,
@@ -27,7 +27,7 @@
   "g1Prerequisites": {
     "temporaryDataPolicyApproved": true,
     "mergeChecklistApproved": true,
-    "requiredStatusChecksConfiguredInScm": false,
+    "requiredStatusChecksConfiguredInScm": true,
     "negativeCiEnforcementTestPassed": true,
     "jobOwnersAssigned": true,
     "acceptanceCriteriaAc31ToAc49Mapped": false,
@@ -35,7 +35,7 @@
     "windowsPostgres18Validated": true,
     "applicationMigrationRunnerValidated": true
   },
-  "note": "The physical Host/BuildingBlocks relocation, Solution/project-reference migration, four isolated module Contracts projects and their architecture boundary tests are complete. CI workflow run 41185491539 passed all 13 jobs on commit 7bcc423a87b44e19291f4f28d04858e06e74515c, including Windows foundation build/test, architecture, disposable PostgreSQL 18.6 on Linux/Windows and migration idempotence. The Windows preview installer workflow passed on commit de9ffc1aab96e8954abff417a32f51cd6bb3e362; the two commits since then changed documentation only. Project Owner policy/checklist acceptance, CI group ownership, and negative architecture enforcement evidence are recorded. Remaining G1 governance blockers: main currently has zero required status check contexts/checks; repository Admin configuration/export is required. Independent architecture review by the Group of Software Advisers and the Project Owner's security/privacy review are not yet recorded. AC-31..AC-45 remain UNMAPPED because real temporary-data and merge runtime/tests are G1 implementation work. Keep g1Authorized=false.",
+  "note": "G0 is formally closed by PR #8 squash merge at 43a51631e342d94757c5ad88a6e1a81ef97be0ef. All 12 required status checks are configured on protected main as verified by the Project Owner via GitHub CLI on 2026-10-31; PR #9 delivered the protection verification tool. Architecture review by the Group of Software Advisers and security/privacy review by the Project Owner were confirmed by the owner on 2026-10-31. Workflow run 41233442659 passed 13/13 jobs on synchronized PR #8 HEAD 43092dd3097ec38c2bab1b564399018d9c29878d. Persons business runtime and migrations remain absent. AC-31..AC-45 remain intentionally UNMAPPED until their real implementation tests are added during G1; AC-46..AC-49 are implemented as governance/CI checks. This is preparation evidence only: g1Authorized remains false and no Persons implementation is authorized by this manifest.",
   "validationEvidenceReference": "docs/operations/evidence/g0-ci-validation-2026-10-31.json",
   "runtimeHostBuildingBlocksRelocated": true
 }
