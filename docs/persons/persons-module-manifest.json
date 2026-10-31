@@ -1,5 +1,5 @@
 {
-  "manifestVersion": "1.0",
+  "manifestVersion": "1.1",
   "module": "Persons",
   "repositoryStage": "G0_PREPARATION_ONLY",
   "implementationState": "NOT_IMPLEMENTED",
@@ -24,7 +24,10 @@
     "requiredStatusChecksConfiguredInScm": false,
     "negativeCiEnforcementTestPassed": false,
     "jobOwnersAssigned": false,
-    "acceptanceCriteriaAc31ToAc49Mapped": true
+    "acceptanceCriteriaAc31ToAc49Mapped": false,
+    "architectureAligned": false,
+    "windowsPostgres18Validated": false,
+    "applicationMigrationRunnerValidated": false
   },
-  "note": "This manifest describes source preparation only. It must not be marked implemented or G1-authorized until runtime code, automated tests, SCM protections, and evidence satisfy the architecture document v1.1."
+  "note": "G0 preparation only. G1 is blocked: architecture alignment and runtime contracts are pending; AC-31..AC-45 are UNMAPPED; policy approvals and SCM evidence are external and absent. Do not set g1Authorized=true."
 }
