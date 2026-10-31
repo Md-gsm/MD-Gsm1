@@ -174,6 +174,17 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(gates.GateFailure, "persons-postgres-windows-migrations"):
                 gates.run_spec(dst)
 
+    def test_module_contract_projects_are_isolated(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            project = dst / "src/Modules/Finance/Contracts/MDGsm.Finance.Contracts.csproj"
+            text = project.read_text(encoding="utf-8")
+            text = text.replace("</Project>", '<ItemGroup><ProjectReference Include="..\\..\\..\\Persons\\Domain\\Persons.csproj" /></ItemGroup></Project>')
+            project.write_text(text, encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "Finance Contracts project must not depend"):
+                gates.run_architecture(dst)
+
     def test_application_migration_runner_is_required(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
