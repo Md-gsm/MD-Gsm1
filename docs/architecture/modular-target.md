@@ -32,7 +32,7 @@ src/
     Desktop/
 ```
 
-The current `src/MDGsm.*` projects are the existing preparation shell, not the final module topology. They must not be mistaken for proof that the modular target has been implemented. Migration from the shell to this topology is a controlled architecture task and must be covered by build and dependency tests; no business implementation is authorized by creating this target specification.
+The current `src/MDGsm.*` projects are still the host/shared-layer preparation shell; the physical relocation of those projects into `src/Host/*` and `src/BuildingBlocks/*` has not been completed. The four module Contracts assemblies are now separate .NET projects under `src/Modules/*/Contracts`, included in `MDGsm.sln`, and referenced by the current API composition project. Each exposes only a contract-version marker; no business DTO or behavior has been added. The Host and BuildingBlocks directories remain documented placeholders until the controlled physical relocation is completed and validated by build/dependency tests.
 
 ## Ownership boundaries
 
@@ -53,4 +53,4 @@ The current `src/MDGsm.*` projects are the existing preparation shell, not the f
 
 ## Explicit non-claims
 
-The module directories, ADRs, contracts documentation, CI workflow, and preview UI are preparation artifacts. They do not constitute implemented Persons, IdentityAccess, database migrations, runtime contracts, or G1 approval.
+Only the four version-marker Contracts assemblies are compiled module runtime artifacts at this stage. There are no Persons/IdentityAccess business entities, use cases, persistence mappings, module APIs, business database migrations, or G1 approval.
