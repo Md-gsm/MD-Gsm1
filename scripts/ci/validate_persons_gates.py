@@ -298,6 +298,9 @@ def run_architecture(root: Path) -> None:
         project = contract_dir / f"MDGsm.{module}.Contracts.csproj"
         if not project.exists() or f"src\\Modules\\{module}\\Contracts\\MDGsm.{module}.Contracts.csproj" not in solution:
             raise GateFailure(f"{module} compiled Contracts project is missing from MDGsm.sln.")
+        marker = contract_dir / "ModuleContractVersion.cs"
+        if not marker.exists() or 'Current = "1.0"' not in marker.read_text(encoding="utf-8"):
+            raise GateFailure(f"{module} Contracts version marker is missing or invalid.")
         project_xml = ET.parse(project)
         if any(node.tag.endswith("ProjectReference") for node in project_xml.iter()):
             raise GateFailure(f"{module} Contracts project must not depend on implementation projects.")
