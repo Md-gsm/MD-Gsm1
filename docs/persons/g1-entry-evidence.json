@@ -2,7 +2,7 @@
   "evidenceVersion": "1.1",
   "status": "NOT_READY",
   "scmRemoteRepository": "https://github.com/Md-gsm/MD-Gsm1",
-  "branchProtectionEvidence": "",
+  "branchProtectionEvidence": "main protected=true; branch protection details API 403; rulesets API returned [] (2026-10-31). Exact Required Status Checks remain unverified.",
   "negativeEnforcementPullRequest": "https://github.com/Md-gsm/MD-Gsm1/pull/6",
   "policyApprovalReference": "docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md",
   "mergeChecklistApprovalReference": "docs/persons/MERGE_CONTRACT_CHECKLIST_FA.md",
