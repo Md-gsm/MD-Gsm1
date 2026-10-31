@@ -163,6 +163,25 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(gates.GateFailure, "UNMAPPED|evidence"):
                 gates.run_spec(dst)
 
+    def test_windows_postgres18_job_is_required(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            workflow_path = dst / ".github/workflows/persons-module-gates.yml"
+            workflow = workflow_path.read_text(encoding="utf-8")
+            workflow = workflow.replace("  persons-postgres-windows-migrations:\n", "  persons-postgres-windows-migrations_disabled:\n", 1)
+            workflow_path.write_text(workflow, encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "persons-postgres-windows-migrations"):
+                gates.run_spec(dst)
+
+    def test_application_migration_runner_is_required(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            (dst / "src/MDGsm.Infrastructure/Persistence/DatabaseMigrationRunner.cs").unlink()
+            with self.assertRaisesRegex(gates.GateFailure, "DatabaseMigrationRunner"):
+                gates.run_spec(dst)
+
     def test_workflow_actions_are_sha_pinned_and_runs_are_serialized(self):
         workflow = (ROOT / ".github/workflows/persons-module-gates.yml").read_text(encoding="utf-8")
         action_lines = [line.strip().split("uses:", 1)[1].strip() for line in workflow.splitlines() if "uses:" in line]

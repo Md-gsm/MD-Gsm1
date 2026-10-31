@@ -21,7 +21,7 @@ if ([string]::IsNullOrWhiteSpace($ApiProjectPath)) {
 if ([string]::IsNullOrWhiteSpace($DesktopProjectPath)) {
     $DesktopProjectPath = Join-Path $scriptRoot '..\src\MDGsm.Desktop\MDGsm.Desktop.csproj'
 }
-if ([string]::IsNullOrWhiteSpace($MigrationPath)) {
+if ([string]::IsNullOrWhiteSpace($MigratorProjectPath)) {
     $MigratorProjectPath = Join-Path $scriptRoot '..\tools\MDGsm.DbMigrator\MDGsm.DbMigrator.csproj'
 }
 

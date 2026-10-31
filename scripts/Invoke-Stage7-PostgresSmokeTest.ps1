@@ -24,7 +24,7 @@ if ([string]::IsNullOrWhiteSpace($scriptRoot)) {
 if ([string]::IsNullOrWhiteSpace($ApiProjectPath)) {
     $ApiProjectPath = Join-Path $scriptRoot '..\src\MDGsm.Api\MDGsm.Api.csproj'
 }
-if ([string]::IsNullOrWhiteSpace($MigrationPath)) {
+if ([string]::IsNullOrWhiteSpace($MigratorProjectPath)) {
     $MigratorProjectPath = Join-Path $scriptRoot '..\tools\MDGsm.DbMigrator\MDGsm.DbMigrator.csproj'
 }
 foreach ($path in @($PsqlPath, $ApiProjectPath, $MigratorProjectPath)) {

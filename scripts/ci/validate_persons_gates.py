@@ -22,6 +22,7 @@ REQUIRED_JOBS = {
     "persons-temporary-data-retention",
     "persons-merge-contract",
     "persons-postgres-migrations",
+    "persons-postgres-windows-migrations",
     "persons-security-tests",
     "persons-e2e-disposable",
     "persons-ci-enforcement-test",
@@ -204,10 +205,51 @@ def run_spec(root: Path) -> None:
         raise GateFailure("Smoke test must reject non-loopback database hosts.")
     if "MDGSM_DISPOSABLE_TEST_DB" not in smoke_text:
         raise GateFailure("Smoke test must mark its newly created database explicitly as disposable.")
+    if "MDGsm.DbMigrator" not in smoke_text or "dotnet run" not in smoke_text:
+        raise GateFailure("API-only smoke test must call the application-owned migration runner.")
+    if "Get-Content -LiteralPath $MigrationPath" in smoke_text or "$migrationSql | & $PsqlPath" in smoke_text:
+        raise GateFailure("API-only smoke test must not apply migrations directly through psql.")
     disposable = root / "scripts/Start-MDGsm-DisposableTest.ps1"
     disposable_text = disposable.read_text(encoding="utf-8", errors="replace") if disposable.exists() else ""
     if "MDGSM_DISPOSABLE_TEST_DB" not in disposable_text:
         raise GateFailure("Stage7 disposable runner must mark its newly created database explicitly as disposable.")
+    if "MDGsm.DbMigrator" not in disposable_text or "dotnet run" not in disposable_text:
+        raise GateFailure("Stage7 integrated test must call the application-owned migration runner.")
+    if "Get-Content -LiteralPath $MigrationPath" in disposable_text or "$migrationSql | & $PsqlPath" in disposable_text:
+        raise GateFailure("Stage7 integrated test must not apply migrations directly through psql.")
+
+    runner = root / "src/MDGsm.Infrastructure/Persistence/DatabaseMigrationRunner.cs"
+    migrator_project = root / "tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj"
+    migrator_program = root / "tools/MDGsm.DbMigrator/Program.cs"
+    infrastructure_project = root / "src/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj"
+    if not runner.exists() or "class DatabaseMigrationRunner" not in runner.read_text(encoding="utf-8"):
+        raise GateFailure("Application-owned DatabaseMigrationRunner implementation is missing.")
+    if not migrator_project.exists() or not migrator_program.exists():
+        raise GateFailure("Executable tools/MDGsm.DbMigrator project is missing.")
+    runner_text = runner.read_text(encoding="utf-8")
+    if "mdgsm_migration_history" not in runner_text or "pg_advisory_xact_lock" not in runner_text:
+        raise GateFailure("Migration runner must track applied versions and serialize concurrent execution.")
+    if "SHA256.HashData" not in runner_text:
+        raise GateFailure("Migration runner must verify immutable migration checksums.")
+    if "EmbeddedResource" not in infrastructure_project.read_text(encoding="utf-8"):
+        raise GateFailure("SQL migrations must be embedded into the Infrastructure assembly.")
+    manifest = load_json(root / "docs/persons/persons-module-manifest.json")
+    if manifest.get("applicationMigrationRunnerImplemented") is not True:
+        raise GateFailure("Manifest must declare the application-owned migration runner implementation.")
+    workflow_text = workflow.read_text(encoding="utf-8")
+    windows_job = re.search(r"(?ms)^  persons-postgres-windows-migrations:\s*\n(?P<body>.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", workflow_text)
+    if not windows_job or "runs-on: windows-latest" not in windows_job.group("body") or "Invoke-PostgreSQL18WindowsMigrationTest.ps1" not in windows_job.group("body"):
+        raise GateFailure("A dedicated PostgreSQL 18 Windows job must invoke the Windows migration integration script.")
+    windows_script = root / "scripts/Invoke-PostgreSQL18WindowsMigrationTest.ps1"
+    windows_text = windows_script.read_text(encoding="utf-8") if windows_script.exists() else ""
+    expected_installer_hash = "227e2bc08091b4c2b8338c7d61b11d057f895711480b006f90bfcfcd2410a58a"
+    if "postgresql-18.6-5-windows-x64.exe" not in windows_text or expected_installer_hash not in windows_text or "Get-FileHash" not in windows_text:
+        raise GateFailure("Windows PostgreSQL job must verify the official PostgreSQL 18.6-5 installer SHA-256.")
+    if "MDGSM_DISPOSABLE_TEST_DB" not in windows_text or "newlyApplied=0" not in windows_text:
+        raise GateFailure("Windows PostgreSQL job must use a marked disposable database and verify migrator idempotence.")
+    if manifest.get("windowsPostgres18CiIntegrationConfigured") is not True:
+        raise GateFailure("Manifest must declare PostgreSQL 18 Windows integration configuration.")
+
     checksum_verifier = root / "scripts/Verify-SourceChecksums.ps1"
     if not checksum_verifier.exists() or "Get-FileHash" not in checksum_verifier.read_text(encoding="utf-8"):
         raise GateFailure("Source checksum verifier is missing or does not verify SHA-256 hashes.")
