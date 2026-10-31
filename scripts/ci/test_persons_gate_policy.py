@@ -72,7 +72,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
             contract = dst / "src/MDGsm.Application/Contracts/ExternalConsumer.json"
-            contract.write_text('{"personId":"example"}', encoding="utf-8")
+            contract.write_text('{"PartyId":"example"}', encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_registry(dst)
 
