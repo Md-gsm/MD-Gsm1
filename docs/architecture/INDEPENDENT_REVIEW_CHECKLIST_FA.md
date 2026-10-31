@@ -16,7 +16,7 @@
 - نتیجهٔ ArchitectureBoundaryTests، Python architecture gate و CI build/test روی همان commit.
 
 **نتیجهٔ بازبینی گروه:** ثبت‌نشده  
-**Commit بررسی‌شده:** ثبت نشده؛ SHA مبنا باید هنگام انجام واقعی بررسی وارد شود؛ SHA مبنا باید هنگام انجام واقعی بررسی وارد شود  
+**Commit بررسی‌شده:** ثبت نشده؛ SHA مبنا هنگام انجام واقعی بررسی وارد شود  
 **یافته‌های باز / اصلاحات لازم:** ثبت نشده  
 **تصمیم نهایی گروه:** ثبت نشده  
 **تاریخ UTC:** ثبت نشده
@@ -46,9 +46,9 @@
 
 - فایل‌های `appsettings.json` در Hostهای API/Desktop فاقد connection string یا credential هستند؛ API و migrator مقدار اتصال را از process environment دریافت می‌کنند.
 - smoke testهای محلی رمز مدیر PostgreSQL را با `Read-Host -AsSecureString` می‌گیرند و فقط برای اجرای همان فرایند در environment قرار می‌دهند.
-- آزمون PostgreSQL روی Windows رمز تصادفی per-run تولید می‌کند و آن را در پایان restore/پاک می‌کند.
+- آزمون PostgreSQL روی Windows رمز تصادفی per-run تولید می‌کند. EDB unattended installer این رمز تصادفی را از طریق پارامترهای نصب دریافت می‌کند؛ این مقدار فقط روی hosted runner همان job مصرف می‌شود، در repository/log ثبت نمی‌شود و VM پس از اجرای job دور انداخته می‌شود. سپس connection string برای migrator فقط از process environment منتقل می‌شود و در پایان environment قبلی restore می‌شود. این استفادهٔ گذرای رمز در آرگومان installer یک risk موردنیازِ پیکربندی unattended است و مالک پروژه باید آن را در بازبینی خود صریحاً بسنجد؛ آن را نباید به‌عنوان «عدم استفاده از رمز در command line» توصیف کرد.
 - مقدار ثابت قبلی `mdgsm_ci_only_password` در workflow عمومی Linux CI حذف شده است؛ سرویس disposable داخل شبکه محدود runner از `POSTGRES_HOST_AUTH_METHOD=trust` استفاده می‌کند و connection string بدون password ساخته می‌شود.
-- validator و unit test جدید از بازگشت password ثابت یا connection string دارای `Password=` در workflow جلوگیری می‌کنند.
+- validator و unit test جدید از بازگشت password ثابت یا connection string دارای `Password=` در workflow جلوگیری می‌کنند. یک اسکن heuristic روی ۶۲ فایل کد/تنظیمات/اسکریپت/تست، الگوی credential واقعی یا token/private-key پیدا نکرد؛ یک مقدار صریحاً ساختگی `not-a-real-secret` در fixture تست دیده شد و در commit `e31f303caf7918e560efd4cfc177a5d61b9ad62f` حذف شد. این اسکن، جایگزین secret-scanning سرویس یا تأیید نهایی مالک پروژه نیست.
 - Authentication/session/token runtime هنوز پیاده‌سازی نشده است؛ بنابراین ADR-0006 الزام طراحی است، نه گواهی امنیت runtime.
 
 این پیش‌بررسی ماشینی/فنی جایگزین بازبینی رسمی مالک پروژه نیست و نباید به‌عنوان نتیجه یا امضای مالک پروژه ثبت شود.

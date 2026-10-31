@@ -17,6 +17,9 @@ $runAttempt = if ($env:GITHUB_RUN_ATTEMPT -match '^[0-9]+$') { $env:GITHUB_RUN_A
 $databaseName = "mdgsm_ci_disposable_{0}_{1}" -f $runId, $runAttempt
 if ($databaseName -notmatch '^mdgsm_ci_disposable_[0-9]+_[0-9]+$') { throw 'Disposable database name guard failed.' }
 
+# Unique credential for this isolated hosted-runner instance. The EDB unattended installer
+# accepts the superuser/service passwords as installer arguments; this random value is
+# never committed or written to logs, and the hosted runner VM is discarded after the job.
 $password = 'MdGsmCi' + [Guid]::NewGuid().ToString('N')
 $previousPgPassword = $env:PGPASSWORD
 $previousConnectionString = $env:ConnectionStrings__MDGsmDatabase
@@ -84,7 +87,9 @@ try {
     & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d postgres -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE $databaseName IS 'MDGSM_DISPOSABLE_TEST_DB; PostgreSQL 18 Windows CI';"
     if ($LASTEXITCODE -ne 0) { throw 'Could not apply the disposable database marker.' }
 
-    # Credentials are passed only through process environment, never CLI arguments or repository files.
+    # The EDB installer above needs its per-run password in installer arguments.
+    # For application migrations, the connection string is supplied only via this process environment,
+    # never as a dotnet command-line argument or repository file.
     $env:ConnectionStrings__MDGsmDatabase = "Host=127.0.0.1;Port=$port;Database=$databaseName;Username=postgres;Password=$password;Timeout=15;Command Timeout=120"
     $migratorProject = Join-Path $PSScriptRoot '..\tools\MDGsm.DbMigrator\MDGsm.DbMigrator.csproj'
     if (-not (Test-Path -LiteralPath $migratorProject)) { throw "Application migrator project not found: $migratorProject" }
