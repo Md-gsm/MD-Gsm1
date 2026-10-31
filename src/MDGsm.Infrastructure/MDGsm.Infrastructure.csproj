@@ -4,5 +4,9 @@
     <ProjectReference Include="..\MDGsm.Application\MDGsm.Application.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+    <PackageReference Include="Npgsql" Version="10.0.0" />
+    <EmbeddedResource Include="..\..\database\migrations\*.sql">
+      <LogicalName>MDGsm.Migrations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>
