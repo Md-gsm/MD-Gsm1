@@ -212,4 +212,6 @@ jobs:
           if-no-files-found: error
       - name: Enforce every required gate and test passed
         if: always()
+        env:
+          GATE_NEEDS_JSON: ${{ toJSON(needs) }}
         run: python scripts/ci/write_ci_evidence.py --root . --out artifacts/persons-ci-evidence.json --enforce
