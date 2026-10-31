@@ -288,6 +288,15 @@ def run_architecture(root: Path) -> None:
     required = [root / "src/Modules/Persons/Contracts/README.md", root / "src/Modules/IdentityAccess/Contracts/README.md", root / "src/Modules/RepairOperations/Contracts/README.md", root / "src/Modules/Finance/Contracts/README.md", root / "src/Host/Api/README.md", root / "src/Host/Desktop/README.md"]
     if not target.exists() or any(not path.exists() for path in required):
         raise GateFailure("Approved modular target and Persons/IdentityAccess Contracts boundaries are missing.")
+    solution = (root / "MDGsm.sln").read_text(encoding="utf-8")
+    for module in ("Persons", "IdentityAccess", "RepairOperations", "Finance"):
+        contract_dir = root / "src" / "Modules" / module / "Contracts"
+        project = contract_dir / f"MDGsm.{module}.Contracts.csproj"
+        if not project.exists() or f"src\\Modules\\{module}\\Contracts\\MDGsm.{module}.Contracts.csproj" not in solution:
+            raise GateFailure(f"{module} compiled Contracts project is missing from MDGsm.sln.")
+        project_xml = ET.parse(project)
+        if any(node.tag.endswith("ProjectReference") for node in project_xml.iter()):
+            raise GateFailure(f"{module} Contracts project must not depend on implementation projects.")
     print("PASS: current shell dependency direction and modular target/Contracts boundaries.")
 
 def run_registry(root: Path) -> None:
