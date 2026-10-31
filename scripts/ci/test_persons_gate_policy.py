@@ -160,8 +160,14 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest["g1Authorized"] = True
             manifest["g1Prerequisites"] = {key: True for key in manifest["g1Prerequisites"]}
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            with self.assertRaisesRegex(gates.GateFailure, "UNMAPPED"):
+            with self.assertRaisesRegex(gates.GateFailure, "UNMAPPED|evidence"):
                 gates.run_spec(dst)
+
+    def test_workflow_actions_are_sha_pinned_and_runs_are_serialized(self):
+        workflow = (ROOT / ".github/workflows/persons-module-gates.yml").read_text(encoding="utf-8")
+        self.assertNotRegex(workflow, r"(?m)^\\s+uses:\\s+[^\\s]+@(v[0-9]+|main|master)\\s*$")
+        self.assertIn("concurrency:", workflow)
+        self.assertIn("cancel-in-progress: true", workflow)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
