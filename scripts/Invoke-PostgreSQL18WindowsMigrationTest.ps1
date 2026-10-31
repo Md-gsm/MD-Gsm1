@@ -42,7 +42,7 @@ try {
         throw "PostgreSQL installation directory already exists on this runner: $installRoot"
     }
 
-    # Create the response file without inherited access, then populate it with per-run values.
+    # Create an empty response file, lock down its ACL, and only then write per-run values.
     $file = [System.IO.File]::Create($optionFilePath)
     $file.Dispose()
     $currentUserSid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
