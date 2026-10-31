@@ -24,7 +24,7 @@
     "temporaryDataPolicyApproved": false,
     "mergeChecklistApproved": false,
     "requiredStatusChecksConfiguredInScm": false,
-    "negativeCiEnforcementTestPassed": false,
+    "negativeCiEnforcementTestPassed": true,
     "jobOwnersAssigned": true,
     "acceptanceCriteriaAc31ToAc49Mapped": false,
     "architectureAligned": false,
