@@ -243,7 +243,7 @@ def run_architecture(root: Path) -> None:
             if re.search(r"MdGsmDbContext|Npgsql|Microsoft\.EntityFrameworkCore|UseNpgsql", text):
                 raise GateFailure(f"Desktop/client source must not directly use database persistence: {p.relative_to(root)}")
     target = root / "docs/architecture/modular-target.md"
-    required = [root / "src/Modules/Persons/Contracts/README.md", root / "src/Modules/IdentityAccess/Contracts/README.md"]
+    required = [root / "src/Modules/Persons/Contracts/README.md", root / "src/Modules/IdentityAccess/Contracts/README.md", root / "src/Modules/RepairOperations/Contracts/README.md", root / "src/Modules/Finance/Contracts/README.md", root / "src/Host/Api/README.md", root / "src/Host/Desktop/README.md"]
     if not target.exists() or any(not path.exists() for path in required):
         raise GateFailure("Approved modular target and Persons/IdentityAccess Contracts boundaries are missing.")
     print("PASS: current shell dependency direction and modular target/Contracts boundaries.")
