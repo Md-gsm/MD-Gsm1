@@ -9,7 +9,7 @@ public sealed class PersonsPreviewInstallerTests
     public void Persons_preview_is_reachable_from_catalog_and_hover_menu()
     {
         var root = FindSolutionRoot();
-        var catalogPath = Path.Combine(root, "src", "MDGsm.Desktop", "Assets", "menu-catalog-fa.json");
+        var catalogPath = Path.Combine(root, "src", "Host", "Desktop", "Assets", "menu-catalog-fa.json");
         using var catalog = JsonDocument.Parse(File.ReadAllText(catalogPath));
         var allItems = catalog.RootElement.GetProperty("mainMenus")
             .EnumerateArray()
@@ -20,8 +20,8 @@ public sealed class PersonsPreviewInstallerTests
             item.GetProperty("id").GetString() == "BASE-P-06" &&
             item.GetProperty("title").GetString() == "ثبت و فهرست اشخاص");
 
-        var codeBehind = File.ReadAllText(Path.Combine(root, "src", "MDGsm.Desktop", "MainWindow.xaml.cs"));
-        var xaml = File.ReadAllText(Path.Combine(root, "src", "MDGsm.Desktop", "MainWindow.xaml"));
+        var codeBehind = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml.cs"));
+        var xaml = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml"));
         Assert.Contains("ShowPersonsPreview();", codeBehind);
         Assert.Contains("x:Name=\"PersonsPreviewView\"", xaml);
         Assert.Contains("MouseEnter=\"NavMenuButton_MouseEnter\"", xaml);
@@ -36,9 +36,9 @@ public sealed class PersonsPreviewInstallerTests
     public void Dashboard_matches_reference_sections_and_uses_hover_only_cascading_menus()
     {
         var root = FindSolutionRoot();
-        var xaml = File.ReadAllText(Path.Combine(root, "src", "MDGsm.Desktop", "MainWindow.xaml"));
-        var codeBehind = File.ReadAllText(Path.Combine(root, "src", "MDGsm.Desktop", "MainWindow.xaml.cs"));
-        var catalogPath = Path.Combine(root, "src", "MDGsm.Desktop", "Assets", "menu-catalog-fa.json");
+        var xaml = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml"));
+        var codeBehind = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml.cs"));
+        var catalogPath = Path.Combine(root, "src", "Host", "Desktop", "Assets", "menu-catalog-fa.json");
         using var catalog = JsonDocument.Parse(File.ReadAllText(catalogPath));
 
         Assert.Contains("x:Name=\"HeaderRoot\" Grid.Row=\"0\" MouseLeave=\"HeaderRoot_MouseLeave\"", xaml);
@@ -114,7 +114,7 @@ public sealed class PersonsPreviewInstallerTests
     public void Preview_add_handler_is_in_memory_only_and_explicitly_demonstration_scoped()
     {
         var root = FindSolutionRoot();
-        var codeBehind = File.ReadAllText(Path.Combine(root, "src", "MDGsm.Desktop", "MainWindow.xaml.cs"));
+        var codeBehind = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml.cs"));
         var start = codeBehind.IndexOf("private void SavePreviewPersonButton_Click", StringComparison.Ordinal);
         Assert.True(start >= 0, "Preview-only add handler must exist.");
         var end = codeBehind.IndexOf("private void CancelNewPersonButton_Click", start, StringComparison.Ordinal);

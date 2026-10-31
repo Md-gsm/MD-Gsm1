@@ -22,6 +22,7 @@ REQUIRED_JOBS = {
     "persons-temporary-data-retention",
     "persons-merge-contract",
     "persons-postgres-migrations",
+    "persons-postgres-windows-migrations",
     "persons-security-tests",
     "persons-e2e-disposable",
     "persons-ci-enforcement-test",
@@ -111,31 +112,39 @@ def run_spec(root: Path) -> None:
         "autoMergeAllowed": False,
     }
     if policy != expected_policy:
-        raise GateFailure(f"Temporary data policy does not match the approved v1.1 target values: {policy}")
+        raise GateFailure(f"Temporary data policy does not match the proposed v1.1 target values: {policy}")
     criteria = mapping.get("criteria", [])
     ids = [x.get("id") for x in criteria]
     expected = [f"AC-{i:02d}" for i in range(31, 50)]
     if ids != expected:
         raise GateFailure("Acceptance map must contain AC-31..AC-49 exactly once, in order, with no gaps or extras.")
     for item in criteria:
-        for key in ("gate", "testFile", "automatedTest", "status", "expectedBehavior"):
+        for key in ("gate", "status", "expectedBehavior"):
             if not str(item.get(key, "")).strip():
                 raise GateFailure(f"{item.get('id')} is missing field '{key}'.")
-        if item["status"] not in {"MAPPED", "IMPLEMENTED"}:
+        if item["status"] not in {"UNMAPPED", "IMPLEMENTED"}:
             raise GateFailure(f"Unexpected status for {item['id']}: {item['status']}")
         number = int(item["id"].split("-")[1])
         expected_gate = "persons-temporary-data-retention" if number <= 38 else "persons-merge-contract" if number <= 45 else "persons-ci-enforcement-test" if number <= 48 else "persons-ci-evidence"
         if item["gate"] != expected_gate:
             raise GateFailure(f"{item['id']} is mapped to {item['gate']} instead of {expected_gate}.")
+        if item["status"] == "UNMAPPED":
+            if item.get("testFile") is not None or item.get("automatedTest") is not None:
+                raise GateFailure(f"{item['id']} is UNMAPPED but still names a nonexistent test.")
         if item["status"] == "IMPLEMENTED":
+            if not item.get("testFile") or not item.get("automatedTest"):
+                raise GateFailure(f"{item['id']} is IMPLEMENTED without a test file and method.")
             candidates = list(root.rglob(item["testFile"]))
             if not candidates:
                 raise GateFailure(f"{item['id']} claims an implemented test but file '{item['testFile']}' is missing.")
             if not any(item["automatedTest"] in candidate.read_text(encoding="utf-8", errors="replace") for candidate in candidates):
                 raise GateFailure(f"{item['id']} claims an implemented test but method '{item['automatedTest']}' is absent.")
-    if prereqs.get("acceptanceCriteriaAc31ToAc49Mapped") is not True:
-        raise GateFailure("AC-31..AC-49 must be mapped before G1.")
-    if len(registry.get("ownerPaths", [])) < 4 or "registeredConsumers" not in registry:
+    all_criteria_implemented = all(item.get("status") == "IMPLEMENTED" for item in criteria)
+    if prereqs.get("acceptanceCriteriaAc31ToAc49Mapped") is True and not all_criteria_implemented:
+        raise GateFailure("Manifest claims AC-31..AC-49 are mapped, but one or more criteria are UNMAPPED.")
+    if manifest.get("g1Authorized") is True and not all_criteria_implemented:
+        raise GateFailure("G1 cannot be authorized while any AC-31..AC-49 criterion is UNMAPPED.")
+    if "src/Modules/Persons" not in registry.get("ownerPaths", []) or "registeredConsumers" not in registry:
         raise GateFailure("Consumer registry lacks owner paths or registeredConsumers.")
     for consumer in registry.get("registeredConsumers", []):
         for key in ("module", "path", "contractVersion", "mergeProtocolVersion"):
@@ -172,6 +181,19 @@ def run_spec(root: Path) -> None:
                 raise GateFailure("persons-ci-evidence must run with exactly 'if: always()' so failures are still recorded.")
         elif job_conditions:
             raise GateFailure(f"Required CI job '{job}' has a job-level condition that may skip the required check: {job_conditions}.")
+    # Third-party actions must be pinned to immutable full commit SHAs.
+    action_refs = re.findall(r"(?m)^\s+uses:\s+([^\s]+)", wf)
+    unpinned = [ref for ref in action_refs if not re.search(r"@[0-9a-f]{40}$", ref)]
+    if unpinned:
+        raise GateFailure(f"GitHub Actions must be pinned to full commit SHAs: {unpinned}")
+    if "concurrency:" not in wf or "cancel-in-progress: true" not in wf:
+        raise GateFailure("Required workflow must serialize/cancel superseded runs with concurrency.")
+    if "POSTGRES_HOST_AUTH_METHOD: trust" not in wf:
+        raise GateFailure("Linux PostgreSQL service must use isolated runner-local trust authentication, not a repository-stored password.")
+    if re.search(r"(?im)^\s*(?:POSTGRES_PASSWORD|PGPASSWORD)\s*:", wf) or re.search(r"(?i)Password\s*=", wf):
+        raise GateFailure("The public CI workflow must not embed a static PostgreSQL password or password-bearing connection string.")
+    if "image: postgres:18.6-bookworm@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8" not in wf:
+        raise GateFailure("PostgreSQL integration smoke test must use the approved immutable PostgreSQL 18.6 Bookworm digest.")
     # Do not allow PR/push path filters that could silently omit required checks.
     if re.search(r"(?m)^\s{4}paths(-ignore)?:", wf):
         raise GateFailure("Path-based workflow filters are prohibited for required Persons gates.")
@@ -187,45 +209,150 @@ def run_spec(root: Path) -> None:
         raise GateFailure("Smoke test must reject non-loopback database hosts.")
     if "MDGSM_DISPOSABLE_TEST_DB" not in smoke_text:
         raise GateFailure("Smoke test must mark its newly created database explicitly as disposable.")
+    if "MDGsm.DbMigrator" not in smoke_text or "dotnet run" not in smoke_text:
+        raise GateFailure("API-only smoke test must call the application-owned migration runner.")
+    if "Get-Content -LiteralPath $MigrationPath" in smoke_text or "$migrationSql | & $PsqlPath" in smoke_text:
+        raise GateFailure("API-only smoke test must not apply migrations directly through psql.")
     disposable = root / "scripts/Start-MDGsm-DisposableTest.ps1"
     disposable_text = disposable.read_text(encoding="utf-8", errors="replace") if disposable.exists() else ""
     if "MDGSM_DISPOSABLE_TEST_DB" not in disposable_text:
         raise GateFailure("Stage7 disposable runner must mark its newly created database explicitly as disposable.")
+    if "MDGsm.DbMigrator" not in disposable_text or "dotnet run" not in disposable_text:
+        raise GateFailure("Stage7 integrated test must call the application-owned migration runner.")
+    if "Get-Content -LiteralPath $MigrationPath" in disposable_text or "$migrationSql | & $PsqlPath" in disposable_text:
+        raise GateFailure("Stage7 integrated test must not apply migrations directly through psql.")
+
+    runner = root / "src/BuildingBlocks/MDGsm.Infrastructure/Persistence/DatabaseMigrationRunner.cs"
+    migrator_project = root / "tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj"
+    migrator_program = root / "tools/MDGsm.DbMigrator/Program.cs"
+    infrastructure_project = root / "src/BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj"
+    if not runner.exists() or "class DatabaseMigrationRunner" not in runner.read_text(encoding="utf-8"):
+        raise GateFailure("Application-owned DatabaseMigrationRunner implementation is missing.")
+    if not migrator_project.exists() or not migrator_program.exists():
+        raise GateFailure("Executable tools/MDGsm.DbMigrator project is missing.")
+    runner_text = runner.read_text(encoding="utf-8")
+    if "mdgsm_migration_history" not in runner_text or "pg_advisory_xact_lock" not in runner_text:
+        raise GateFailure("Migration runner must track applied versions and serialize concurrent execution.")
+    if "SHA256.HashData" not in runner_text:
+        raise GateFailure("Migration runner must verify immutable migration checksums.")
+    if "EmbeddedResource" not in infrastructure_project.read_text(encoding="utf-8"):
+        raise GateFailure("SQL migrations must be embedded into the Infrastructure assembly.")
+    manifest = load_json(root / "docs/persons/persons-module-manifest.json")
+    if manifest.get("applicationMigrationRunnerImplemented") is not True:
+        raise GateFailure("Manifest must declare the application-owned migration runner implementation.")
+    workflow_text = workflow.read_text(encoding="utf-8")
+    windows_job = re.search(r"(?ms)^  persons-postgres-windows-migrations:\s*\n(?P<body>.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", workflow_text)
+    if not windows_job or "runs-on: windows-latest" not in windows_job.group("body") or "Invoke-PostgreSQL18WindowsMigrationTest.ps1" not in windows_job.group("body"):
+        raise GateFailure("A dedicated PostgreSQL 18 Windows job must invoke the Windows migration integration script.")
+    windows_script = root / "scripts/Invoke-PostgreSQL18WindowsMigrationTest.ps1"
+    windows_text = windows_script.read_text(encoding="utf-8") if windows_script.exists() else ""
+    expected_installer_hash = "227e2bc08091b4c2b8338c7d61b11d057f895711480b006f90bfcfcd2410a58a"
+    if "postgresql-18.6-5-windows-x64.exe" not in windows_text or expected_installer_hash not in windows_text or "Get-FileHash" not in windows_text:
+        raise GateFailure("Windows PostgreSQL job must verify the official PostgreSQL 18.6-5 installer SHA-256.")
+    if "MDGSM_DISPOSABLE_TEST_DB" not in windows_text or "newlyApplied=0" not in windows_text:
+        raise GateFailure("Windows PostgreSQL job must use a marked disposable database and verify migrator idempotence.")
+    if "'--mode', 'unattended'" not in windows_text or "'--optionfile'" not in windows_text:
+        raise GateFailure("Windows PostgreSQL installer must explicitly run unattended and read its protected option file.")
+    if "'--superpassword'" in windows_text or "'--servicepassword'" in windows_text:
+        raise GateFailure("Windows PostgreSQL installer credentials must not be passed as process command-line arguments.")
+    if "SetAccessRuleProtection" not in windows_text or "superpassword=$databasePassword" not in windows_text or "servicepassword=$servicePassword" not in windows_text:
+        raise GateFailure("Windows PostgreSQL installer option file must be restricted to the runner identity and contain separate per-run credentials.")
+    if manifest.get("windowsPostgres18CiIntegrationConfigured") is not True:
+        raise GateFailure("Manifest must declare PostgreSQL 18 Windows integration configuration.")
+
     checksum_verifier = root / "scripts/Verify-SourceChecksums.ps1"
     if not checksum_verifier.exists() or "Get-FileHash" not in checksum_verifier.read_text(encoding="utf-8"):
         raise GateFailure("Source checksum verifier is missing or does not verify SHA-256 hashes.")
     print("PASS: specification, policy values, AC-31..AC-49 mapping, required job IDs, disposable-test safety guards, and checksum verifier.")
 
 def run_architecture(root: Path) -> None:
-    allowed = {
-        "MDGsm.Domain": set(),
-        "MDGsm.Application": {"MDGsm.Domain"},
-        "MDGsm.Infrastructure": {"MDGsm.Application"},
-        "MDGsm.Api": {"MDGsm.Application", "MDGsm.Infrastructure"},
-        "MDGsm.Client": set(),
-        "MDGsm.Desktop": {"MDGsm.Client"},
+    expected_projects = {
+        "BuildingBlocks/MDGsm.Domain/MDGsm.Domain.csproj": set(),
+        "BuildingBlocks/MDGsm.Application/MDGsm.Application.csproj": {"MDGsm.Domain"},
+        "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {"MDGsm.Application"},
+        "BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj": set(),
+        "Host/Api/MDGsm.Api.csproj": {
+            "MDGsm.Application", "MDGsm.Infrastructure",
+            "MDGsm.Persons.Contracts", "MDGsm.IdentityAccess.Contracts",
+            "MDGsm.RepairOperations.Contracts", "MDGsm.Finance.Contracts",
+        },
+        "Host/Desktop/MDGsm.Desktop.csproj": {"MDGsm.Client"},
     }
-    projects = list((root / "src").glob("*/*.csproj"))
-    names = {p.stem for p in projects}
-    if names != set(allowed):
-        raise GateFailure(f"Unexpected source project set: {sorted(names)}")
-    for proj in projects:
-        tree = ET.parse(proj)
-        refs = set()
-        for node in tree.iter():
-            if node.tag.endswith("ProjectReference"):
-                include = node.attrib.get("Include", "")
-                filename = Path(include.replace("\\", "/")).stem
-                refs.add(filename)
-        if refs != allowed[proj.stem]:
-            raise GateFailure(f"Project reference boundary violated in {proj.stem}: expected {sorted(allowed[proj.stem])}, found {sorted(refs)}")
-    for proj_name in ("MDGsm.Client", "MDGsm.Desktop"):
-        proj_dir = root / "src" / proj_name
-        for p in proj_dir.rglob("*.cs"):
-            text = p.read_text(encoding="utf-8", errors="replace")
-            if re.search(r"MdGsmDbContext|Npgsql|Microsoft\.EntityFrameworkCore|UseNpgsql", text):
-                raise GateFailure(f"Desktop/client source must not directly use database persistence: {p.relative_to(root)}")
-    print("PASS: project dependency direction and API-only client boundary.")
+    modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance")
+    for module in modules:
+        expected_projects[f"Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj"] = set()
+
+    project_root = root / "src"
+    projects = {
+        path.relative_to(project_root).as_posix(): path
+        for path in project_root.rglob("*.csproj")
+    }
+    if set(projects) != set(expected_projects):
+        missing = sorted(set(expected_projects) - set(projects))
+        unexpected = sorted(set(projects) - set(expected_projects))
+        raise GateFailure(f"Modular project inventory mismatch. Missing={missing}; unexpected={unexpected}")
+
+    for relative_path, expected_refs in expected_projects.items():
+        project = projects[relative_path]
+        tree = ET.parse(project)
+        actual_refs = {
+            Path(node.attrib.get("Include", "").replace("\\", "/")).stem
+            for node in tree.iter()
+            if node.tag.endswith("ProjectReference")
+        }
+        if actual_refs != expected_refs:
+            if "/Contracts/" in relative_path and actual_refs:
+                module_name = relative_path.split("/")[1]
+                raise GateFailure(
+                    f"{module_name} Contracts project must not depend on module internals: {sorted(actual_refs)}"
+                )
+            raise GateFailure(
+                f"Project reference boundary violated in {relative_path}: "
+                f"expected {sorted(expected_refs)}, found {sorted(actual_refs)}"
+            )
+
+    for relative_dir in ("Host/Desktop", "BuildingBlocks/MDGsm.Client"):
+        source_dir = project_root / relative_dir
+        for source in source_dir.rglob("*.cs"):
+            source_text = source.read_text(encoding="utf-8", errors="replace")
+            if re.search(r"MdGsmDbContext|Npgsql|Microsoft\\.EntityFrameworkCore|UseNpgsql", source_text):
+                raise GateFailure(
+                    f"Desktop/client source must not directly use database persistence: {source.relative_to(root)}"
+                )
+
+    target = root / "docs/architecture/modular-target.md"
+    required_readmes = [
+        root / "src/Host/Api/README.md",
+        root / "src/Host/Desktop/README.md",
+        root / "src/Modules/README.md",
+        root / "src/Modules/Persons/Contracts/README.md",
+        root / "src/Modules/IdentityAccess/Contracts/README.md",
+        root / "src/Modules/RepairOperations/Contracts/README.md",
+        root / "src/Modules/Finance/Contracts/README.md",
+    ]
+    if not target.exists() or any(not path.exists() for path in required_readmes):
+        raise GateFailure("Modular target specification or required Host/Contracts boundary documentation is missing.")
+
+    solution = (root / "MDGsm.sln").read_text(encoding="utf-8", errors="replace")
+    for module in modules:
+        contract_dir = root / "src" / "Modules" / module / "Contracts"
+        project = contract_dir / f"MDGsm.{module}.Contracts.csproj"
+        marker = contract_dir / "ModuleContractVersion.cs"
+        solution_path = f"src\\Modules\\{module}\\Contracts\\MDGsm.{module}.Contracts.csproj"
+        if not project.exists() or solution_path not in solution:
+            raise GateFailure(f"{module} Contracts project is missing from MDGsm.sln.")
+        if not marker.exists() or 'Current = "1.0"' not in marker.read_text(encoding="utf-8"):
+            raise GateFailure(f"{module} Contracts version marker is missing or invalid.")
+
+    old_roots = (
+        "MDGsm.Domain", "MDGsm.Application", "MDGsm.Infrastructure",
+        "MDGsm.Api", "MDGsm.Desktop", "MDGsm.Client",
+    )
+    for old_root in old_roots:
+        if (project_root / old_root).exists():
+            raise GateFailure(f"Flat legacy project directory remains under src/: {old_root}")
+
+    print("PASS: modular project inventory, Host/BuildingBlocks dependency graph, isolated Contracts assemblies, and source boundaries.")
 
 def run_registry(root: Path) -> None:
     reg = load_json(root / "docs/persons/consumer-registry.json")
@@ -233,7 +360,7 @@ def run_registry(root: Path) -> None:
     owner_paths = [str(x).replace("\\", "/").rstrip("/") for x in reg.get("ownerPaths", [])]
     found = set()
     owner_paths.extend(["database/migrations/persons"])
-    rx = re.compile(r"\bPersonId\b|\bperson_id\b|REFERENCES\s+persons\b", re.IGNORECASE)
+    rx = re.compile(r"\bPartyId\b|\bparty_id\b|REFERENCES\s+parties\b", re.IGNORECASE)
     scanned_extensions = {".cs", ".sql", ".xaml", ".json", ".yml", ".yaml", ".xml", ".props", ".csproj"}
     scan_roots = [root / "src", root / "database" / "migrations"]
     for base in scan_roots:
@@ -253,10 +380,10 @@ def run_registry(root: Path) -> None:
     unknown = found - registered
     stale = registered - found
     if unknown:
-        raise GateFailure(f"Unregistered PersonId consumer(s): {sorted(unknown)}")
+        raise GateFailure(f"Unregistered PartyId consumer(s): {sorted(unknown)}")
     if stale:
         raise GateFailure(f"Registry contains consumer paths not found in source: {sorted(stale)}")
-    print(f"PASS: PersonId consumer registry reconciles. Registered external consumers: {len(registered)}; unknown: 0.")
+    print(f"PASS: PartyId consumer registry reconciles. Registered external consumers: {len(registered)}; unknown: 0.")
 
 def run_api(root: Path) -> None:
     manifest = load_json(root / "docs/persons/persons-module-manifest.json")
@@ -283,14 +410,14 @@ def run_retention(root: Path) -> None:
     print("PASS: temporary-data runtime has its required automated test file.")
 
 def run_merge(root: Path) -> None:
-    found = require_flag_consistency(root, "mergeExecutionImplemented", r"PersonMergeService|MergePersonsAsync|MergePersonsEndpoint|MergedIntoPersonId|person_merge_record", "person merge")
+    found = require_flag_consistency(root, "mergeExecutionImplemented", r"PartyMergeService|MergePartiesAsync|MergePartiesEndpoint|MergedIntoPartyId|party_merge_record", "party merge")
     if not found:
         print("PASS-N/A: merge execution is not implemented; gate remains active and rejects untested merge code.")
         return
     require_test(root, "PersonsMergeContractTests.cs", "Person merge")
     reg = load_json(root / "docs/persons/consumer-registry.json")
     # The registry gate independently enumerates all external references; the merge
-    # gate must not confuse the Persons module's own PersonId with a consumer.
+    # gate must not confuse the Persons module's own PartyId with a consumer.
     run_registry(root)
     print("PASS: merge code has required contract-test file.")
 

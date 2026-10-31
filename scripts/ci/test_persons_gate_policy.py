@@ -29,7 +29,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             manifest["temporaryDataRuntimeImplemented"] = True
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            marker = dst / "src/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
+            marker = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
             marker.write_text("public sealed class TemporaryDataRetentionWorker {}", encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_retention(dst)
@@ -38,18 +38,18 @@ class PersonsGatePolicyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
-            marker = dst / "src/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
+            marker = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
             marker.write_text("public sealed class TemporaryDataRetentionWorker {}", encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_retention(dst)
 
-    def test_unknown_personid_consumer_fails_registry_gate(self):
+    def test_unknown_partyid_consumer_fails_registry_gate(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
-            consumer = dst / "src/MDGsm.Application/Reporting/PersonReportQuery.cs"
+            consumer = dst / "src/BuildingBlocks/MDGsm.Application/Reporting/PersonReportQuery.cs"
             consumer.parent.mkdir(parents=True)
-            consumer.write_text("public sealed record PersonReportQuery(Guid PersonId);", encoding="utf-8")
+            consumer.write_text("public sealed record PersonReportQuery(Guid PartyId);", encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_registry(dst)
 
@@ -64,15 +64,15 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest["g1Authorized"] = True
             manifest["g1Prerequisites"] = {key: True for key in manifest["g1Prerequisites"]}
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            with self.assertRaisesRegex(gates.GateFailure, r"evidence\."):
+            with self.assertRaisesRegex(gates.GateFailure, r"UNMAPPED|evidence\."):
                 gates.run_spec(dst)
 
-    def test_unknown_personid_in_contract_json_fails_registry_gate(self):
+    def test_unknown_partyid_in_contract_json_fails_registry_gate(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
-            contract = dst / "src/MDGsm.Application/Contracts/ExternalConsumer.json"
-            contract.write_text('{"personId":"example"}', encoding="utf-8")
+            contract = dst / "src/BuildingBlocks/MDGsm.Application/Contracts/ExternalConsumer.json"
+            contract.write_text('{"PartyId":"example"}', encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_registry(dst)
 
@@ -136,10 +136,118 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             manifest["personsApiImplemented"] = True
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            endpoint = dst / "src/MDGsm.Api/Endpoints/Persons/PersonsEndpoints.cs"
+            endpoint = dst / "src/Host/Api/Endpoints/Persons/PersonsEndpoints.cs"
             endpoint.write_text('app.MapGroup("/api/v1/persons");', encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_api(dst)
+
+    def test_unimplemented_acceptance_criteria_remain_unmapped(self):
+        mapping = gates.load_json(ROOT / "docs/persons/acceptance-gate-map.json")
+        for item in mapping["criteria"]:
+            if item["status"] == "UNMAPPED":
+                self.assertIsNone(item.get("testFile"))
+                self.assertIsNone(item.get("automatedTest"))
+        manifest = gates.load_json(ROOT / "docs/persons/persons-module-manifest.json")
+        self.assertFalse(manifest["g1Prerequisites"]["acceptanceCriteriaAc31ToAc49Mapped"])
+
+    def test_g1_cannot_be_authorized_with_unmapped_acceptance_criteria(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            manifest_path = dst / "docs/persons/persons-module-manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["repositoryStage"] = "G1_CONTRACTS"
+            manifest["g1Authorized"] = True
+            manifest["g1Prerequisites"] = {key: True for key in manifest["g1Prerequisites"]}
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "UNMAPPED|evidence"):
+                gates.run_spec(dst)
+
+    def test_windows_postgres18_job_is_required(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            workflow_path = dst / ".github/workflows/persons-module-gates.yml"
+            workflow = workflow_path.read_text(encoding="utf-8")
+            workflow = workflow.replace("  persons-postgres-windows-migrations:\n", "  persons-postgres-windows-migrations_disabled:\n", 1)
+            workflow_path.write_text(workflow, encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "persons-postgres-windows-migrations"):
+                gates.run_spec(dst)
+
+    def test_module_contract_projects_are_isolated(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            project = dst / "src/Modules/Finance/Contracts/MDGsm.Finance.Contracts.csproj"
+            text = project.read_text(encoding="utf-8")
+            text = text.replace("</Project>", '<ItemGroup><ProjectReference Include="..\\..\\..\\Persons\\Domain\\Persons.csproj" /></ItemGroup></Project>')
+            project.write_text(text, encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "Finance Contracts project must not depend"):
+                gates.run_architecture(dst)
+
+    def test_application_migration_runner_is_required(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            (dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persistence/DatabaseMigrationRunner.cs").unlink()
+            with self.assertRaisesRegex(gates.GateFailure, "DatabaseMigrationRunner"):
+                gates.run_spec(dst)
+
+    def test_postgres_image_must_use_the_approved_digest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            workflow_path = dst / ".github/workflows/persons-module-gates.yml"
+            workflow = workflow_path.read_text(encoding="utf-8")
+            workflow = workflow.replace("@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8", "", 1)
+            workflow_path.write_text(workflow, encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "immutable PostgreSQL 18.6 Bookworm digest"):
+                gates.run_spec(dst)
+
+    def test_windows_postgres_credentials_use_a_protected_option_file(self):
+        script_path = ROOT / "scripts/Invoke-PostgreSQL18WindowsMigrationTest.ps1"
+        script = script_path.read_text(encoding="utf-8")
+        self.assertIn("'--mode', 'unattended'", script)
+        self.assertIn("'--optionfile'", script)
+        self.assertIn("SetAccessRuleProtection", script)
+        self.assertIn("superpassword=$databasePassword", script)
+        self.assertIn("servicepassword=$servicePassword", script)
+        self.assertNotIn("'--superpassword'", script)
+        self.assertNotIn("'--servicepassword'", script)
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            bad = dst / "scripts/Invoke-PostgreSQL18WindowsMigrationTest.ps1"
+            content = bad.read_text(encoding="utf-8")
+            content = content.replace("'--optionfile', $optionFilePath", "'--superpassword', $databasePassword, '--optionfile', $optionFilePath", 1)
+            bad.write_text(content, encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "credentials must not be passed as process command-line"):
+                gates.run_spec(dst)
+
+    def test_public_ci_workflow_does_not_embed_a_static_postgres_password(self):
+        workflow_path = ROOT / ".github/workflows/persons-module-gates.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        self.assertIn("POSTGRES_HOST_AUTH_METHOD: trust", workflow)
+        self.assertNotIn("POSTGRES_PASSWORD:", workflow)
+        self.assertNotIn("PGPASSWORD:", workflow)
+        self.assertNotRegex(workflow, r"(?i)Password\s*=")
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            bad = dst / ".github/workflows/persons-module-gates.yml"
+            content = bad.read_text(encoding="utf-8")
+            content = content.replace("POSTGRES_HOST_AUTH_METHOD: trust", "POSTGRES_HOST_AUTH_METHOD: trust\n          POSTGRES_PASSWORD: static_test_password", 1)
+            bad.write_text(content, encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "must not embed a static PostgreSQL password"):
+                gates.run_spec(dst)
+
+    def test_workflow_actions_are_sha_pinned_and_runs_are_serialized(self):
+        workflow = (ROOT / ".github/workflows/persons-module-gates.yml").read_text(encoding="utf-8")
+        action_lines = [line.strip().split("uses:", 1)[1].strip() for line in workflow.splitlines() if "uses:" in line]
+        self.assertTrue(action_lines)
+        self.assertTrue(all("@" in action and len(action.rsplit("@", 1)[1]) == 40 for action in action_lines), action_lines)
+        self.assertIn("concurrency:", workflow)
+        self.assertIn("cancel-in-progress: true", workflow)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

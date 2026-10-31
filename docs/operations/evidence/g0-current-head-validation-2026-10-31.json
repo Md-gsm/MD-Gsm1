@@ -1,0 +1,84 @@
+{
+  "evidenceVersion": "1.0",
+  "purpose": "Supplemental current-HEAD validation record for G0 technical work.",
+  "repository": "Md-gsm/MD-Gsm1",
+  "pullRequest": 8,
+  "branch": "hardening/g0-alignment-and-ci-2026-10-31",
+  "validatedCommit": "a9640ab9fdfed96fd1a826627181e8292cabbb27",
+  "workflowRun": {
+    "id": 41215914259,
+    "url": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41215914259",
+    "workflow": "MD-Gsm Persons Module Gates",
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "success",
+    "totalJobs": 13,
+    "passedJobs": 13,
+    "failedJobs": 0,
+    "jobs": [
+      "foundation-build-test",
+      "persons-spec-lint",
+      "persons-architecture-boundary",
+      "persons-consumer-registry",
+      "persons-api-contract",
+      "persons-temporary-data-retention",
+      "persons-merge-contract",
+      "persons-postgres-migrations",
+      "persons-postgres-windows-migrations",
+      "persons-security-tests",
+      "persons-e2e-disposable",
+      "persons-ci-enforcement-test",
+      "persons-ci-evidence"
+    ]
+  },
+  "postgresRunner": {
+    "linux": {
+      "jobId": 124580606974,
+      "disposableDatabase": "mdgsm_ci_disposable_41215914259_1",
+      "firstRun": "newlyApplied=1; previouslyApplied=0; versions=1",
+      "secondRun": "newlyApplied=0; previouslyApplied=1"
+    },
+    "windows": {
+      "jobId": 124580607116,
+      "serverVersion": "18.6",
+      "installer": "postgresql-18.6-5-windows-x64.exe",
+      "installerSha256": "227e2bc08091b4c2b8338c7d61b11d057f895711480b006f90bfcfcd2410a58a",
+      "disposableDatabase": "mdgsm_ci_disposable_41215914259_1",
+      "firstRun": "newlyApplied=1; previouslyApplied=0; versions=1",
+      "secondRun": "newlyApplied=0; previouslyApplied=1",
+      "credentialHandling": "Unique per-run passwords passed to EDB via an ACL-restricted temporary option file; passwords are not placed in process command-line arguments; option file is deleted after installation and in finally."
+    }
+  },
+  "windowsPreviewInstaller": {
+    "runId": 41214667312,
+    "url": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41214667312",
+    "testedCommit": "e31f303caf7918e560efd4cfc177a5d61b9ad62f",
+    "conclusion": "success",
+    "scopeNote": "Subsequent commits through validatedCommit changed only PostgreSQL Windows migration test/security policy, validator and governance docs; no Host/Desktop project source or installer packaging inputs changed."
+  },
+  "mainBranchProtection": {
+    "observedAt": "2026-10-31",
+    "protected": true,
+    "enforcementLevel": "non_admins",
+    "requiredStatusCheckContexts": [],
+    "requiredStatusCheckChecks": [],
+    "rulesets": []
+  },
+  "humanGovernance": {
+    "temporaryDataPolicyAcceptedByProjectOwner": true,
+    "mergeChecklistAcceptedByProjectOwner": true,
+    "ciJobOwner": "Group of Software Advisers; phase membership appointed by Project Owner",
+    "securityPrivacyOwner": "Project Owner",
+    "independentArchitectureReviewRecorded": false,
+    "projectOwnerSecurityPrivacyReviewRecorded": false,
+    "branchProtectionAdminUpdateRecorded": false,
+    "postConfigurationNegativeMergeTestRecorded": false
+  },
+  "interpretation": {
+    "technicalG0": "PASS on validatedCommit; 13/13 CI jobs passed.",
+    "formalG0Closure": "ON HOLD until the 13 required checks are configured on main, a post-configuration negative PR test passes, the Group of Software Advisers records an independent architecture review, and the Project Owner records the security/privacy review.",
+    "g1Authorized": false,
+    "personsImplementationState": "NOT_IMPLEMENTED",
+    "ac31to45": "UNMAPPED; actual temporary-data and merge runtime/acceptance tests are G1 work."
+  }
+}

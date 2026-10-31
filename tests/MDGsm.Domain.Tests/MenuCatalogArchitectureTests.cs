@@ -9,7 +9,7 @@ public sealed class MenuCatalogArchitectureTests
     public void Menu_catalog_has_eleven_roots_and_unique_nonempty_ids_and_owners()
     {
         var root = FindSolutionRoot();
-        var path = Path.Combine(root, "src", "MDGsm.Desktop", "Assets", "menu-catalog-fa.json");
+        var path = Path.Combine(root, "src", "Host", "Desktop", "Assets", "menu-catalog-fa.json");
         using var document = JsonDocument.Parse(File.ReadAllText(path));
         var mainMenus = document.RootElement.GetProperty("mainMenus").EnumerateArray().ToArray();
         Assert.Equal(11, mainMenus.Length);
@@ -65,7 +65,7 @@ public sealed class MenuCatalogArchitectureTests
     public void Parsian_screenshot_menu_hierarchy_is_preserved_as_direct_rows_and_real_flyouts()
     {
         var root = FindSolutionRoot();
-        var path = Path.Combine(root, "src", "MDGsm.Desktop", "Assets", "menu-catalog-fa.json");
+        var path = Path.Combine(root, "src", "Host", "Desktop", "Assets", "menu-catalog-fa.json");
         using var document = JsonDocument.Parse(File.ReadAllText(path));
         var menus = document.RootElement.GetProperty("mainMenus").EnumerateArray().ToArray();
 
@@ -132,7 +132,7 @@ public sealed class MenuCatalogArchitectureTests
         Assert.All(Menu("tax").GetProperty("groups").EnumerateArray(), group => Assert.Equal("hidden", Mode(group)));
         Assert.All(Menu("help").GetProperty("groups").EnumerateArray(), group => Assert.Equal("hidden", Mode(group)));
 
-        var mainWindow = File.ReadAllText(Path.Combine(root, "src", "MDGsm.Desktop", "MainWindow.xaml.cs"));
+        var mainWindow = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml.cs"));
         Assert.Contains("var hasEvidenceBackedContent = root.Groups.Any(group =>", mainWindow);
         Assert.Contains("if (!hasEvidenceBackedContent)", mainWindow);
     }
