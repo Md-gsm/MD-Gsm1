@@ -25,7 +25,7 @@
     "mergeChecklistApproved": false,
     "requiredStatusChecksConfiguredInScm": false,
     "negativeCiEnforcementTestPassed": false,
-    "jobOwnersAssigned": false,
+    "jobOwnersAssigned": true,
     "acceptanceCriteriaAc31ToAc49Mapped": false,
     "architectureAligned": false,
     "windowsPostgres18Validated": true,
