@@ -49,3 +49,22 @@ CI unit tests exercise the fail-closed validator; they are not a substitute for 
 The application-owned `tools/MDGsm.DbMigrator` and PostgreSQL 18.6 Linux/Windows integration were revalidated on the post-relocation PR head in run `41185491539` (13/13 jobs passed). First run applied one migration and second run applied zero migrations in each disposable test database. Earlier detailed migration evidence remains at `docs/operations/evidence/postgresql18-migration-validation-2026-10-31.json`; the complete current-head CI record is `docs/operations/evidence/g0-ci-validation-2026-10-31.json`.
 
 The Linux PostgreSQL service image is pinned to `postgres:18.6-bookworm@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8`.
+
+
+## Admin one-command helper
+
+A PowerShell helper is available at `scripts/Configure-MainBranchProtection.ps1`.
+
+1. Install GitHub CLI and authenticate as the repository Admin with the **Administration: write** permission. No token is written to this repository.
+2. From the project root, run a dry run:
+   ```powershell
+   .\scripts\Configure-MainBranchProtection.ps1
+   ```
+3. Review the displayed check names and settings. To apply, run:
+   ```powershell
+   .\scripts\Configure-MainBranchProtection.ps1 -Apply
+   ```
+   The script requires typing the exact repository/branch name, preserves existing unrelated restrictions, configures strict required checks, admin enforcement, at least one approval, latest-push approval, no bypass allowances, no force pushes and no deletion, then reads the result back and verifies it.
+4. After successful configuration, perform a **new** negative PR test. The earlier PR #6 was before these required checks were configured and cannot replace that post-configuration test.
+
+The script intentionally does not run automatically in CI: changing remote branch protection is an explicit repository-Admin operation. GitHub's official REST documentation lists the required fields, strict option and Administration-write permission for this endpoint: https://docs.github.com/en/rest/branches/branch-protection.
