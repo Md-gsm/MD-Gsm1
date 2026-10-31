@@ -5,7 +5,7 @@
   "branchProtectionEvidence": "",
   "negativeEnforcementPullRequest": "https://github.com/Md-gsm/MD-Gsm1/pull/6",
   "policyApprovalReference": "docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md",
-  "mergeChecklistApprovalReference": "",
+  "mergeChecklistApprovalReference": "docs/persons/MERGE_CONTRACT_CHECKLIST_FA.md",
   "verifiedBy": "",
   "verifiedAtUtc": "",
   "note": "NOT_READY is mandatory until independent architecture and security/privacy reviews are recorded against a commit, policy owner approvals are signed, remote branch protection settings are evidenced, and an actual failing required check is proven to block merge. A successful workflow run or a local policy unit test is not sufficient."
