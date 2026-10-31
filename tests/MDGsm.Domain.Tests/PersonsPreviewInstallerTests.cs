@@ -74,8 +74,8 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("Background=\"#EFF6FF\" Foreground=\"#1D4ED8\" FontWeight=\"SemiBold\"", xaml);
         Assert.Contains("x:Name=\"TabIntakeToday\" Tag=\"intakeToday\"", xaml);
         Assert.Contains("private string _activeReceptionFilter = \"deliveryToday\";", codeBehind);
-        Assert.Contains("Value=\"{Binding MarkerBrush}\"", xaml);
-        Assert.Contains("Value=\"{Binding MarkerLabel}\"", xaml);
+        Assert.Contains("<Border Background=\"{Binding MarkerBrush}\" ToolTip=\"{Binding MarkerLabel}\"", xaml);
+        Assert.Contains("<Setter Property=\"ToolTip\" Value=\"{Binding MarkerLabel}\"/>", xaml);
         Assert.Contains("UrgentMarkerBrush = CreateFrozenBrush(\"#E00000\")", codeBehind);
         Assert.Contains("PartnerMarkerBrush = CreateFrozenBrush(\"#8B5CF6\")", codeBehind);
         Assert.Contains("LaterDeliveryMarkerBrush = CreateFrozenBrush(\"#10B981\")", codeBehind);
