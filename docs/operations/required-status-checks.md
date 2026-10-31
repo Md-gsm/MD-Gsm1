@@ -30,3 +30,9 @@ Workflow: `.github/workflows/persons-module-gates.yml`
 5. تغییر آزمایشی را بدون دور زدن قفل خاتمه دهید.
 
 Unit test مربوط به سیاست fail-closed، رفتار خود validator را می‌آزماید؛ **جایگزین آزمون branch protection واقعی نیست**.
+
+## Evidence state (2026-10-31)
+
+The repository has a workflow definition and successful workflow runs, but the exact branch-protection/ruleset configuration has not been independently retrieved through the connected GitHub integration. Treat remote required-check enforcement as UNVERIFIED until the owner supplies the settings/API evidence. The prior negative architecture PR demonstrated a blocked merge state, but it is not a substitute for inspecting the configured ruleset and recording a dedicated current negative-enforcement proof.
+
+The PostgreSQL job currently uses a versioned PostgreSQL 18.6 Bookworm tag on Linux. It is not yet a digest-pinned image, does not validate PostgreSQL on Windows, and applies the infrastructure SQL directly with psql. It is a disposable migration smoke test, not an application migration runner.
