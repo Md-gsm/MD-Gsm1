@@ -72,7 +72,7 @@
       "testFile": null,
       "automatedTest": null,
       "status": "UNMAPPED",
-      "expectedBehavior": "All code-discovered PersonId consumers are registered"
+      "expectedBehavior": "All code-discovered PartyId consumers are registered"
     },
     {
       "id": "AC-40",
@@ -80,7 +80,7 @@
       "testFile": null,
       "automatedTest": null,
       "status": "UNMAPPED",
-      "expectedBehavior": "Every PersonId reference has exactly one merge classification"
+      "expectedBehavior": "Every PartyId reference has exactly one merge classification"
     },
     {
       "id": "AC-41",
