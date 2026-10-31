@@ -4,8 +4,12 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'src/MDGsm.Desktop/**'
-      - 'src/MDGsm.Client/**'
+      - 'src/Host/Desktop/**'
+      - 'src/Host/Api/**'
+      - 'src/BuildingBlocks/**'
+      - 'src/Modules/**'
+      - 'database/migrations/**'
+      - 'tools/MDGsm.DbMigrator/**'
       - 'tests/**'
       - 'installer/**'
       - 'scripts/Build-Windows-Installer.ps1'
