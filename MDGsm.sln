@@ -24,6 +24,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDGsm.IdentityAccess.Contra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDGsm.RepairOperations.Contracts", "src\Modules\RepairOperations\Contracts\MDGsm.RepairOperations.Contracts.csproj", "{5E4B7393-A6CB-4A5B-9D6C-1D84C890A00B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDGsm.Finance.Contracts", "src\Modules\Finance\Contracts\MDGsm.Finance.Contracts.csproj", "{5E4B7393-A6CB-4A5B-9D6C-1D84C890A00C}"
+EndProject
 Global
  GlobalSection(SolutionConfigurationPlatforms) = preSolution
   Debug|Any CPU = Debug|Any CPU
@@ -74,5 +76,9 @@ Global
   {5E4B7393-A6CB-4A5B-9D6C-1D84C890A00B}.Debug|Any CPU.Build.0 = Debug|Any CPU
   {5E4B7393-A6CB-4A5B-9D6C-1D84C890A00B}.Release|Any CPU.ActiveCfg = Release|Any CPU
   {5E4B7393-A6CB-4A5B-9D6C-1D84C890A00B}.Release|Any CPU.Build.0 = Release|Any CPU
+  {5E4B7393-A6CB-4A5B-9D6C-1D84C890A00C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {5E4B7393-A6CB-4A5B-9D6C-1D84C890A00C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {5E4B7393-A6CB-4A5B-9D6C-1D84C890A00C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {5E4B7393-A6CB-4A5B-9D6C-1D84C890A00C}.Release|Any CPU.Build.0 = Release|Any CPU
  EndGlobalSection
 EndGlobal
