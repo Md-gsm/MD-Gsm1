@@ -125,9 +125,7 @@ $payload = @{
         required_approving_review_count = 0
         require_last_push_approval = $false
     }
-    required_conversation_resolution = @{
-        enabled = $true
-    }
+    required_conversation_resolution = $true
     restrictions = $null
     allow_force_pushes = $false
     allow_deletions = $false
@@ -154,7 +152,7 @@ try {
     $missingAfter = @($RequiredChecks | Where-Object { $_ -notin $actual })
     $unexpectedAfter = @($actual | Where-Object { $_ -notin $RequiredChecks })
     $prReviewsEnabled = $null -ne $verified.required_pull_request_reviews
-    $conversationResolutionEnabled = $null -ne $verified.required_conversation_resolution -and $verified.required_conversation_resolution.enabled
+    $conversationResolutionEnabled = $verified.required_conversation_resolution -eq $true
     if (
         $missingAfter.Count -gt 0 -or
         $unexpectedAfter.Count -gt 0 -or
@@ -175,7 +173,7 @@ try {
     Write-Host "Strict/up-to-date: $($verified.required_status_checks.strict)"
     Write-Host "Admin enforcement: $($verified.enforce_admins.enabled)"
     Write-Host "PR required (approvals): $($verified.required_pull_request_reviews.required_approving_review_count)"
-    Write-Host "Conversation resolution required: $($verified.required_conversation_resolution.enabled)"
+    Write-Host "Conversation resolution required: $conversationResolutionEnabled"
     Write-Host "Force pushes allowed: $($verified.allow_force_pushes.enabled)"
     Write-Host "Branch deletion allowed: $($verified.allow_deletions.enabled)"
 } finally {
