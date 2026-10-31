@@ -256,55 +256,88 @@ def run_spec(root: Path) -> None:
     print("PASS: specification, policy values, AC-31..AC-49 mapping, required job IDs, disposable-test safety guards, and checksum verifier.")
 
 def run_architecture(root: Path) -> None:
-    allowed = {
-        "MDGsm.Domain": set(),
-        "MDGsm.Application": {"MDGsm.Domain"},
-        "MDGsm.Infrastructure": {"MDGsm.Application"},
-        "MDGsm.Api": {
+    expected_projects = {
+        "BuildingBlocks/MDGsm.Domain/MDGsm.Domain.csproj": set(),
+        "BuildingBlocks/MDGsm.Application/MDGsm.Application.csproj": {"MDGsm.Domain"},
+        "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {"MDGsm.Application"},
+        "BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj": set(),
+        "Host/Api/MDGsm.Api.csproj": {
             "MDGsm.Application", "MDGsm.Infrastructure",
             "MDGsm.Persons.Contracts", "MDGsm.IdentityAccess.Contracts",
             "MDGsm.RepairOperations.Contracts", "MDGsm.Finance.Contracts",
         },
-        "MDGsm.Client": set(),
-        "MDGsm.Desktop": {"MDGsm.Client"},
+        "Host/Desktop/MDGsm.Desktop.csproj": {"MDGsm.Client"},
     }
-    projects = list((root / "src").glob("*/*.csproj"))
-    names = {p.stem for p in projects}
-    if names != set(allowed):
-        raise GateFailure(f"Unexpected source project set: {sorted(names)}")
-    for proj in projects:
-        tree = ET.parse(proj)
-        refs = set()
-        for node in tree.iter():
-            if node.tag.endswith("ProjectReference"):
-                include = node.attrib.get("Include", "")
-                filename = Path(include.replace("\\", "/")).stem
-                refs.add(filename)
-        if refs != allowed[proj.stem]:
-            raise GateFailure(f"Project reference boundary violated in {proj.stem}: expected {sorted(allowed[proj.stem])}, found {sorted(refs)}")
-    for proj_name in ("MDGsm.Client", "MDGsm.Desktop"):
-        proj_dir = root / "src" / proj_name
-        for p in proj_dir.rglob("*.cs"):
-            text = p.read_text(encoding="utf-8", errors="replace")
-            if re.search(r"MdGsmDbContext|Npgsql|Microsoft\.EntityFrameworkCore|UseNpgsql", text):
-                raise GateFailure(f"Desktop/client source must not directly use database persistence: {p.relative_to(root)}")
+    modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance")
+    for module in modules:
+        expected_projects[f"Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj"] = set()
+
+    project_root = root / "src"
+    projects = {
+        path.relative_to(project_root).as_posix(): path
+        for path in project_root.rglob("*.csproj")
+    }
+    if set(projects) != set(expected_projects):
+        missing = sorted(set(expected_projects) - set(projects))
+        unexpected = sorted(set(projects) - set(expected_projects))
+        raise GateFailure(f"Modular project inventory mismatch. Missing={missing}; unexpected={unexpected}")
+
+    for relative_path, expected_refs in expected_projects.items():
+        project = projects[relative_path]
+        tree = ET.parse(project)
+        actual_refs = {
+            Path(node.attrib.get("Include", "").replace("\\", "/")).stem
+            for node in tree.iter()
+            if node.tag.endswith("ProjectReference")
+        }
+        if actual_refs != expected_refs:
+            raise GateFailure(
+                f"Project reference boundary violated in {relative_path}: "
+                f"expected {sorted(expected_refs)}, found {sorted(actual_refs)}"
+            )
+
+    for relative_dir in ("Host/Desktop", "BuildingBlocks/MDGsm.Client"):
+        source_dir = project_root / relative_dir
+        for source in source_dir.rglob("*.cs"):
+            source_text = source.read_text(encoding="utf-8", errors="replace")
+            if re.search(r"MdGsmDbContext|Npgsql|Microsoft\\.EntityFrameworkCore|UseNpgsql", source_text):
+                raise GateFailure(
+                    f"Desktop/client source must not directly use database persistence: {source.relative_to(root)}"
+                )
+
     target = root / "docs/architecture/modular-target.md"
-    required = [root / "src/Modules/Persons/Contracts/README.md", root / "src/Modules/IdentityAccess/Contracts/README.md", root / "src/Modules/RepairOperations/Contracts/README.md", root / "src/Modules/Finance/Contracts/README.md", root / "src/Host/Api/README.md", root / "src/Host/Desktop/README.md"]
-    if not target.exists() or any(not path.exists() for path in required):
-        raise GateFailure("Approved modular target and Persons/IdentityAccess Contracts boundaries are missing.")
-    solution = (root / "MDGsm.sln").read_text(encoding="utf-8")
-    for module in ("Persons", "IdentityAccess", "RepairOperations", "Finance"):
+    required_readmes = [
+        root / "src/Host/Api/README.md",
+        root / "src/Host/Desktop/README.md",
+        root / "src/Modules/README.md",
+        root / "src/Modules/Persons/Contracts/README.md",
+        root / "src/Modules/IdentityAccess/Contracts/README.md",
+        root / "src/Modules/RepairOperations/Contracts/README.md",
+        root / "src/Modules/Finance/Contracts/README.md",
+    ]
+    if not target.exists() or any(not path.exists() for path in required_readmes):
+        raise GateFailure("Modular target specification or required Host/Contracts boundary documentation is missing.")
+
+    solution = (root / "MDGsm.sln").read_text(encoding="utf-8", errors="replace")
+    for module in modules:
         contract_dir = root / "src" / "Modules" / module / "Contracts"
         project = contract_dir / f"MDGsm.{module}.Contracts.csproj"
-        if not project.exists() or f"src\\Modules\\{module}\\Contracts\\MDGsm.{module}.Contracts.csproj" not in solution:
-            raise GateFailure(f"{module} compiled Contracts project is missing from MDGsm.sln.")
         marker = contract_dir / "ModuleContractVersion.cs"
+        solution_path = f"src\\Modules\\{module}\\Contracts\\MDGsm.{module}.Contracts.csproj"
+        if not project.exists() or solution_path not in solution:
+            raise GateFailure(f"{module} Contracts project is missing from MDGsm.sln.")
         if not marker.exists() or 'Current = "1.0"' not in marker.read_text(encoding="utf-8"):
             raise GateFailure(f"{module} Contracts version marker is missing or invalid.")
-        project_xml = ET.parse(project)
-        if any(node.tag.endswith("ProjectReference") for node in project_xml.iter()):
-            raise GateFailure(f"{module} Contracts project must not depend on implementation projects.")
-    print("PASS: current shell dependency direction and modular target/Contracts boundaries.")
+
+    old_roots = (
+        "MDGsm.Domain", "MDGsm.Application", "MDGsm.Infrastructure",
+        "MDGsm.Api", "MDGsm.Desktop", "MDGsm.Client",
+    )
+    for old_root in old_roots:
+        if (project_root / old_root).exists():
+            raise GateFailure(f"Flat legacy project directory remains under src/: {old_root}")
+
+    print("PASS: modular project inventory, Host/BuildingBlocks dependency graph, isolated Contracts assemblies, and source boundaries.")
 
 def run_registry(root: Path) -> None:
     reg = load_json(root / "docs/persons/consumer-registry.json")
