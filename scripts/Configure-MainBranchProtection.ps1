@@ -152,7 +152,8 @@ try {
     $missingAfter = @($RequiredChecks | Where-Object { $_ -notin $actual })
     $unexpectedAfter = @($actual | Where-Object { $_ -notin $RequiredChecks })
     $prReviewsEnabled = $null -ne $verified.required_pull_request_reviews
-    $conversationResolutionEnabled = $verified.required_conversation_resolution -eq $true
+    # GitHub REST GET returns { enabled: true }; PUT accepts a Boolean.
+    $conversationResolutionEnabled = $verified.required_conversation_resolution.enabled -eq $true
     if (
         $missingAfter.Count -gt 0 -or
         $unexpectedAfter.Count -gt 0 -or
