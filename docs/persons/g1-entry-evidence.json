@@ -8,5 +8,5 @@
   "mergeChecklistApprovalReference": "docs/persons/MERGE_CONTRACT_CHECKLIST_FA.md",
   "verifiedBy": "",
   "verifiedAtUtc": "",
-  "note": "NOT_READY is mandatory until independent architecture and security/privacy reviews are recorded against a commit, policy owner approvals are signed, remote branch protection settings are evidenced, and an actual failing required check is proven to block merge. A successful workflow run or a local policy unit test is not sufficient."
+  "note": "NOT_READY remains mandatory because independent architecture and security/privacy review by the Group of Software Advisers is not yet recorded, and exact remote Required Status Checks/bypass settings remain unverified. Project Owner acceptance of temporary-data policy and merge checklist is referenced above. PR #6 and workflow run 41177718250 provide negative architecture-enforcement evidence. No G1 authorization is implied."
 }
