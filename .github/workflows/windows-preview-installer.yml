@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/MDGsm.Desktop/**'
       - 'src/MDGsm.Client/**'
+      - 'tests/**'
       - 'installer/**'
       - 'scripts/Build-Windows-Installer.ps1'
       - 'MDGsm.sln'

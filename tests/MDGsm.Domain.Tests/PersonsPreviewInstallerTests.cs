@@ -65,15 +65,17 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("SizeChanged=\"DashboardView_SizeChanged\"", xaml);
         Assert.Contains("MinHeight=\"600\"", xaml);
         Assert.DoesNotContain("Width=\"1075\"", xaml);
-        Assert.Contains("HorizontalAlignment=\"Stretch\" Margin=\"26,18,26,28\"", xaml);
+        Assert.Contains("<StackPanel x:Name=\"DashboardContentPanel\" HorizontalAlignment=\"Stretch\" Margin=\"0\">", xaml); // Dashboard uses a responsive, scrollable content panel; outer page padding is intentionally not hard-coded.
         Assert.Contains("DashboardView_SizeChanged", codeBehind);
-        Assert.Contains("Math.Clamp(availableHeight * 0.39, 270d, 420d)", codeBehind);
+        Assert.Contains("var horizontalInset = viewportWidth * 0.10;", codeBehind);
+        Assert.Contains("var verticalInset = viewportHeight * 0.10;", codeBehind);
+        Assert.Contains("DashboardContentPanel.Margin = new Thickness(horizontalInset, verticalInset, horizontalInset, verticalInset);", codeBehind);
         Assert.Contains("x:Name=\"TabDeliveryToday\" Tag=\"deliveryToday\"", xaml);
         Assert.Contains("Background=\"#EFF6FF\" Foreground=\"#1D4ED8\" FontWeight=\"SemiBold\"", xaml);
         Assert.Contains("x:Name=\"TabIntakeToday\" Tag=\"intakeToday\"", xaml);
         Assert.Contains("private string _activeReceptionFilter = \"deliveryToday\";", codeBehind);
-        Assert.Contains("Value=\"{Binding MarkerBrush}\"", xaml);
-        Assert.Contains("Value=\"{Binding MarkerLabel}\"", xaml);
+        Assert.Contains("<Border Background=\"{Binding MarkerBrush}\" ToolTip=\"{Binding MarkerLabel}\"", xaml);
+        Assert.Contains("<Setter Property=\"ToolTip\" Value=\"{Binding MarkerLabel}\"/>", xaml);
         Assert.Contains("UrgentMarkerBrush = CreateFrozenBrush(\"#E00000\")", codeBehind);
         Assert.Contains("PartnerMarkerBrush = CreateFrozenBrush(\"#8B5CF6\")", codeBehind);
         Assert.Contains("LaterDeliveryMarkerBrush = CreateFrozenBrush(\"#10B981\")", codeBehind);
