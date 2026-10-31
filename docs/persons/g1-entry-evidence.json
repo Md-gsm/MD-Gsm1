@@ -4,7 +4,7 @@
   "scmRemoteRepository": "",
   "branchProtectionEvidence": "",
   "negativeEnforcementPullRequest": "https://github.com/Md-gsm/MD-Gsm1/pull/6",
-  "policyApprovalReference": "",
+  "policyApprovalReference": "docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md",
   "mergeChecklistApprovalReference": "",
   "verifiedBy": "",
   "verifiedAtUtc": "",
