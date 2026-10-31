@@ -12,6 +12,7 @@ Workflow: `.github/workflows/persons-module-gates.yml`
 - `persons-temporary-data-retention`
 - `persons-merge-contract`
 - `persons-postgres-migrations`
+- `persons-postgres-windows-migrations`
 - `persons-security-tests`
 - `persons-e2e-disposable`
 - `persons-ci-enforcement-test`
@@ -35,4 +36,4 @@ Unit test مربوط به سیاست fail-closed، رفتار خود validator �
 
 The repository has a workflow definition and successful workflow runs, but the exact branch-protection/ruleset configuration has not been independently retrieved through the connected GitHub integration. Treat remote required-check enforcement as UNVERIFIED until the owner supplies the settings/API evidence. The prior negative architecture PR demonstrated a blocked merge state, but it is not a substitute for inspecting the configured ruleset and recording a dedicated current negative-enforcement proof.
 
-The PostgreSQL job currently uses a versioned PostgreSQL 18.6 Bookworm tag on Linux. It is not yet a digest-pinned image, does not validate PostgreSQL on Windows, and applies the infrastructure SQL directly with psql. It is a disposable migration smoke test, not an application migration runner.
+The Linux PostgreSQL 18.6 job and a separate Windows PostgreSQL 18.6-5 job now execute the application-owned `MDGsm.DbMigrator`. The Windows job verifies the EDB installer using its published SHA-256, creates a marked disposable database, runs the migrator twice, and checks history and idempotence. These checks are configured in this branch; validation prerequisites must remain false until both CI jobs pass on the current commit. The Linux container image remains version-tagged but not digest-pinned.

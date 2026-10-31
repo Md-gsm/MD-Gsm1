@@ -26,7 +26,7 @@
 | نگاشت AC-31..AC-49 | ناقص | فقط AC-46..AC-49 تست اجرایی دارند؛ AC-31..AC-45 باید UNMAPPED بمانند تا تست واقعی نوشته شود |
 | Build/Test واقعی روی Windows | باز | خروجی `dotnet restore/build/test` از ماشین Windows یا CI Windows |
 
-**G1 نباید شروع شود** تا شروط بالا با شواهد قابل ردیابی بسته شوند. ساختار هدف ماژولار، ADR-0004/0005/0006 و PostgreSQL 18.6 نیز باید در بازبینی معماری/امنیت بررسی شوند. CI فعلی آزمون PostgreSQL روی Windows یا migration runner داخل برنامه را اثبات نمی‌کند. اجرای موفق lint در این بسته به‌تنهایی هیچ کدام از تأییدهای خارجی/سازمانی را ادعا نمی‌کند.
+**G1 نباید شروع شود** تا شروط بالا با شواهد قابل ردیابی بسته شوند. برای دو مانع فنی PostgreSQL روی Windows و migration runner، پیاده‌سازی و jobهای CI اضافه شده‌اند؛ اما تا موفقیت jobهای جدید روی همین commit، فیلدهای `windowsPostgres18Validated` و `applicationMigrationRunnerValidated` باید `false` بمانند. ساختار هدف ماژولار، ADR-0004/0005/0006 و PostgreSQL 18.6 نیز باید در بازبینی معماری/امنیت بررسی شوند. سایر تأییدهای خارجی/سازمانی با CI جایگزین نمی‌شوند.
 
 ## ترتیب ساخت پیشنهادی پس از بسته‌شدن شروط
 
@@ -48,6 +48,6 @@
 
 ## کنترل‌های CI پیشنهادی برای Required Status Checks
 
-`foundation-build-test`, `persons-spec-lint`, `persons-architecture-boundary`, `persons-consumer-registry`, `persons-api-contract`, `persons-temporary-data-retention`, `persons-merge-contract`, `persons-postgres-migrations`, `persons-security-tests`, `persons-e2e-disposable`, `persons-ci-enforcement-test`, `persons-ci-evidence`.
+`foundation-build-test`, `persons-spec-lint`, `persons-architecture-boundary`, `persons-consumer-registry`, `persons-api-contract`, `persons-temporary-data-retention`, `persons-merge-contract`, `persons-postgres-migrations`, `persons-postgres-windows-migrations`, `persons-security-tests`, `persons-e2e-disposable`, `persons-ci-enforcement-test`, `persons-ci-evidence`.
 
 این نام‌ها در Workflow تعریف می‌شوند، ولی Required بودن آن‌ها فقط با تنظیم مخزن remote قابل اثبات است. اتصال GitHub موجود است، اما API متصل جزئیات Branch Protection را با 403 رد کرده است؛ بنابراین تنظیمات دقیق و Required بودن checkها هنوز تأیید نشده‌اند.

@@ -45,7 +45,7 @@ Run the API with `dotnet run --project .\src\MDGsm.Api\MDGsm.Api.csproj`. The `/
 - `docs/PHASE_4_STATUS.md` — implementation and validation status for stage 4.
 - `docs/PHASE_5_STATUS.md` — implementation and local run instructions for stage 5.
 - `docs/PHASE_6_STATUS.md` — scope and validation status for stage 6.
-- `docs/data/persistence-and-migrations.md` — persistence and migration operating rules.
+- `docs/data/persistence-and-migrations.md` — persistence and migration operating rules, including explicit application-owned migration execution.
 - `docs/decisions/0002-postgresql-and-efcore.md` — database technology decision.
 - `docs/decisions/0001-clean-start.md` — clean-start decision.
 
@@ -84,7 +84,7 @@ Preparation assets:
 - `docs/persons/acceptance-gate-map.json` — AC-31..AC-45 are UNMAPPED because executable tests do not exist; AC-46..AC-49 link to checked-in policy tests.
 - `docs/persons/consumer-registry.json` — current runtime consumers (none yet) and rules for registering future consumers.
 - `docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md` and `docs/persons/MERGE_CONTRACT_CHECKLIST_FA.md` — policy proposals/checklists requiring approval.
-- `.github/workflows/persons-module-gates.yml` — 12 CI jobs, including Windows restore/build/test, a disposable PostgreSQL 18.6 Linux migration smoke test and redacted evidence enforcement. PostgreSQL-on-Windows validation and an application-owned migration runner remain outstanding.
+- `.github/workflows/persons-module-gates.yml` — 13 CI jobs, including Windows restore/build/test, disposable PostgreSQL 18.6 Linux and Windows integration, and redacted evidence enforcement. Both database jobs invoke the application-owned `tools/MDGsm.DbMigrator`; the Windows job installs a checksum-verified PostgreSQL 18.6-5 server.
 - `scripts/ci/validate_persons_gates.py` — fail-closed static gate checks. Runtime checks report PASS-N/A only when machine checks prove that the related feature is absent.
 - `scripts/ci/write_ci_evidence.py` — produces a commit-bound CI evidence manifest with redaction checks and fails closed if any required gate or test is missing, skipped, or failing.
 - `scripts/Validate-Stage9-Baseline.ps1` — Windows local restore/build/test plus source gates. It validates the Python runtime first and supports `py -3`; it rejects the Microsoft Store execution alias as a missing runtime and reports that condition separately from an actual gate failure.
@@ -93,7 +93,7 @@ Preparation assets:
 
 ### Current validation status
 
-Python static gates and 17 dashboard/policy regression tests run successfully in the preparation environment. The .NET SDK, Windows PowerShell and PostgreSQL are not installed in this execution environment, so no claim is made that the WPF solution has been built/tested here or that the PostgreSQL script ran. Run `scripts/Validate-Stage9-Baseline.ps1` on the Windows development machine. The GitHub workflow provides Windows and disposable PostgreSQL jobs once pushed to a remote repository.
+Python static gates and 17 dashboard/policy regression tests run successfully in the preparation environment. The .NET SDK, Windows PowerShell and PostgreSQL are not installed in this execution environment, so no claim is made that the WPF solution has been built/tested here or that the PostgreSQL script ran. Run `scripts/Validate-Stage9-Baseline.ps1` on the Windows development machine. The GitHub workflow provides Windows restore/build/test, PostgreSQL 18.6 Linux and PostgreSQL 18.6-5 Windows integration, and migration-runner verification. Their results must be read from the current commit's workflow runs before validation flags are changed.
 
 ### Hard stop before G1
 
