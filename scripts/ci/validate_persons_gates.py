@@ -111,7 +111,7 @@ def run_spec(root: Path) -> None:
         "autoMergeAllowed": False,
     }
     if policy != expected_policy:
-        raise GateFailure(f"Temporary data policy does not match the approved v1.1 target values: {policy}")
+        raise GateFailure(f"Temporary data policy does not match the proposed v1.1 target values: {policy}")
     criteria = mapping.get("criteria", [])
     ids = [x.get("id") for x in criteria]
     expected = [f"AC-{i:02d}" for i in range(31, 50)]
@@ -233,7 +233,11 @@ def run_architecture(root: Path) -> None:
             text = p.read_text(encoding="utf-8", errors="replace")
             if re.search(r"MdGsmDbContext|Npgsql|Microsoft\.EntityFrameworkCore|UseNpgsql", text):
                 raise GateFailure(f"Desktop/client source must not directly use database persistence: {p.relative_to(root)}")
-    print("PASS: project dependency direction and API-only client boundary.")
+    target = root / "docs/architecture/modular-target.md"
+    required = [root / "src/Modules/Persons/Contracts/README.md", root / "src/Modules/IdentityAccess/Contracts/README.md"]
+    if not target.exists() or any(not path.exists() for path in required):
+        raise GateFailure("Approved modular target and Persons/IdentityAccess Contracts boundaries are missing.")
+    print("PASS: current shell dependency direction and modular target/Contracts boundaries.")
 
 def run_registry(root: Path) -> None:
     reg = load_json(root / "docs/persons/consumer-registry.json")
@@ -291,14 +295,14 @@ def run_retention(root: Path) -> None:
     print("PASS: temporary-data runtime has its required automated test file.")
 
 def run_merge(root: Path) -> None:
-    found = require_flag_consistency(root, "mergeExecutionImplemented", r"PartyMergeService|MergePartiesAsync|MergePartiesEndpoint|MergedIntoPartyId|party_merge_record", "person merge")
+    found = require_flag_consistency(root, "mergeExecutionImplemented", r"PartyMergeService|MergePartiesAsync|MergePartiesEndpoint|MergedIntoPartyId|party_merge_record", "party merge")
     if not found:
         print("PASS-N/A: merge execution is not implemented; gate remains active and rejects untested merge code.")
         return
     require_test(root, "PersonsMergeContractTests.cs", "Person merge")
     reg = load_json(root / "docs/persons/consumer-registry.json")
     # The registry gate independently enumerates all external references; the merge
-    # gate must not confuse the Persons module's own PersonId with a consumer.
+    # gate must not confuse the Persons module's own PartyId with a consumer.
     run_registry(root)
     print("PASS: merge code has required contract-test file.")
 
