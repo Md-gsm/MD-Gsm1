@@ -1,12 +1,15 @@
 name: MD-Gsm Persons Module Gates
 
 on:
+  # Main commits and every proposed PR are validated; feature branch pushes are covered by PR events.
   push:
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 permissions:
@@ -100,6 +103,7 @@ jobs:
   persons-postgres-migrations:
     name: persons-postgres-migrations
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:18.6-bookworm
@@ -150,6 +154,7 @@ jobs:
   persons-postgres-windows-migrations:
     name: persons-postgres-windows-migrations
     runs-on: windows-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
