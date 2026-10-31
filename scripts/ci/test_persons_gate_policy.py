@@ -29,7 +29,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             manifest["temporaryDataRuntimeImplemented"] = True
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            marker = dst / "src/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
+            marker = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
             marker.write_text("public sealed class TemporaryDataRetentionWorker {}", encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_retention(dst)
@@ -38,7 +38,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
-            marker = dst / "src/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
+            marker = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
             marker.write_text("public sealed class TemporaryDataRetentionWorker {}", encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_retention(dst)
@@ -47,7 +47,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
-            consumer = dst / "src/MDGsm.Application/Reporting/PersonReportQuery.cs"
+            consumer = dst / "src/BuildingBlocks/MDGsm.Application/Reporting/PersonReportQuery.cs"
             consumer.parent.mkdir(parents=True)
             consumer.write_text("public sealed record PersonReportQuery(Guid PartyId);", encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
@@ -71,7 +71,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
-            contract = dst / "src/MDGsm.Application/Contracts/ExternalConsumer.json"
+            contract = dst / "src/BuildingBlocks/MDGsm.Application/Contracts/ExternalConsumer.json"
             contract.write_text('{"PartyId":"example"}', encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_registry(dst)
@@ -136,7 +136,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             manifest["personsApiImplemented"] = True
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            endpoint = dst / "src/MDGsm.Api/Endpoints/Persons/PersonsEndpoints.cs"
+            endpoint = dst / "src/Host/Api/Endpoints/Persons/PersonsEndpoints.cs"
             endpoint.write_text('app.MapGroup("/api/v1/persons");', encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_api(dst)
@@ -189,7 +189,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
-            (dst / "src/MDGsm.Infrastructure/Persistence/DatabaseMigrationRunner.cs").unlink()
+            (dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persistence/DatabaseMigrationRunner.cs").unlink()
             with self.assertRaisesRegex(gates.GateFailure, "DatabaseMigrationRunner"):
                 gates.run_spec(dst)
 

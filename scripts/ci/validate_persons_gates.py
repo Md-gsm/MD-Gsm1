@@ -218,10 +218,10 @@ def run_spec(root: Path) -> None:
     if "Get-Content -LiteralPath $MigrationPath" in disposable_text or "$migrationSql | & $PsqlPath" in disposable_text:
         raise GateFailure("Stage7 integrated test must not apply migrations directly through psql.")
 
-    runner = root / "src/MDGsm.Infrastructure/Persistence/DatabaseMigrationRunner.cs"
+    runner = root / "src/BuildingBlocks/MDGsm.Infrastructure/Persistence/DatabaseMigrationRunner.cs"
     migrator_project = root / "tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj"
     migrator_program = root / "tools/MDGsm.DbMigrator/Program.cs"
-    infrastructure_project = root / "src/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj"
+    infrastructure_project = root / "src/BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj"
     if not runner.exists() or "class DatabaseMigrationRunner" not in runner.read_text(encoding="utf-8"):
         raise GateFailure("Application-owned DatabaseMigrationRunner implementation is missing.")
     if not migrator_project.exists() or not migrator_program.exists():
