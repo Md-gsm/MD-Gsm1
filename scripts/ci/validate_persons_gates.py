@@ -143,7 +143,7 @@ def run_spec(root: Path) -> None:
         raise GateFailure("Manifest claims AC-31..AC-49 are mapped, but one or more criteria are UNMAPPED.")
     if manifest.get("g1Authorized") is True and not all_criteria_implemented:
         raise GateFailure("G1 cannot be authorized while any AC-31..AC-49 criterion is UNMAPPED.")
-    if len(registry.get("ownerPaths", [])) < 4 or "registeredConsumers" not in registry:
+    if "src/Modules/Persons" not in registry.get("ownerPaths", []) or "registeredConsumers" not in registry:
         raise GateFailure("Consumer registry lacks owner paths or registeredConsumers.")
     for consumer in registry.get("registeredConsumers", []):
         for key in ("module", "path", "contractVersion", "mergeProtocolVersion"):
