@@ -34,6 +34,13 @@ Unit test مربوط به سیاست fail-closed، رفتار خود validator �
 
 ## Evidence state (2026-10-31)
 
-The repository has a workflow definition and successful workflow runs, but the exact branch-protection/ruleset configuration has not been independently retrieved through the connected GitHub integration. Treat remote required-check enforcement as UNVERIFIED until the owner supplies the settings/API evidence. The prior negative architecture PR demonstrated a blocked merge state, but it is not a substitute for inspecting the configured ruleset and recording a dedicated current negative-enforcement proof.
+- The remote `main` branch API reports `protected=true`.
+- The rulesets API returned an empty list. The dedicated branch-protection details endpoint returned HTTP 403 (`Resource not accessible by integration`), so the exact required-check names, strict/up-to-date policy, bypass exceptions and review requirements remain unverified.
+- Negative enforcement test: PR #6 deliberately added the forbidden `MDGsm.Domain -> MDGsm.Infrastructure` project reference. The `persons-architecture-boundary` job failed in workflow run `41177718250`; GitHub reported the PR `mergeable_state=blocked`; the PR was closed without merge. This establishes that the negative test was blocked, but does not establish the complete exact Required Status Checks configuration.
+- Consequently, `negativeCiEnforcementTestPassed` may be recorded as true, while `requiredStatusChecksConfiguredInScm` must remain false until a maintainer can inspect and export the actual settings from GitHub.
 
-The Linux PostgreSQL 18.6 job and a separate Windows PostgreSQL 18.6-5 job now execute the application-owned `MDGsm.DbMigrator`. The Windows job verifies the EDB installer using its published SHA-256, creates a marked disposable database, runs the migrator twice, and checks history and idempotence. These checks are configured in this branch; validation prerequisites must remain false until both CI jobs pass on the current commit. The Linux container image remains version-tagged but not digest-pinned.
+## Database migration evidence
+
+The application-owned `tools/MDGsm.DbMigrator` was validated on both Linux and Windows against PostgreSQL 18.6 in workflow run `41181075233` (13/13 jobs passed). The Windows job verified the EDB installer SHA-256, created a marked disposable database, applied one migration on the first run and zero on the second. The Linux job performed the same first-run/second-run idempotence check. See `docs/operations/evidence/postgresql18-migration-validation-2026-10-31.json`.
+
+The Linux service image is now digest-pinned as `postgres:18.6-bookworm@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8`.
