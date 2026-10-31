@@ -6,23 +6,73 @@ namespace MDGsm.Domain.Tests;
 public sealed class ArchitectureBoundaryTests
 {
     [Fact]
-    public void Layer_project_references_follow_the_approved_dependency_direction()
+    public void Building_blocks_follow_the_approved_dependency_direction()
     {
         var root = FindSolutionRoot();
-        AssertReferences(root, "src/MDGsm.Domain/MDGsm.Domain.csproj");
-        AssertReferences(root, "src/MDGsm.Application/MDGsm.Application.csproj", "..\\MDGsm.Domain\\MDGsm.Domain.csproj");
-        AssertReferences(root, "src/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj", "..\\MDGsm.Application\\MDGsm.Application.csproj");
+        AssertReferences(root, "src/BuildingBlocks/MDGsm.Domain/MDGsm.Domain.csproj");
         AssertReferences(
             root,
-            "src/MDGsm.Api/MDGsm.Api.csproj",
-            "..\\MDGsm.Application\\MDGsm.Application.csproj",
-            "..\\MDGsm.Infrastructure\\MDGsm.Infrastructure.csproj",
-            "..\\Modules\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj",
-            "..\\Modules\\IdentityAccess\\Contracts\\MDGsm.IdentityAccess.Contracts.csproj",
-            "..\\Modules\\RepairOperations\\Contracts\\MDGsm.RepairOperations.Contracts.csproj",
-            "..\\Modules\\Finance\\Contracts\\MDGsm.Finance.Contracts.csproj");
-        AssertReferences(root, "src/MDGsm.Client/MDGsm.Client.csproj");
-        AssertReferences(root, "src/MDGsm.Desktop/MDGsm.Desktop.csproj", "..\\MDGsm.Client\\MDGsm.Client.csproj");
+            "src/BuildingBlocks/MDGsm.Application/MDGsm.Application.csproj",
+            "..\\MDGsm.Domain\\MDGsm.Domain.csproj");
+        AssertReferences(
+            root,
+            "src/BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj",
+            "..\\MDGsm.Application\\MDGsm.Application.csproj");
+        AssertReferences(root, "src/BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj");
+    }
+
+    [Fact]
+    public void Host_projects_depend_only_on_building_blocks_and_published_contracts()
+    {
+        var root = FindSolutionRoot();
+        AssertReferences(
+            root,
+            "src/Host/Api/MDGsm.Api.csproj",
+            "..\\..\\BuildingBlocks\\MDGsm.Application\\MDGsm.Application.csproj",
+            "..\\..\\BuildingBlocks\\MDGsm.Infrastructure\\MDGsm.Infrastructure.csproj",
+            "..\\..\\Modules\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj",
+            "..\\..\\Modules\\IdentityAccess\\Contracts\\MDGsm.IdentityAccess.Contracts.csproj",
+            "..\\..\\Modules\\RepairOperations\\Contracts\\MDGsm.RepairOperations.Contracts.csproj",
+            "..\\..\\Modules\\Finance\\Contracts\\MDGsm.Finance.Contracts.csproj");
+        AssertReferences(
+            root,
+            "src/Host/Desktop/MDGsm.Desktop.csproj",
+            "..\\..\\BuildingBlocks\\MDGsm.Client\\MDGsm.Client.csproj");
+    }
+
+    [Fact]
+    public void All_module_contract_projects_are_isolated_and_in_the_solution()
+    {
+        var root = FindSolutionRoot();
+        var solution = File.ReadAllText(Path.Combine(root, "MDGsm.sln"));
+        foreach (var module in new[] { "Persons", "IdentityAccess", "RepairOperations", "Finance" })
+        {
+            var relative = $"src/Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj";
+            var project = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+            Assert.True(File.Exists(project), $"Missing Contracts project: {relative}");
+            Assert.Contains(relative.Replace('/', '\\'), solution);
+
+            var xml = XDocument.Load(project);
+            Assert.Empty(xml.Descendants("ProjectReference"));
+
+            var versionMarker = Path.Combine(Path.GetDirectoryName(project)!, "ModuleContractVersion.cs");
+            Assert.True(File.Exists(versionMarker), $"Missing contract version marker: {versionMarker}");
+            Assert.Contains("Current = \"1.0\"", File.ReadAllText(versionMarker));
+        }
+    }
+
+    [Fact]
+    public void Flat_legacy_project_roots_are_not_left_under_src()
+    {
+        var root = FindSolutionRoot();
+        foreach (var oldName in new[]
+        {
+            "MDGsm.Domain", "MDGsm.Application", "MDGsm.Infrastructure",
+            "MDGsm.Api", "MDGsm.Desktop", "MDGsm.Client"
+        })
+        {
+            Assert.False(Directory.Exists(Path.Combine(root, "src", oldName)), $"Legacy source root remains: {oldName}");
+        }
     }
 
     private static string FindSolutionRoot()
