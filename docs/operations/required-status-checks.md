@@ -2,7 +2,7 @@
 
 Workflow: `.github/workflows/persons-module-gates.yml`
 
-این jobها باید روی repository remote به‌صورت Required Status Checks / ruleset ثبت شوند:
+The following 13 job names are the required check set that must be configured on the remote default branch:
 
 - `foundation-build-test`
 - `persons-spec-lint`
@@ -18,29 +18,34 @@ Workflow: `.github/workflows/persons-module-gates.yml`
 - `persons-ci-enforcement-test`
 - `persons-ci-evidence`
 
-## نکته اجرایی مهم
+## Remote configuration evidence — 2026-10-31
 
-تعریف workflow معادل فعال‌شدن قفل branch نیست. تا زمانی که remote repository مشخص نشده و تنظیمات branch protection/ruleset مشاهده و آزمون نشده‌اند، وضعیت `requiredStatusChecksConfiguredInScm` باید `false` بماند و G1 نباید شروع شود.
+The GitHub branch metadata endpoint for `main` returned:
 
-## آزمون منفی واقعی
+- `protected=true`
+- `protection.enabled=true`
+- `protection.required_status_checks.enforcement_level=non_admins`
+- `protection.required_status_checks.contexts=[]`
+- `protection.required_status_checks.checks=[]`
 
-1. یک branch آزمایشی روی remote بسازید.
-2. تغییری ایجاد کنید که یکی از checkهای اجباری را عمداً FAIL کند.
-3. PR بسازید و نشان دهید سیستم Merge را مسدود می‌کند.
-4. شواهد PR، نام check شکست‌خورده، تنظیم branch protection و نتیجه مسدودشدن Merge را ثبت کنید.
-5. تغییر آزمایشی را بدون دور زدن قفل خاتمه دهید.
+The rulesets endpoint returned an empty array. The dedicated Branch Protection details endpoint returned HTTP 403 (`Resource not accessible by integration`). **The current branch metadata therefore does not list any required status checks.** A protected branch is not enough to close this condition.
 
-Unit test مربوط به سیاست fail-closed، رفتار خود validator را می‌آزماید؛ **جایگزین آزمون branch protection واقعی نیست**.
+Recommended Admin configuration:
+1. Add all 13 check names listed above as required checks.
+2. Require branches to be up to date before merging.
+3. Prevent bypass for administrators and maintainers for these checks, unless a documented emergency exception is explicitly approved by the Project Owner.
+4. Keep required checks attached to the default branch rules, not just workflow YAML.
 
-## Evidence state (2026-10-31)
+The connected GitHub integration currently exposes no Branch Protection/Rulesets write action. It cannot change these settings even though the repository account has Admin permission. A repository Admin must configure them in GitHub Settings and provide an exported/screenshot/API evidence reference. Until this is verified, `requiredStatusChecksConfiguredInScm=false`.
 
-- The remote `main` branch API reports `protected=true`.
-- The rulesets API returned an empty list. The dedicated branch-protection details endpoint returned HTTP 403 (`Resource not accessible by integration`), so the exact required-check names, strict/up-to-date policy, bypass exceptions and review requirements remain unverified.
-- Negative enforcement test: PR #6 deliberately added the forbidden `MDGsm.Domain -> MDGsm.Infrastructure` project reference. The `persons-architecture-boundary` job failed in workflow run `41177718250`; GitHub reported the PR `mergeable_state=blocked`; the PR was closed without merge. This establishes that the negative test was blocked, but does not establish the complete exact Required Status Checks configuration.
-- Consequently, `negativeCiEnforcementTestPassed` may be recorded as true, while `requiredStatusChecksConfiguredInScm` must remain false until a repository Admin can inspect and export the actual settings from GitHub. The connected GitHub integration has no write action for Branch Protection/Rulesets, so this setting cannot be changed from this session.
+## Negative enforcement test
 
-## Database migration evidence
+PR #6 deliberately introduced a forbidden `MDGsm.Domain -> MDGsm.Infrastructure` project reference. The `persons-architecture-boundary` check failed; GitHub reported the PR as blocked and it was closed without merge. This is recorded as evidence that the negative architecture test was exercised. It does not replace the requirement to configure the complete 13-check set on `main`.
 
-The application-owned `tools/MDGsm.DbMigrator` was validated on both Linux and Windows against PostgreSQL 18.6 in workflow run `41181075233` (13/13 jobs passed). The Windows job verified the EDB installer SHA-256, created a marked disposable database, applied one migration on the first run and zero on the second. The Linux job performed the same first-run/second-run idempotence check. See `docs/operations/evidence/postgresql18-migration-validation-2026-10-31.json`.
+CI unit tests exercise the fail-closed validator; they are not a substitute for remote Branch Protection enforcement.
 
-The Linux service image is now digest-pinned as `postgres:18.6-bookworm@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8`.
+## PostgreSQL and application migration runner
+
+The application-owned `tools/MDGsm.DbMigrator` was validated on PostgreSQL 18.6 Linux and Windows in workflow run `41181075233` (13/13 jobs passed). First run applied one migration and second run applied zero migrations in each environment; both used disposable databases. The detailed record is at `docs/operations/evidence/postgresql18-migration-validation-2026-10-31.json`.
+
+The Linux PostgreSQL service image is pinned to `postgres:18.6-bookworm@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8`.
