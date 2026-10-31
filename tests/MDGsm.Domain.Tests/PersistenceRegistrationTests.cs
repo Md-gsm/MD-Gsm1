@@ -25,7 +25,7 @@ public sealed class PersistenceRegistrationTests
     {
         var values = new Dictionary<string, string?>
         {
-            ["ConnectionStrings:MDGsmDatabase"] = "Host=127.0.0.1;Port=5432;Database=mdgsm_stage6_test;Username=mdgsm_test;Password=not-a-real-secret"
+            ["ConnectionStrings:MDGsmDatabase"] = "Host=127.0.0.1;Port=5432;Database=mdgsm_stage6_test;Username=mdgsm_test"
         };
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
         var services = new ServiceCollection();
