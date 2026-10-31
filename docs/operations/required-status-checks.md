@@ -46,6 +46,6 @@ CI unit tests exercise the fail-closed validator; they are not a substitute for 
 
 ## PostgreSQL and application migration runner
 
-The application-owned `tools/MDGsm.DbMigrator` was validated on PostgreSQL 18.6 Linux and Windows in workflow run `41181075233` (13/13 jobs passed). First run applied one migration and second run applied zero migrations in each environment; both used disposable databases. The detailed record is at `docs/operations/evidence/postgresql18-migration-validation-2026-10-31.json`.
+The application-owned `tools/MDGsm.DbMigrator` and PostgreSQL 18.6 Linux/Windows integration were revalidated on the post-relocation PR head in run `41185491539` (13/13 jobs passed). First run applied one migration and second run applied zero migrations in each disposable test database. Earlier detailed migration evidence remains at `docs/operations/evidence/postgresql18-migration-validation-2026-10-31.json`; the complete current-head CI record is `docs/operations/evidence/g0-ci-validation-2026-10-31.json`.
 
 The Linux PostgreSQL service image is pinned to `postgres:18.6-bookworm@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8`.

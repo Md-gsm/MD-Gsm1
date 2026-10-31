@@ -1,15 +1,21 @@
 {
-  "evidenceVersion": "1.3",
+  "evidenceVersion": "1.4",
   "status": "NOT_READY",
   "scmRemoteRepository": "https://github.com/Md-gsm/MD-Gsm1",
-  "branchProtectionEvidence": "GET /branches/main returned protected=true, protection.enabled=true, required_status_checks.enforcement_level=non_admins, contexts=[], checks=[]; GET /rulesets?includes_parents=true returned []; GET /branches/main/protection returned HTTP 403. The branch summary therefore lists no required status checks; detailed protection/bypass settings remain unavailable.",
+  "branchProtectionEvidence": "GET /branches/main: protected=true, protection.enabled=true, required_status_checks.enforcement_level=non_admins, contexts=[], checks=[]; GET /rulesets?includes_parents=true returned []; GET /branches/main/protection returned HTTP 403. No required status checks are currently configured in the branch summary. Exact other bypass/review settings remain unavailable.",
   "negativeEnforcementPullRequest": "https://github.com/Md-gsm/MD-Gsm1/pull/6",
   "policyApprovalReference": "docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md",
   "mergeChecklistApprovalReference": "docs/persons/MERGE_CONTRACT_CHECKLIST_FA.md",
-  "architectureReviewReference": "docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md (review not yet performed)",
+  "architectureReviewReference": "docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md (prepared; review by Group of Software Advisers not yet performed)",
   "securityPrivacyOwner": "Project Owner",
   "securityPrivacyReviewReference": "docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md (Project Owner review not yet recorded)",
   "verifiedBy": "",
   "verifiedAtUtc": "",
-  "note": "NOT_READY is mandatory. The branch summary explicitly lists empty required status check contexts/checks; a repository Admin must configure the 13 required checks and provide evidence. The Group of Software Advisers must independently review the modular architecture on a specific SHA and record its decision. The Project Owner alone must perform and record the security/privacy review. Templates are not approvals. AC-31..AC-45 remain G1 implementation/acceptance work and UNMAPPED. No G1 authorization is implied."
+  "note": "Technical G0 source/architecture/build/CI work has passed on validatedCommit. Formal merge/G1 governance remains NOT_READY: an Admin must configure the 13 required checks and restrict bypass on main; the Group of Software Advisers must independently review the current PR head and record the decision; the Project Owner must record the security/privacy review. AC-31..AC-45 remain intentionally UNMAPPED and belong to G1 implementation/acceptance. g1Authorized stays false.",
+  "validatedCommit": "7bcc423a87b44e19291f4f28d04858e06e74515c",
+  "ciWorkflowRun": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41185491539",
+  "ciResult": "SUCCESS — 13/13 jobs passed on validatedCommit, including foundation build/test, architecture, security, disposable E2E and PostgreSQL 18.6 Linux/Windows migration jobs.",
+  "windowsPreviewInstallerRun": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41185066512",
+  "windowsPreviewInstallerCommit": "de9ffc1aab96e8954abff417a32f51cd6bb3e362",
+  "windowsPreviewInstallerResult": "SUCCESS; the only commits after that installer build and before validatedCommit changed documentation only (docs/PHASE_5_STATUS.md, docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md, docs/operations/required-status-checks.md, docs/persons/g1-entry-evidence.json)."
 }

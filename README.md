@@ -93,11 +93,11 @@ Preparation assets:
 
 ### Current validation status
 
-Python static gates and 17 dashboard/policy regression tests run successfully in the preparation environment. The .NET SDK, Windows PowerShell and PostgreSQL are not installed in this execution environment, so no claim is made that the WPF solution has been built/tested here or that the PostgreSQL script ran. Run `scripts/Validate-Stage9-Baseline.ps1` on the Windows development machine. The GitHub workflow provides Windows restore/build/test, PostgreSQL 18.6 Linux and PostgreSQL 18.6-5 Windows integration, and migration-runner verification. Their results must be read from the current commit's workflow runs before validation flags are changed.
+Latest PR-head validation: commit `7bcc423a87b44e19291f4f28d04858e06e74515c`; GitHub Actions run `41185491539` completed SUCCESS with all 13 jobs passing, including Windows Release build/test, architecture controls, disposable PostgreSQL 18.6 Linux/Windows and migration-runner idempotence. The Windows preview installer build also passed in run `41185066512` on `de9ffc1aab96e8954abff417a32f51cd6bb3e362`; only documentation changed between that commit and the latest validated PR head.
 
 ### Hard stop before G1
 
-`g1Authorized` is `false`. The sole active repository is Md-gsm/MD-Gsm1; no parallel md-gsm repository is part of the project. The Host/BuildingBlocks source relocation and module Contracts boundary projects are now physically present; current-head CI validation remains required. AC-31..AC-45 remain UNMAPPED because their business runtime and executable tests are G1 work. Exact Required Status Checks and bypass settings still require repository Admin evidence; independent architecture review by the Group of Software Advisers remains unrecorded. Policy/checklist acceptance, CI job ownership, and the negative architecture enforcement test are recorded.
+`g1Authorized` is `false`. The sole active repository is Md-gsm/MD-Gsm1; no parallel md-gsm repository is part of the project. The Host/BuildingBlocks source relocation and module Contracts boundary projects are physically present; current-head CI passed in run `41185491539` (13/13). AC-31..AC-45 remain UNMAPPED because their business runtime and executable tests are G1 work. Exact Required Status Checks and bypass settings still require repository Admin evidence; independent architecture review by the Group of Software Advisers remains unrecorded. Policy/checklist acceptance, CI job ownership, and the negative architecture enforcement test are recorded.
 
 No production/real-data database was accessed or changed. The existing Stage9 infrastructure migration was not modified.
 

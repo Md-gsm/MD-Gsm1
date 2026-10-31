@@ -2,38 +2,51 @@
 
 **Repository:** `Md-gsm/MD-Gsm1`  
 **PR:** [#8](https://github.com/Md-gsm/MD-Gsm1/pull/8)  
-**Recorded state:** technical remediation committed; final CI on the latest HEAD and external governance evidence are still required. This record does not declare G0 fully closed and does not authorize G1.
+**Validated source/architecture commit:** `7bcc423a87b44e19291f4f28d04858e06e74515c`  
+**Current-head CI:** [run 41185491539](https://github.com/Md-gsm/MD-Gsm1/actions/runs/41185491539) — SUCCESS, 13/13 jobs.
 
-## Completed in the current PR branch
+## Technical G0 work — complete
 
-1. Relocated the four shared technical projects into `src/BuildingBlocks/*` and the API/Desktop projects into `src/Host/*`; removed the former flat source roots.
-2. Updated `MDGsm.sln`, project references, API composition references, the migration resource path, Desktop/preview/smoke scripts, and Windows preview CI path filters.
-3. Updated the C# architecture tests and Python architecture gate to validate the exact modular project inventory, dependency graph, isolated Contracts projects, and absence of legacy flat roots.
-4. Preserved four compiled, versioned Contracts assemblies for Persons, IdentityAccess, RepairOperations and Finance. They expose version markers only; they do not implement business use cases.
-5. Recorded Project Owner acceptance of the temporary-data policy and merge-design checklist.
-6. Assigned CI job ownership to the Group of Software Advisers, with membership appointed by the Project Owner for each stage. The Project Owner remains accountable for security/privacy.
-7. Retained the negative architecture enforcement evidence: PR #6 deliberately introduced a forbidden Domain-to-Infrastructure reference; the architecture job failed and the PR was blocked/closed without merge.
-8. Retained successful PostgreSQL 18.6 Linux/Windows and application-owned Migration Runner evidence (run 41181075233, 13/13 jobs). The migration runner applies only the infrastructure version-1 migration in a disposable database.
-9. Pinned the Linux PostgreSQL service image to an immutable digest.
+1. Relocated the Domain, Application, Infrastructure and Client projects into `src/BuildingBlocks/*`, and API/Desktop into `src/Host/*`; removed the previous flat project roots.
+2. Updated `MDGsm.sln`, all project references, API composition references, embedded migration resource path, Windows build/preview/smoke scripts, test path assumptions and workflow path filters.
+3. Added and compiled four isolated versioned Contracts projects for Persons, IdentityAccess, RepairOperations and Finance. They contain version markers only; no business API/DTO/runtime implementation is claimed.
+4. Strengthened C# and Python architecture controls to verify exact project inventory, dependency graph, Contracts isolation and absence of old flat roots.
+5. Passed the latest PR workflow on the validated commit: 13/13 jobs succeeded, including foundation Release build/test, all architecture/specification/registry/API/security/retention/merge/enforcement checks, disposable E2E, and PostgreSQL 18.6 Linux and Windows migration validation.
+6. Windows preview installer build passed in run [41185066512](https://github.com/Md-gsm/MD-Gsm1/actions/runs/41185066512) on commit `de9ffc1aab96e8954abff417a32f51cd6bb3e362`. The two commits after that installer run and before the current validated commit changed documentation only; no source, project, installer or script content changed.
+7. Recorded Project Owner acceptance of the temporary-data policy and merge-design checklist.
+8. Assigned CI job ownership to the Group of Software Advisers; membership for each phase is appointed by the Project Owner. Security/privacy accountability remains solely with the Project Owner.
+9. Retained the negative architecture enforcement evidence: PR #6 introduced a forbidden Domain-to-Infrastructure reference; architecture CI failed and GitHub reported the PR blocked; the test branch was closed without merge.
+10. Pinned the Linux PostgreSQL 18.6 service image to an immutable digest.
 
-## Final technical validation still required
+The machine-readable evidence is in `docs/operations/evidence/g0-ci-validation-2026-10-31.json`. The architecture prerequisite is now `true`; G1 authorization remains `false`.
 
-- GitHub Actions must finish green on the current PR HEAD after the physical relocation and all path changes. Earlier 13/13 success on commit `bfe482aff31e50811bfb2293a21c21b2eb11d150` does not validate subsequent relocation commits.
-- The final architecture gate and C# build/tests must pass on the same current commit.
-- The latest CI evidence artifact and manifest should reference that same tested SHA.
+## Governance / merge blockers — still open
 
-## External governance evidence still required
+### 1. Required Status Checks are not configured
 
-- The connected GitHub integration reports `main protected=true`, but the branch-protection details endpoint returned HTTP 403 and the Rulesets endpoint returned an empty list. Exact Required Status Checks, strict/up-to-date and bypass settings are not verified. There is no Branch Protection/Ruleset write action exposed in the connected integration; a repository Admin must inspect/export the actual settings.
-- An independent architecture review by the Group of Software Advisers must be recorded against a specific commit. The group, not an invented individual name, is the review body.
-- Security/privacy accountability belongs to the Project Owner only. The Project Owner's policy acceptance is recorded; a distinct security/privacy review record for the G1 entry package is still required from that owner.
+The current GitHub branch metadata for `main` reports `protected=true`, but also:
+- `required_status_checks.enforcement_level=non_admins`
+- `contexts=[]`
+- `checks=[]`
 
-## Items intentionally not implemented in G0
+The Rulesets endpoint returned an empty list. The detailed protection endpoint is not readable by the connected integration (HTTP 403). Therefore the 13 checks passing in Actions are **not** evidence that they are required by branch protection. A repository Admin must configure all 13 names in `docs/operations/required-status-checks.md`, require up-to-date branches, restrict bypass (including administrators unless an explicit emergency exception is approved), and save/export evidence.
 
-- AC-31..AC-45 remain `UNMAPPED`. The verification plan defines scenarios but no real Persons temporary-data runtime, party merge execution, or executable acceptance tests exist. Creating static/fake tests to mark them implemented would be misleading. Those are G1 implementation/acceptance tasks.
-- No Persons business entity, business API, DbSet, Persons SQL table/migration, finance posting, or real-data access was introduced.
-- `g1Authorized` remains `false`.
+The connected GitHub toolset has no Branch Protection/Rulesets write operation; this setting was not changed by this session.
 
-## Closure decision
+### 2. Independent architecture review is not recorded
 
-G0 can be declared technically complete only after final-head CI is green and the architecture evidence is attached. Formal repository governance and independent review remain outside the capabilities of the connected GitHub integration and cannot be closed by fabricated configuration or approvals. G1 remains unauthorized until all required entry evidence is genuinely recorded.
+The Group of Software Advisers must review the current PR head and the architecture/ADR boundary checklist independently and record the decision and any findings in `docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md`. No name, review or approval has been invented or substituted.
+
+### 3. Project Owner security/privacy review is not recorded
+
+The Project Owner is the sole accountable security/privacy owner. The checklist is prepared, but no review outcome has been entered. Project Owner acceptance of the policy document is not the same as recording the end-to-end security/privacy review for this G1 entry package.
+
+## Items intentionally outside G0
+
+- AC-31..AC-45 remain `UNMAPPED`: these need actual temporary-data lifecycle and Party merge runtime plus executable tests. They are G1 implementation/acceptance work, not defects to hide with placeholder tests.
+- No Persons business entity, business API, DbSet, Persons SQL table/migration, finance posting or real-data access was introduced.
+- The branch contains only G0 preparation and must not authorize or start G1.
+
+## Decision
+
+**Technical G0 implementation and CI validation are complete on the commit above. Formal G0/PR merge and G1 entry remain on HOLD** until the Admin branch-protection configuration and the two genuine human reviews are recorded. `g1Authorized=false` must remain unchanged.
