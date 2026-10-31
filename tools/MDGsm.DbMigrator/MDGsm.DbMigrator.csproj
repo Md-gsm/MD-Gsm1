@@ -4,6 +4,6 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MDGsm.Infrastructure\MDGsm.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\MDGsm.Infrastructure\MDGsm.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
