@@ -260,7 +260,11 @@ def run_architecture(root: Path) -> None:
         "MDGsm.Domain": set(),
         "MDGsm.Application": {"MDGsm.Domain"},
         "MDGsm.Infrastructure": {"MDGsm.Application"},
-        "MDGsm.Api": {"MDGsm.Application", "MDGsm.Infrastructure"},
+        "MDGsm.Api": {
+            "MDGsm.Application", "MDGsm.Infrastructure",
+            "MDGsm.Persons.Contracts", "MDGsm.IdentityAccess.Contracts",
+            "MDGsm.RepairOperations.Contracts", "MDGsm.Finance.Contracts",
+        },
         "MDGsm.Client": set(),
         "MDGsm.Desktop": {"MDGsm.Client"},
     }
