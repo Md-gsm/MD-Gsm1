@@ -216,7 +216,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
             bad = dst / ".github/workflows/persons-module-gates.yml"
             content = bad.read_text(encoding="utf-8")
-            content = content.replace("POSTGRES_HOST_AUTH_METHOD: trust", "POSTGRES_PASSWORD: static_test_password", 1)
+            content = content.replace("POSTGRES_HOST_AUTH_METHOD: trust", "POSTGRES_HOST_AUTH_METHOD: trust\\n          POSTGRES_PASSWORD: static_test_password", 1)
             bad.write_text(content, encoding="utf-8")
             with self.assertRaisesRegex(gates.GateFailure, "must not embed a static PostgreSQL password"):
                 gates.run_spec(dst)
