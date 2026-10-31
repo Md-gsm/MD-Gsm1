@@ -118,23 +118,31 @@ def run_spec(root: Path) -> None:
     if ids != expected:
         raise GateFailure("Acceptance map must contain AC-31..AC-49 exactly once, in order, with no gaps or extras.")
     for item in criteria:
-        for key in ("gate", "testFile", "automatedTest", "status", "expectedBehavior"):
+        for key in ("gate", "status", "expectedBehavior"):
             if not str(item.get(key, "")).strip():
                 raise GateFailure(f"{item.get('id')} is missing field '{key}'.")
-        if item["status"] not in {"MAPPED", "IMPLEMENTED"}:
+        if item["status"] not in {"UNMAPPED", "IMPLEMENTED"}:
             raise GateFailure(f"Unexpected status for {item['id']}: {item['status']}")
         number = int(item["id"].split("-")[1])
         expected_gate = "persons-temporary-data-retention" if number <= 38 else "persons-merge-contract" if number <= 45 else "persons-ci-enforcement-test" if number <= 48 else "persons-ci-evidence"
         if item["gate"] != expected_gate:
             raise GateFailure(f"{item['id']} is mapped to {item['gate']} instead of {expected_gate}.")
+        if item["status"] == "UNMAPPED":
+            if item.get("testFile") is not None or item.get("automatedTest") is not None:
+                raise GateFailure(f"{item['id']} is UNMAPPED but still names a nonexistent test.")
         if item["status"] == "IMPLEMENTED":
+            if not item.get("testFile") or not item.get("automatedTest"):
+                raise GateFailure(f"{item['id']} is IMPLEMENTED without a test file and method.")
             candidates = list(root.rglob(item["testFile"]))
             if not candidates:
                 raise GateFailure(f"{item['id']} claims an implemented test but file '{item['testFile']}' is missing.")
             if not any(item["automatedTest"] in candidate.read_text(encoding="utf-8", errors="replace") for candidate in candidates):
                 raise GateFailure(f"{item['id']} claims an implemented test but method '{item['automatedTest']}' is absent.")
-    if prereqs.get("acceptanceCriteriaAc31ToAc49Mapped") is not True:
-        raise GateFailure("AC-31..AC-49 must be mapped before G1.")
+    all_criteria_implemented = all(item.get("status") == "IMPLEMENTED" for item in criteria)
+    if prereqs.get("acceptanceCriteriaAc31ToAc49Mapped") is True and not all_criteria_implemented:
+        raise GateFailure("Manifest claims AC-31..AC-49 are mapped, but one or more criteria are UNMAPPED.")
+    if manifest.get("g1Authorized") is True and not all_criteria_implemented:
+        raise GateFailure("G1 cannot be authorized while any AC-31..AC-49 criterion is UNMAPPED.")
     if len(registry.get("ownerPaths", [])) < 4 or "registeredConsumers" not in registry:
         raise GateFailure("Consumer registry lacks owner paths or registeredConsumers.")
     for consumer in registry.get("registeredConsumers", []):
@@ -233,7 +241,7 @@ def run_registry(root: Path) -> None:
     owner_paths = [str(x).replace("\\", "/").rstrip("/") for x in reg.get("ownerPaths", [])]
     found = set()
     owner_paths.extend(["database/migrations/persons"])
-    rx = re.compile(r"\bPersonId\b|\bperson_id\b|REFERENCES\s+persons\b", re.IGNORECASE)
+    rx = re.compile(r"\bPartyId\b|\bparty_id\b|REFERENCES\s+parties\b", re.IGNORECASE)
     scanned_extensions = {".cs", ".sql", ".xaml", ".json", ".yml", ".yaml", ".xml", ".props", ".csproj"}
     scan_roots = [root / "src", root / "database" / "migrations"]
     for base in scan_roots:
@@ -253,10 +261,10 @@ def run_registry(root: Path) -> None:
     unknown = found - registered
     stale = registered - found
     if unknown:
-        raise GateFailure(f"Unregistered PersonId consumer(s): {sorted(unknown)}")
+        raise GateFailure(f"Unregistered PartyId consumer(s): {sorted(unknown)}")
     if stale:
         raise GateFailure(f"Registry contains consumer paths not found in source: {sorted(stale)}")
-    print(f"PASS: PersonId consumer registry reconciles. Registered external consumers: {len(registered)}; unknown: 0.")
+    print(f"PASS: PartyId consumer registry reconciles. Registered external consumers: {len(registered)}; unknown: 0.")
 
 def run_api(root: Path) -> None:
     manifest = load_json(root / "docs/persons/persons-module-manifest.json")
@@ -283,7 +291,7 @@ def run_retention(root: Path) -> None:
     print("PASS: temporary-data runtime has its required automated test file.")
 
 def run_merge(root: Path) -> None:
-    found = require_flag_consistency(root, "mergeExecutionImplemented", r"PersonMergeService|MergePersonsAsync|MergePersonsEndpoint|MergedIntoPersonId|person_merge_record", "person merge")
+    found = require_flag_consistency(root, "mergeExecutionImplemented", r"PartyMergeService|MergePartiesAsync|MergePartiesEndpoint|MergedIntoPartyId|party_merge_record", "person merge")
     if not found:
         print("PASS-N/A: merge execution is not implemented; gate remains active and rejects untested merge code.")
         return
