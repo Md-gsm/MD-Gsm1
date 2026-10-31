@@ -50,4 +50,4 @@
 
 `foundation-build-test`, `persons-spec-lint`, `persons-architecture-boundary`, `persons-consumer-registry`, `persons-api-contract`, `persons-temporary-data-retention`, `persons-merge-contract`, `persons-postgres-migrations`, `persons-security-tests`, `persons-e2e-disposable`, `persons-ci-enforcement-test`, `persons-ci-evidence`.
 
-این نام‌ها در Workflow تعریف می‌شوند، ولی Required بودن آن‌ها فقط با تنظیم مخزن remote قابل اثبات است. این محیط به remote repository متصل نیست و ادعای فعال بودن branch protection نمی‌شود.
+این نام‌ها در Workflow تعریف می‌شوند، ولی Required بودن آن‌ها فقط با تنظیم مخزن remote قابل اثبات است. اتصال GitHub موجود است، اما API متصل جزئیات Branch Protection را با 403 رد کرده است؛ بنابراین تنظیمات دقیق و Required بودن checkها هنوز تأیید نشده‌اند.
