@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDGsm.Client", "src\MDGsm.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDGsm.DbMigrator", "tools\MDGsm.DbMigrator\MDGsm.DbMigrator.csproj", "{5E4B7393-A6CB-4A5B-9D6C-1D84C890A008}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDGsm.Persons.Contracts", "src\Modules\Persons\Contracts\MDGsm.Persons.Contracts.csproj", "{5E4B7393-A6CB-4A5B-9D6C-1D84C890A009}"
+EndProject
 Global
  GlobalSection(SolutionConfigurationPlatforms) = preSolution
   Debug|Any CPU = Debug|Any CPU
@@ -56,5 +58,9 @@ Global
   {5E4B7393-A6CB-4A5B-9D6C-1D84C890A008}.Debug|Any CPU.Build.0 = Debug|Any CPU
   {5E4B7393-A6CB-4A5B-9D6C-1D84C890A008}.Release|Any CPU.ActiveCfg = Release|Any CPU
   {5E4B7393-A6CB-4A5B-9D6C-1D84C890A008}.Release|Any CPU.Build.0 = Release|Any CPU
+  {5E4B7393-A6CB-4A5B-9D6C-1D84C890A009}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {5E4B7393-A6CB-4A5B-9D6C-1D84C890A009}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {5E4B7393-A6CB-4A5B-9D6C-1D84C890A009}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {5E4B7393-A6CB-4A5B-9D6C-1D84C890A009}.Release|Any CPU.Build.0 = Release|Any CPU
  EndGlobalSection
 EndGlobal
