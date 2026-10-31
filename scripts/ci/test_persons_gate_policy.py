@@ -210,7 +210,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
         self.assertIn("POSTGRES_HOST_AUTH_METHOD: trust", workflow)
         self.assertNotIn("POSTGRES_PASSWORD:", workflow)
         self.assertNotIn("PGPASSWORD:", workflow)
-        self.assertNotRegex(workflow, r"(?i)Password\\s*=")
+        self.assertNotRegex(workflow, r"(?i)Password\s*=")
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
