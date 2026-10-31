@@ -1,7 +1,7 @@
 {
   "evidenceVersion": "1.1",
   "status": "NOT_READY",
-  "scmRemoteRepository": "",
+  "scmRemoteRepository": "https://github.com/Md-gsm/MD-Gsm1",
   "branchProtectionEvidence": "",
   "negativeEnforcementPullRequest": "https://github.com/Md-gsm/MD-Gsm1/pull/6",
   "policyApprovalReference": "docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md",
