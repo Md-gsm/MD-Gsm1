@@ -1,3 +1,8 @@
 # MD-Gsm Host boundaries
 
-Reserved for composition hosts. The API host owns server-side persistence and credentials; Desktop communicates through versioned API contracts and never connects directly to PostgreSQL. Runtime host topology is not yet migrated from the preparation shell.
+The API and Desktop runtime projects are physically located under this directory:
+
+- `Api/MDGsm.Api.csproj` owns server composition, database access, API endpoints, and server-side secrets.
+- `Desktop/MDGsm.Desktop.csproj` owns the WPF presentation layer and accesses server capabilities through the API/HTTP client.
+
+Shared technical code is in `src/BuildingBlocks/*`. Business modules are isolated under `src/Modules/*`; consumers use their published Contracts assemblies, never another module's private implementation.
