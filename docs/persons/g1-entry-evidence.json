@@ -3,7 +3,7 @@
   "status": "NOT_READY",
   "scmRemoteRepository": "",
   "branchProtectionEvidence": "",
-  "negativeEnforcementPullRequest": "",
+  "negativeEnforcementPullRequest": "https://github.com/Md-gsm/MD-Gsm1/pull/6",
   "policyApprovalReference": "",
   "mergeChecklistApprovalReference": "",
   "verifiedBy": "",
