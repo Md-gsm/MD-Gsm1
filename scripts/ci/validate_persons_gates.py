@@ -291,6 +291,11 @@ def run_architecture(root: Path) -> None:
             if node.tag.endswith("ProjectReference")
         }
         if actual_refs != expected_refs:
+            if "/Contracts/" in relative_path and actual_refs:
+                module_name = relative_path.split("/")[1]
+                raise GateFailure(
+                    f"{module_name} Contracts project must not depend on module internals: {sorted(actual_refs)}"
+                )
             raise GateFailure(
                 f"Project reference boundary violated in {relative_path}: "
                 f"expected {sorted(expected_refs)}, found {sorted(actual_refs)}"

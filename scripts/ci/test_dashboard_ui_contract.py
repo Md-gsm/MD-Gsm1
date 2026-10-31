@@ -8,8 +8,8 @@ import re
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-XAML = (ROOT / "src/MDGsm.Desktop/MainWindow.xaml").read_text(encoding="utf-8")
-CS = (ROOT / "src/MDGsm.Desktop/MainWindow.xaml.cs").read_text(encoding="utf-8")
+XAML = (ROOT / "src/Host/Desktop/MainWindow.xaml").read_text(encoding="utf-8")
+CS = (ROOT / "src/Host/Desktop/MainWindow.xaml.cs").read_text(encoding="utf-8")
 
 
 class DashboardUiContractTests(unittest.TestCase):
@@ -75,7 +75,7 @@ class DashboardUiContractTests(unittest.TestCase):
         for action_id in ('QCK-01', 'QCK-02', 'QCK-03'):
             self.assertIn(f'Tag="{action_id}"', XAML)
         self.assertIn('Title="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل | MD-Gsm v0.2.10 — پیش‌نمایش"', XAML)
-        csproj = (ROOT / "src/MDGsm.Desktop/MDGsm.Desktop.csproj").read_text(encoding="utf-8")
+        csproj = (ROOT / "src/Host/Desktop/MDGsm.Desktop.csproj").read_text(encoding="utf-8")
         installer = (ROOT / "installer/MDGsm-Persons-Preview.iss").read_text(encoding="utf-8")
         build_script = (ROOT / "scripts/Build-Windows-Installer.ps1").read_text(encoding="utf-8")
         self.assertIn('<Version>0.2.10</Version>', csproj)
