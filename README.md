@@ -4,7 +4,7 @@ A new, independently authored foundation for the MD-Gsm accounting application. 
 
 ## Current scope
 
-1. **Architecture baseline:** six-project solution with explicit layer dependency rules and an automated project-reference boundary test.
+1. **Architecture baseline:** preparation shell with explicit layer dependency rules and an automated project-reference boundary test; the approved target is modular and documented in docs/architecture/modular-target.md.
 2. **Configuration and logging:** non-secret API defaults in `appsettings.json`, console logging, and operating guidance for secrets and sensitive log data.
 3. **Security design baseline:** trust boundaries and requirements for future identity, roles, authorization, and transport security.
 4. **API contracts:** typed success envelope, versioned technical route, Problem Details errors, request IDs, and contract tests.
@@ -36,7 +36,9 @@ Run the API with `dotnet run --project .\src\MDGsm.Api\MDGsm.Api.csproj`. The `/
 
 ## Documents
 
-- `docs/architecture/overview.md` — dependency direction and layer boundaries.
+- `docs/architecture/overview.md` — current shell dependency direction.
+- `docs/architecture/modular-target.md` — authoritative modular target topology and module ownership.
+- ADR-0004/0005/0006 — PartyId, shared PostgreSQL transaction, and opaque access-token constraints.
 - `docs/operations/configuration-and-logging.md` — configuration and logging rules.
 - `docs/security/security-model.md` — security design constraints and implementation status.
 - `docs/architecture/api-contracts.md` — success/error contracts, route versioning, and request IDs.
@@ -79,10 +81,10 @@ Preparation assets:
 
 - `docs/persons/G1_PREPARATION_AND_ENTRY_CHECKLIST_FA.md` — G1 entry conditions and remaining external approvals.
 - `docs/persons/persons-module-manifest.json` — machine-readable stage and gate state; `g1Authorized` must remain `false` until evidence is complete.
-- `docs/persons/acceptance-gate-map.json` — AC-31..AC-49 mapped to automated tests.
+- `docs/persons/acceptance-gate-map.json` — AC-31..AC-45 are UNMAPPED because executable tests do not exist; AC-46..AC-49 link to checked-in policy tests.
 - `docs/persons/consumer-registry.json` — current runtime consumers (none yet) and rules for registering future consumers.
 - `docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md` and `docs/persons/MERGE_CONTRACT_CHECKLIST_FA.md` — policy proposals/checklists requiring approval.
-- `.github/workflows/persons-module-gates.yml` — 12 CI jobs, including Windows restore/build/test, PostgreSQL disposable-migration tests and redacted evidence enforcement.
+- `.github/workflows/persons-module-gates.yml` — 12 CI jobs, including Windows restore/build/test, a disposable PostgreSQL 18.6 Linux migration smoke test and redacted evidence enforcement. PostgreSQL-on-Windows validation and an application-owned migration runner remain outstanding.
 - `scripts/ci/validate_persons_gates.py` — fail-closed static gate checks. Runtime checks report PASS-N/A only when machine checks prove that the related feature is absent.
 - `scripts/ci/write_ci_evidence.py` — produces a commit-bound CI evidence manifest with redaction checks and fails closed if any required gate or test is missing, skipped, or failing.
 - `scripts/Validate-Stage9-Baseline.ps1` — Windows local restore/build/test plus source gates. It validates the Python runtime first and supports `py -3`; it rejects the Microsoft Store execution alias as a missing runtime and reports that condition separately from an actual gate failure.
@@ -95,7 +97,7 @@ Python static gates and 17 dashboard/policy regression tests run successfully in
 
 ### Hard stop before G1
 
-`g1Authorized` is `false`. Required Status Checks must still be configured on the actual remote repository, owners assigned, policy/checklist approval recorded, and a negative PR test must prove a failed required check blocks merge. A workflow file alone does not enable branch protection.
+`g1Authorized` is `false`. The sole active repository is Md-gsm/MD-Gsm1; no parallel md-gsm repository is part of the project. The modular target is specified but not yet implemented. AC-31..AC-45 remain UNMAPPED. Required Status Checks must still be configured on the actual remote repository, owners assigned, policy/checklist approval recorded, and a negative PR test must prove a failed required check blocks merge. A workflow file alone does not enable branch protection.
 
 No production/real-data database was accessed or changed. The existing Stage9 infrastructure migration was not modified.
 
