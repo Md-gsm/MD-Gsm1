@@ -1,125 +1,125 @@
 {
-  "mapVersion": "1.0",
+  "mapVersion": "1.1",
   "sourceArchitecture": "MDGsm_Persons_Module_Architecture_Decision_and_Build_Spec_v1.1_FA",
   "criteria": [
     {
       "id": "AC-31",
       "gate": "persons-temporary-data-retention",
-      "testFile": "PersonsTemporaryDataRetentionTests.cs",
-      "automatedTest": "PersonsTemporaryDataRetentionTests.ExpiredRecordCannotBeReadOrEdited",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Expiry blocks access at the exact UTC expiry instant"
     },
     {
       "id": "AC-32",
       "gate": "persons-temporary-data-retention",
-      "testFile": "PersonsTemporaryDataRetentionTests.cs",
-      "automatedTest": "PersonsTemporaryDataRetentionTests.ExpiredPiiPurgedWithinDeadline",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Physical purge removes expired raw temporary PII within the deadline"
     },
     {
       "id": "AC-33",
       "gate": "persons-temporary-data-retention",
-      "testFile": "PersonsTemporaryDataRetentionTests.cs",
-      "automatedTest": "PersonsTemporaryDataRetentionTests.AbsoluteMaximumAgeCannotBeRenewedPastLimit",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "TTL cannot be extended beyond the 30-day absolute maximum"
     },
     {
       "id": "AC-34",
       "gate": "persons-temporary-data-retention",
-      "testFile": "PersonsTemporaryDataRetentionTests.cs",
-      "automatedTest": "PersonsTemporaryDataRetentionTests.SingleAuthorizedRenewalOnly",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Only one authorized renewal with reason is accepted"
     },
     {
       "id": "AC-35",
       "gate": "persons-temporary-data-retention",
-      "testFile": "PersonsTemporaryDataRetentionTests.cs",
-      "automatedTest": "PersonsTemporaryDataRetentionTests.PurgeRetryIsIdempotent",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Cleanup worker is idempotent and retries after transient failure"
     },
     {
       "id": "AC-36",
       "gate": "persons-temporary-data-retention",
-      "testFile": "PersonsTemporaryDataRetentionTests.cs",
-      "automatedTest": "PersonsTemporaryDataRetentionTests.TemporaryDataExcludedFromGlobalSearch",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Temporary data never appears in global people search or generic autocomplete"
     },
     {
       "id": "AC-37",
       "gate": "persons-temporary-data-retention",
-      "testFile": "PersonsTemporaryDataRetentionTests.cs",
-      "automatedTest": "PersonsTemporaryDataRetentionTests.PromotionRequiresExplicitChoiceAndIsIdempotent",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Promotion requires an explicit person choice and duplicate check; promotion is atomic and idempotent"
     },
     {
       "id": "AC-38",
       "gate": "persons-temporary-data-retention",
-      "testFile": "PersonsTemporaryDataRetentionTests.cs",
-      "automatedTest": "PersonsTemporaryDataRetentionTests.RawPiiNeverWrittenToLogsOrArtifacts",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Logs, audit, metrics and CI artifacts do not contain raw temporary PII"
     },
     {
       "id": "AC-39",
       "gate": "persons-merge-contract",
-      "testFile": "PersonsMergeContractTests.cs",
-      "automatedTest": "PersonsMergeContractTests.AllPersonIdConsumersAreRegistered",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "All code-discovered PersonId consumers are registered"
     },
     {
       "id": "AC-40",
       "gate": "persons-merge-contract",
-      "testFile": "PersonsMergeContractTests.cs",
-      "automatedTest": "PersonsMergeContractTests.AllReferencesHaveOneClassification",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Every PersonId reference has exactly one merge classification"
     },
     {
       "id": "AC-41",
       "gate": "persons-merge-contract",
-      "testFile": "PersonsMergeContractTests.cs",
-      "automatedTest": "PersonsMergeContractTests.EveryParticipantContractIsComplete",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Every participant implements versioned Prepare/Validate/Apply/Verify/Recovery contract"
     },
     {
       "id": "AC-42",
       "gate": "persons-merge-contract",
-      "testFile": "PersonsMergeContractTests.cs",
-      "automatedTest": "PersonsMergeContractTests.PreviewIsReadOnlyAndReportsImpact",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Merge preview is read-only and counts active, historical, transferable and blocking references"
     },
     {
       "id": "AC-43",
       "gate": "persons-merge-contract",
-      "testFile": "PersonsMergeContractTests.cs",
-      "automatedTest": "PersonsMergeContractTests.BlockingConflictsPreventMerge",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Unresolved blocking conflicts prevent execution"
     },
     {
       "id": "AC-44",
       "gate": "persons-merge-contract",
-      "testFile": "PersonsMergeContractTests.cs",
-      "automatedTest": "PersonsMergeContractTests.FailureInjectionRollsBackAndReplayIsIdempotent",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Merge is atomic, concurrency-safe and idempotent; failures leave no partial state"
     },
     {
       "id": "AC-45",
       "gate": "persons-merge-contract",
-      "testFile": "PersonsMergeContractTests.cs",
-      "automatedTest": "PersonsMergeContractTests.HistoricalSnapshotsRemainStableAndReferencesReconcile",
-      "status": "MAPPED",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
       "expectedBehavior": "Historical snapshots stay unchanged and active references reconcile exactly"
     },
     {
@@ -154,5 +154,6 @@
       "status": "IMPLEMENTED",
       "expectedBehavior": "CI evidence contains commit, contract versions, schema fingerprint, gate/test counts, and no raw PII."
     }
-  ]
+  ],
+  "note": "UNMAPPED means no executable test currently exists. Only IMPLEMENTED entries are backed by a checked-in test method. G1 remains blocked while any required criterion is UNMAPPED."
 }
