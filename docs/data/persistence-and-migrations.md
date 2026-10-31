@@ -3,11 +3,11 @@
 ## Current implementation
 
 - PostgreSQL provider: Npgsql for EF Core 10.
-- Context: `MDGsm.Infrastructure.Persistence.MdGsmDbContext`.
+- Context: `MDGsm.Infrastructure.Persistence.MdGsmDbContext` in `src/BuildingBlocks/MDGsm.Infrastructure`.
 - Registration: `AddMdGsmPersistence` reads `ConnectionStrings:MDGsmDatabase`.
 - No connection string means no `DbContext` is registered; the API may run for non-database endpoints.
 - `/health/ready` is dependency-aware; `/health/live` is not.
-- The application-owned CLI is `tools/MDGsm.DbMigrator`; its runner is implemented in Infrastructure and loads SQL migrations as embedded resources.
+- The application-owned CLI is `tools/MDGsm.DbMigrator`; its runner is implemented in `src/BuildingBlocks/MDGsm.Infrastructure` and loads SQL migrations as embedded resources.
 - The runner uses a PostgreSQL advisory transaction lock, a migration history table with SHA-256 checksums, checksum/name drift detection, and a PostgreSQL transaction for the migration batch.
 - By default, the runner refuses to operate unless the target database comment contains `MDGSM_DISPOSABLE_TEST_DB`. An explicitly approved deployment invocation may opt out using `--allow-unmarked-database`; credentials are read only from `ConnectionStrings__MDGsmDatabase` in the process environment.
 - The API never applies migrations on startup. Migration execution is explicit.

@@ -1,4 +1,4 @@
-# Required Status Checks — MD-Gsm Persons G1
+# Required Status Checks — MD-Gsm G0/G1 control
 
 Workflow: `.github/workflows/persons-module-gates.yml`
 
@@ -37,7 +37,7 @@ Unit test مربوط به سیاست fail-closed، رفتار خود validator �
 - The remote `main` branch API reports `protected=true`.
 - The rulesets API returned an empty list. The dedicated branch-protection details endpoint returned HTTP 403 (`Resource not accessible by integration`), so the exact required-check names, strict/up-to-date policy, bypass exceptions and review requirements remain unverified.
 - Negative enforcement test: PR #6 deliberately added the forbidden `MDGsm.Domain -> MDGsm.Infrastructure` project reference. The `persons-architecture-boundary` job failed in workflow run `41177718250`; GitHub reported the PR `mergeable_state=blocked`; the PR was closed without merge. This establishes that the negative test was blocked, but does not establish the complete exact Required Status Checks configuration.
-- Consequently, `negativeCiEnforcementTestPassed` may be recorded as true, while `requiredStatusChecksConfiguredInScm` must remain false until a maintainer can inspect and export the actual settings from GitHub.
+- Consequently, `negativeCiEnforcementTestPassed` may be recorded as true, while `requiredStatusChecksConfiguredInScm` must remain false until a repository Admin can inspect and export the actual settings from GitHub. The connected GitHub integration has no write action for Branch Protection/Rulesets, so this setting cannot be changed from this session.
 
 ## Database migration evidence
 

@@ -4,7 +4,7 @@ A new, independently authored foundation for the MD-Gsm accounting application. 
 
 ## Current scope
 
-1. **Architecture baseline:** preparation shell with explicit layer dependency rules and an automated project-reference boundary test; the approved target is modular and documented in docs/architecture/modular-target.md.
+1. **Architecture baseline:** physically separated Host and BuildingBlocks projects, four isolated versioned module Contracts projects, and automated project-inventory/dependency-boundary tests; the target topology is documented in docs/architecture/modular-target.md.
 2. **Configuration and logging:** non-secret API defaults in `appsettings.json`, console logging, and operating guidance for secrets and sensitive log data.
 3. **Security design baseline:** trust boundaries and requirements for future identity, roles, authorization, and transport security.
 4. **API contracts:** typed success envelope, versioned technical route, Problem Details errors, request IDs, and contract tests.
@@ -32,7 +32,7 @@ dotnet build .\MDGsm.sln --no-restore
 dotnet test .\MDGsm.sln --no-build
 ```
 
-Run the API with `dotnet run --project .\src\MDGsm.Api\MDGsm.Api.csproj`. The `/health/live` endpoint means process liveness only.
+Run the API with `dotnet run --project .\src\Host\Api\MDGsm.Api.csproj`. The `/health/live` endpoint means process liveness only.
 
 ## Documents
 
@@ -83,7 +83,7 @@ Preparation assets:
 - `docs/persons/persons-module-manifest.json` — machine-readable stage and gate state; `g1Authorized` must remain `false` until evidence is complete.
 - `docs/persons/acceptance-gate-map.json` — AC-31..AC-45 are UNMAPPED because executable tests do not exist; AC-46..AC-49 link to checked-in policy tests.
 - `docs/persons/consumer-registry.json` — current runtime consumers (none yet) and rules for registering future consumers.
-- `docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md` and `docs/persons/MERGE_CONTRACT_CHECKLIST_FA.md` — policy proposals/checklists requiring approval.
+- `docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md` and `docs/persons/MERGE_CONTRACT_CHECKLIST_FA.md` — accepted policy and design checklist; business runtime and executable acceptance tests are still pending.
 - `.github/workflows/persons-module-gates.yml` — 13 CI jobs, including Windows restore/build/test, disposable PostgreSQL 18.6 Linux and Windows integration, and redacted evidence enforcement. Both database jobs invoke the application-owned `tools/MDGsm.DbMigrator`; the Windows job installs a checksum-verified PostgreSQL 18.6-5 server.
 - `scripts/ci/validate_persons_gates.py` — fail-closed static gate checks. Runtime checks report PASS-N/A only when machine checks prove that the related feature is absent.
 - `scripts/ci/write_ci_evidence.py` — produces a commit-bound CI evidence manifest with redaction checks and fails closed if any required gate or test is missing, skipped, or failing.
@@ -97,7 +97,7 @@ Python static gates and 17 dashboard/policy regression tests run successfully in
 
 ### Hard stop before G1
 
-`g1Authorized` is `false`. The sole active repository is Md-gsm/MD-Gsm1; no parallel md-gsm repository is part of the project. The modular target is specified but not yet implemented. AC-31..AC-45 remain UNMAPPED. Required Status Checks must still be configured on the actual remote repository, owners assigned, policy/checklist approval recorded, and a negative PR test must prove a failed required check blocks merge. A workflow file alone does not enable branch protection.
+`g1Authorized` is `false`. The sole active repository is Md-gsm/MD-Gsm1; no parallel md-gsm repository is part of the project. The Host/BuildingBlocks source relocation and module Contracts boundary projects are now physically present; current-head CI validation remains required. AC-31..AC-45 remain UNMAPPED because their business runtime and executable tests are G1 work. Exact Required Status Checks and bypass settings still require repository Admin evidence; independent architecture review by the Group of Software Advisers remains unrecorded. Policy/checklist acceptance, CI job ownership, and the negative architecture enforcement test are recorded.
 
 No production/real-data database was accessed or changed. The existing Stage9 infrastructure migration was not modified.
 

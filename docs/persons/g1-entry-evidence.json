@@ -1,12 +1,15 @@
 {
-  "evidenceVersion": "1.1",
+  "evidenceVersion": "1.2",
   "status": "NOT_READY",
   "scmRemoteRepository": "https://github.com/Md-gsm/MD-Gsm1",
-  "branchProtectionEvidence": "main protected=true; branch protection details API 403; rulesets API returned [] (2026-10-31). Exact Required Status Checks remain unverified.",
+  "branchProtectionEvidence": "main protected=true; branch protection details API returned HTTP 403; repository rulesets API returned []; exact Required Status Checks, strict/up-to-date and bypass settings remain unverified (2026-10-31).",
   "negativeEnforcementPullRequest": "https://github.com/Md-gsm/MD-Gsm1/pull/6",
   "policyApprovalReference": "docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md",
   "mergeChecklistApprovalReference": "docs/persons/MERGE_CONTRACT_CHECKLIST_FA.md",
+  "architectureReviewReference": "",
+  "securityPrivacyOwner": "Project Owner",
+  "securityPrivacyReviewReference": "",
   "verifiedBy": "",
   "verifiedAtUtc": "",
-  "note": "NOT_READY remains mandatory because independent architecture and security/privacy review by the Group of Software Advisers is not yet recorded, and exact remote Required Status Checks/bypass settings remain unverified. Project Owner acceptance of temporary-data policy and merge checklist is referenced above. PR #6 and workflow run 41177718250 provide negative architecture-enforcement evidence. No G1 authorization is implied."
+  "note": "NOT_READY is mandatory until the Group of Software Advisers records an independent architecture review against a specific commit, the Project Owner records the security/privacy review for which they are the accountable owner, and a repository Admin verifies/exports exact remote Required Status Checks and bypass settings. The accepted temporary-data policy and merge checklist are already referenced above. PR #6 and workflow run 41177718250 record the negative architecture-enforcement test. CI green status, policy unit tests or a protected=true branch flag alone do not replace these approvals or SCM evidence. No G1 authorization is implied."
 }

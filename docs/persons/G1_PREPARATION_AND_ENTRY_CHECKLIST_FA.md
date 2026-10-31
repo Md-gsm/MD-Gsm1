@@ -1,56 +1,68 @@
 # آماده‌سازی G1 — ماژول اشخاص MD-Gsm
 
-**وضعیت فعلی:** آماده‌سازی سورس؛ G1 هنوز مجاز نشده است.
-**مخزن مرجع یگانه:** `Md-gsm/MD-Gsm1`؛ مخزن موازی `md-gsm` دیگر وجود ندارد و مرجع فعال پروژه نیست.
-**وضعیت معماری:** چهار پروژه مستقل Contracts در `src/Modules/*/Contracts` ایجاد، به `MDGsm.sln` اضافه و از API composition project ارجاع داده شده‌اند؛ اما انتقال فیزیکی Host/BuildingBlocks به مسیرهای نهایی هنوز انجام نشده و business moduleها پیاده‌سازی نشده‌اند.
+**وضعیت فعلی:** آماده‌سازی فنی G0 در حال تکمیل اعتبارسنجی نهایی است؛ G1 هنوز مجاز نشده است.  
+**مخزن مرجع یگانه:** `Md-gsm/MD-Gsm1`؛ مخزن موازی `md-gsm` وجود ندارد و مرجع فعال پروژه نیست.  
+**وضعیت معماری:** پروژه‌های Host و BuildingBlocks به مسیرهای نهایی منتقل شده‌اند؛ چهار اسمبلی Contracts نیز مستقل و در Solution ثبت شده‌اند. این کار به معنی پیاده‌سازی business moduleها نیست.  
 **مرحله 10:** صریحاً خارج از دامنه است.
 
-## آنچه در این بسته انجام شده است
+## کارهای فنی انجام‌شده در بسته G0
 
-- سورس Stage9 از بایگانی مجاز وارد یک مخزن Git جدید شده؛ تاریخچه یا metadata مخزن دیگری وارد نشده است.
-- مسیرهای مالکیت آینده برای Domain، Application، Infrastructure، API و Tests ایجاد شده‌اند؛ فایل‌های README صرفاً مرزبندی هستند و هیچ رفتار/جدول اشخاصی پیاده‌سازی نمی‌کنند.
-- مرجع مالکیت داده‌ها با هویت مرکزی، تماس، نشانی، رابطه هویتی، تشخیص تکراری، پروتکل ادغام و staging موقت تکمیل شده است.
-- Manifest ماژول، Registry مصرف‌کنندگان و نگاشت AC-31 تا AC-49 اضافه شده‌اند.
-- Workflowهای CI برای Build/Test ویندوزی، کنترل‌های ایستای معماری، آزمون‌های PostgreSQL آزمایشی و سیاست‌های ماژول تعریف شده‌اند.
-- اسکریپت API smoke test سخت‌گیرانه‌تر شده است: فقط loopback، دریافت امن رمز، و بازگردانی متغیرهای محیطی.
+- مرجع مخزن فقط `Md-gsm/MD-Gsm1` است؛ تاریخچه یا metadata مخزن موازی وارد پروژه نشده است.
+- پروژه‌های Domain، Application، Infrastructure و Client در `src/BuildingBlocks/*` قرار دارند.
+- پروژه‌های API و Desktop در `src/Host/Api` و `src/Host/Desktop` قرار دارند.
+- Solution، ProjectReferenceها، تست‌های معماری، اسکریپت‌های build/preview/smoke و path filterهای Windows workflow با مسیرهای جدید هماهنگ شده‌اند.
+- چهار Contracts project برای Persons، IdentityAccess، RepairOperations و Finance در `src/Modules/*/Contracts` ساخته، نسخه‌گذاری و به Solution و API composition متصل شده‌اند. این اسمبلی‌ها فقط version marker دارند و حاوی business DTO یا رفتار نیستند.
+- تست معماری موجودی دقیق projectها، جهت dependencyها، جداسازی Contracts و حذف ریشه‌های تخت قدیمی را کنترل می‌کند.
+- سیاست داده موقت و چک‌لیست قرارداد ادغام توسط مالک پروژه پذیرفته شده‌اند؛ مسئولیت امنیت/حریم خصوصی نیز با مالک پروژه است.
+- مالکیت jobهای CI به «گروه مشاور نرم‌افزار» واگذار شده و اعضای هر مرحله را مالک پروژه تعیین می‌کند.
+- آزمون منفی معماری در PR #6 عمداً وابستگی ممنوع ایجاد کرد؛ check معماری شکست خورد و PR در وضعیت blocked باقی ماند و بدون merge بسته شد.
+- Migration Runner متعلق به برنامه با PostgreSQL 18.6 در Linux و Windows آزمایش شده است. گزارش ثبت‌شده: `docs/operations/evidence/postgresql18-migration-validation-2026-10-31.json`.
+- Docker image لینوکس PostgreSQL با digest ثابت pin شده است.
 
-## شروط قفل‌شده قبل از G1
+## وضعیت موانع و شروط G0/G1
 
 | شرط | وضعیت فعلی | شواهد / باقی‌مانده |
 |---|---|---|
-| تصویب سیاست داده موقت | بسته در سطح سیاست | پذیرش مالک پروژه در سند `TEMPORARY_DATA_RETENTION_POLICY_FA.md` ثبت شده؛ پیاده‌سازی Runtime و تست AC-31..38 باقی است |
-| تصویب چک‌لیست قرارداد ادغام | بسته در سطح معیار طراحی | پذیرش مالک پروژه در سند `MERGE_CONTRACT_CHECKLIST_FA.md` ثبت شده؛ اجرای واقعی ادغام و تست AC-39..45 باقی است |
-| Required Status Checks در SCM | باز / تأییدنشده | `main protected=true`، اما جزئیات protection با 403 و Rulesets API با فهرست خالی پاسخ داده؛ exact Required Checks و bypass باید از GitHub Settings اثبات شود |
-| آزمون منفی قفل CI | آزمون منفی انجام شد | PR #6؛ `persons-architecture-boundary` شکست خورد و PR `mergeable_state=blocked` گزارش شد؛ run `41177718250` |
-| مالکیت CI jobها | بسته | گروه مشاور نرم‌افزار مسئول همهٔ jobهاست؛ اعضای هر مرحله را مالک پروژه اعلام می‌کند؛ مسئول امنیت/حریم خصوصی خود مالک پروژه است |
-| AC-31..AC-45 | سناریوها برنامه‌ریزی شده، تست اجرایی ندارند | شناسه‌های سناریو در `AC31-45-VERIFICATION-PLAN.md` ثبت شده‌اند؛ status رسمی باید UNMAPPED بماند تا فایل و متد تست واقعی ایجاد و در CI اجرا شود |
-| PostgreSQL 18 Linux/Windows و Application Migration Runner | بسته و اعتبارسنجی‌شده روی commit آزمایش‌شده | run `41181075233` با ۱۳/۱۳ job موفق؛ گزارش `postgresql18-migration-validation-2026-10-31.json` |
-| PostgreSQL image digest | بسته | Linux service با digest ثابت در workflow pin شده است |
-| انتقال کامل Host/BuildingBlocks | باز | پروژه‌های فعلی هنوز زیر `src/MDGsm.*` هستند؛ باید به مرزهای فیزیکی نهایی منتقل و با build/test تأیید شوند |
-| Build/Test ویندوزی | موفق روی commit آزمایش‌شده | اجرای کامل foundation build/test در run `41181075233`؛ commit فعلی PR نیز نیازمند CI سبز روی HEAD جاری است |
+| ساختار فیزیکی Host/BuildingBlocks | پیاده‌سازی شد | ۶ پروژه فنی به مسیرهای نهایی منتقل شده‌اند؛ Solution، مراجع پروژه، تست‌ها و اسکریپت‌ها هماهنگ شده‌اند. CI روی HEAD جدید باید موفق شود. |
+| مرز وابستگی و Contracts | پیاده‌سازی شد؛ CI نهایی لازم است | Architecture gate و تست C# موجودی دقیق projectها، dependency graph، Contracts isolation و نبود مسیرهای flat قدیمی را کنترل می‌کنند. |
+| تصویب سیاست داده موقت | بسته در سطح سیاست | پذیرش مالک پروژه در `TEMPORARY_DATA_RETENTION_POLICY_FA.md` ثبت شده؛ Runtime و تست‌های عملیاتی AC-31..38 مربوط به G1 هستند. |
+| تصویب چک‌لیست قرارداد ادغام | بسته در سطح معیار طراحی | پذیرش مالک پروژه در `MERGE_CONTRACT_CHECKLIST_FA.md` ثبت شده؛ اجرای واقعی ادغام و تست‌های AC-39..45 مربوط به G1 هستند. |
+| مالکیت CI jobها | بسته | گروه مشاور نرم‌افزار مسئول jobهاست؛ اعضای هر مرحله را مالک پروژه اعلام می‌کند. مسئول امنیت/حریم خصوصی شخص مالک پروژه است. |
+| آزمون منفی کنترل معماری | انجام‌شده | PR #6؛ `persons-architecture-boundary` شکست خورد و PR به دلیل check شکست‌خورده blocked ماند؛ run `41177718250`. |
+| PostgreSQL 18 Linux/Windows و Application Migration Runner | اعتبارسنجی‌شده روی commit آزمایش‌شده | run `41181075233` با ۱۳/۱۳ job موفق؛ گزارش `postgresql18-migration-validation-2026-10-31.json`. پس از relocation باید روی HEAD جدید نیز دوباره تأیید شود. |
+| PostgreSQL image digest | بسته | Linux service در workflow با digest ثابت pin شده است. |
+| Required Status Checks واقعی در SCM | باز / نیازمند دسترسی Admin | API شاخه `main` مقدار `protected=true` می‌دهد؛ endpoint جزئیات protection با 403 رد می‌شود و Rulesets API فهرست خالی برمی‌گرداند. Required check names، strict/up-to-date و bypass exception را نمی‌توان از این شواهد استنتاج کرد. |
+| بازبینی مستقل معماری | باز | گروه مشاور نرم‌افزار باید topology و ADRها را روی commit مشخص بازبینی و نتیجه را در مخزن ثبت کند. نام یا امضای اشخاصی جعل نشده است. |
+| بررسی امنیت/حریم خصوصی | مالکیت مشخص؛ ثبت نهایی بررسی لازم است | مسئولیت این حوزه با مالک پروژه است، نه گروه مشاور نرم‌افزار. پذیرش سیاست داده موقت در سند ثبت شده؛ بررسی نهایی امنیتی برای بسته G1 باید جداگانه و با مرجع commit مشخص ثبت شود. |
+| AC-31..AC-45 | برنامه آزمون آماده؛ تست اجرایی وجود ندارد | سناریوها در `AC31-45-VERIFICATION-PLAN.md` شناسه‌گذاری شده‌اند؛ status در acceptance map باید `UNMAPPED` بماند تا رفتار واقعی پیاده‌سازی و تست شود. |
 
-**G1 نباید شروع شود** تا شروط بالا با شواهد قابل ردیابی بسته شوند. PostgreSQL 18 Linux/Windows و migration runner روی commit آزمایش‌شده اعتبارسنجی شده‌اند و فیلدهای متناظر در Manifest `true` هستند. module Contracts اکنون اسمبلی‌های جداگانه دارند و API به آن‌ها ارجاع می‌دهد. با این حال انتقال کامل Host/BuildingBlocks، تست‌های اجرایی AC-31..45، بررسی مستقل معماری/امنیت و اثبات تنظیم دقیق Required Status Checks باقی مانده‌اند. سایر تأییدهای خارجی/سازمانی با CI جایگزین نمی‌شوند.
+## تفکیک بسته‌شدن G0 از مجوز G1
 
-## ترتیب ساخت پیشنهادی پس از بسته‌شدن شروط
+بسته‌شدن فنی G0 به انتقال ساختار، هم‌ترازی Solution و scripts/tests، موفقیت CI روی HEAD نهایی، و تکمیل مستندات نیاز دارد. Required Status Checks واقعی و بازبینی مستقل معماری، شواهد سازمانی‌اند و نباید با سبزشدن CI جعل یا جایگزین شوند.
 
-1. G1: قراردادهای مفهومی، API و مالکیت؛ بدون migration عملیاتی.
-2. بازبینی و تصویب بسته طراحی داده و قرارداد API.
-3. G2: طرحواره نو و migrationهای نسخه‌دار روی PostgreSQL disposable.
-4. سپس پیاده‌سازی مرحله‌ای Use Case، endpoint و آزمون‌ها طبق دروازه‌های G3 تا G7 سند معماری.
+موارد AC-31..AC-45 و Runtime اشخاص/ادغام، دامنه پیاده‌سازی و پذیرش G1 هستند؛ آن‌ها عمداً در این بسته به تست ساختگی تبدیل نمی‌شوند. بنابراین `acceptanceCriteriaAc31ToAc49Mapped=false` باقی می‌ماند و هیچ تغییر این سند مجوز شروع G1 نیست.
 
-## ساختار افزوده‌شده (صرفاً مرزبندی)
+**`g1Authorized=false` باید باقی بماند** تا شرایط رسمی ورود G1 با شواهد مستقل و تنظیمات SCM تأیید شوند.
 
-- `src/MDGsm.Domain/Persons/`
-- `src/MDGsm.Application/Persons/`
-- `src/MDGsm.Infrastructure/Persons/`
-- `src/MDGsm.Api/Endpoints/Persons/`
-- `tests/MDGsm.Domain.Tests/Persons/`
+## ساختار فیزیکی فعلی
+
+- `src/BuildingBlocks/MDGsm.Domain/`
+- `src/BuildingBlocks/MDGsm.Application/`
+- `src/BuildingBlocks/MDGsm.Infrastructure/`
+- `src/BuildingBlocks/MDGsm.Client/`
+- `src/Host/Api/`
+- `src/Host/Desktop/`
+- `src/Modules/Persons/{Domain,Application,Infrastructure,Contracts}/`
+- `src/Modules/IdentityAccess/{Domain,Application,Infrastructure,Contracts}/`
+- `src/Modules/RepairOperations/Contracts/`
+- `src/Modules/Finance/Contracts/`
+- `tests/MDGsm.Domain.Tests/`
 - `docs/persons/`
 
-هیچ entity، endpoint، DbSet، جدول اشخاص، migration اشخاص یا عملیات مالی به کد اضافه نشده است.
+هیچ Persons business entity، endpoint، DbSet، جدول اشخاص، migration اشخاص یا عملیات مالی به کد اضافه نشده است.
 
 ## کنترل‌های CI پیشنهادی برای Required Status Checks
 
 `foundation-build-test`, `persons-spec-lint`, `persons-architecture-boundary`, `persons-consumer-registry`, `persons-api-contract`, `persons-temporary-data-retention`, `persons-merge-contract`, `persons-postgres-migrations`, `persons-postgres-windows-migrations`, `persons-security-tests`, `persons-e2e-disposable`, `persons-ci-enforcement-test`, `persons-ci-evidence`.
 
-این نام‌ها در Workflow تعریف می‌شوند، ولی Required بودن آن‌ها فقط با تنظیم مخزن remote قابل اثبات است. اتصال GitHub موجود است، اما API متصل جزئیات Branch Protection را با 403 رد کرده است؛ بنابراین تنظیمات دقیق و Required بودن checkها هنوز تأیید نشده‌اند.
+این نام‌ها در Workflow تعریف شده‌اند، ولی Required بودن آن‌ها فقط با دسترسی Admin به تنظیمات remote و مشاهده/ثبت Ruleset یا Branch Protection قابل اثبات است. تا آن زمان `requiredStatusChecksConfiguredInScm=false` باقی می‌ماند.
