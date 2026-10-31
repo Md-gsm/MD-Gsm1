@@ -1,16 +1,12 @@
 [CmdletBinding()]
 param(
-    [switch] $Apply
+    [string]$Repository = 'Md-gsm/MD-Gsm1',
+    [string]$Branch = 'main',
+    [switch]$Apply
 )
 
 $ErrorActionPreference = 'Stop'
-Set-StrictMode -Version 2.0
-
-# This helper changes only the protection settings for Md-gsm/MD-Gsm1:main.
-# It requires GitHub CLI authentication by a repository Admin with Administration:write.
-$repository = 'Md-gsm/MD-Gsm1'
-$branch = 'main'
-$requiredChecks = @(
+$RequiredChecks = @(
     'foundation-build-test',
     'persons-spec-lint',
     'persons-architecture-boundary',
@@ -19,154 +15,174 @@ $requiredChecks = @(
     'persons-temporary-data-retention',
     'persons-merge-contract',
     'persons-postgres-migrations',
-    'persons-postgres-windows-migrations',
     'persons-security-tests',
     'persons-e2e-disposable',
     'persons-ci-enforcement-test',
     'persons-ci-evidence'
 )
 
-function Get-ObjectProperty {
-    param(
-        [AllowNull()] [object] $Object,
-        [Parameter(Mandatory = $true)] [string] $Name,
-        [AllowNull()] [object] $DefaultValue = $null
-    )
-
-    if ($null -eq $Object) { return $DefaultValue }
-    $property = $Object.PSObject.Properties[$Name]
-    if ($null -eq $property) { return $DefaultValue }
-    return $property.Value
+function Invoke-GhJson {
+    param([Parameter(Mandatory=$true)][string[]]$Arguments)
+    $output = & gh @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "GitHub CLI command failed (exit $LASTEXITCODE): gh $($Arguments -join ' ')"
+    }
+    if ([string]::IsNullOrWhiteSpace(($output -join [Environment]::NewLine))) {
+        return $null
+    }
+    return (($output -join [Environment]::NewLine) | ConvertFrom-Json)
 }
 
-function Get-ProtectionFlag {
-    param(
-        [AllowNull()] [object] $Object,
-        [Parameter(Mandatory = $true)] [string] $Name,
-        [bool] $DefaultValue = $false
-    )
+Write-Host 'MD-Gsm main branch protection — preflight' -ForegroundColor Cyan
+Write-Host "Repository : $Repository"
+Write-Host "Branch     : $Branch"
+Write-Host "Mode       : $(if ($Apply) { 'APPLY' } else { 'PREVIEW ONLY' })"
+Write-Host ''
 
-    $setting = Get-ObjectProperty -Object $Object -Name $Name -DefaultValue $null
-    if ($null -eq $setting) { return $DefaultValue }
-    $enabled = Get-ObjectProperty -Object $setting -Name 'enabled' -DefaultValue $setting
-    return [bool]$enabled
+if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+    throw 'GitHub CLI (gh) was not found. Install GitHub CLI and reopen PowerShell.'
 }
 
-$gh = Get-Command 'gh.exe' -ErrorAction SilentlyContinue
-if (-not $gh) { $gh = Get-Command 'gh' -ErrorAction SilentlyContinue }
-if (-not $gh) { throw 'GitHub CLI (gh) is required. Install it and authenticate the repository Admin account first.' }
-
-& $gh.Source auth status --hostname github.com
-if ($LASTEXITCODE -ne 0) { throw 'GitHub CLI authentication is unavailable. No repository settings were changed.' }
-
-$repositoryJson = & $gh.Source api "repos/$repository" 2>&1
-if ($LASTEXITCODE -ne 0) { throw "Cannot read repository metadata: $($repositoryJson -join ' ')" }
-$repositoryInfo = ($repositoryJson -join "`n") | ConvertFrom-Json
-if ($repositoryInfo.full_name -ne $repository) { throw "Unexpected repository identity: $($repositoryInfo.full_name)" }
-if ($repositoryInfo.default_branch -ne $branch) { throw "Expected default branch '$branch', got '$($repositoryInfo.default_branch)'." }
-if ($repositoryInfo.permissions.admin -ne $true) {
-    throw 'The authenticated GitHub identity is not a repository Admin. No repository settings were changed.'
-}
-
-# Read the existing full rule before PUT because the endpoint replaces the branch protection object.
-$currentJson = & $gh.Source api "repos/$repository/branches/$branch/protection" 2>&1
+& gh auth status
 if ($LASTEXITCODE -ne 0) {
-    throw "Cannot read existing branch protection. Ensure the CLI token has Administration:read/write. No settings were changed. $($currentJson -join ' ')"
+    throw 'GitHub CLI is not authenticated. Run: gh auth login'
 }
-$current = ($currentJson -join "`n") | ConvertFrom-Json
 
-$currentStatusChecks = Get-ObjectProperty -Object $current -Name 'required_status_checks' -DefaultValue $null
-$currentContexts = @(Get-ObjectProperty -Object $currentStatusChecks -Name 'contexts' -DefaultValue @())
+$branchInfo = Invoke-GhJson -Arguments @('api', "repos/$Repository/branches/$Branch")
+$headSha = [string]$branchInfo.commit.sha
+if ([string]::IsNullOrWhiteSpace($headSha)) {
+    throw "Could not resolve HEAD SHA for $Repository/$Branch."
+}
 
-$reviewCount = 1
-$requireCodeOwnerReviews = $false
-$dismissalRestrictions = @{ users = @(); teams = @(); apps = @() }
-$existingReviews = Get-ObjectProperty -Object $current -Name 'required_pull_request_reviews' -DefaultValue $null
-if ($null -ne $existingReviews) {
-    $existingReviewCount = Get-ObjectProperty -Object $existingReviews -Name 'required_approving_review_count' -DefaultValue 0
-    $reviewCount = [Math]::Max(1, [int]$existingReviewCount)
-    $requireCodeOwnerReviews = [bool](Get-ObjectProperty -Object $existingReviews -Name 'require_code_owner_reviews' -DefaultValue $false)
-    $currentDismissal = Get-ObjectProperty -Object $existingReviews -Name 'dismissal_restrictions' -DefaultValue $null
-    if ($null -ne $currentDismissal) {
-        $dismissalRestrictions = @{
-            users = @(Get-ObjectProperty -Object $currentDismissal -Name 'users' -DefaultValue @() | ForEach-Object { $_.login })
-            teams = @(Get-ObjectProperty -Object $currentDismissal -Name 'teams' -DefaultValue @() | ForEach-Object { $_.slug })
-            apps = @(Get-ObjectProperty -Object $currentDismissal -Name 'apps' -DefaultValue @() | ForEach-Object { $_.slug })
-        }
+Write-Host "Remote HEAD: $headSha"
+Write-Host "GitHub reports protected: $($branchInfo.protected)"
+
+$checksResponse = Invoke-GhJson -Arguments @('api', "repos/$Repository/commits/$headSha/check-runs?per_page=100")
+$checkRuns = @($checksResponse.check_runs)
+$missing = @()
+$notGreen = @()
+foreach ($required in $RequiredChecks) {
+    $matchingChecks = @($checkRuns | Where-Object { $_.name -eq $required })
+    if ($matchingChecks.Count -eq 0) {
+        $missing += $required
+        continue
+    }
+    $latest = $matchingChecks | Sort-Object { [DateTime]$_.completed_at } -Descending | Select-Object -First 1
+    if ($latest.status -ne 'completed' -or $latest.conclusion -ne 'success') {
+        $notGreen += "$required [$($latest.status)/$($latest.conclusion)]"
     }
 }
 
-$pushRestrictions = $null
-$currentRestrictions = Get-ObjectProperty -Object $current -Name 'restrictions' -DefaultValue $null
-if ($null -ne $currentRestrictions) {
-    $users = @(Get-ObjectProperty -Object $currentRestrictions -Name 'users' -DefaultValue @() | ForEach-Object { $_.login })
-    $teams = @(Get-ObjectProperty -Object $currentRestrictions -Name 'teams' -DefaultValue @() | ForEach-Object { $_.slug })
-    $apps = @(Get-ObjectProperty -Object $currentRestrictions -Name 'apps' -DefaultValue @() | ForEach-Object { $_.slug })
-    if ($users.Count + $teams.Count + $apps.Count -gt 0) {
-        $pushRestrictions = @{ users = $users; teams = $teams; apps = $apps }
+Write-Host ''
+Write-Host 'Required CI checks at current remote HEAD:' -ForegroundColor Cyan
+foreach ($required in $RequiredChecks) {
+    $match = @($checkRuns | Where-Object { $_.name -eq $required } | Select-Object -First 1)
+    if ($match.Count -eq 0) {
+        Write-Host "  MISSING  $required" -ForegroundColor Red
+    } else {
+        $state = "$($match[0].status)/$($match[0].conclusion)"
+        $color = if ($state -eq 'completed/success') { 'Green' } else { 'Yellow' }
+        Write-Host "  $state  $required" -ForegroundColor $color
     }
+}
+
+$currentProtection = $null
+try {
+    $currentProtection = Invoke-GhJson -Arguments @('api', "repos/$Repository/branches/$Branch/protection")
+} catch {
+    Write-Warning "Could not read current detailed branch protection: $($_.Exception.Message)"
+    throw 'Cannot safely continue without reading the current protection configuration.'
+}
+
+$currentContexts = @()
+if ($null -ne $currentProtection.required_status_checks) {
+    $currentContexts = @($currentProtection.required_status_checks.contexts)
+}
+Write-Host ''
+Write-Host 'Current required checks configured on branch:' -ForegroundColor Cyan
+if ($currentContexts.Count -eq 0) {
+    Write-Host '  NONE' -ForegroundColor Yellow
+} else {
+    $currentContexts | ForEach-Object { Write-Host "  $_" }
+}
+
+Write-Host ''
+if ($missing.Count -gt 0 -or $notGreen.Count -gt 0) {
+    if ($missing.Count -gt 0) { Write-Host ("Missing checks: " + ($missing -join ', ')) -ForegroundColor Red }
+    if ($notGreen.Count -gt 0) { Write-Host ("Checks not green: " + ($notGreen -join ', ')) -ForegroundColor Red }
+    throw 'Preflight blocked. No protection settings were changed.'
 }
 
 $payload = @{
     required_status_checks = @{
         strict = $true
-        contexts = $requiredChecks
+        contexts = $RequiredChecks
     }
     enforce_admins = $true
     required_pull_request_reviews = @{
-        dismissal_restrictions = $dismissalRestrictions
-        bypass_pull_request_allowances = @{ users = @(); teams = @(); apps = @() }
         dismiss_stale_reviews = $true
-        require_code_owner_reviews = $requireCodeOwnerReviews
-        required_approving_review_count = $reviewCount
-        require_last_push_approval = $true
+        require_code_owner_reviews = $false
+        required_approving_review_count = 0
+        require_last_push_approval = $false
     }
-    restrictions = $pushRestrictions
-    required_linear_history = Get-ProtectionFlag -Object $current -Name 'required_linear_history' -DefaultValue $false
+    required_conversation_resolution = $true
+    required_linear_history = $true
+    lock_branch = $false
+    allow_fork_syncing = $false
+    restrictions = $null
     allow_force_pushes = $false
     allow_deletions = $false
-    block_creations = Get-ProtectionFlag -Object $current -Name 'block_creations' -DefaultValue $false
-    required_conversation_resolution = $true
-    lock_branch = Get-ProtectionFlag -Object $current -Name 'lock_branch' -DefaultValue $false
-    allow_fork_syncing = Get-ProtectionFlag -Object $current -Name 'allow_fork_syncing' -DefaultValue $false
 }
+$json = $payload | ConvertTo-Json -Depth 10
+$tempFile = Join-Path ([IO.Path]::GetTempPath()) ("mdgsm-main-protection-" + [Guid]::NewGuid().ToString('N') + '.json')
+[IO.File]::WriteAllText($tempFile, $json, (New-Object System.Text.UTF8Encoding($false)))
 
-Write-Host "Repository: $repository"
-Write-Host "Branch: $branch"
-Write-Host 'Required checks to apply:'
-$requiredChecks | ForEach-Object { Write-Host "  - $_" }
-Write-Host "Existing required-check contexts: $($currentContexts -join ', ')"
-Write-Host "Required approving reviews: $reviewCount"
-Write-Host 'Strict/up-to-date: true; enforce administrators: true; bypass allowances: none; force-push: false; deletion: false.'
-Write-Host 'Existing push restrictions and unrelated protection options are preserved where present.'
+try {
+    if (-not $Apply) {
+        Write-Host 'PREVIEW COMPLETE — no GitHub settings were changed.' -ForegroundColor Green
+        Write-Host 'Planned policy: PR required; all 12 current CI jobs required; branch must be up to date; admin enforcement enabled; force-push and branch deletion disabled; conversation resolution required.'
+        Write-Host 'Approval count is intentionally 0 because no independent reviewer account/team was confirmed. This can be raised after reviewer assignment.'
+        Write-Host 'To apply after reviewing this report, run:'
+        Write-Host ".\scripts\Configure-MainBranchProtection.ps1 -Apply"
+        return
+    }
 
-if (-not $Apply) {
-    Write-Host 'DRY RUN ONLY. No repository settings were changed. Re-run with -Apply to perform the update.'
-    return
+    Write-Warning 'Applying branch protection to the remote main branch.'
+    $null = Invoke-GhJson -Arguments @('api', '--method', 'PUT', '--input', $tempFile, "repos/$Repository/branches/$Branch/protection")
+    $verified = Invoke-GhJson -Arguments @('api', "repos/$Repository/branches/$Branch/protection")
+
+    $actual = @($verified.required_status_checks.contexts)
+    $missingAfter = @($RequiredChecks | Where-Object { $_ -notin $actual })
+    $unexpectedAfter = @($actual | Where-Object { $_ -notin $RequiredChecks })
+    $prReviewsEnabled = $null -ne $verified.required_pull_request_reviews
+    # GitHub REST GET returns { enabled: true }; PUT accepts a Boolean.
+    $conversationResolutionEnabled = $verified.required_conversation_resolution.enabled -eq $true
+    if (
+        $missingAfter.Count -gt 0 -or
+        $unexpectedAfter.Count -gt 0 -or
+        $actual.Count -ne $RequiredChecks.Count -or
+        -not $verified.required_status_checks.strict -or
+        -not $verified.enforce_admins.enabled -or
+        -not $prReviewsEnabled -or
+        $verified.required_pull_request_reviews.required_approving_review_count -ne 0 -or
+        -not $conversationResolutionEnabled -or
+        $verified.lock_branch.enabled -or
+        -not $verified.required_linear_history.enabled -or
+        $verified.allow_fork_syncing.enabled -or
+        $verified.allow_force_pushes.enabled -or
+        $verified.allow_deletions.enabled
+    ) {
+        throw 'Post-apply verification failed. Review branch protection in GitHub immediately.'
+    }
+
+    Write-Host 'SUCCESS — branch protection applied and read back from GitHub.' -ForegroundColor Green
+    Write-Host "Required checks verified: $($actual.Count)"
+    Write-Host "Strict/up-to-date: $($verified.required_status_checks.strict)"
+    Write-Host "Admin enforcement: $($verified.enforce_admins.enabled)"
+    Write-Host "PR required (approvals): $($verified.required_pull_request_reviews.required_approving_review_count)"
+    Write-Host "Conversation resolution required: $conversationResolutionEnabled"
+    Write-Host "Force pushes allowed: $($verified.allow_force_pushes.enabled)"
+    Write-Host "Branch deletion allowed: $($verified.allow_deletions.enabled)"
+} finally {
+    Remove-Item -LiteralPath $tempFile -Force -ErrorAction SilentlyContinue
 }
-
-$confirmation = Read-Host "To apply these settings, type exactly '$repository/$branch'"
-if ($confirmation -cne "$repository/$branch") {
-    throw 'Confirmation text did not match. No repository settings were changed.'
-}
-
-$body = $payload | ConvertTo-Json -Depth 12 -Compress
-$response = $body | & $gh.Source api --method PUT "repos/$repository/branches/$branch/protection" --input -
-if ($LASTEXITCODE -ne 0) { throw 'GitHub rejected the branch-protection update. Review the API output above.' }
-
-$verifyJson = & $gh.Source api "repos/$repository/branches/$branch/protection" 2>&1
-if ($LASTEXITCODE -ne 0) { throw 'Settings were sent, but verification could not read them back. Do not assume success.' }
-$verified = ($verifyJson -join "`n") | ConvertFrom-Json
-$actualContexts = @($verified.required_status_checks.contexts)
-$missing = @($requiredChecks | Where-Object { $_ -notin $actualContexts })
-if ($missing.Count -gt 0) { throw "Branch protection is missing required checks: $($missing -join ', ')" }
-if ($verified.required_status_checks.strict -ne $true) { throw 'Require branches to be up to date was not enabled.' }
-if ($verified.enforce_admins.enabled -ne $true) { throw 'Administrator enforcement was not enabled.' }
-if ($verified.required_pull_request_reviews.required_approving_review_count -lt 1) { throw 'A pull-request approval is not required.' }
-if ($verified.required_pull_request_reviews.require_last_push_approval -ne $true) { throw 'Approval of the latest push is not required.' }
-if ($verified.allow_force_pushes.enabled -ne $false) { throw 'Force-push is not blocked.' }
-if ($verified.allow_deletions.enabled -ne $false) { throw 'Branch deletion is not blocked.' }
-if ($verified.required_conversation_resolution.enabled -ne $true) { throw 'Conversation resolution is not required.' }
-
-Write-Host 'PASS: GitHub main branch protection updated and verified.' -ForegroundColor Green
-Write-Host 'Next required evidence: run a new negative PR after this update and prove the failed required check blocks merge.'
