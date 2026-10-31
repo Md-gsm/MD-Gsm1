@@ -121,22 +121,43 @@ jobs:
       PGUSER: postgres
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Create uniquely named disposable database and apply Stage9 infrastructure migration
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore application migrator
+        run: dotnet restore .\tools\MDGsm.DbMigrator\MDGsm.DbMigrator.csproj
+      - name: Create marked disposable database (psql is used only for database bootstrap)
         shell: bash
         run: |
           set -euo pipefail
           db="mdgsm_ci_disposable_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           [[ "$db" =~ ^mdgsm_ci_disposable_[0-9]+_[0-9]+$ ]]
           psql -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$db\";"
-          psql -d postgres -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE \"$db\" IS 'MDGSM_DISPOSABLE_TEST_DB; created by GitHub CI workflow';"
-          psql -d "$db" -v ON_ERROR_STOP=1 -f database/migrations/0001_infrastructure_schema_version.sql
-          psql -d "$db" -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN IF (SELECT count(*) FROM mdgsm_schema_version WHERE version=1 AND migration_name='0001_infrastructure_schema_version') <> 1 THEN RAISE EXCEPTION 'migration verification failed'; END IF; END \$\$;"
-          # Replay demonstrates migration idempotence on a disposable database only.
-          psql -d "$db" -v ON_ERROR_STOP=1 -f database/migrations/0001_infrastructure_schema_version.sql
-          count="$(psql -d "$db" -tA -v ON_ERROR_STOP=1 -c 'SELECT count(*) FROM mdgsm_schema_version;')"
-          test "$count" = '1'
-          sha256sum database/migrations/0001_infrastructure_schema_version.sql
-          echo "PASS: only current Stage9 infrastructure migration tested in $db; no Persons business schema exists yet."
+          psql -d postgres -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE \"$db\" IS 'MDGSM_DISPOSABLE_TEST_DB; created by Linux PostgreSQL CI';"
+          echo "MDGSM_TEST_DB=$db" >> "$GITHUB_ENV"
+          echo "ConnectionStrings__MDGsmDatabase=Host=127.0.0.1;Port=5432;Database=$db;Username=postgres;Password=mdgsm_ci_only_password;Timeout=15;Command Timeout=120" >> "$GITHUB_ENV"
+      - name: Apply migrations through the application-owned runner and verify idempotence
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet run --project tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj --configuration Release --no-restore
+          dotnet run --project tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj --configuration Release --no-build
+          history="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;")"
+          test "$history" = '1|1'
+          schema_version="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(version)::text FROM mdgsm_schema_version;")"
+          test "$schema_version" = '1|1'
+          echo "PASS: application migration runner applied and recorded the current migration exactly once."
+  persons-postgres-windows-migrations:
+    name: persons-postgres-windows-migrations
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 10.0.x
+      - name: Install verified PostgreSQL 18.6-5 and test application-owned migrations on Windows
+        shell: pwsh
+        run: .\scripts\Invoke-PostgreSQL18WindowsMigrationTest.ps1
 
   persons-security-tests:
     name: persons-security-tests
@@ -183,6 +204,7 @@ jobs:
       - persons-temporary-data-retention
       - persons-merge-contract
       - persons-postgres-migrations
+      - persons-postgres-windows-migrations
       - persons-security-tests
       - persons-e2e-disposable
       - persons-ci-enforcement-test
