@@ -28,8 +28,9 @@
     "jobOwnersAssigned": false,
     "acceptanceCriteriaAc31ToAc49Mapped": false,
     "architectureAligned": false,
-    "windowsPostgres18Validated": false,
-    "applicationMigrationRunnerValidated": false
+    "windowsPostgres18Validated": true,
+    "applicationMigrationRunnerValidated": true
   },
-  "note": "G0 preparation only. The application-owned SQL migration runner and PostgreSQL 18 Windows CI integration are implemented/configured, but their validation prerequisites remain false until the new jobs pass on the current commit. G1 remains blocked: runtime modular architecture, AC-31..AC-45 mapping, policy approvals, SCM protection evidence and independent review remain outstanding. Do not set g1Authorized=true."
+  "note": "G0 preparation only. The application-owned migration runner and PostgreSQL 18 Linux/Windows integration were validated successfully by CI against commit bfe482aff31e50811bfb2293a21c21b2eb11d150; see validationEvidenceReference. G1 remains blocked: runtime modular architecture, AC-31..AC-45 mapping, policy approvals, exact SCM protection evidence and independent review remain outstanding. Do not set g1Authorized=true.",
+  "validationEvidenceReference": "docs/operations/evidence/postgresql18-migration-validation-2026-10-31.json"
 }
