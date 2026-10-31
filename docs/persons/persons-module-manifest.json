@@ -21,7 +21,7 @@
     "autoMergeAllowed": false
   },
   "g1Prerequisites": {
-    "temporaryDataPolicyApproved": false,
+    "temporaryDataPolicyApproved": true,
     "mergeChecklistApproved": false,
     "requiredStatusChecksConfiguredInScm": false,
     "negativeCiEnforcementTestPassed": true,
