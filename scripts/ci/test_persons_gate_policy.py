@@ -204,6 +204,26 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(gates.GateFailure, "immutable PostgreSQL 18.6 Bookworm digest"):
                 gates.run_spec(dst)
 
+    def test_windows_postgres_credentials_use_a_protected_option_file(self):
+        script_path = ROOT / "scripts/Invoke-PostgreSQL18WindowsMigrationTest.ps1"
+        script = script_path.read_text(encoding="utf-8")
+        self.assertIn("'--mode', 'unattended'", script)
+        self.assertIn("'--optionfile'", script)
+        self.assertIn("SetAccessRuleProtection", script)
+        self.assertIn("superpassword=$databasePassword", script)
+        self.assertIn("servicepassword=$servicePassword", script)
+        self.assertNotIn("'--superpassword'", script)
+        self.assertNotIn("'--servicepassword'", script)
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            bad = dst / "scripts/Invoke-PostgreSQL18WindowsMigrationTest.ps1"
+            content = bad.read_text(encoding="utf-8")
+            content = content.replace("'--optionfile', $optionFilePath", "'--superpassword', $databasePassword, '--optionfile', $optionFilePath", 1)
+            bad.write_text(content, encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "credentials must not be passed as process command-line"):
+                gates.run_spec(dst)
+
     def test_public_ci_workflow_does_not_embed_a_static_postgres_password(self):
         workflow_path = ROOT / ".github/workflows/persons-module-gates.yml"
         workflow = workflow_path.read_text(encoding="utf-8")

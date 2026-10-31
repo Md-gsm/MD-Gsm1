@@ -74,7 +74,7 @@ try {
     [System.IO.File]::WriteAllLines($optionFilePath, $installerOptions, [System.Text.Encoding]::ASCII)
 
     Write-Host 'Installing the verified PostgreSQL 18 server and command-line tools using a protected option file...'
-    $installerProcess = Start-Process -FilePath $installerPath -ArgumentList @('--optionfile', $optionFilePath) -Wait -PassThru -NoNewWindow
+    $installerProcess = Start-Process -FilePath $installerPath -ArgumentList @('--mode', 'unattended', '--unattendedmodeui', 'none', '--optionfile', $optionFilePath) -Wait -PassThru -NoNewWindow
     if (Test-Path -LiteralPath $optionFilePath) {
         Remove-Item -LiteralPath $optionFilePath -Force
     }

@@ -251,6 +251,12 @@ def run_spec(root: Path) -> None:
         raise GateFailure("Windows PostgreSQL job must verify the official PostgreSQL 18.6-5 installer SHA-256.")
     if "MDGSM_DISPOSABLE_TEST_DB" not in windows_text or "newlyApplied=0" not in windows_text:
         raise GateFailure("Windows PostgreSQL job must use a marked disposable database and verify migrator idempotence.")
+    if "'--mode', 'unattended'" not in windows_text or "'--optionfile'" not in windows_text:
+        raise GateFailure("Windows PostgreSQL installer must explicitly run unattended and read its protected option file.")
+    if "'--superpassword'" in windows_text or "'--servicepassword'" in windows_text:
+        raise GateFailure("Windows PostgreSQL installer credentials must not be passed as process command-line arguments.")
+    if "SetAccessRuleProtection" not in windows_text or "superpassword=$databasePassword" not in windows_text or "servicepassword=$servicePassword" not in windows_text:
+        raise GateFailure("Windows PostgreSQL installer option file must be restricted to the runner identity and contain separate per-run credentials.")
     if manifest.get("windowsPostgres18CiIntegrationConfigured") is not True:
         raise GateFailure("Manifest must declare PostgreSQL 18 Windows integration configuration.")
 
