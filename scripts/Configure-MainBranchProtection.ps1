@@ -62,12 +62,12 @@ $checkRuns = @($checksResponse.check_runs)
 $missing = @()
 $notGreen = @()
 foreach ($required in $RequiredChecks) {
-    $matches = @($checkRuns | Where-Object { $_.name -eq $required })
-    if ($matches.Count -eq 0) {
+    $matchingChecks = @($checkRuns | Where-Object { $_.name -eq $required })
+    if ($matchingChecks.Count -eq 0) {
         $missing += $required
         continue
     }
-    $latest = $matches | Sort-Object { [DateTime]$_.completed_at } -Descending | Select-Object -First 1
+    $latest = $matchingChecks | Sort-Object { [DateTime]$_.completed_at } -Descending | Select-Object -First 1
     if ($latest.status -ne 'completed' -or $latest.conclusion -ne 'success') {
         $notGreen += "$required [$($latest.status)/$($latest.conclusion)]"
     }
