@@ -40,7 +40,20 @@
 **استثناها / اقدام‌ها:** ثبت نشده  
 **تاریخ UTC:** ثبت نشده
 
-## C. قاعدهٔ شواهد
+## C. پیش‌بررسی ایستای سورس (کمکی، نه تأیید نهایی مالک پروژه)
+
+در بازبینی مقدماتی فایل‌های تنظیمات، workflowها، migrator و smoke scriptها این موارد بررسی شده‌اند:
+
+- فایل‌های `appsettings.json` در Hostهای API/Desktop فاقد connection string یا credential هستند؛ API و migrator مقدار اتصال را از process environment دریافت می‌کنند.
+- smoke testهای محلی رمز مدیر PostgreSQL را با `Read-Host -AsSecureString` می‌گیرند و فقط برای اجرای همان فرایند در environment قرار می‌دهند.
+- آزمون PostgreSQL روی Windows رمز تصادفی per-run تولید می‌کند و آن را در پایان restore/پاک می‌کند.
+- مقدار ثابت قبلی `mdgsm_ci_only_password` در workflow عمومی Linux CI حذف شده است؛ سرویس disposable داخل شبکه محدود runner از `POSTGRES_HOST_AUTH_METHOD=trust` استفاده می‌کند و connection string بدون password ساخته می‌شود.
+- validator و unit test جدید از بازگشت password ثابت یا connection string دارای `Password=` در workflow جلوگیری می‌کنند.
+- Authentication/session/token runtime هنوز پیاده‌سازی نشده است؛ بنابراین ADR-0006 الزام طراحی است، نه گواهی امنیت runtime.
+
+این پیش‌بررسی ماشینی/فنی جایگزین بازبینی رسمی مالک پروژه نیست و نباید به‌عنوان نتیجه یا امضای مالک پروژه ثبت شود.
+
+## D. قاعدهٔ شواهد
 
 پرکردن این سند فقط بعد از انجام واقعی بازبینی مجاز است. CI سبز، پذیرش قبلی یک سیاست، یا وجود این template به‌تنهایی به معنی انجام بازبینی نهایی نیست. پس از تکمیل دو بازبینی، ارجاع این سند و SHA دقیق در `docs/persons/g1-entry-evidence.json` ثبت می‌شود.
 

@@ -108,8 +108,9 @@ jobs:
       postgres:
         image: postgres:18.6-bookworm@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8
         env:
+          # Runner-local disposable service only; avoid committing a reusable/static credential.
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: mdgsm_ci_only_password
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
@@ -119,7 +120,6 @@ jobs:
           --health-timeout 5s
           --health-retries 15
     env:
-      PGPASSWORD: mdgsm_ci_only_password
       PGHOST: 127.0.0.1
       PGPORT: '5432'
       PGUSER: postgres
@@ -139,7 +139,7 @@ jobs:
           psql -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$db\";"
           psql -d postgres -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE \"$db\" IS 'MDGSM_DISPOSABLE_TEST_DB; created by Linux PostgreSQL CI';"
           echo "MDGSM_TEST_DB=$db" >> "$GITHUB_ENV"
-          echo "ConnectionStrings__MDGsmDatabase=Host=127.0.0.1;Port=5432;Database=$db;Username=postgres;Password=mdgsm_ci_only_password;Timeout=15;Command Timeout=120" >> "$GITHUB_ENV"
+          echo "ConnectionStrings__MDGsmDatabase=Host=127.0.0.1;Port=5432;Database=$db;Username=postgres;Timeout=15;Command Timeout=120" >> "$GITHUB_ENV"
       - name: Apply migrations through the application-owned runner and verify idempotence
         shell: bash
         run: |

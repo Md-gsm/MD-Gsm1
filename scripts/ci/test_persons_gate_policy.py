@@ -204,6 +204,23 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(gates.GateFailure, "immutable PostgreSQL 18.6 Bookworm digest"):
                 gates.run_spec(dst)
 
+    def test_public_ci_workflow_does_not_embed_a_static_postgres_password(self):
+        workflow_path = ROOT / ".github/workflows/persons-module-gates.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        self.assertIn("POSTGRES_HOST_AUTH_METHOD: trust", workflow)
+        self.assertNotIn("POSTGRES_PASSWORD:", workflow)
+        self.assertNotIn("PGPASSWORD:", workflow)
+        self.assertNotRegex(workflow, r"(?i)Password\\s*=")
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            bad = dst / ".github/workflows/persons-module-gates.yml"
+            content = bad.read_text(encoding="utf-8")
+            content = content.replace("POSTGRES_HOST_AUTH_METHOD: trust", "POSTGRES_PASSWORD: static_test_password", 1)
+            bad.write_text(content, encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "must not embed a static PostgreSQL password"):
+                gates.run_spec(dst)
+
     def test_workflow_actions_are_sha_pinned_and_runs_are_serialized(self):
         workflow = (ROOT / ".github/workflows/persons-module-gates.yml").read_text(encoding="utf-8")
         action_lines = [line.strip().split("uses:", 1)[1].strip() for line in workflow.splitlines() if "uses:" in line]

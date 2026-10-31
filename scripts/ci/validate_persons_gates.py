@@ -188,6 +188,10 @@ def run_spec(root: Path) -> None:
         raise GateFailure(f"GitHub Actions must be pinned to full commit SHAs: {unpinned}")
     if "concurrency:" not in wf or "cancel-in-progress: true" not in wf:
         raise GateFailure("Required workflow must serialize/cancel superseded runs with concurrency.")
+    if "POSTGRES_HOST_AUTH_METHOD: trust" not in wf:
+        raise GateFailure("Linux PostgreSQL service must use isolated runner-local trust authentication, not a repository-stored password.")
+    if re.search(r"(?im)^\s*(?:POSTGRES_PASSWORD|PGPASSWORD)\s*:", wf) or re.search(r"(?i)Password\s*=", wf):
+        raise GateFailure("The public CI workflow must not embed a static PostgreSQL password or password-bearing connection string.")
     if "image: postgres:18.6-bookworm@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8" not in wf:
         raise GateFailure("PostgreSQL integration smoke test must use the approved immutable PostgreSQL 18.6 Bookworm digest.")
     # Do not allow PR/push path filters that could silently omit required checks.
