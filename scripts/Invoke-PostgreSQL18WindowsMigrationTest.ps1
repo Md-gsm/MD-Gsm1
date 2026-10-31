@@ -17,10 +17,12 @@ $runAttempt = if ($env:GITHUB_RUN_ATTEMPT -match '^[0-9]+$') { $env:GITHUB_RUN_A
 $databaseName = "mdgsm_ci_disposable_{0}_{1}" -f $runId, $runAttempt
 if ($databaseName -notmatch '^mdgsm_ci_disposable_[0-9]+_[0-9]+$') { throw 'Disposable database name guard failed.' }
 
-# Unique credential for this isolated hosted-runner instance. The EDB unattended installer
-# accepts the superuser/service passwords as installer arguments; this random value is
-# never committed or written to logs, and the hosted runner VM is discarded after the job.
-$password = 'MdGsmCi' + [Guid]::NewGuid().ToString('N')
+# Independent credentials for this isolated hosted-runner instance.
+# The EDB installer receives them through a temporary ACL-restricted option file,
+# not command-line arguments. The file is deleted immediately after installation.
+$databasePassword = 'MdGsmDb' + [Guid]::NewGuid().ToString('N')
+$servicePassword = 'MdGsmSvc' + [Guid]::NewGuid().ToString('N')
+$optionFilePath = Join-Path $downloadDirectory 'postgresql-installer-options.txt'
 $previousPgPassword = $env:PGPASSWORD
 $previousConnectionString = $env:ConnectionStrings__MDGsmDatabase
 $databaseCreated = $false
@@ -40,22 +42,42 @@ try {
         throw "PostgreSQL installation directory already exists on this runner: $installRoot"
     }
 
-    $installerArguments = @(
-        '--mode', 'unattended',
-        '--unattendedmodeui', 'none',
-        '--superaccount', 'postgres',
-        '--superpassword', $password,
-        '--serviceaccount', 'postgres',
-        '--servicepassword', $password,
-        '--serverport', "$port",
-        '--prefix', $installRoot,
-        '--datadir', $dataDirectory,
-        '--servicename', $serviceName,
-        '--enable-components', 'server,commandlinetools',
-        '--enable_acledit', '1'
+    # Create the response file without inherited access, then populate it with per-run values.
+    $file = [System.IO.File]::Create($optionFilePath)
+    $file.Dispose()
+    $currentUserSid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
+    $fileAcl = New-Object System.Security.AccessControl.FileSecurity
+    $fileAcl.SetOwner($currentUserSid)
+    $fileAcl.SetAccessRuleProtection($true, $false)
+    $ownerRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+        $currentUserSid,
+        [System.Security.AccessControl.FileSystemRights]::FullControl,
+        [System.Security.AccessControl.AccessControlType]::Allow
     )
-    Write-Host 'Installing the verified PostgreSQL 18 server and command-line tools...'
-    $installerProcess = Start-Process -FilePath $installerPath -ArgumentList $installerArguments -Wait -PassThru -NoNewWindow
+    $fileAcl.AddAccessRule($ownerRule)
+    Set-Acl -LiteralPath $optionFilePath -AclObject $fileAcl
+
+    $installerOptions = @(
+        'mode=unattended',
+        'unattendedmodeui=none',
+        'superaccount=postgres',
+        "superpassword=$databasePassword",
+        'serviceaccount=postgres',
+        "servicepassword=$servicePassword",
+        "serverport=$port",
+        "prefix=$installRoot",
+        "datadir=$dataDirectory",
+        "servicename=$serviceName",
+        'enable-components=server,commandlinetools',
+        'enable_acledit=1'
+    )
+    [System.IO.File]::WriteAllLines($optionFilePath, $installerOptions, [System.Text.Encoding]::ASCII)
+
+    Write-Host 'Installing the verified PostgreSQL 18 server and command-line tools using a protected option file...'
+    $installerProcess = Start-Process -FilePath $installerPath -ArgumentList @('--optionfile', $optionFilePath) -Wait -PassThru -NoNewWindow
+    if (Test-Path -LiteralPath $optionFilePath) {
+        Remove-Item -LiteralPath $optionFilePath -Force
+    }
     if ($installerProcess.ExitCode -ne 0) {
         throw "PostgreSQL installer exited with code $($installerProcess.ExitCode)."
     }
@@ -66,7 +88,7 @@ try {
         throw 'PostgreSQL 18 command-line tools were not found after installation.'
     }
 
-    $env:PGPASSWORD = $password
+    $env:PGPASSWORD = $databasePassword
     $ready = $false
     for ($attempt = 0; $attempt -lt 60; $attempt++) {
         & $pgIsReadyPath -h 127.0.0.1 -p "$port" -U postgres -d postgres | Out-Null
@@ -87,10 +109,8 @@ try {
     & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d postgres -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE $databaseName IS 'MDGSM_DISPOSABLE_TEST_DB; PostgreSQL 18 Windows CI';"
     if ($LASTEXITCODE -ne 0) { throw 'Could not apply the disposable database marker.' }
 
-    # The EDB installer above needs its per-run password in installer arguments.
-    # For application migrations, the connection string is supplied only via this process environment,
-    # never as a dotnet command-line argument or repository file.
-    $env:ConnectionStrings__MDGsmDatabase = "Host=127.0.0.1;Port=$port;Database=$databaseName;Username=postgres;Password=$password;Timeout=15;Command Timeout=120"
+    # For application migrations, the connection string is supplied only through process environment.
+    $env:ConnectionStrings__MDGsmDatabase = "Host=127.0.0.1;Port=$port;Database=$databaseName;Username=postgres;Password=$databasePassword;Timeout=15;Command Timeout=120"
     $migratorProject = Join-Path $PSScriptRoot '..\tools\MDGsm.DbMigrator\MDGsm.DbMigrator.csproj'
     if (-not (Test-Path -LiteralPath $migratorProject)) { throw "Application migrator project not found: $migratorProject" }
 
@@ -131,5 +151,8 @@ finally {
     else { $env:PGPASSWORD = $previousPgPassword }
     if ($null -eq $previousConnectionString) { Remove-Item Env:ConnectionStrings__MDGsmDatabase -ErrorAction SilentlyContinue }
     else { $env:ConnectionStrings__MDGsmDatabase = $previousConnectionString }
+    if (Test-Path -LiteralPath $optionFilePath) { Remove-Item -LiteralPath $optionFilePath -Force -ErrorAction SilentlyContinue }
+    $databasePassword = $null
+    $servicePassword = $null
     Remove-Item -LiteralPath $downloadDirectory -Recurse -Force -ErrorAction SilentlyContinue
 }
