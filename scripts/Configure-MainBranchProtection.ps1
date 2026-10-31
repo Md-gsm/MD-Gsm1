@@ -126,6 +126,9 @@ $payload = @{
         require_last_push_approval = $false
     }
     required_conversation_resolution = $true
+    required_linear_history = $true
+    lock_branch = $false
+    allow_fork_syncing = $false
     restrictions = $null
     allow_force_pushes = $false
     allow_deletions = $false
@@ -163,6 +166,9 @@ try {
         -not $prReviewsEnabled -or
         $verified.required_pull_request_reviews.required_approving_review_count -ne 0 -or
         -not $conversationResolutionEnabled -or
+        $verified.lock_branch.enabled -or
+        -not $verified.required_linear_history.enabled -or
+        $verified.allow_fork_syncing.enabled -or
         $verified.allow_force_pushes.enabled -or
         $verified.allow_deletions.enabled
     ) {
