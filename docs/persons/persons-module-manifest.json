@@ -22,7 +22,7 @@
   },
   "g1Prerequisites": {
     "temporaryDataPolicyApproved": true,
-    "mergeChecklistApproved": false,
+    "mergeChecklistApproved": true,
     "requiredStatusChecksConfiguredInScm": false,
     "negativeCiEnforcementTestPassed": true,
     "jobOwnersAssigned": true,
