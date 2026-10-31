@@ -43,13 +43,13 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaises(gates.GateFailure):
                 gates.run_retention(dst)
 
-    def test_unknown_personid_consumer_fails_registry_gate(self):
+    def test_unknown_partyid_consumer_fails_registry_gate(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
             consumer = dst / "src/MDGsm.Application/Reporting/PersonReportQuery.cs"
             consumer.parent.mkdir(parents=True)
-            consumer.write_text("public sealed record PersonReportQuery(Guid PersonId);", encoding="utf-8")
+            consumer.write_text("public sealed record PersonReportQuery(Guid PartyId);", encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_registry(dst)
 
@@ -67,7 +67,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(gates.GateFailure, r"evidence\."):
                 gates.run_spec(dst)
 
-    def test_unknown_personid_in_contract_json_fails_registry_gate(self):
+    def test_unknown_partyid_in_contract_json_fails_registry_gate(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
@@ -140,6 +140,28 @@ class PersonsGatePolicyTests(unittest.TestCase):
             endpoint.write_text('app.MapGroup("/api/v1/persons");', encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_api(dst)
+
+    def test_unimplemented_acceptance_criteria_remain_unmapped(self):
+        mapping = gates.load_json(ROOT / "docs/persons/acceptance-gate-map.json")
+        for item in mapping["criteria"]:
+            if item["status"] == "UNMAPPED":
+                self.assertIsNone(item.get("testFile"))
+                self.assertIsNone(item.get("automatedTest"))
+        manifest = gates.load_json(ROOT / "docs/persons/persons-module-manifest.json")
+        self.assertFalse(manifest["g1Prerequisites"]["acceptanceCriteriaAc31ToAc49Mapped"])
+
+    def test_g1_cannot_be_authorized_with_unmapped_acceptance_criteria(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            manifest_path = dst / "docs/persons/persons-module-manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["repositoryStage"] = "G1_CONTRACTS"
+            manifest["g1Authorized"] = True
+            manifest["g1Prerequisites"] = {key: True for key in manifest["g1Prerequisites"]}
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "UNMAPPED"):
+                gates.run_spec(dst)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
