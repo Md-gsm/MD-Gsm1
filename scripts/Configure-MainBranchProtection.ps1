@@ -26,6 +26,32 @@ $requiredChecks = @(
     'persons-ci-evidence'
 )
 
+function Get-ObjectProperty {
+    param(
+        [AllowNull()] [object] $Object,
+        [Parameter(Mandatory = $true)] [string] $Name,
+        [AllowNull()] [object] $DefaultValue = $null
+    )
+
+    if ($null -eq $Object) { return $DefaultValue }
+    $property = $Object.PSObject.Properties[$Name]
+    if ($null -eq $property) { return $DefaultValue }
+    return $property.Value
+}
+
+function Get-ProtectionFlag {
+    param(
+        [AllowNull()] [object] $Object,
+        [Parameter(Mandatory = $true)] [string] $Name,
+        [bool] $DefaultValue = $false
+    )
+
+    $setting = Get-ObjectProperty -Object $Object -Name $Name -DefaultValue $null
+    if ($null -eq $setting) { return $DefaultValue }
+    $enabled = Get-ObjectProperty -Object $setting -Name 'enabled' -DefaultValue $setting
+    return [bool]$enabled
+}
+
 $gh = Get-Command 'gh.exe' -ErrorAction SilentlyContinue
 if (-not $gh) { $gh = Get-Command 'gh' -ErrorAction SilentlyContinue }
 if (-not $gh) { throw 'GitHub CLI (gh) is required. Install it and authenticate the repository Admin account first.' }
@@ -49,32 +75,33 @@ if ($LASTEXITCODE -ne 0) {
 }
 $current = ($currentJson -join "`n") | ConvertFrom-Json
 
-$currentContexts = @()
-if ($null -ne $current.required_status_checks -and $null -ne $current.required_status_checks.contexts) {
-    $currentContexts = @($current.required_status_checks.contexts)
-}
+$currentStatusChecks = Get-ObjectProperty -Object $current -Name 'required_status_checks' -DefaultValue $null
+$currentContexts = @(Get-ObjectProperty -Object $currentStatusChecks -Name 'contexts' -DefaultValue @())
 
 $reviewCount = 1
 $requireCodeOwnerReviews = $false
 $dismissalRestrictions = @{ users = @(); teams = @(); apps = @() }
-if ($null -ne $current.required_pull_request_reviews) {
-    $reviewCount = [Math]::Max(1, [int]$current.required_pull_request_reviews.required_approving_review_count)
-    $requireCodeOwnerReviews = [bool]$current.required_pull_request_reviews.require_code_owner_reviews
-    $currentDismissal = $current.required_pull_request_reviews.dismissal_restrictions
+$existingReviews = Get-ObjectProperty -Object $current -Name 'required_pull_request_reviews' -DefaultValue $null
+if ($null -ne $existingReviews) {
+    $existingReviewCount = Get-ObjectProperty -Object $existingReviews -Name 'required_approving_review_count' -DefaultValue 0
+    $reviewCount = [Math]::Max(1, [int]$existingReviewCount)
+    $requireCodeOwnerReviews = [bool](Get-ObjectProperty -Object $existingReviews -Name 'require_code_owner_reviews' -DefaultValue $false)
+    $currentDismissal = Get-ObjectProperty -Object $existingReviews -Name 'dismissal_restrictions' -DefaultValue $null
     if ($null -ne $currentDismissal) {
         $dismissalRestrictions = @{
-            users = @($currentDismissal.users | ForEach-Object { $_.login })
-            teams = @($currentDismissal.teams | ForEach-Object { $_.slug })
-            apps = @($currentDismissal.apps | ForEach-Object { $_.slug })
+            users = @(Get-ObjectProperty -Object $currentDismissal -Name 'users' -DefaultValue @() | ForEach-Object { $_.login })
+            teams = @(Get-ObjectProperty -Object $currentDismissal -Name 'teams' -DefaultValue @() | ForEach-Object { $_.slug })
+            apps = @(Get-ObjectProperty -Object $currentDismissal -Name 'apps' -DefaultValue @() | ForEach-Object { $_.slug })
         }
     }
 }
 
 $pushRestrictions = $null
-if ($null -ne $current.restrictions) {
-    $users = @($current.restrictions.users | ForEach-Object { $_.login })
-    $teams = @($current.restrictions.teams | ForEach-Object { $_.slug })
-    $apps = @($current.restrictions.apps | ForEach-Object { $_.slug })
+$currentRestrictions = Get-ObjectProperty -Object $current -Name 'restrictions' -DefaultValue $null
+if ($null -ne $currentRestrictions) {
+    $users = @(Get-ObjectProperty -Object $currentRestrictions -Name 'users' -DefaultValue @() | ForEach-Object { $_.login })
+    $teams = @(Get-ObjectProperty -Object $currentRestrictions -Name 'teams' -DefaultValue @() | ForEach-Object { $_.slug })
+    $apps = @(Get-ObjectProperty -Object $currentRestrictions -Name 'apps' -DefaultValue @() | ForEach-Object { $_.slug })
     if ($users.Count + $teams.Count + $apps.Count -gt 0) {
         $pushRestrictions = @{ users = $users; teams = $teams; apps = $apps }
     }
@@ -95,13 +122,13 @@ $payload = @{
         require_last_push_approval = $true
     }
     restrictions = $pushRestrictions
-    required_linear_history = [bool]$current.required_linear_history.enabled
+    required_linear_history = Get-ProtectionFlag -Object $current -Name 'required_linear_history' -DefaultValue $false
     allow_force_pushes = $false
     allow_deletions = $false
-    block_creations = [bool]$current.block_creations.enabled
+    block_creations = Get-ProtectionFlag -Object $current -Name 'block_creations' -DefaultValue $false
     required_conversation_resolution = $true
-    lock_branch = [bool]$current.lock_branch.enabled
-    allow_fork_syncing = [bool]$current.allow_fork_syncing.enabled
+    lock_branch = Get-ProtectionFlag -Object $current -Name 'lock_branch' -DefaultValue $false
+    allow_fork_syncing = Get-ProtectionFlag -Object $current -Name 'allow_fork_syncing' -DefaultValue $false
 }
 
 Write-Host "Repository: $repository"
