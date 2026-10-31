@@ -5,7 +5,7 @@ param(
     [int] $PostgresPort = 5432,
     [Parameter(Mandatory = $true)] [string] $AdminUser,
     [string] $ApiProjectPath = '',
-    [string] $MigrationPath = ''
+    [string] $MigratorProjectPath = ''
 )
 $ErrorActionPreference = 'Stop'
 
@@ -25,9 +25,9 @@ if ([string]::IsNullOrWhiteSpace($ApiProjectPath)) {
     $ApiProjectPath = Join-Path $scriptRoot '..\src\MDGsm.Api\MDGsm.Api.csproj'
 }
 if ([string]::IsNullOrWhiteSpace($MigrationPath)) {
-    $MigrationPath = Join-Path $scriptRoot '..\database\migrations\0001_infrastructure_schema_version.sql'
+    $MigratorProjectPath = Join-Path $scriptRoot '..\tools\MDGsm.DbMigrator\MDGsm.DbMigrator.csproj'
 }
-foreach ($path in @($PsqlPath, $ApiProjectPath, $MigrationPath)) {
+foreach ($path in @($PsqlPath, $ApiProjectPath, $MigratorProjectPath)) {
     if (-not (Test-Path -LiteralPath $path)) { throw "Required path not found: $path" }
 }
 
@@ -64,13 +64,6 @@ try {
     & $PsqlPath @baseArgs -c "COMMENT ON DATABASE `"$dbName`" IS 'MDGSM_DISPOSABLE_TEST_DB; created by Stage7 smoke test';"
     if ($LASTEXITCODE -ne 0) { throw "Could not mark '$dbName' as disposable. Do not use it for any non-test purpose." }
 
-    $migrationSql = Get-Content -LiteralPath $MigrationPath -Raw
-    $migrationSql | & $PsqlPath -h $PostgresHost -p "$PostgresPort" -U $AdminUser -d $dbName -v ON_ERROR_STOP=1
-    if ($LASTEXITCODE -ne 0) { throw "Versioned migration failed. Database '$dbName' is retained for inspection." }
-
-    $version = & $PsqlPath -h $PostgresHost -p "$PostgresPort" -U $AdminUser -d $dbName -t -A -v ON_ERROR_STOP=1 -c 'SELECT version FROM mdgsm_schema_version ORDER BY version DESC LIMIT 1;'
-    if ($LASTEXITCODE -ne 0 -or "$version".Trim() -ne '1') { throw "Schema version verification failed. Found: $version. Database '$dbName' is retained." }
-
     # Let the platform's connection-string builder escape punctuation correctly.
     $connectionBuilder = [System.Data.Common.DbConnectionStringBuilder]::new()
     $connectionBuilder['Host'] = $PostgresHost
@@ -79,9 +72,14 @@ try {
     $connectionBuilder['Username'] = $AdminUser
     $connectionBuilder['Password'] = $plainPassword
     $connectionBuilder['Timeout'] = 5
-    $connectionBuilder['Command Timeout'] = 5
-
+    $connectionBuilder['Command Timeout'] = 120
     $env:ConnectionStrings__MDGsmDatabase = $connectionBuilder.ConnectionString
+
+    Write-Host 'Applying pending SQL through the application-owned migration runner...'
+    & dotnet run --project $MigratorProjectPath --configuration Release
+    if ($LASTEXITCODE -ne 0) { throw "Application migration runner failed. Database '$dbName' is retained." }
+    $history = & $PsqlPath -h $PostgresHost -p "$PostgresPort" -U $AdminUser -d $dbName -t -A -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;"
+    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '1|1') { throw "Schema migration history verification failed. Found: $history. Database '$dbName' is retained." }
     $env:ASPNETCORE_URLS = 'http://127.0.0.1:5080'
     $api = Start-Process -FilePath 'dotnet' -ArgumentList @('run', '--project', ('"' + $ApiProjectPath + '"'), '--no-launch-profile') -PassThru -WindowStyle Hidden
     try {
