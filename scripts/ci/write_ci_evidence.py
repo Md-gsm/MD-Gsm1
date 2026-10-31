@@ -19,6 +19,7 @@ UPSTREAM_JOBS = (
     "persons-temporary-data-retention",
     "persons-merge-contract",
     "persons-postgres-migrations",
+    "persons-postgres-windows-migrations",
     "persons-security-tests",
     "persons-e2e-disposable",
     "persons-ci-enforcement-test",

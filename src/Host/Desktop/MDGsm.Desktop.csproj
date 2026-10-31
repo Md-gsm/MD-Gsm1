@@ -10,7 +10,7 @@
     <InformationalVersion>0.2.10-preview</InformationalVersion>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MDGsm.Client\MDGsm.Client.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\MDGsm.Client\MDGsm.Client.csproj" />
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Assets\menu-catalog-fa.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

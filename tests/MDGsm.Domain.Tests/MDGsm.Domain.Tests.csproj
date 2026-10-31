@@ -12,9 +12,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <ProjectReference Include="..\..\src\MDGsm.Domain\MDGsm.Domain.csproj" />
-    <ProjectReference Include="..\..\src\MDGsm.Application\MDGsm.Application.csproj" />
-    <ProjectReference Include="..\..\src\MDGsm.Client\MDGsm.Client.csproj" />
-    <ProjectReference Include="..\..\src\MDGsm.Infrastructure\MDGsm.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\MDGsm.Domain\MDGsm.Domain.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\MDGsm.Application\MDGsm.Application.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\MDGsm.Client\MDGsm.Client.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\MDGsm.Infrastructure\MDGsm.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

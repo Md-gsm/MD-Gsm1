@@ -5,7 +5,7 @@
 
 ## Decision
 
-Use PostgreSQL as the database engine and Entity Framework Core with the Npgsql provider for the server-side persistence adapter. The WPF desktop client must not connect directly to the database; only the API/server process owns database credentials and database connections.
+Use PostgreSQL 18.6 as the V1 database baseline and Entity Framework Core with the Npgsql provider for the server-side persistence adapter. The WPF desktop client must not connect directly to the database; only the API/server process owns database credentials and database connections.
 
 ## Configuration
 
@@ -23,7 +23,7 @@ No business entities or schema migrations are included in this stage. The DbCont
 
 ## Consequences
 
-- PostgreSQL is the selected relational store for this project.
+- PostgreSQL 18.6 is the selected V1 relational store for this project. Windows PostgreSQL 18 validation is a required acceptance target.
 - Database access is server-side, behind the API.
 - Local startup remains possible without a configured database, but readiness correctly remains negative.
 - Schema versioning and release gates are required before business data is introduced.

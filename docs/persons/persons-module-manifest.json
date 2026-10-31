@@ -1,5 +1,5 @@
 {
-  "manifestVersion": "1.0",
+  "manifestVersion": "1.1",
   "module": "Persons",
   "repositoryStage": "G0_PREPARATION_ONLY",
   "implementationState": "NOT_IMPLEMENTED",
@@ -9,6 +9,12 @@
   "mergeExecutionImplemented": false,
   "securityRuntimeImplemented": false,
   "personsBusinessMigrationsPresent": false,
+  "applicationMigrationRunnerImplemented": true,
+  "windowsPostgres18CiIntegrationConfigured": true,
+  "moduleContractsProjectsPresent": true,
+  "moduleContractsProjectsIncludedInSolution": true,
+  "apiReferencesModuleContracts": true,
+  "acceptanceCriteriaVerificationPlanPresent": true,
   "currentPolicy": {
     "temporaryDataTtlDefaultDays": 7,
     "temporaryDataMaxAgeDays": 30,
@@ -19,12 +25,17 @@
     "autoMergeAllowed": false
   },
   "g1Prerequisites": {
-    "temporaryDataPolicyApproved": false,
-    "mergeChecklistApproved": false,
+    "temporaryDataPolicyApproved": true,
+    "mergeChecklistApproved": true,
     "requiredStatusChecksConfiguredInScm": false,
-    "negativeCiEnforcementTestPassed": false,
-    "jobOwnersAssigned": false,
-    "acceptanceCriteriaAc31ToAc49Mapped": true
+    "negativeCiEnforcementTestPassed": true,
+    "jobOwnersAssigned": true,
+    "acceptanceCriteriaAc31ToAc49Mapped": false,
+    "architectureAligned": false,
+    "windowsPostgres18Validated": true,
+    "applicationMigrationRunnerValidated": true
   },
-  "note": "This manifest describes source preparation only. It must not be marked implemented or G1-authorized until runtime code, automated tests, SCM protections, and evidence satisfy the architecture document v1.1."
+  "note": "G0 physical Host/BuildingBlocks relocation and project reference migration are implemented on the current branch; the final CI run on the resulting head must pass before architectureAligned can be set true. Four isolated version-marker Contracts projects are in the solution and referenced by the API host. Policy/checklist approval, CI group ownership, negative architecture test, PostgreSQL 18 Linux/Windows and migration runner validation are recorded. Remaining formal G1 evidence: exact remote Required Status Checks/bypass settings require repository Admin access; independent architecture review by the Group of Software Advisers and the Project Owner's security/privacy review must be recorded; AC-31..AC-45 remain UNMAPPED until real behavior and tests exist. Do not set g1Authorized=true.",
+  "validationEvidenceReference": "docs/operations/evidence/postgresql18-migration-validation-2026-10-31.json",
+  "runtimeHostBuildingBlocksRelocated": true
 }

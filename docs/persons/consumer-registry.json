@@ -1,34 +1,39 @@
 {
-  "registryVersion": "1.0",
+  "registryVersion": "1.1",
   "module": "Persons",
   "ownerPaths": [
-    "src/MDGsm.Domain/Persons",
-    "src/MDGsm.Application/Persons",
-    "src/MDGsm.Infrastructure/Persons",
-    "src/MDGsm.Api/Endpoints/Persons"
+    "src/Modules/Persons"
   ],
   "registeredConsumers": [],
   "registryPolicy": {
-    "anyNonOwnerPersonIdReferenceRequiresRegistration": true,
+    "anyNonOwnerPartyIdReferenceRequiresRegistration": true,
     "unknownConsumerCountMustBeZero": true,
     "registrationRequiredBeforeMerge": true,
-    "registrationRequiredBeforeRelease": true
+    "registrationRequiredBeforeRelease": true,
+    "scannedIdentifiers": [
+      "PartyId",
+      "party_id"
+    ],
+    "legacyIdentifierForbidden": [
+      "PersonId",
+      "person_id"
+    ]
   },
   "plannedNotYetImplemented": [
     {
       "module": "RepairWorkflow",
       "status": "PLANNED",
-      "condition": "Register only when the module is implemented and stores or transports PersonId."
+      "condition": "Register only when the module is implemented and stores or transports PartyId."
     },
     {
       "module": "Finance",
       "status": "PLANNED",
-      "condition": "Register only when a reviewed Finance contract stores or transports PersonId."
+      "condition": "Register only when a reviewed Finance contract stores or transports PartyId."
     },
     {
       "module": "PurchasingSales",
       "status": "PLANNED",
-      "condition": "Register only when implemented and stores or transports PersonId."
+      "condition": "Register only when implemented and stores or transports PartyId."
     }
   ]
 }

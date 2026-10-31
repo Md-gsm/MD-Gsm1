@@ -1,0 +1,45 @@
+{
+  "evidenceVersion": "1.0",
+  "status": "PASSED",
+  "testedCommit": "bfe482aff31e50811bfb2293a21c21b2eb11d150",
+  "workflowRunId": 41181075233,
+  "workflowRunUrl": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41181075233",
+  "checkedAtUtc": "2026-10-31T07:41:48Z",
+  "resultSummary": {
+    "workflowConclusion": "success",
+    "requiredJobsTotal": 13,
+    "requiredJobsPassed": 13
+  },
+  "applicationMigrationRunner": {
+    "project": "tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj",
+    "implementation": "src/MDGsm.Infrastructure/Persistence/DatabaseMigrationRunner.cs",
+    "firstRun": "newlyApplied=1; previouslyApplied=0; versions=1",
+    "secondRun": "newlyApplied=0; previouslyApplied=1; versions=",
+    "verification": "mdgsm_migration_history=1|1; mdgsm_schema_version=1|1",
+    "linux": {
+      "jobId": 124478486751,
+      "result": "success",
+      "targetDatabase": "mdgsm_ci_disposable_41181075233_1",
+      "postgresBaseline": "18.6-bookworm"
+    },
+    "windows": {
+      "jobId": 124478486746,
+      "result": "success",
+      "targetDatabase": "mdgsm_ci_disposable_41181075233_1",
+      "serverVersion": "18.6",
+      "installer": "postgresql-18.6-5-windows-x64.exe",
+      "installerSha256": "227e2bc08091b4c2b8338c7d61b11d057f895711480b006f90bfcfcd2410a58a"
+    }
+  },
+  "safety": {
+    "databaseMarkerRequired": "MDGSM_DISPOSABLE_TEST_DB",
+    "databaseNamesAreRunScoped": true,
+    "credentialsCommitted": false,
+    "apiStartupRunsMigrations": false
+  },
+  "scopeLimitations": [
+    "The only migration tested is infrastructure schema version 1.",
+    "No Persons, finance, or other business tables were added.",
+    "This evidence validates PostgreSQL 18 Linux/Windows execution and the application migration runner only; it does not authorize G1."
+  ]
+}

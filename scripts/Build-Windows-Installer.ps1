@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $solution = Join-Path $repoRoot 'MDGsm.sln'
-$desktopProject = Join-Path $repoRoot 'src\MDGsm.Desktop\MDGsm.Desktop.csproj'
+$desktopProject = Join-Path $repoRoot 'src\Host\Desktop\MDGsm.Desktop.csproj'
 $publishDir = Join-Path $repoRoot 'artifacts\windows-publish'
 $outputDir = Join-Path $repoRoot 'artifacts\installer'
 $issFile = Join-Path $repoRoot 'installer\MDGsm-Persons-Preview.iss'

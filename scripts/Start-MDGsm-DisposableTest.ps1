@@ -6,7 +6,7 @@ param(
     [string] $AdminUser = 'postgres',
     [string] $ApiProjectPath = '',
     [string] $DesktopProjectPath = '',
-    [string] $MigrationPath = ''
+    [string] $MigratorProjectPath = ''
 )
 $ErrorActionPreference = 'Stop'
 
@@ -16,13 +16,13 @@ if ([string]::IsNullOrWhiteSpace($scriptRoot)) {
     throw 'Could not resolve the script directory. Run this file directly with -File.'
 }
 if ([string]::IsNullOrWhiteSpace($ApiProjectPath)) {
-    $ApiProjectPath = Join-Path $scriptRoot '..\src\MDGsm.Api\MDGsm.Api.csproj'
+    $ApiProjectPath = Join-Path $scriptRoot '..\src\Host\Api\MDGsm.Api.csproj'
 }
 if ([string]::IsNullOrWhiteSpace($DesktopProjectPath)) {
-    $DesktopProjectPath = Join-Path $scriptRoot '..\src\MDGsm.Desktop\MDGsm.Desktop.csproj'
+    $DesktopProjectPath = Join-Path $scriptRoot '..\src\Host\Desktop\MDGsm.Desktop.csproj'
 }
-if ([string]::IsNullOrWhiteSpace($MigrationPath)) {
-    $MigrationPath = Join-Path $scriptRoot '..\database\migrations\0001_infrastructure_schema_version.sql'
+if ([string]::IsNullOrWhiteSpace($MigratorProjectPath)) {
+    $MigratorProjectPath = Join-Path $scriptRoot '..\tools\MDGsm.DbMigrator\MDGsm.DbMigrator.csproj'
 }
 
 
@@ -30,7 +30,7 @@ if ([string]::IsNullOrWhiteSpace($MigrationPath)) {
 if ($PostgresHost -notin @('127.0.0.1', 'localhost', '::1')) {
     throw 'Safety stop: this test runner only permits a local PostgreSQL server (127.0.0.1, localhost, or ::1).'
 }
-foreach ($path in @($PsqlPath, $ApiProjectPath, $DesktopProjectPath, $MigrationPath)) {
+foreach ($path in @($PsqlPath, $ApiProjectPath, $DesktopProjectPath, $MigratorProjectPath)) {
     if (-not (Test-Path -LiteralPath $path)) { throw "Required path not found: $path" }
 }
 
@@ -67,17 +67,15 @@ try {
     & $PsqlPath -h $PostgresHost -p "$PostgresPort" -U $AdminUser -d postgres -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE `"$dbName`" IS 'MDGSM_DISPOSABLE_TEST_DB; created by Stage7 test runner';"
     if ($LASTEXITCODE -ne 0) { throw "Could not mark '$dbName' as disposable. Stop the test and inspect the new database." }
 
-    Write-Host 'Applying the project-owned infrastructure migration...'
-    $migrationSql = Get-Content -LiteralPath $MigrationPath -Raw
-    $migrationSql | & $PsqlPath -h $PostgresHost -p "$PostgresPort" -U $AdminUser -d $dbName -v ON_ERROR_STOP=1
-    if ($LASTEXITCODE -ne 0) { throw "Migration failed. The database '$dbName' is intentionally retained for inspection." }
-
-    $version = & $PsqlPath -h $PostgresHost -p "$PostgresPort" -U $AdminUser -d $dbName -t -A -v ON_ERROR_STOP=1 -c 'SELECT version FROM mdgsm_schema_version ORDER BY version DESC LIMIT 1;'
-    if ($LASTEXITCODE -ne 0 -or "$version".Trim() -ne '1') { throw "Migration verification failed. Found version: $version. Database '$dbName' is retained." }
-    Write-Host "PASS: migration version 1 verified in $dbName" -ForegroundColor Green
-
     # Test-only connection string. Production must use a least-privilege runtime role and managed secret.
-    $env:ConnectionStrings__MDGsmDatabase = "Host=$PostgresHost;Port=$PostgresPort;Database=$dbName;Username=$AdminUser;Password=$plainPassword;Timeout=5;Command Timeout=5"
+    $env:ConnectionStrings__MDGsmDatabase = "Host=$PostgresHost;Port=$PostgresPort;Database=$dbName;Username=$AdminUser;Password=$plainPassword;Timeout=5;Command Timeout=120"
+    Write-Host 'Running the application-owned database migrator...'
+    & dotnet run --project $MigratorProjectPath --configuration Release
+    if ($LASTEXITCODE -ne 0) { throw "Application migration runner failed. Database '$dbName' is retained for inspection." }
+
+    $history = & $PsqlPath -h $PostgresHost -p "$PostgresPort" -U $AdminUser -d $dbName -t -A -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;"
+    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '1|1') { throw "Migration history verification failed. Found: $history. Database '$dbName' is retained." }
+    Write-Host "PASS: application migration runner recorded version 1 in $dbName" -ForegroundColor Green
     $env:ASPNETCORE_URLS = $apiUrl
     Write-Host 'Starting API with the new disposable database connection...'
     $api = Start-Process -FilePath 'dotnet' -ArgumentList @('run', '--project', ('"' + $ApiProjectPath + '"'), '--no-launch-profile') -PassThru -WindowStyle Hidden
