@@ -115,10 +115,10 @@ def run_spec(root: Path) -> None:
         raise GateFailure(f"Temporary data policy does not match the proposed v1.1 target values: {policy}")
     criteria = mapping.get("criteria", [])
     ids = [x.get("id") for x in criteria]
-    # Stage 2 expands the ordered specification map through AC-67; UNMAPPED means no executable proof yet.
-    expected = [f"AC-{i:02d}" for i in range(31, 68)]
+    # Stage 2 expands the ordered specification map through AC-72; UNMAPPED means no executable proof yet.
+    expected = [f"AC-{i:02d}" for i in range(31, 73)]
     if ids != expected:
-        raise GateFailure("Acceptance map must contain AC-31..AC-67 exactly once, in order, with no gaps or extras.")
+        raise GateFailure("Acceptance map must contain AC-31..AC-72 exactly once, in order, with no gaps or extras.")
     for item in criteria:
         for key in ("gate", "status", "expectedBehavior"):
             if not str(item.get(key, "")).strip():
@@ -145,6 +145,9 @@ def run_spec(root: Path) -> None:
                 62: "persons-merge-contract", 63: "persons-merge-contract",
                 64: "persons-security-tests", 65: "persons-consumer-registry",
                 66: "persons-api-contract", 67: "persons-security-tests",
+                68: "persons-security-tests", 69: "persons-security-tests",
+                70: "persons-api-contract", 71: "persons-postgres-migrations",
+                72: "persons-consumer-registry",
             }[number]
         if item["gate"] != expected_gate:
             raise GateFailure(f"{item['id']} is mapped to {item['gate']} instead of {expected_gate}.")
