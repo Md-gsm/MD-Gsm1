@@ -1,5 +1,5 @@
 {
-  "mapVersion": "1.1",
+  "mapVersion": "1.2",
   "sourceArchitecture": "MDGsm_Persons_Module_Architecture_Decision_and_Build_Spec_v1.1_FA",
   "criteria": [
     {
@@ -153,7 +153,143 @@
       "automatedTest": "test_ci_evidence_manifest_is_traceable_and_redacted",
       "status": "IMPLEMENTED",
       "expectedBehavior": "CI evidence contains commit, contract versions, schema fingerprint, gate/test counts, and no raw PII."
+    },
+    {
+      "id": "AC-50",
+      "gate": "persons-api-contract",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_phone_normalizes_persian_arabic_digits_and_ir_09_mobile",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Normalize Persian/Arabic digits; valid 09 mobile becomes +989; reject ambiguous/invalid."
+    },
+    {
+      "id": "AC-51",
+      "gate": "persons-api-contract",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_mobile_unique_within_party_and_soft_duplicate_across_parties",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Canonical mobile unique within Party; cross-Party reuse only creates duplicate signal."
+    },
+    {
+      "id": "AC-52",
+      "gate": "persons-postgres-migrations",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_party_has_at_most_one_active_primary_mobile",
+      "status": "UNMAPPED",
+      "expectedBehavior": "DB constraint prevents multiple active primary mobiles per Party."
+    },
+    {
+      "id": "AC-53",
+      "gate": "persons-api-contract",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_find_or_create_party_by_mobile_is_idempotent",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Quick intake idempotent; ambiguous matches require human selection."
+    },
+    {
+      "id": "AC-54",
+      "gate": "persons-api-contract",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_reception_mobile_suffix_search_is_bounded_and_masked",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Suffix4 search returns at most 10 masked results."
+    },
+    {
+      "id": "AC-55",
+      "gate": "persons-security-tests",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_full_mobile_unmask_requires_permission_and_audit",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Full mobile display requires permission and audit."
+    },
+    {
+      "id": "AC-56",
+      "gate": "persons-api-contract",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_work_classification_staff_employee_technician_is_queryable",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Persons exposes Staff/Employee/Technician without owning skills/scheduling."
+    },
+    {
+      "id": "AC-57",
+      "gate": "persons-api-contract",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_party_and_role_inactive_states_are_independent",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Party and role/work classification states are independent."
+    },
+    {
+      "id": "AC-58",
+      "gate": "persons-security-tests",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_access_scope_is_permission_purpose_and_record_state_based",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Single-shop V1 has no tenant/branch; server enforces permission, purpose and state."
+    },
+    {
+      "id": "AC-59",
+      "gate": "persons-api-contract",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_profile_contact_role_concurrency_tokens_are_independent",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Contact changes do not conflict with profile changes; opaque tokens independent."
+    },
+    {
+      "id": "AC-60",
+      "gate": "persons-postgres-migrations",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_temporal_overlap_exclusion_constraint",
+      "status": "UNMAPPED",
+      "expectedBehavior": "PostgreSQL exclusion constraint rejects forbidden overlapping ranges."
+    },
+    {
+      "id": "AC-61",
+      "gate": "persons-merge-contract",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_merge_participants_share_one_postgres_transaction",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Participants share one transaction; injected failure rolls back all DB writes."
+    },
+    {
+      "id": "AC-62",
+      "gate": "persons-merge-contract",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_unknown_merge_participant_stops_before_any_write",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Unknown/unregistered/version-incompatible participant stops before writes."
+    },
+    {
+      "id": "AC-63",
+      "gate": "persons-merge-contract",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_merge_recovery_is_limited_to_external_effects",
+      "status": "UNMAPPED",
+      "expectedBehavior": "No DB staging/compensation; recovery only external post-commit."
+    },
+    {
+      "id": "AC-64",
+      "gate": "persons-security-tests",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_official_identifier_storage_requires_key_management_approval",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Official identifier persistence blocked until key ADR and owner approval."
+    },
+    {
+      "id": "AC-65",
+      "gate": "persons-consumer-registry",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_party_id_scan_and_legacy_person_id_rejection",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Scan PartyId/party_id; reject PersonId/person_id outside negative fixtures."
+    },
+    {
+      "id": "AC-66",
+      "gate": "persons-api-contract",
+      "testFile": "tests/persons/architecture/test_stage2_contracts.py",
+      "automatedTest": "test_v1_excludes_deferred_identity_features",
+      "status": "UNMAPPED",
+      "expectedBehavior": "V1 excludes official identifiers, reference-data addresses, representation, legal hold and merge execution."
     }
   ],
-  "note": "UNMAPPED means no executable test currently exists. Only IMPLEMENTED entries are backed by a checked-in test method. G1 remains blocked while any required criterion is UNMAPPED."
+  "note": "UNMAPPED means specified with intended test name but no checked-in executable test/evidence yet. Only IMPLEMENTED entries are backed by checked-in tests. G1 remains blocked while required criteria are UNMAPPED."
 }
