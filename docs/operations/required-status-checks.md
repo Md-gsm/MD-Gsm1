@@ -46,7 +46,9 @@ The earlier PR #6 deliberately introduced a forbidden project reference and caus
 
 ## Signed commits and merge method
 
-The repository evidence records signed-commit enforcement on `main`; the current `main` tip is also reported by GitHub as signature-verified. The feature-branch commits in PR #12 are unsigned, so do not use rebase or a merge method that would place those unsigned commits directly on `main`. Use **Squash and merge from the GitHub web interface** after every gate and approval is satisfied, then verify that the resulting commit on `main` is marked **Verified**. This is a merge instruction, not authorization to merge PR #12.
+The repository evidence records signed-commit enforcement on `main`. GitHub's protected-branch evaluation checks commits introduced by a PR, including commits on the PR head. Therefore unsigned commits in the PR head can block **Squash and merge too**, even though GitHub signs the final squash commit. Squash merge by itself is not a workaround.
+
+The latest PR #12 head commit inspected here (`2f1f29a5b255c484f70fb8c57cb1e07558311ef2`) is reported by GitHub as `verified=false`, reason `unsigned`. Before any merge attempt, every commit introduced by the PR must be signed and verified. The owner must use a local signing key to re-sign/rewrite the topic-branch commit range, push the corrected topic branch, rerun CI, and obtain a fresh review on that final SHA. Do not force-push `main`, disable signed-commit enforcement, or use an administrative bypass to evade this rule. Once every introduced commit verifies, use a merge method compatible with linear history and verify the resulting `main` commit is also marked `Verified`.
 
 ## Historical observations
 

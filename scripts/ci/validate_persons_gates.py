@@ -87,13 +87,13 @@ def run_spec(root: Path) -> None:
     if manifest.get("implementationState") not in {"NOT_IMPLEMENTED", "PARTIAL", "IMPLEMENTED"}:
         raise GateFailure(f"Unknown implementationState: {manifest.get('implementationState')}")
     prereqs = manifest.get("g1Prerequisites", {})
-    required_prereqs = ["temporaryDataPolicyApproved", "mergeChecklistApproved", "requiredStatusChecksConfiguredInScm", "negativeCiEnforcementTestPassed", "jobOwnersAssigned", "acceptanceCriteriaAc31ToAc49Mapped", "suffixSearchAbusePolicyApproved"]
+    required_prereqs = ["temporaryDataPolicyApproved", "mergeChecklistApproved", "requiredStatusChecksConfiguredInScm", "independentPullRequestApprovalConfiguredInScm", "signedCommitsReadyForProtectedMain", "negativeCiEnforcementTestPassed", "jobOwnersAssigned", "acceptanceCriteriaAc31ToAc49Mapped", "suffixSearchAbusePolicyApproved"]
     if manifest.get("g1Authorized") is True:
         if manifest.get("repositoryStage") != "G1_CONTRACTS":
             raise GateFailure("G1 authorization requires repositoryStage=G1_CONTRACTS.")
         missing = [name for name in required_prereqs if prereqs.get(name) is not True]
         evidence = load_json(root / "docs/persons/g1-entry-evidence.json")
-        evidence_fields = ["scmRemoteRepository", "branchProtectionEvidence", "negativeEnforcementPullRequest", "policyApprovalReference", "mergeChecklistApprovalReference", "verifiedBy", "verifiedAtUtc"]
+        evidence_fields = ["scmRemoteRepository", "branchProtectionEvidence", "independentPullRequestApprovalEvidence", "signedCommitMergeReadinessEvidence", "negativeEnforcementPullRequest", "policyApprovalReference", "mergeChecklistApprovalReference", "verifiedBy", "verifiedAtUtc"]
         missing.extend([f"evidence.{name}" for name in evidence_fields if not str(evidence.get(name, "")).strip()])
         if evidence.get("status") != "VERIFIED":
             missing.append("evidence.status=VERIFIED")

@@ -67,6 +67,24 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(gates.GateFailure, r"UNMAPPED|evidence\."):
                 gates.run_spec(dst)
 
+    def test_g1_authorization_requires_independent_review_and_signed_commit_gates(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            manifest_path = dst / "docs/persons/persons-module-manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["repositoryStage"] = "G1_CONTRACTS"
+            manifest["g1Authorized"] = True
+            manifest["g1Prerequisites"] = {key: True for key in manifest["g1Prerequisites"]}
+            manifest["g1Prerequisites"]["independentPullRequestApprovalConfiguredInScm"] = False
+            manifest["g1Prerequisites"]["signedCommitsReadyForProtectedMain"] = False
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(
+                gates.GateFailure,
+                r"independentPullRequestApprovalConfiguredInScm|signedCommitsReadyForProtectedMain",
+            ):
+                gates.run_spec(dst)
+
     def test_legacy_personid_identifier_fails_registry_gate(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"

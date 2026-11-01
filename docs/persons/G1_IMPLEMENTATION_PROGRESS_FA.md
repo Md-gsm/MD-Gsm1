@@ -16,8 +16,8 @@
 - نوع مقدار `PartyId` به‌صورت opaque و مبتنی بر UUIDv7 پیاده‌سازی شد.
 - ساخت و parsing شناسه، version UUIDv7 و RFC variant را اعتبارسنجی می‌کند؛ Parse/TryParse فقط lowercase canonical UUID در قالب `D` را می‌پذیرند.
 - `Guid.Empty` و قالب‌های `N`/`B`/`P` و حروف بزرگ رد می‌شوند.
-- تست واحد برای تولید، رد version/variant نامعتبر، Empty، قالب غیرcanonical، یکتایی تولید هم‌زمان ۴۰۹۶ شناسه، پیشروی timestamp UUIDv7 بین میلی‌ثانیه‌های متمایز و round-trip اضافه شد.
-- آزمون معماری C# نیز وجود پروژه Persons Domain در Solution و صفر بودن ProjectReferenceهای آن را کنترل می‌کند.
+- تست واحد برای تولید، رد version/variant نامعتبر، Empty، قالب‌های غیرcanonical با GUID ثابت، رد null و ورودی فاصله‌دار، یکتایی تولید هم‌زمان ۴۰۹۶ شناسه و round-trip اضافه شد. تست وابسته به ساعت واقعی و انتظار ۳ ثانیه‌ای حذف شد تا روی runner شلوغ ناپایدار نباشد.
+- آزمون معماری C# وجود پروژه Persons Domain در Solution، TargetFramework=net10.0 و نبود ProjectReference، PackageReference و FrameworkReference را کنترل می‌کند؛ گیت Python نیز همین محدودیت وابستگی را بررسی می‌کند.
 - پروژه به Solution و تست‌های Domain متصل شد.
 
 ## محدوده عمداً خارج از این برش
@@ -37,3 +37,11 @@
 - اجرای [CI Run #362](https://github.com/Md-gsm/MD-Gsm1/actions/runs/41313898532) نتیجه `success` داشت: ۱۳ از ۱۳ job موفق، شامل آزمون migrationهای PostgreSQL روی Windows و Linux و تولید شواهد CI.
 - Build/Unit Tests: ۳۱ موفق، صفر ناموفق، صفر ردشده.
 - بازبینی کد همین SHA توسط گروه مشاور نرم‌افزار درخواست شده و هنوز ثبت/دریافت نشده است؛ درخواست در PR #12 ثبت شده.
+
+
+## یافته‌های بازبینی مستقل و گیت‌های راه دور
+
+- بررسی زندهٔ metadata شاخه main در 2026-11-01 نشان داد ۱۲ مورد از ۱۳ check الزامی ثبت شده‌اند؛ `persons-postgres-windows-migrations` جا افتاده است. `requiredStatusChecksConfiguredInScm=false` تا read-back کامل باقی می‌ماند.
+- helper حفاظت شاخه برای ۱۳ check، یک تأیید مستقل، رد approval قدیمی و تأیید آخرین push اصلاح شده؛ این تغییر هنوز در تنظیم راه دور Apply/Read-back نشده است.
+- الزام signed commits مستلزم امضای معتبر تمام commitهای واردشونده از PR head است. آخرین SHA گزارش‌شده پیش از اصلاحات جاری با `verified=false / unsigned` بوده؛ این مانع تا امضای کل بازه commitها باز است.
+- PR #12 تا تکمیل Branch Protection، امضای همه commitهای PR، CI روی SHA نهایی و GitHub Review مستقل، Draft و ادغام‌نشده می‌ماند.

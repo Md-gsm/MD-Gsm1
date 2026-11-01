@@ -11,7 +11,7 @@
   "securityPrivacyReviewReference": "docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md — Project Owner reported approval on 2026-10-31; reviewed commit 1d4e42b626fe6ca4b9a1910c94b4d4631d0c0c4b.",
   "verifiedBy": "Project Owner confirmation recorded in repository evidence; CI independently reported by GitHub Actions.",
   "verifiedAtUtc": "2026-10-31",
-  "note": "The G1 entry evidence remains NOT_READY. The live public branch metadata read-back on 2026-11-01 shows main is protected and enforced for everyone, but only 12 of the required 13 contexts are configured; persons-postgres-windows-migrations is missing. The current connected integration cannot read the detailed branch-protection endpoint (HTTP 403), so required approving review count and detailed options remain unverified. The helper now proposes 13 checks, one independent approval, stale-review dismissal and latest-push approval; the Project Owner must apply it with GitHub CLI as repository Admin and capture a post-apply read-back. The historical PR #6 negative test predates the corrected rule; a new failing-check PR test is required after configuration. All G1 entry prerequisites remain open until evidence is independently read back. Keep g1Authorized=false.",
+  "note": "The G1 entry evidence remains NOT_READY. The live public branch metadata read-back on 2026-11-01 shows main is protected and enforced for everyone, but only 12 of the required 13 contexts are configured; persons-postgres-windows-migrations is missing. The current connected integration cannot read the detailed branch-protection endpoint (HTTP 403), so required approving review count and detailed options remain unverified. The helper now proposes 13 checks, one independent approval, stale-review dismissal and latest-push approval; the Project Owner must apply it with GitHub CLI as repository Admin and capture a post-apply read-back. The historical PR #6 negative test predates the corrected rule; a new failing-check PR test is required after configuration. All G1 entry prerequisites remain open until evidence is independently read back. Keep g1Authorized=false. The latest inspected PR #12 head commit was reported by GitHub as unsigned. Signed-commit readiness is a separate G1 prerequisite; the fail-closed validator now requires all incoming PR commits to be verified before g1Authorized can be enabled.",
   "validatedCommit": "7bcc423a87b44e19291f4f28d04858e06e74515c",
   "ciWorkflowRun": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41185491539",
   "ciResult": "SUCCESS — 13/13 jobs passed on validatedCommit, including foundation build/test, architecture, security, disposable E2E and PostgreSQL 18.6 Linux/Windows migration jobs.",
@@ -43,8 +43,10 @@
       "persons-ci-evidence"
     ],
     "detailedProtectionEndpoint": "HTTP 403 — not readable by connected integration",
-    "independentApprovalRequirement": "NOT_VERIFIED"
+    "independentApprovalRequirement": "NOT_VERIFIED",
+    "signatureMergeReadiness": "BLOCKED — PR head commit is unsigned; sign and verify the entire introduced commit range before merge."
   },
-  "independentPullRequestApprovalEvidence": "The prior owner-reported protection configuration listed required_approving_review_count=0. The corrected helper now requests one approval and latest-push approval, but this is not remotely applied or verified yet.",
-  "requiredStatusChecksConfiguredInScm": false
+  "independentPullRequestApprovalEvidence": "The corrected Admin helper requests one independent approval and latest-push approval; this is not remotely applied or verified yet.",
+  "requiredStatusChecksConfiguredInScm": false,
+  "signedCommitMergeReadinessEvidence": "PR #12 head commit 2f1f29a5b255c484f70fb8c57cb1e07558311ef2 was read from GitHub with verification.verified=false and verification.reason=unsigned. All commits introduced by the PR must have verified signatures before merge to a branch requiring signed commits; squash merge does not bypass GitHub's PR-head signature checks."
 }
