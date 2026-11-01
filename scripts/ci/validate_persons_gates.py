@@ -115,9 +115,9 @@ def run_spec(root: Path) -> None:
         raise GateFailure(f"Temporary data policy does not match the proposed v1.1 target values: {policy}")
     criteria = mapping.get("criteria", [])
     ids = [x.get("id") for x in criteria]
-    expected = [f"AC-{i:02d}" for i in range(31, 50)]
+    expected = [f"AC-{i:02d}" for i in range(31, 67)]
     if ids != expected:
-        raise GateFailure("Acceptance map must contain AC-31..AC-49 exactly once, in order, with no gaps or extras.")
+        raise GateFailure("Acceptance map must contain AC-31..AC-66 exactly once, in order, with no gaps or extras.")
     for item in criteria:
         for key in ("gate", "status", "expectedBehavior"):
             if not str(item.get(key, "")).strip():
@@ -125,12 +125,34 @@ def run_spec(root: Path) -> None:
         if item["status"] not in {"UNMAPPED", "IMPLEMENTED"}:
             raise GateFailure(f"Unexpected status for {item['id']}: {item['status']}")
         number = int(item["id"].split("-")[1])
-        expected_gate = "persons-temporary-data-retention" if number <= 38 else "persons-merge-contract" if number <= 45 else "persons-ci-enforcement-test" if number <= 48 else "persons-ci-evidence"
+        if number <= 38:
+            expected_gate = "persons-temporary-data-retention"
+        elif number <= 45:
+            expected_gate = "persons-merge-contract"
+        elif number <= 48:
+            expected_gate = "persons-ci-enforcement-test"
+        elif number == 49:
+            expected_gate = "persons-ci-evidence"
+        else:
+            expected_gate = {
+                50: "persons-api-contract", 51: "persons-api-contract",
+                52: "persons-postgres-migrations", 53: "persons-api-contract",
+                54: "persons-api-contract", 55: "persons-security-tests",
+                56: "persons-api-contract", 57: "persons-api-contract",
+                58: "persons-security-tests", 59: "persons-api-contract",
+                60: "persons-postgres-migrations", 61: "persons-merge-contract",
+                62: "persons-merge-contract", 63: "persons-merge-contract",
+                64: "persons-security-tests", 65: "persons-consumer-registry",
+                66: "persons-api-contract",
+            }[number]
         if item["gate"] != expected_gate:
             raise GateFailure(f"{item['id']} is mapped to {item['gate']} instead of {expected_gate}.")
         if item["status"] == "UNMAPPED":
-            if item.get("testFile") is not None or item.get("automatedTest") is not None:
-                raise GateFailure(f"{item['id']} is UNMAPPED but still names a nonexistent test.")
+            if not item.get("testFile") or not item.get("automatedTest"):
+                raise GateFailure(f"{item['id']} is UNMAPPED without a named future test.")
+            candidates = list(root.rglob(item["testFile"]))
+            if candidates and any(item["automatedTest"] in candidate.read_text(encoding="utf-8", errors="replace") for candidate in candidates):
+                raise GateFailure(f"{item['id']} is UNMAPPED but its named automated test already exists.")
         if item["status"] == "IMPLEMENTED":
             if not item.get("testFile") or not item.get("automatedTest"):
                 raise GateFailure(f"{item['id']} is IMPLEMENTED without a test file and method.")
@@ -141,9 +163,9 @@ def run_spec(root: Path) -> None:
                 raise GateFailure(f"{item['id']} claims an implemented test but method '{item['automatedTest']}' is absent.")
     all_criteria_implemented = all(item.get("status") == "IMPLEMENTED" for item in criteria)
     if prereqs.get("acceptanceCriteriaAc31ToAc49Mapped") is True and not all_criteria_implemented:
-        raise GateFailure("Manifest claims AC-31..AC-49 are mapped, but one or more criteria are UNMAPPED.")
+        raise GateFailure("Manifest claims AC-31..AC-66 are mapped, but one or more criteria are UNMAPPED.")
     if manifest.get("g1Authorized") is True and not all_criteria_implemented:
-        raise GateFailure("G1 cannot be authorized while any AC-31..AC-49 criterion is UNMAPPED.")
+        raise GateFailure("G1 cannot be authorized while any AC-31..AC-66 criterion is UNMAPPED.")
     if "src/Modules/Persons" not in registry.get("ownerPaths", []) or "registeredConsumers" not in registry:
         raise GateFailure("Consumer registry lacks owner paths or registeredConsumers.")
     for consumer in registry.get("registeredConsumers", []):
@@ -263,7 +285,7 @@ def run_spec(root: Path) -> None:
     checksum_verifier = root / "scripts/Verify-SourceChecksums.ps1"
     if not checksum_verifier.exists() or "Get-FileHash" not in checksum_verifier.read_text(encoding="utf-8"):
         raise GateFailure("Source checksum verifier is missing or does not verify SHA-256 hashes.")
-    print("PASS: specification, policy values, AC-31..AC-49 mapping, required job IDs, disposable-test safety guards, and checksum verifier.")
+    print("PASS: specification, policy values, AC-31..AC-66 mapping, required job IDs, disposable-test safety guards, and checksum verifier.")
 
 def run_architecture(root: Path) -> None:
     expected_projects = {
@@ -361,6 +383,7 @@ def run_registry(root: Path) -> None:
     found = set()
     owner_paths.extend(["database/migrations/persons"])
     rx = re.compile(r"\bPartyId\b|\bparty_id\b|REFERENCES\s+parties\b", re.IGNORECASE)
+    legacy_rx = re.compile(r"\bPersonId\b|\bperson_id\b", re.IGNORECASE)
     scanned_extensions = {".cs", ".sql", ".xaml", ".json", ".yml", ".yaml", ".xml", ".props", ".csproj"}
     scan_roots = [root / "src", root / "database" / "migrations"]
     for base in scan_roots:
@@ -375,6 +398,8 @@ def run_registry(root: Path) -> None:
             if any(rel.startswith(path + "/") for path in owner_paths):
                 continue
             content = p.read_text(encoding="utf-8", errors="replace")
+            if legacy_rx.search(content):
+                raise GateFailure(f"Legacy PersonId/person_id identifier is forbidden in source: {rel}")
             if rx.search(content):
                 found.add(rel)
     unknown = found - registered
