@@ -1,6 +1,6 @@
 {
   "evidenceVersion": "1.4",
-  "status": "NOT_READY",
+  "status": "G0_CLOSED",
   "scmRemoteRepository": "https://github.com/Md-gsm/MD-Gsm1",
   "branchProtectionEvidence": "Verified by repository owner via GitHub API on 2026-10-31: main is protected; strict required status checks enabled with all 12 configured contexts (foundation-build-test, persons-spec-lint, persons-architecture-boundary, persons-consumer-registry, persons-api-contract, persons-temporary-data-retention, persons-merge-contract, persons-postgres-migrations, persons-security-tests, persons-e2e-disposable, persons-ci-enforcement-test, persons-ci-evidence); required PR enabled; enforce_admins=true; required_signatures=true; required_linear_history=true; required_conversation_resolution=true; force pushes/deletions/fork syncing disabled; lock_branch=false. Required approving review count is 0 pending owner decision.",
   "negativeEnforcementPullRequest": "https://github.com/Md-gsm/MD-Gsm1/pull/6",
@@ -11,11 +11,16 @@
   "securityPrivacyReviewReference": "docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md — Project Owner reported approval on 2026-10-31; reviewed commit 1d4e42b626fe6ca4b9a1910c94b4d4631d0c0c4b.",
   "verifiedBy": "Project Owner confirmation recorded in repository evidence; CI independently reported by GitHub Actions.",
   "verifiedAtUtc": "2026-10-31",
-  "note": "PR #9 (main branch protection tool) was merged to main at ce282d964314cff4f5980ec023a4c822e4f7b786. PR #8 branch now contains that main commit as an ancestor; the final branch-protection tool and operations guide are synchronized into PR #8. The prior PR #8 head f927a958b1c0a4bc27e83b65db92de36821e48f1 passed 13/13 jobs; CI must pass again on the current synchronized head before PR #8 can merge. G0 remains NOT_READY until PR #8 merges. Persons remains NOT_IMPLEMENTED; g1Authorized=false; AC-31..AC-45 remain intentionally unmapped for G1.",
-  "validatedCommit": "7bcc423a87b44e19291f4f28d04858e06e74515c",
-  "ciWorkflowRun": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41185491539",
-  "ciResult": "SUCCESS — 13/13 jobs passed on validatedCommit, including foundation build/test, architecture, security, disposable E2E and PostgreSQL 18.6 Linux/Windows migration jobs.",
+  "note": "G0 CLOSED: PR #9 (main branch protection tool) merged at ce282d964314cff4f5980ec023a4c822e4f7b786; PR #8 (G0 completion) squash-merged at 43a51631e342d94757c5ad88a6e1a81ef97be0ef after workflow run 41233442659 passed all 13 jobs on synchronized head 43092dd3097ec38c2bab1b564399018d9c29878d. Architecture review by Group of Software Advisers and security/privacy review by Project Owner were confirmed by the owner on 2026-10-31. Main branch protection was previously verified by the owner via GitHub CLI; the GitHub connector cannot read the branch-protection endpoint due to integration permission limits. Persons remains NOT_IMPLEMENTED; g1Authorized=false. G0 closure does not authorize G1 or Persons implementation; explicit owner authorization is still required. On 2026-11-01, the Project Owner explicitly confirmed that the Group of Software Advisers approved the G1 scope document and that the Project Owner approved its security/privacy aspects. These approvals apply to the G1 scope document only and do not authorize implementation; g1Authorized remains false.",
+  "validatedCommit": "43092dd3097ec38c2bab1b564399018d9c29878d",
+  "ciWorkflowRun": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41233442659",
+  "ciResult": "SUCCESS — 13/13 jobs passed on synchronized PR #8 HEAD 43092dd3097ec38c2bab1b564399018d9c29878d, including all 12 required checks and PostgreSQL 18.6 Linux/Windows migration jobs.",
   "windowsPreviewInstallerRun": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41185066512",
   "windowsPreviewInstallerCommit": "de9ffc1aab96e8954abff417a32f51cd6bb3e362",
-  "windowsPreviewInstallerResult": "SUCCESS; the only commits after that installer build and before validatedCommit changed documentation only (docs/PHASE_5_STATUS.md, docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md, docs/operations/required-status-checks.md, docs/persons/g1-entry-evidence.json)."
+  "windowsPreviewInstallerResult": "SUCCESS; the only commits after that installer build and before validatedCommit changed documentation only (docs/PHASE_5_STATUS.md, docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md, docs/operations/required-status-checks.md, docs/persons/g1-entry-evidence.json).",
+  "g1ScopeReviewReference": "docs/persons/G1_SCOPE_AND_ENTRY_CRITERIA_FA.md — Project Owner reported Group of Software Advisers approval of the G1 scope on 2026-11-01; recorded as owner-provided confirmation, not as a direct GitHub review.",
+  "g1SecurityPrivacyReviewReference": "docs/persons/G1_SCOPE_AND_ENTRY_CRITERIA_FA.md — Project Owner explicitly confirmed security and privacy approval of the G1 scope on 2026-11-01.",
+  "g1ScopeApprovalStatus": "APPROVED_BY_GROUP_OF_SOFTWARE_ADVISERS_PER_PROJECT_OWNER_CONFIRMATION",
+  "g1SecurityPrivacyApprovalStatus": "APPROVED_BY_PROJECT_OWNER",
+  "g1EntryPreparationStatus": "APPROVALS_RECORDED_CI_REMEDIATION_PENDING"
 }
