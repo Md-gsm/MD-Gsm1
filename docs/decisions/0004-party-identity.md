@@ -18,3 +18,10 @@
 - No implementation, schema, or API is implied until G1 is separately authorized.
 - External modules must use versioned Contracts and register every persisted or transported PartyId consumer.
 - Legacy `PersonId` / `person_id` naming is not an accepted new contract.
+
+
+## Stage 2 clarification (proposed baseline)
+
+- Invalid, incomplete, or ambiguous mobile numbers are rejected; no unverified-contact persistence path is permitted.
+- Persons exposes WorkClassification values Staff, Employee, and Technician separately from commercial roles and IAM permissions. Technician skills, capabilities, scheduling, and assignment remain owned by RepairOperations.
+- New cross-module contracts use opaque PartyId only. PersonId/person_id are forbidden legacy identifiers; this ADR's mention above is solely an explicit prohibition and must never be copied into a new contract.
