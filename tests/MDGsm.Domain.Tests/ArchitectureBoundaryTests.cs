@@ -73,7 +73,7 @@ public sealed class ArchitectureBoundaryTests
         Assert.Contains(relative.Replace("/", Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal), solution);
 
         var xml = XDocument.Load(project);
-        Assert.Empty(xml.Descendants().Where(element => element.Name.LocalName is "ProjectReference" or "PackageReference" or "FrameworkReference"));
+        Assert.DoesNotContain(xml.Descendants(), element => element.Name.LocalName is "ProjectReference" or "PackageReference" or "FrameworkReference");
         Assert.Contains(xml.Descendants("TargetFramework"), element => element.Value == "net10.0");
     }
 
