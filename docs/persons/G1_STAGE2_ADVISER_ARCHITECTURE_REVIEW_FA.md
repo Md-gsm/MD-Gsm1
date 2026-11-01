@@ -54,7 +54,7 @@
 - [ ] suffix4 حداکثر ۱۰ نتیجه؛ ماسک فقط دو رقم آخر؛ سقف ۵/دقیقه و ۳۰/روز actor-purpose به‌علاوه سقف global پیشنهادی ۱۰۰۰/روز؛ تعریف دقیق traversal، throttle موقت ۱۵ دقیقه‌ای و unlock مدیریتی با reason/audit. اعداد تا سنجش حجم واقعی و تأیید مالک امنیت صرفاً پیشنهادی‌اند.
 - [ ] Active/Inactive/Restricted/Archived/Merged و وضعیت مستقل role.
 - [ ] V1 تک‌شعبه بدون tenant؛ Scope permission + purpose + record state.
-- [ ] orchestrator در Application؛ participant contract نسخه‌دار، OperationId و idempotency/payload hash؛ Prepare فقط read-only؛ تمام DB participants در shared connection/transaction؛ failure rollback کامل.
+- [ ] orchestrator در Application؛ participant contract نسخه‌دار، OperationId و idempotency بدون ذخیره/مقایسه payload؛ Prepare فقط read-only؛ تمام DB participants در shared connection/transaction؛ failure rollback کامل.
 - [ ] participant ناشناخته/ناسازگار پیش از اولین write عملیات را متوقف می‌کند؛ DbContext هر ماژول مستقل اما enlisted در همان connection/transaction است؛ DbContext سراسری ممنوع و اصلاحیه ADR-0005 است.
 - [ ] ترتیب migration: تخصیص در registry مرکزی Git، بازه‌های رزرو ماژولی، CI برای duplicate/out-of-range و رد اجرای late lower version؛ ADR-0009 Proposed.
 - [ ] PartyId در تمام consumer contracts wire-format UUIDv7 یکسان و round-trip دارد؛ بدون coupling به CLR type ماژول Persons.
@@ -70,7 +70,7 @@
 
 | شناسه | اصلاح پیشنهادی/ثبت‌شده در نسخه جاری | داوری مستقل گروه مشاور (A/R/X/O) | شدت/مرجع/شرط |
 |---|---|---|---|
-| N1 | payload خام و hash بدون کلید حذف؛ حذف مقایسهٔ payload؛ ثبت OperationId scoped و نتیجه، بدون payload/hash/HMAC؛ AC-67؛ AC-67 |  |  |
+| N1 | مقایسهٔ payload حذف؛ ثبت OperationId scoped و نتیجه، بدون payload/hash/HMAC؛ AC-67 |  |  |
 | N2 | Contracts و استقلال DbContext در ADR-0007؛ اصلاحیهٔ پیشنهادی جداگانه در ADR-0010؛ ADR-0005 Accepted دست‌نخورده می‌ماند |  |  |
 | N3 | ADR-0009: sequence عددی سراسری، نام NNNN_module، history سراسری با module_key و dependency DAG |  |  |
 | N4 | traversal دقیق، throttle ۱۵ دقیقه‌ای، unlock مدیریتی audit‌شده؛ سقف‌ها پیشنهادی و نیازمند سنجش حجم/تأیید مالک امنیت؛ AC-69 |  |  |
