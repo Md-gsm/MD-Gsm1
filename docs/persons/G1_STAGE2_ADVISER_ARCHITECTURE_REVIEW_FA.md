@@ -51,15 +51,17 @@
 - [ ] ارقام فارسی/عربی normalize؛ ۰۹ معتبر به +989؛ شماره نامعتبر رد.
 - [ ] یکتایی موبایل در Party سخت و بین Partyها soft؛ یک موبایل اصلی فعال.
 - [ ] FindOrCreate idempotent؛ ambiguity به انتخاب انسانی.
-- [ ] suffix4 حداکثر ۱۰ نتیجه ماسک‌شده؛ ۵ درخواست/دقیقه و ۳۰ درخواست/روز برای actor/purpose، audit، alert و قفل موقت؛ unmask مجوز مستقل و purpose کنترل‌شده و audit.
+- [ ] suffix4 حداکثر ۱۰ نتیجه؛ ماسک فقط دو رقم آخر؛ سقف ۵/دقیقه و ۳۰/روز actor-purpose به‌علاوه سقف global پیشنهادی ۱۰۰۰/روز؛ تعریف دقیق traversal، throttle موقت ۱۵ دقیقه‌ای و unlock مدیریتی با reason/audit. اعداد تا سنجش حجم واقعی و تأیید مالک امنیت صرفاً پیشنهادی‌اند.
 - [ ] Active/Inactive/Restricted/Archived/Merged و وضعیت مستقل role.
 - [ ] V1 تک‌شعبه بدون tenant؛ Scope permission + purpose + record state.
 - [ ] orchestrator در Application؛ participant contract نسخه‌دار، OperationId و idempotency/payload hash؛ Prepare فقط read-only؛ تمام DB participants در shared connection/transaction؛ failure rollback کامل.
-- [ ] participant ناشناخته/ناسازگار پیش از اولین write عملیات را متوقف می‌کند؛ DbContext هر ماژول مستقل اما enlisted در همان connection/transaction است.
+- [ ] participant ناشناخته/ناسازگار پیش از اولین write عملیات را متوقف می‌کند؛ DbContext هر ماژول مستقل اما enlisted در همان connection/transaction است؛ DbContext سراسری ممنوع و اصلاحیه ADR-0005 است.
+- [ ] ترتیب migration: NNNN_module_name با sequence عددی global، history واحد شامل module_key، dependencyهای صریح و بررسی چرخه پیش از write؛ ADR-0009 Proposed.
+- [ ] PartyId در تمام consumer contracts wire-format UUIDv7 یکسان و round-trip دارد؛ بدون coupling به CLR type ماژول Persons.
 - [ ] outbox فقط اثر بیرونی؛ Recovery برای DB staging/compensation ندارد.
 - [ ] tokenهای profile/contact/role مستقل؛ overlap ممنوع با exclusion constraint.
-- [ ] ذخیره شناسه رسمی تا ADR-0008 ممنوع.
-- [ ] AC-50..66 مشخص اما UNMAPPED؛ هیچ ادعای PASS بدون تست؛ validator و تست سیاست AC-31..66 را پوشش می‌دهند.
+- [ ] هیچ تفسیر حقوقی مفروض نیست؛ صدور صورتحساب رسمی اشخاص حقوقی تا تصمیم O مستند مالک و تأیید ADR-0008 در HOLD می‌ماند.
+- [ ] AC-50..72 با مسیرهای آیندهٔ تست .NET و نام کلاس/متد مشخص اما UNMAPPED؛ هیچ ادعای PASS بدون تست؛ validator و تست سیاست AC-31..72 را پوشش می‌دهند.
 - [ ] هیچ مجوز Runtime از این بازبینی استنباط نمی‌شود.
 
 ## یافته‌های جدید این دور — پاسخ تهیه‌کنندگان و داوری مستقل
