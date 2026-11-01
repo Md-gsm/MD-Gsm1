@@ -1,7 +1,7 @@
 {
   "manifestVersion": "1.1",
   "module": "Persons",
-  "repositoryStage": "G0_CLOSED_G1_ENTRY_PREPARATION",
+  "repositoryStage": "G0_PREPARATION_ONLY",
   "implementationState": "NOT_IMPLEMENTED",
   "g1Authorized": false,
   "personsApiImplemented": false,
@@ -33,9 +33,11 @@
     "acceptanceCriteriaAc31ToAc49Mapped": false,
     "architectureAligned": true,
     "windowsPostgres18Validated": true,
-    "applicationMigrationRunnerValidated": true
+    "applicationMigrationRunnerValidated": true,
+    "g1ScopeApproved": true,
+    "g1SecurityPrivacyApproved": true
   },
-  "note": "G0 is formally closed by PR #8 squash merge at 43a51631e342d94757c5ad88a6e1a81ef97be0ef. All 12 required status checks are configured on protected main as verified by the Project Owner via GitHub CLI on 2026-10-31; PR #9 delivered the protection verification tool. Architecture review by the Group of Software Advisers and security/privacy review by the Project Owner were confirmed by the owner on 2026-10-31. Workflow run 41233442659 passed 13/13 jobs on synchronized PR #8 HEAD 43092dd3097ec38c2bab1b564399018d9c29878d. Persons business runtime and migrations remain absent. AC-31..AC-45 remain intentionally UNMAPPED until their real implementation tests are added during G1; AC-46..AC-49 are implemented as governance/CI checks. This is preparation evidence only: g1Authorized remains false and no Persons implementation is authorized by this manifest.",
+  "note": "G0 is formally closed by PR #8 squash merge at 43a51631e342d94757c5ad88a6e1a81ef97be0ef. All 12 required status checks are configured on protected main as verified by the Project Owner via GitHub CLI on 2026-10-31; PR #9 delivered the protection verification tool. Architecture review by the Group of Software Advisers and security/privacy review by the Project Owner were confirmed by the owner on 2026-10-31. Workflow run 41233442659 passed 13/13 jobs on synchronized PR #8 HEAD 43092dd3097ec38c2bab1b564399018d9c29878d. Persons business runtime and migrations remain absent. AC-31..AC-45 remain intentionally UNMAPPED until their real implementation tests are added during G1; AC-46..AC-49 are implemented as governance/CI checks. This is preparation evidence only: g1Authorized remains false and no Persons implementation is authorized by this manifest. On 2026-11-01, the Project Owner confirmed approval of the G1 scope by the Group of Software Advisers and security/privacy approval by the Project Owner. These are scope approvals, not authorization to implement. repositoryStage remains the validator-supported G0_PREPARATION_ONLY until explicit G1 authorization.",
   "validationEvidenceReference": "docs/operations/evidence/g0-ci-validation-2026-10-31.json",
   "runtimeHostBuildingBlocksRelocated": true
 }
