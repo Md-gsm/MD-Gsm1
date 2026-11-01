@@ -136,7 +136,7 @@ def run_spec(root: Path) -> None:
             expected_gate = "persons-ci-evidence"
         else:
             expected_gate = {
-                50: "persons-api-contract", 51: "persons-api-contract",
+                50: "persons-api-contract", 51: "persons-postgres-migrations",
                 52: "persons-postgres-migrations", 53: "persons-api-contract",
                 54: "persons-api-contract", 55: "persons-security-tests",
                 56: "persons-api-contract", 57: "persons-api-contract",
