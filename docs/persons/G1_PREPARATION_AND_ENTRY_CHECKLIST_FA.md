@@ -66,3 +66,10 @@
 `foundation-build-test`, `persons-spec-lint`, `persons-architecture-boundary`, `persons-consumer-registry`, `persons-api-contract`, `persons-temporary-data-retention`, `persons-merge-contract`, `persons-postgres-migrations`, `persons-postgres-windows-migrations`, `persons-security-tests`, `persons-e2e-disposable`, `persons-ci-enforcement-test`, `persons-ci-evidence`.
 
 این ۱۳ job در Workflow تعریف و در run `41185491539` همگی موفق شده‌اند، اما Branch API روی `main` هنوز `contexts=[]` و `checks=[]` گزارش می‌کند؛ Required بودن آن‌ها فعال نیست. تا ثبت واقعی از سوی Admin، `requiredStatusChecksConfiguredInScm=false` باقی می‌ماند.
+
+
+## پیش‌نیاز اجباری جدید ورود به G1 — سیاست ضد-enumeration
+
+- تأیید صریح مالک پروژه/مسئول امنیت دربارهٔ حدود per-actor، سقف تجمیعی global، دامنهٔ enforcement، پنجره‌های UTC، رفتار throttle، مسیر override مدیر و شواهد آزمون، پیش‌نیاز سخت ورود به G1 است.
+- تا پیش از این تأیید، همهٔ سقف‌های عددی فقط telemetry/alert هستند؛ هیچ سقف global نباید موجب رد سراسری درخواست‌ها شود.
+- این تأیید هنوز ثبت نشده است؛ بنابراین `suffixSearchAbusePolicyApproved=false` و `g1Authorized=false` باقی می‌مانند.

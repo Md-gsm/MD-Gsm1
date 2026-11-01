@@ -1,5 +1,5 @@
 {
-  "registryVersion": "1.1",
+  "registryVersion": "1.2",
   "module": "Persons",
   "ownerPaths": [
     "src/Modules/Persons"
@@ -35,5 +35,6 @@
       "status": "PLANNED",
       "condition": "Register only when implemented and stores or transports PartyId."
     }
-  ]
+  ],
+  "note": "Scanner must detect PartyId/party_id and fail on legacy PersonId/person_id outside negative-test fixtures and this forbidden-pattern policy. No implemented consumers currently exist; do not invent consumers."
 }

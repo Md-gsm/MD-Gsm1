@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "registryStatus": "PROPOSED_SEED_ONLY",
+  "ciEnforcementImplemented": false,
+  "nextVersion": 2,
+  "moduleRangeGuidance": {
+    "foundation": { "start": 1, "end": 99 },
+    "persons": { "start": 100, "end": 199 },
+    "identityAccess": { "start": 200, "end": 299 },
+    "repairOperations": { "start": 300, "end": 399 },
+    "finance": { "start": 400, "end": 499 }
+  },
+  "allocations": [
+    {
+      "version": 1,
+      "moduleKey": "foundation",
+      "migrationName": "0001_infrastructure_schema_version.sql",
+      "path": "database/migrations/0001_infrastructure_schema_version.sql",
+      "dependsOn": []
+    }
+  ],
+  "allocationRules": {
+    "sequence": "GLOBAL_MONOTONIC",
+    "moduleRangesAreAdvisoryOnly": true,
+    "allocateInPullRequest": true,
+    "runtimeAllocationAllowed": false,
+    "nextVersionMustEqualMaxAllocatedPlusOne": true,
+    "duplicateVersionOrNameAllowed": false,
+    "dependenciesMustBeAcyclic": true
+  },
+  "notes": [
+    "This is a proposed seed registry, not an implemented allocator or CI gate.",
+    "The high-water mark controls execution order only; it does not reserve a permanent numeric range for any module.",
+    "After migration 0200 is applied, the next new Persons migration may be allocated as 0201 or the next globally free version."
+  ]
+}

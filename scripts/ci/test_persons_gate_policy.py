@@ -67,6 +67,16 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(gates.GateFailure, r"UNMAPPED|evidence\."):
                 gates.run_spec(dst)
 
+    def test_legacy_personid_identifier_fails_registry_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
+            legacy = dst / "src/BuildingBlocks/MDGsm.Application/Reporting/LegacyPartyQuery.cs"
+            legacy.parent.mkdir(parents=True, exist_ok=True)
+            legacy.write_text("public sealed record LegacyPartyQuery(Guid PersonId);", encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "Legacy PersonId/person_id identifier is forbidden"):
+                gates.run_registry(dst)
+
     def test_unknown_partyid_in_contract_json_fails_registry_gate(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
@@ -145,10 +155,31 @@ class PersonsGatePolicyTests(unittest.TestCase):
         mapping = gates.load_json(ROOT / "docs/persons/acceptance-gate-map.json")
         for item in mapping["criteria"]:
             if item["status"] == "UNMAPPED":
-                self.assertIsNone(item.get("testFile"))
-                self.assertIsNone(item.get("automatedTest"))
+                number = int(item["id"].split("-")[1])
+                if number <= 49:
+                    self.assertIsNone(item.get("testFile"))
+                    self.assertIsNone(item.get("automatedTest"))
+                else:
+                    self.assertTrue(item.get("testFile"))
+                    self.assertTrue(item.get("automatedTest"))
+                    candidates = list(ROOT.rglob(item["testFile"]))
+                    self.assertFalse(
+                        any(item["automatedTest"] in p.read_text(encoding="utf-8", errors="replace") for p in candidates),
+                        f'{item["id"]} is UNMAPPED but its named test already exists',
+                    )
+        self.assertEqual([f"AC-{n:02d}" for n in range(31, 74)], [x["id"] for x in mapping["criteria"]])
         manifest = gates.load_json(ROOT / "docs/persons/persons-module-manifest.json")
         self.assertFalse(manifest["g1Prerequisites"]["acceptanceCriteriaAc31ToAc49Mapped"])
+        self.assertTrue(manifest["g1Prerequisites"]["suffixSearchAbusePolicyApproved"])
+        abuse = manifest["suffixSearchAbusePolicy"]
+        self.assertEqual(10, abuse["perActorPurposeRequestsPerRollingMinute"])
+        self.assertEqual(100, abuse["perActorPurposeRequestsPerUtcDay"])
+        self.assertEqual(1000, abuse["globalRequestsPerUtcDay"])
+        self.assertEqual("TELEMETRY_ALERT_ONLY_NEVER_BLOCK", abuse["globalLimitMode"])
+        self.assertEqual(15, abuse["abuseResponse"]["actorThrottleMinutes"])
+        self.assertTrue(abuse["managerOverride"]["reasonRequired"])
+        self.assertEqual("APPEND_ONLY_IMMUTABLE", abuse["managerOverride"]["audit"])
+        self.assertFalse(abuse["accountLock24HoursAllowed"])
 
     def test_g1_cannot_be_authorized_with_unmapped_acceptance_criteria(self):
         with tempfile.TemporaryDirectory() as tmp:
