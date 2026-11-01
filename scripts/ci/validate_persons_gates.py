@@ -115,6 +115,7 @@ def run_spec(root: Path) -> None:
         raise GateFailure(f"Temporary data policy does not match the proposed v1.1 target values: {policy}")
     criteria = mapping.get("criteria", [])
     ids = [x.get("id") for x in criteria]
+    # Stage 2 expands the ordered specification map through AC-66; UNMAPPED means no executable proof yet.
     expected = [f"AC-{i:02d}" for i in range(31, 67)]
     if ids != expected:
         raise GateFailure("Acceptance map must contain AC-31..AC-66 exactly once, in order, with no gaps or extras.")
