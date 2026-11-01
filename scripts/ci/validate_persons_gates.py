@@ -341,6 +341,17 @@ def run_architecture(root: Path) -> None:
                 f"Project reference boundary violated in {relative_path}: "
                 f"expected {sorted(expected_refs)}, found {sorted(actual_refs)}"
             )
+        if relative_path == "Modules/Persons/Domain/MDGsm.Persons.Domain.csproj":
+            forbidden_dependencies = [
+                node.tag.split("}")[-1]
+                for node in tree.iter()
+                if node.tag.split("}")[-1] in {"PackageReference", "FrameworkReference"}
+            ]
+            if forbidden_dependencies:
+                raise GateFailure(
+                    "Persons Domain must not reference NuGet packages or shared frameworks: "
+                    f"{sorted(forbidden_dependencies)}"
+                )
 
     for relative_dir in ("Host/Desktop", "BuildingBlocks/MDGsm.Client"):
         source_dir = project_root / relative_dir
@@ -384,7 +395,7 @@ def run_architecture(root: Path) -> None:
         if (project_root / old_root).exists():
             raise GateFailure(f"Flat legacy project directory remains under src/: {old_root}")
 
-    print("PASS: modular project inventory, Host/BuildingBlocks dependency graph, isolated Contracts assemblies, and source boundaries.")
+    print("PASS: modular project inventory, Host/BuildingBlocks dependency graph, isolated Contracts assemblies, dependency-free Persons Domain (including no package/framework references), and source boundaries.")
 
 def run_registry(root: Path) -> None:
     reg = load_json(root / "docs/persons/consumer-registry.json")

@@ -2,7 +2,7 @@
 
 Workflow: `.github/workflows/persons-module-gates.yml`
 
-The following 13 job names are the required check set that must be configured on the remote default branch:
+The complete required check set contains **13 job names**:
 
 - `foundation-build-test`
 - `persons-spec-lint`
@@ -18,53 +18,40 @@ The following 13 job names are the required check set that must be configured on
 - `persons-ci-enforcement-test`
 - `persons-ci-evidence`
 
-## Remote configuration evidence — 2026-10-31
+## Current remote read-back
 
-The GitHub branch metadata endpoint for `main` returned:
+A fresh read of GitHub's public branch metadata for `main` on 2026-11-01 returned `protected=true`, `protection.enabled=true`, and `required_status_checks.enforcement_level=everyone`, but exactly **12 required contexts** are listed. They match the list above except `persons-postgres-windows-migrations`.
 
-- `protected=true`
-- `protection.enabled=true`
-- `protection.required_status_checks.enforcement_level=non_admins`
-- `protection.required_status_checks.contexts=[]`
-- `protection.required_status_checks.checks=[]`
+Therefore the remote rule is incomplete: the Windows PostgreSQL migration job is not currently a required context. This is material because Windows is a supported V1 platform. `requiredStatusChecksConfiguredInScm=false` until all 13 contexts are read back from GitHub.
 
-The rulesets endpoint returned an empty array. The dedicated Branch Protection details endpoint returned HTTP 403 (`Resource not accessible by integration`). **The current branch metadata therefore does not list any required status checks.** A protected branch is not enough to close this condition.
+The detailed `GET /branches/main/protection` endpoint returned HTTP 403 to the connected integration, so this read-back does not independently establish the current approval count, signature setting, or every other detailed protection property. An older owner-reported record says the approval count was zero. Do not treat that historical value as a current verified configuration.
 
-Recommended Admin configuration:
-1. Add all 13 check names listed above as required checks.
-2. Require branches to be up to date before merging.
-3. Prevent bypass for administrators and maintainers for these checks, unless a documented emergency exception is explicitly approved by the Project Owner.
-4. Keep required checks attached to the default branch rules, not just workflow YAML.
+## Required remote policy
 
-The connected GitHub integration currently exposes no Branch Protection/Rulesets write action. It cannot change these settings even though the repository account has Admin permission. A repository Admin must configure them in GitHub Settings and provide an exported/screenshot/API evidence reference. Until this is verified, `requiredStatusChecksConfiguredInScm=false`.
+The repository Admin must configure and read back all of the following on `main`:
 
-## Negative enforcement test
+1. Require all 13 check contexts above, including `persons-postgres-windows-migrations`.
+2. Require the branch to be up to date before merge (`strict=true`).
+3. Enforce the rule for administrators; no bypass allowances.
+4. Require pull requests and at least **one approving review** from someone other than the last pusher.
+5. Dismiss stale approvals and require approval of the latest push.
+6. Preserve signed-commit enforcement, linear history and conversation resolution.
+7. Disallow force pushes and branch deletion.
 
-PR #6 deliberately introduced a forbidden `MDGsm.Domain -> MDGsm.Infrastructure` project reference. The `persons-architecture-boundary` check failed; GitHub reported the PR as blocked and it was closed without merge. This is recorded as evidence that the negative architecture test was exercised. It does not replace the requirement to configure the complete 13-check set on `main`.
+The repository helper `scripts/Configure-MainBranchProtection.ps1` has been corrected to request these 13 checks and one independent approval. It performs a preflight against the current `main` HEAD, applies the rule only with the explicit `-Apply` switch, then reads the detailed settings back and fails unless the 13 names and review policy match. The current connector exposes no Branch Protection write action; the owner must run this helper locally using GitHub CLI authenticated as a repository Admin.
 
-CI unit tests exercise the fail-closed validator; they are not a substitute for remote Branch Protection enforcement.
+## Negative enforcement evidence
+
+The earlier PR #6 deliberately introduced a forbidden project reference and caused the architecture check to fail, but it predates the complete 13-check rule. It is not evidence that the corrected remote rule blocks merge. After the Admin read-back succeeds, a new disposable negative PR must demonstrate that a failing required check blocks merge. Keep that test PR unmerged and close it after recording the result.
+
+## Signed commits and merge method
+
+The repository evidence records signed-commit enforcement on `main`; the current `main` tip is also reported by GitHub as signature-verified. The feature-branch commits in PR #12 are unsigned, so do not use rebase or a merge method that would place those unsigned commits directly on `main`. Use **Squash and merge from the GitHub web interface** after every gate and approval is satisfied, then verify that the resulting commit on `main` is marked **Verified**. This is a merge instruction, not authorization to merge PR #12.
+
+## Historical observations
+
+On 2026-10-31 an earlier branch metadata observation returned an empty required-context list. The 2026-11-01 read-back now shows 12 contexts, but still omits the Windows PostgreSQL job. Keep these observations distinct; neither proves the full 13-context policy is active.
 
 ## PostgreSQL and application migration runner
 
-The application-owned `tools/MDGsm.DbMigrator` and PostgreSQL 18.6 Linux/Windows integration were revalidated on the post-relocation PR head in run `41185491539` (13/13 jobs passed). First run applied one migration and second run applied zero migrations in each disposable test database. Earlier detailed migration evidence remains at `docs/operations/evidence/postgresql18-migration-validation-2026-10-31.json`; the complete current-head CI record is `docs/operations/evidence/g0-ci-validation-2026-10-31.json`.
-
-The Linux PostgreSQL service image is pinned to `postgres:18.6-bookworm@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8`.
-
-
-## Admin one-command helper
-
-A PowerShell helper is available at `scripts/Configure-MainBranchProtection.ps1`.
-
-1. Install GitHub CLI and authenticate as the repository Admin with the **Administration: write** permission. No token is written to this repository.
-2. From the project root, run a dry run:
-   ```powershell
-   .\scripts\Configure-MainBranchProtection.ps1
-   ```
-3. Review the displayed check names and settings. To apply, run:
-   ```powershell
-   .\scripts\Configure-MainBranchProtection.ps1 -Apply
-   ```
-   The script requires typing the exact repository/branch name, preserves existing unrelated restrictions, configures strict required checks, admin enforcement, at least one approval, latest-push approval, no bypass allowances, no force pushes and no deletion, then reads the result back and verifies it.
-4. After successful configuration, perform a **new** negative PR test. The earlier PR #6 was before these required checks were configured and cannot replace that post-configuration test.
-
-The script intentionally does not run automatically in CI: changing remote branch protection is an explicit repository-Admin operation. GitHub's official REST documentation lists the required fields, strict option and Administration-write permission for this endpoint: https://docs.github.com/en/rest/branches/branch-protection.
+The application-owned `tools/MDGsm.DbMigrator` and PostgreSQL 18.6 Linux/Windows integration were revalidated on the G0 head in run `41185491539` (13/13 workflow jobs passed). First run applied one migration and second run applied zero migrations in each disposable test database. Earlier detailed migration evidence remains at `docs/operations/evidence/postgresql18-migration-validation-2026-10-31.json`; the complete G0 CI record is `docs/operations/evidence/g0-ci-validation-2026-10-31.json`.

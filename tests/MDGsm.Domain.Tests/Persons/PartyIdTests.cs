@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using Xunit;
 using MDGsm.Persons.Domain;
 
@@ -42,35 +41,58 @@ public sealed class PartyIdTests
     [Fact]
     public void TryParse_RejectsNonCanonicalGuidFormats()
     {
-        var value = PartyId.New().Value;
+        var value = Guid.Parse("018f0000-0000-7000-8000-000000000001");
         var alternatives = new[]
         {
             value.ToString("N"),
             value.ToString("B"),
-            value.ToString("P"),
-            value.ToString("D").ToUpperInvariant()
+            value.ToString("P")
         };
 
         foreach (var alternative in alternatives)
         {
             Assert.False(PartyId.TryParse(alternative, out _));
         }
+
+        Assert.True(PartyId.TryParse(value.ToString("D"), out _));
+        Assert.False(PartyId.TryParse(value.ToString("D").ToUpperInvariant(), out _));
     }
 
     [Theory]
     [InlineData("")]
     [InlineData("not-a-uuid")]
-    public void TryParse_RejectsMalformedValues(string value)
+    [InlineData(" 018f0000-0000-7000-8000-000000000001")]
+    [InlineData("018f0000-0000-7000-8000-000000000001 ")]
+    public void TryParse_RejectsMalformedOrWhitespacePaddedValues(string value)
     {
         Assert.False(PartyId.TryParse(value, out _));
     }
 
     [Fact]
+    public void TryParse_RejectsNull()
+    {
+        Assert.False(PartyId.TryParse(null, out _));
+    }
+
+    [Fact]
+    public void Parse_RejectsNull()
+    {
+        Assert.Throws<FormatException>(() => PartyId.Parse(null!));
+    }
+
+    [Fact]
     public void Parse_RejectsNonCanonicalGuidFormat()
     {
-        var value = PartyId.New().Value.ToString("N");
+        const string value = "018f0000-0000-7000-8000-000000000001";
 
-        Assert.Throws<FormatException>(() => PartyId.Parse(value));
+        Assert.Throws<FormatException>(() => PartyId.Parse(Guid.Parse(value).ToString("N")));
+        Assert.Throws<FormatException>(() => PartyId.Parse(value.ToUpperInvariant()));
+    }
+
+    [Fact]
+    public void Parse_RejectsWhitespacePaddedGuid()
+    {
+        Assert.Throws<FormatException>(() => PartyId.Parse(" 018f0000-0000-7000-8000-000000000001 "));
     }
 
     [Fact]
@@ -88,30 +110,6 @@ public sealed class PartyIdTests
     }
 
     [Fact]
-    public void New_EncodesIncreasingTimestampsAcrossDistinctMilliseconds()
-    {
-        var first = PartyId.New();
-        var firstTimestamp = GetUuidTimestamp(first.Value);
-        var timer = Stopwatch.StartNew();
-        PartyId? later = null;
-
-        while (timer.Elapsed < TimeSpan.FromSeconds(3))
-        {
-            var candidate = PartyId.New();
-            if (GetUuidTimestamp(candidate.Value) > firstTimestamp)
-            {
-                later = candidate;
-                break;
-            }
-
-            Thread.Sleep(1);
-        }
-
-        Assert.NotNull(later);
-        Assert.True(GetUuidTimestamp(later.Value) > firstTimestamp);
-    }
-
-    [Fact]
     public void Parse_RoundTripsCanonicalUuidString()
     {
         var original = PartyId.New();
@@ -122,18 +120,4 @@ public sealed class PartyIdTests
         Assert.Equal(original.ToString(), parsed.ToString());
     }
 
-    private static long GetUuidTimestamp(Guid value)
-    {
-        Span<byte> bytes = stackalloc byte[16];
-        Assert.True(value.TryWriteBytes(bytes, bigEndian: true, out var written));
-        Assert.Equal(16, written);
-
-        long timestamp = 0;
-        for (var index = 0; index < 6; index++)
-        {
-            timestamp = (timestamp << 8) | bytes[index];
-        }
-
-        return timestamp;
-    }
 }

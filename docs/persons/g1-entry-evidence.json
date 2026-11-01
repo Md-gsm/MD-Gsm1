@@ -1,8 +1,8 @@
 {
-  "evidenceVersion": "1.4",
+  "evidenceVersion": "1.5",
   "status": "NOT_READY",
   "scmRemoteRepository": "https://github.com/Md-gsm/MD-Gsm1",
-  "branchProtectionEvidence": "Verified by repository owner via GitHub API on 2026-10-31: main is protected; strict required status checks enabled with all 12 configured contexts (foundation-build-test, persons-spec-lint, persons-architecture-boundary, persons-consumer-registry, persons-api-contract, persons-temporary-data-retention, persons-merge-contract, persons-postgres-migrations, persons-security-tests, persons-e2e-disposable, persons-ci-enforcement-test, persons-ci-evidence); required PR enabled; enforce_admins=true; required_signatures=true; required_linear_history=true; required_conversation_resolution=true; force pushes/deletions/fork syncing disabled; lock_branch=false. Required approving review count is 0 pending owner decision.",
+  "branchProtectionEvidence": "Fresh GitHub branch metadata read-back on 2026-11-01: main is protected and enforcement_level=everyone, but only 12 of the 13 workflow job contexts are configured. The missing required context is persons-postgres-windows-migrations. The full GET /branches/main/protection endpoint returned HTTP 403 to the connected integration, so current review-approval count and all detailed options are not independently verified in this snapshot. A prior owner-reported record specified zero approvals; do not treat that as an active independent-review gate. requiredStatusChecksConfiguredInScm remains false until the repository Admin applies and reads back all 13 contexts.",
   "negativeEnforcementPullRequest": "https://github.com/Md-gsm/MD-Gsm1/pull/6",
   "policyApprovalReference": "docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md",
   "mergeChecklistApprovalReference": "docs/persons/MERGE_CONTRACT_CHECKLIST_FA.md",
@@ -11,11 +11,40 @@
   "securityPrivacyReviewReference": "docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md — Project Owner reported approval on 2026-10-31; reviewed commit 1d4e42b626fe6ca4b9a1910c94b4d4631d0c0c4b.",
   "verifiedBy": "Project Owner confirmation recorded in repository evidence; CI independently reported by GitHub Actions.",
   "verifiedAtUtc": "2026-10-31",
-  "note": "PR #9 (main branch protection tool) was merged to main at ce282d964314cff4f5980ec023a4c822e4f7b786. PR #8 branch now contains that main commit as an ancestor; the final branch-protection tool and operations guide are synchronized into PR #8. The prior PR #8 head f927a958b1c0a4bc27e83b65db92de36821e48f1 passed 13/13 jobs; CI must pass again on the current synchronized head before PR #8 can merge. G0 remains NOT_READY until PR #8 merges. Persons remains NOT_IMPLEMENTED; g1Authorized=false; AC-31..AC-45 remain intentionally unmapped for G1.",
+  "note": "The G1 entry evidence remains NOT_READY. The live public branch metadata read-back on 2026-11-01 shows main is protected and enforced for everyone, but only 12 of the required 13 contexts are configured; persons-postgres-windows-migrations is missing. The current connected integration cannot read the detailed branch-protection endpoint (HTTP 403), so required approving review count and detailed options remain unverified. The helper now proposes 13 checks, one independent approval, stale-review dismissal and latest-push approval; the Project Owner must apply it with GitHub CLI as repository Admin and capture a post-apply read-back. The historical PR #6 negative test predates the corrected rule; a new failing-check PR test is required after configuration. All G1 entry prerequisites remain open until evidence is independently read back. Keep g1Authorized=false.",
   "validatedCommit": "7bcc423a87b44e19291f4f28d04858e06e74515c",
   "ciWorkflowRun": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41185491539",
   "ciResult": "SUCCESS — 13/13 jobs passed on validatedCommit, including foundation build/test, architecture, security, disposable E2E and PostgreSQL 18.6 Linux/Windows migration jobs.",
   "windowsPreviewInstallerRun": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41185066512",
   "windowsPreviewInstallerCommit": "de9ffc1aab96e8954abff417a32f51cd6bb3e362",
-  "windowsPreviewInstallerResult": "SUCCESS; the only commits after that installer build and before validatedCommit changed documentation only (docs/PHASE_5_STATUS.md, docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md, docs/operations/required-status-checks.md, docs/persons/g1-entry-evidence.json)."
+  "windowsPreviewInstallerResult": "SUCCESS; the only commits after that installer build and before validatedCommit changed documentation only (docs/PHASE_5_STATUS.md, docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md, docs/operations/required-status-checks.md, docs/persons/g1-entry-evidence.json).",
+  "currentRemoteProtectionReadback": {
+    "observedDateUtc": "2026-11-01",
+    "branch": "main",
+    "protected": true,
+    "enforcementLevel": "everyone",
+    "requiredContextCountObserved": 12,
+    "requiredContextCountExpected": 13,
+    "missingRequiredContexts": [
+      "persons-postgres-windows-migrations"
+    ],
+    "requiredContextsObserved": [
+      "foundation-build-test",
+      "persons-spec-lint",
+      "persons-architecture-boundary",
+      "persons-consumer-registry",
+      "persons-api-contract",
+      "persons-temporary-data-retention",
+      "persons-merge-contract",
+      "persons-postgres-migrations",
+      "persons-security-tests",
+      "persons-e2e-disposable",
+      "persons-ci-enforcement-test",
+      "persons-ci-evidence"
+    ],
+    "detailedProtectionEndpoint": "HTTP 403 — not readable by connected integration",
+    "independentApprovalRequirement": "NOT_VERIFIED"
+  },
+  "independentPullRequestApprovalEvidence": "The prior owner-reported protection configuration listed required_approving_review_count=0. The corrected helper now requests one approval and latest-push approval, but this is not remotely applied or verified yet.",
+  "requiredStatusChecksConfiguredInScm": false
 }
