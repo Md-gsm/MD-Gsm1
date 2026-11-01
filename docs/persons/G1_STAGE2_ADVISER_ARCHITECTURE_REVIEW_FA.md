@@ -32,7 +32,7 @@
 | N5 | تصمیم صریح مالک درباره دامنه حقوقی صورتحساب رسمی |
 | N6 | مسیرهای آینده تست‌های .NET به‌تفکیک unit/API/integration |
 | N7 | نمایش دقیقاً دو رقم آخر موبایل در حالت ماسک |
-| N8 | سقف تجمیعی روزانه برای همه actorها |
+| N8 | سقف تجمیعی global فقط telemetry/alert تا تأیید مالک؛ بدون رد سراسری |
 | N9 | آزمون serialization/round-trip بین‌ماژولی PartyId |
 | N10 | الزام ثبت نتیجه مستقل و بدون جهت‌دهی گروه مشاور |
 | M8 | Contracts فقط مقدار opaque PartyId؛ ممنوعیت reference به Domain/Infrastructure/DbContext Persons |
