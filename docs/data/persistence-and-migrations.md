@@ -29,3 +29,8 @@ Prefer .NET user-secrets for local API development, or set `ConnectionStrings__M
 8. Runtime application credentials must not be database owners and should receive only the permissions needed by application operations.
 
 A database connection check alone is not a schema compatibility check. Add a required migration-version check when the first migration is added.
+
+
+## Module ownership and global migration ordering (proposed before first business migration)
+
+Module ownership does not mean per-module version counters. The shared mdgsm_migration_history.migration_version remains a single global integer sequence. New migration filenames use NNNN_<module>_<description>.sql; the coordinator allocates globally unique NNNN values under the advisory transaction lock. History records module_key, global version, migration name, checksum and applied time. Dependencies between modules are explicit, validated as an acyclic graph before any migration write, and execution follows global numeric order subject to dependency validation. Module teams own their migration content but cannot allocate local/reused version numbers or apply migrations independently. The coordinator alone executes and records migrations. ADR-0009 is Proposed; runner/history changes and PostgreSQL 18 Linux/Windows disposable integration evidence are required before the first business migration.
