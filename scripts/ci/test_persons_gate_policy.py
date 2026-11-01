@@ -167,7 +167,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
                         any(item["automatedTest"] in p.read_text(encoding="utf-8", errors="replace") for p in candidates),
                         f'{item["id"]} is UNMAPPED but its named test already exists',
                     )
-        self.assertEqual([f"AC-{n:02d}" for n in range(31, 68)], [x["id"] for x in mapping["criteria"]])
+        self.assertEqual([f"AC-{n:02d}" for n in range(31, 73)], [x["id"] for x in mapping["criteria"]])
         manifest = gates.load_json(ROOT / "docs/persons/persons-module-manifest.json")
         self.assertFalse(manifest["g1Prerequisites"]["acceptanceCriteriaAc31ToAc49Mapped"])
 
