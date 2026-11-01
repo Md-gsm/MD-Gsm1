@@ -170,7 +170,16 @@ class PersonsGatePolicyTests(unittest.TestCase):
         self.assertEqual([f"AC-{n:02d}" for n in range(31, 74)], [x["id"] for x in mapping["criteria"]])
         manifest = gates.load_json(ROOT / "docs/persons/persons-module-manifest.json")
         self.assertFalse(manifest["g1Prerequisites"]["acceptanceCriteriaAc31ToAc49Mapped"])
-        self.assertFalse(manifest["g1Prerequisites"]["suffixSearchAbusePolicyApproved"])
+        self.assertTrue(manifest["g1Prerequisites"]["suffixSearchAbusePolicyApproved"])
+        abuse = manifest["suffixSearchAbusePolicy"]
+        self.assertEqual(10, abuse["perActorPurposeRequestsPerRollingMinute"])
+        self.assertEqual(100, abuse["perActorPurposeRequestsPerUtcDay"])
+        self.assertEqual(1000, abuse["globalRequestsPerUtcDay"])
+        self.assertEqual("TELEMETRY_ALERT_ONLY_NEVER_BLOCK", abuse["globalLimitMode"])
+        self.assertEqual(15, abuse["abuseResponse"]["actorThrottleMinutes"])
+        self.assertTrue(abuse["managerOverride"]["reasonRequired"])
+        self.assertEqual("APPEND_ONLY_IMMUTABLE", abuse["managerOverride"]["audit"])
+        self.assertFalse(abuse["accountLock24HoursAllowed"])
 
     def test_g1_cannot_be_authorized_with_unmapped_acceptance_criteria(self):
         with tempfile.TemporaryDirectory() as tmp:
