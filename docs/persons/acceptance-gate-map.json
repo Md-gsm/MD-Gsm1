@@ -304,7 +304,7 @@
       "testFile": "tests/MDGsm.Infrastructure.IntegrationTests/Persons/GlobalSuffixSearchRateLimitTests.cs",
       "automatedTest": "Global_Daily_Suffix_Search_Cap_Applies_Across_All_Actors",
       "status": "UNMAPPED",
-      "expectedBehavior": "Global daily suffix-search cap is telemetry/alert only until explicit owner approval; it never rejects all actors in the unapproved state."
+      "expectedBehavior": "Global daily suffix-search cap is 1,000 requests/day telemetry/alert only; it never rejects or throttles all actors."
     },
     {
       "id": "AC-69",
@@ -312,7 +312,7 @@
       "testFile": "tests/MDGsm.Api.IntegrationTests/Persons/SuffixSearchAbuseThrottleTests.cs",
       "automatedTest": "Traversal_Pattern_Triggers_Throttle_And_Admin_Unlock_Is_Audited",
       "status": "UNMAPPED",
-      "expectedBehavior": "After explicit owner approval and policy activation, distinct-suffix traversal triggers alert and 15-minute throttle only for the offending actor; manager unlocks that actor with mandatory reason and immutable audit; no 24-hour account lock and no global reset."
+      "expectedBehavior": "Per actor/purpose limits are 10 requests per rolling 60 seconds and 100 per UTC day; exceeding either triggers a 15-minute throttle for that actor only. Manager unlock is same-actor-only, requires a reason and immutable audit, and does not reset counters; no 24-hour account lock."
     },
     {
       "id": "AC-70",
@@ -347,5 +347,5 @@
       "expectedBehavior": "Masking handles international mobile numbers of different lengths and consistently exposes only the final two digits."
     }
   ],
-  "note": "UNMAPPED means specified with intended future test file and C# test method; no executable test/evidence is checked in yet. The target paths identify future .NET unit/API/integration test suites and do not claim those projects or tests currently exist. Only IMPLEMENTED entries are backed by checked-in tests. G1 remains blocked while required criteria are UNMAPPED. Additional AC-68..AC-73 map the owner-gated global search telemetry cap, actor-only abuse throttle/admin unlock, variable-length international masking, Git-allocated migration ranges/order, and cross-module PartyId serialization. All new criteria remain UNMAPPED until the named .NET tests are implemented and run."
+  "note": "UNMAPPED means specified with intended future test file and C# test method; no executable test/evidence is checked in yet. The target paths identify future .NET unit/API/integration test suites and do not claim those projects or tests currently exist. Only IMPLEMENTED entries are backed by checked-in tests. G1 remains blocked while required criteria are UNMAPPED. Additional AC-68..AC-73 map the owner-gated global search telemetry cap, actor-only abuse throttle/admin unlock, variable-length international masking, Git-allocated migration ranges/order, and cross-module PartyId serialization. All new criteria remain UNMAPPED until the named .NET tests are implemented and run. Owner-approved suffix-search policy values are 10 requests per rolling 60 seconds and 100 per UTC day per actor/purpose; the 1,000/day global ceiling is alert-only and must never block users. Runtime proof remains UNMAPPED."
 }
