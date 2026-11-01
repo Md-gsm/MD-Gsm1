@@ -19,3 +19,12 @@ Database writes across modules must not be implemented as staged commits, eventu
 ## Scope guard
 
 This ADR does not authorize adding business tables or starting G1. It defines a mandatory V1 constraint for later approved implementation.
+
+
+## Clarification — independent module DbContexts
+
+Each module owns and maintains its own DbContext and mappings. A module DbContext must not contain DbSet/mappings for another module's owned tables. A single global DbContext aggregating all modules is prohibited. Atomic cross-module use cases enlist these independent DbContexts in the same already-open DbConnection and DbTransaction; transaction coordination does not transfer data ownership. This clarification is part of ADR-0005 and requires architecture/integration tests proving both independent context ownership and shared transaction enlistment/rollback.
+
+## Idempotency payload privacy
+
+A payload digest that can be brute-forced over a low-entropy PII domain (including mobile numbers) must never be stored as an unkeyed hash. If payload equality must be persisted, use server-keyed HMAC-SHA-256 over a minimized canonical payload, store key version with the MAC, keep keys outside database/source control, support rotation, compare in constant time, and never log/export the MAC or source PII. Prefer storing only operation/result identifiers when payload equality is not required.
