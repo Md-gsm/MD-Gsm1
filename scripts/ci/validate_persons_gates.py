@@ -147,7 +147,7 @@ def run_spec(root: Path) -> None:
                 66: "persons-api-contract", 67: "persons-security-tests",
                 68: "persons-security-tests", 69: "persons-security-tests",
                 70: "persons-api-contract", 71: "persons-postgres-migrations",
-                72: "persons-consumer-registry",
+                72: "persons-consumer-registry", 73: "persons-api-contract",
             }[number]
         if item["gate"] != expected_gate:
             raise GateFailure(f"{item['id']} is mapped to {item['gate']} instead of {expected_gate}.")
