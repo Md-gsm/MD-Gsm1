@@ -25,7 +25,7 @@
 | M12 | یکتایی موبایل در تماس‌های فعال هر Party و حفظ تاریخچه |
 | M13 | purpose/permission نسخه‌دار و ماتریس lifecycle |
 | M14 | trigger ورود به ADR-0008 هنگام نیاز به شناسه رسمی؛ تصمیم حقوقی با مالک |
-| N1 | PII در idempotency artifact و الزام HMAC سروری |
+| N1 | حذف ذخیره و مقایسهٔ payload؛ OperationId scoped و نتیجه، بدون payload/hash/HMAC |
 | N2 | ثبت تصمیم Contracts و ممنوعیت DbContext سراسری در ADRها |
 | N3 | ترتیب global migration و module ownership در ADR-0009 |
 | N4 | تعریف traversal، throttle، unlock مدیر و تأیید حجم واقعی سقف‌ها |
