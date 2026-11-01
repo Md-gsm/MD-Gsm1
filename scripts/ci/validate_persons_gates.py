@@ -148,11 +148,15 @@ def run_spec(root: Path) -> None:
         if item["gate"] != expected_gate:
             raise GateFailure(f"{item['id']} is mapped to {item['gate']} instead of {expected_gate}.")
         if item["status"] == "UNMAPPED":
-            if not item.get("testFile") or not item.get("automatedTest"):
-                raise GateFailure(f"{item['id']} is UNMAPPED without a named future test.")
-            candidates = list(root.rglob(item["testFile"]))
-            if candidates and any(item["automatedTest"] in candidate.read_text(encoding="utf-8", errors="replace") for candidate in candidates):
-                raise GateFailure(f"{item['id']} is UNMAPPED but its named automated test already exists.")
+            if number <= 49:
+                if item.get("testFile") is not None or item.get("automatedTest") is not None:
+                    raise GateFailure(f"{item['id']} is UNMAPPED but must not claim a future test mapping.")
+            else:
+                if not item.get("testFile") or not item.get("automatedTest"):
+                    raise GateFailure(f"{item['id']} is UNMAPPED without a named future test.")
+                candidates = list(root.rglob(item["testFile"]))
+                if candidates and any(item["automatedTest"] in candidate.read_text(encoding="utf-8", errors="replace") for candidate in candidates):
+                    raise GateFailure(f"{item['id']} is UNMAPPED but its named automated test already exists.")
         if item["status"] == "IMPLEMENTED":
             if not item.get("testFile") or not item.get("automatedTest"):
                 raise GateFailure(f"{item['id']} is IMPLEMENTED without a test file and method.")
