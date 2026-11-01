@@ -1,5 +1,5 @@
 {
-  "mapVersion": "1.4",
+  "mapVersion": "1.5",
   "sourceArchitecture": "MDGsm_Persons_Module_Architecture_Decision_and_Build_Spec_v1.1_FA",
   "criteria": [
     {
@@ -293,10 +293,10 @@
     {
       "id": "AC-67",
       "gate": "persons-security-tests",
-      "testFile": "tests/MDGsm.Infrastructure.IntegrationTests/Persons/IdempotencyPiiArtifactTests.cs",
-      "automatedTest": "Idempotency_Uses_Keyed_Hmac_And_Artifacts_Contain_No_PII_Or_Unkeyed_Hash",
+      "testFile": "tests/MDGsm.Infrastructure.IntegrationTests/Persons/IdempotencyOperationKeyTests.cs",
+      "automatedTest": "Same_Actor_OperationId_Returns_Stored_Result_Without_Persisting_Or_Comparing_Payload",
       "status": "UNMAPPED",
-      "expectedBehavior": "Idempotency stores no raw payload or unkeyed low-entropy PII hash; keyed HMAC uses server-held rotatable key, and no PII/MAC appears in logs, traces, test output or CI artifacts."
+      "expectedBehavior": "V1 idempotency stores actor/client-scoped OperationId, operation name and result only; no request payload, hash or HMAC is persisted or compared; cross-actor keys are isolated."
     },
     {
       "id": "AC-68",
@@ -304,7 +304,7 @@
       "testFile": "tests/MDGsm.Infrastructure.IntegrationTests/Persons/GlobalSuffixSearchRateLimitTests.cs",
       "automatedTest": "Global_Daily_Suffix_Search_Cap_Applies_Across_All_Actors",
       "status": "UNMAPPED",
-      "expectedBehavior": "A single global UTC daily suffix-search ceiling applies across all actors and purposes; changing actor cannot bypass it."
+      "expectedBehavior": "Global daily suffix-search cap is telemetry/alert only until explicit owner approval; it never rejects all actors in the unapproved state."
     },
     {
       "id": "AC-69",
@@ -312,15 +312,15 @@
       "testFile": "tests/MDGsm.Api.IntegrationTests/Persons/SuffixSearchAbuseThrottleTests.cs",
       "automatedTest": "Traversal_Pattern_Triggers_Throttle_And_Admin_Unlock_Is_Audited",
       "status": "UNMAPPED",
-      "expectedBehavior": "Defined distinct-suffix traversal windows trigger alert and temporary actor throttle; privileged manager can unlock with mandatory reason and immutable audit; no 24-hour account lock."
+      "expectedBehavior": "Distinct-suffix traversal triggers alert and 15-minute throttle only for the offending actor; manager unlocks that actor with mandatory reason and immutable audit; no 24-hour account lock and no global reset."
     },
     {
       "id": "AC-70",
       "gate": "persons-api-contract",
       "testFile": "tests/MDGsm.Domain.Tests/Persons/MobileMaskingPolicyTests.cs",
-      "automatedTest": "Default_Mask_Reveals_Only_Last_Two_Digits",
+      "automatedTest": "Default_Mask_Reveals_Only_Last_Two_Digits_For_Variable_Length_International_Numbers",
       "status": "UNMAPPED",
-      "expectedBehavior": "Default mobile mask reveals exactly two trailing digits and masks all other digits consistently across UI/API/export; full reveal requires separately authorized flow."
+      "expectedBehavior": "Default mask preserves only the final two digits for valid mobile numbers of varying international lengths; UI/API/export use the same formatter."
     },
     {
       "id": "AC-71",
@@ -337,7 +337,15 @@
       "automatedTest": "Producer_And_Consumers_Share_UUIDv7_Wire_Contract_And_RoundTrip",
       "status": "UNMAPPED",
       "expectedBehavior": "PartyId contracts across producer and consumers serialize to the same UUIDv7 wire representation and round-trip without CLR type coupling or Guid mix-up."
+    },
+    {
+      "id": "AC-73",
+      "gate": "persons-api-contract",
+      "testFile": "tests/MDGsm.Domain.Tests/Persons/MobileMaskingPolicyTests.cs",
+      "automatedTest": "Masks_Variable_Length_International_Numbers_Without_Assuming_Eleven_Digits",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Masking handles international mobile numbers of different lengths and consistently exposes only the final two digits."
     }
   ],
-  "note": "UNMAPPED means specified with intended future test file and C# test method; no executable test/evidence is checked in yet. The target paths identify future .NET unit/API/integration test suites and do not claim those projects or tests currently exist. Only IMPLEMENTED entries are backed by checked-in tests. G1 remains blocked while required criteria are UNMAPPED. Additional AC-68..AC-72 map the cross-actor global search cap, abuse throttle/admin unlock, exact masking policy, global migration ordering, and cross-module PartyId serialization. All new criteria remain UNMAPPED until the named .NET tests are implemented and run."
+  "note": "UNMAPPED means specified with intended future test file and C# test method; no executable test/evidence is checked in yet. The target paths identify future .NET unit/API/integration test suites and do not claim those projects or tests currently exist. Only IMPLEMENTED entries are backed by checked-in tests. G1 remains blocked while required criteria are UNMAPPED. Additional AC-68..AC-73 map the owner-gated global search telemetry cap, actor-only abuse throttle/admin unlock, variable-length international masking, Git-allocated migration ranges/order, and cross-module PartyId serialization. All new criteria remain UNMAPPED until the named .NET tests are implemented and run."
 }
