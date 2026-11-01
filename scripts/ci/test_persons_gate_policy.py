@@ -67,6 +67,16 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(gates.GateFailure, r"UNMAPPED|evidence\."):
                 gates.run_spec(dst)
 
+    def test_legacy_personid_identifier_fails_registry_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
+            legacy = dst / "src/BuildingBlocks/MDGsm.Application/Reporting/LegacyPartyQuery.cs"
+            legacy.parent.mkdir(parents=True, exist_ok=True)
+            legacy.write_text("public sealed record LegacyPartyQuery(Guid PersonId);", encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "Legacy PersonId/person_id identifier is forbidden"):
+                gates.run_registry(dst)
+
     def test_unknown_partyid_in_contract_json_fails_registry_gate(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
@@ -145,8 +155,14 @@ class PersonsGatePolicyTests(unittest.TestCase):
         mapping = gates.load_json(ROOT / "docs/persons/acceptance-gate-map.json")
         for item in mapping["criteria"]:
             if item["status"] == "UNMAPPED":
-                self.assertIsNone(item.get("testFile"))
-                self.assertIsNone(item.get("automatedTest"))
+                self.assertTrue(item.get("testFile"))
+                self.assertTrue(item.get("automatedTest"))
+                candidates = list(ROOT.rglob(item["testFile"]))
+                self.assertFalse(
+                    any(item["automatedTest"] in p.read_text(encoding="utf-8", errors="replace") for p in candidates),
+                    f'{item["id"]} is UNMAPPED but its named test already exists',
+                )
+        self.assertEqual([f"AC-{n:02d}" for n in range(31, 67)], [x["id"] for x in mapping["criteria"]])
         manifest = gates.load_json(ROOT / "docs/persons/persons-module-manifest.json")
         self.assertFalse(manifest["g1Prerequisites"]["acceptanceCriteriaAc31ToAc49Mapped"])
 
