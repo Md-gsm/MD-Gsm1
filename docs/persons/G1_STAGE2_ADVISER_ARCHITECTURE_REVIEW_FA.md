@@ -1,7 +1,7 @@
 # بسته بازبینی معماری مرحله دوم G1 — درخواست بازبینی مجدد
 
 مخزن Md-gsm/MD-Gsm1 — PR #11 — شاخه design/g1-stage2-persons-architecture  
-**وضعیت:** بسته آماده ارسال برای بازبینی مستقل؛ این سند نتیجه بازبینی نیست. SHA نهایی این بسته پس از پایان CI در سربرگ PR و همین سند ثبت می‌شود. SHA قدیمی یا CI روی commit قبلی، مبنای بازبینی نسخه جاری نیست. گروه مشاور باید دقیقاً SHA نهایی و run موفق همان SHA را بررسی کند.
+**وضعیت:** بستهٔ بازبینی در حال به‌روزرسانی است؛ این سند نتیجه بازبینی نیست. SHA و run نهایی فقط پس از تکمیل CI روی آخرین HEAD ثبت می‌شود. گروه مشاور باید دقیقاً همان SHA و run موفق همان SHA را بررسی کند؛ CI قدیمی‌تر مبنای بازبینی نسخه جاری نیست.
 
 ## پاسخ طراحی به یافته‌های قبلی
 | شناسه | پاسخ اصلاحی |
@@ -56,8 +56,9 @@
 - [ ] V1 تک‌شعبه بدون tenant؛ Scope permission + purpose + record state.
 - [ ] orchestrator در Application؛ participant contract نسخه‌دار، OperationId و idempotency بدون ذخیره/مقایسه payload؛ Prepare فقط read-only؛ تمام DB participants در shared connection/transaction؛ failure rollback کامل.
 - [ ] participant ناشناخته/ناسازگار پیش از اولین write عملیات را متوقف می‌کند؛ DbContext هر ماژول مستقل اما enlisted در همان connection/transaction است؛ DbContext سراسری ممنوع و اصلاحیه ADR-0005 است.
-- [ ] ترتیب migration: تخصیص در registry مرکزی Git، بازه‌های رزرو ماژولی، CI برای duplicate/out-of-range و رد اجرای late lower version؛ ADR-0009 Proposed.
+- [ ] ترتیب migration: شمارندهٔ یکنواخت global در registry مرکزی Git؛ بازه‌های ماژولی فقط راهنمای تخصیص اولیه‌اند؛ CI یکتایی/افزایش شمارنده و module/path را کنترل می‌کند؛ high-water mark فقط اجرای نسخهٔ پایین‌تر از آخرین نسخهٔ اعمال‌شده را رد می‌کند. پس از `0200`، `0201` برای Persons مجاز است؛ ADR-0009 Proposed.
 - [ ] PartyId در تمام consumer contracts wire-format UUIDv7 یکسان و round-trip دارد؛ بدون coupling به CLR type ماژول Persons.
+- [ ] قرارداد کلاینت idempotency: retry همان intent همان OperationId را حفظ می‌کند؛ هر edit واقعی OperationId تازه می‌سازد؛ changed-payload با کلید قبلی نتیجهٔ قبلی را می‌دهد و ویرایش را اعمال نمی‌کند (ADR-0010 Proposed).
 - [ ] outbox فقط اثر بیرونی؛ Recovery برای DB staging/compensation ندارد.
 - [ ] tokenهای profile/contact/role مستقل؛ overlap ممنوع با exclusion constraint.
 - [ ] هیچ تفسیر حقوقی مفروض نیست؛ صدور صورتحساب رسمی اشخاص حقوقی تا تصمیم O مستند مالک و تأیید ADR-0008 در HOLD می‌ماند.
@@ -72,7 +73,7 @@
 |---|---|---|---|
 | N1 | مقایسهٔ payload حذف؛ ثبت OperationId scoped و نتیجه، بدون payload/hash/HMAC؛ AC-67 |  |  |
 | N2 | Contracts و استقلال DbContext در ADR-0007؛ اصلاحیهٔ پیشنهادی جداگانه در ADR-0010؛ ADR-0005 Accepted دست‌نخورده می‌ماند |  |  |
-| N3 | ADR-0009: sequence عددی سراسری، نام NNNN_module، history سراسری با module_key و dependency DAG |  |  |
+| N3 | ADR-0009: شمارندهٔ یکنواخت global در registry Git؛ بازه‌های ماژولی صرفاً راهنما؛ high-water mark فقط ترتیب اجرا را enforce می‌کند و Persons پس از `0200` می‌تواند `0201` بگیرد. |  |  |
 | N4 | traversal دقیق، throttle ۱۵ دقیقه‌ای، unlock مدیریتی audit‌شده؛ سقف‌ها پیشنهادی و نیازمند سنجش حجم/تأیید مالک امنیت؛ AC-69 |  |  |
 | N5 | هیچ حکم حقوقی مفروض نیست؛ صورتحساب رسمی اشخاص حقوقی تا تصمیم مستند O مالک در HOLD |  |  |
 | N6 | مسیرهای آتی .NET و کلاس/متدهای مشخص برای AC-50..73؛ همه UNMAPPED |  |  |
@@ -120,7 +121,7 @@
 
 ## وضعیت CI و محدودیت نتیجه
 
-SHA نهایی: پس از آخرین تغییر و CI موفق همان SHA تکمیل شود. نتیجه CI قدیمی‌تر جایگزین CI نسخه نهایی نیست. AC-50..AC-73 همگی UNMAPPED هستند؛ مسیرها و نام متدها فقط نقشه تست‌های آتی .NET هستند و هیچ ادعای اجرای تست تجاری/Runtime برای آن‌ها وجود ندارد.
+SHA نهایی و run موفق CI: پس از آخرین تغییر و تکمیل workflow روی همان SHA در این بخش ثبت می‌شوند. تا پیش از ثبت هر دو، بسته آماده ارسال نهایی نیست. AC-50..AC-73 همگی UNMAPPED هستند؛ مسیرها و نام متدها فقط نقشه تست‌های آتی .NET هستند و هیچ ادعای اجرای تست تجاری/Runtime برای آن‌ها وجود ندارد.
 
 ## درخواست مشخص از گروه مشاور
 
