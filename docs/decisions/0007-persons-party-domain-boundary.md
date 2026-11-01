@@ -33,8 +33,8 @@ V1: Party حقیقی/حقوقی، موبایل/تماس، FindOrCreate، نقش 
 ## تصمیم‌های تکمیلی این بازنگری — هنوز Proposed
 
 15. Contracts هر ماژول نوع PartyId مستقل و opaque دارد و فقط UUID wire-format استاندارد را serialize می‌کند؛ هیچ reference به Domain/Infrastructure/DbContext ماژول Persons مجاز نیست. آزمون contract بین‌ماژولی باید JSON/OpenAPI serialization، UUIDv7 shape و round-trip را برای producer و هر consumer اثبات کند.
-16. DbContext هر ماژول مستقل است؛ DbContext سراسری ممنوع و این قاعده اصلاحیه ADR-0005 است.
-17. idempotency payload فقط با HMAC-SHA-256 سروری و key version ذخیره می‌شود؛ hash بدون کلید یا payload/موبایل خام در رکورد و artifact ممنوع است.
+16. استقلال DbContext هر ماژول و enlist در connection/transaction مشترک، اصلاحیهٔ پیشنهادی ADR-0005 است و تا تصویب ADR-0010 Proposed محسوب می‌شود.
+17. V1 برای idempotency فقط OperationId scoped به actor/client و operation name و نتیجه را نگه می‌دارد؛ payload، hash و HMAC ذخیره یا مقایسه نمی‌شوند. تکرار همان کلید نتیجهٔ قبلی را می‌دهد؛ intent متفاوت باید OperationId تازه داشته باشد.
 18. migrationها دارای sequence عددی سراسری و نام NNNN_<module>_<description>.sql هستند؛ جدول history سراسری module key را نیز ثبت می‌کند و dependencyها پیش از اجرا بررسی می‌شوند. جزئیات در ADR-0009.
-19. جست‌وجوی suffix4 فقط دو رقم پایانی را در نتایج نشان می‌دهد. سقف پیشنهادی global روزانه ۱۰۰۰ درخواست علاوه بر سقف actor/purpose است و تا تأیید مالک امنیت و سنجش بار واقعی صرفاً پیشنهادی می‌ماند. قفل دائمی/۲۴ساعته حساب پذیرش ممنوع است؛ throttle موقت و unlock مدیریتی audit‌شده جایگزین است.
+19. جست‌وجوی suffix4 فقط دو رقم پایانی را در نتایج نشان می‌دهد. سقف پیشنهادی global روزانه ۱۰۰۰ درخواست علاوه بر سقف actor/purpose است و تا تأیید مالک امنیت و سنجش بار واقعی صرفاً پیشنهادی می‌ماند. قفل ۲۴ساعته حساب ممنوع است؛ throttle ۱۵دقیقه‌ای فقط برای actor دارای الگوی پیمایش اعمال می‌شود و unlock مدیر فقط همان actor را با reason/audit باز می‌کند. سقف global تا تأیید مالک telemetry-only است و نباید موجب رد سراسری کاربران شود. تأیید صریح مالک درباره اعداد، دامنه و enforcement پیش‌نیاز ورود به G1 است.
 20. هیچ قاعده حقوقی درباره نیاز/عدم نیاز شناسه رسمی مفروض نیست؛ صدور صورتحساب رسمی اشخاص حقوقی تا تصمیم مستند مالک در HOLD می‌ماند.
