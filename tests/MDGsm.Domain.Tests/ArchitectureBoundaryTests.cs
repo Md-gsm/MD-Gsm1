@@ -62,6 +62,22 @@ public sealed class ArchitectureBoundaryTests
     }
 
     [Fact]
+    public void Persons_domain_is_dependency_free_and_in_the_solution()
+    {
+        var root = FindSolutionRoot();
+        const string relative = "src/Modules/Persons/Domain/MDGsm.Persons.Domain.csproj";
+        var project = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+        var solution = File.ReadAllText(Path.Combine(root, "MDGsm.sln"));
+
+        Assert.True(File.Exists(project), $"Missing Persons Domain project: {relative}");
+        Assert.Contains(relative.Replace('/', '\\\\'), solution);
+
+        var xml = XDocument.Load(project);
+        Assert.Empty(xml.Descendants("ProjectReference"));
+        Assert.Contains(xml.Descendants("TargetFramework"), element => element.Value == "net10.0");
+    }
+
+    [Fact]
     public void Flat_legacy_project_roots_are_not_left_under_src()
     {
         var root = FindSolutionRoot();

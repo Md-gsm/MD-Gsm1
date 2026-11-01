@@ -16,5 +16,6 @@
     <ProjectReference Include="..\..\src\BuildingBlocks\MDGsm.Application\MDGsm.Application.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\MDGsm.Client\MDGsm.Client.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\MDGsm.Infrastructure\MDGsm.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Persons\Domain\MDGsm.Persons.Domain.csproj" />
   </ItemGroup>
 </Project>

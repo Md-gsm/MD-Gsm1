@@ -298,6 +298,7 @@ def run_spec(root: Path) -> None:
 def run_architecture(root: Path) -> None:
     expected_projects = {
         "BuildingBlocks/MDGsm.Domain/MDGsm.Domain.csproj": set(),
+        "Modules/Persons/Domain/MDGsm.Persons.Domain.csproj": set(),
         "BuildingBlocks/MDGsm.Application/MDGsm.Application.csproj": {"MDGsm.Domain"},
         "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {"MDGsm.Application"},
         "BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj": set(),
@@ -356,6 +357,7 @@ def run_architecture(root: Path) -> None:
         root / "src/Host/Desktop/README.md",
         root / "src/Modules/README.md",
         root / "src/Modules/Persons/Contracts/README.md",
+        root / "src/Modules/Persons/Domain/README.md",
         root / "src/Modules/IdentityAccess/Contracts/README.md",
         root / "src/Modules/RepairOperations/Contracts/README.md",
         root / "src/Modules/Finance/Contracts/README.md",
