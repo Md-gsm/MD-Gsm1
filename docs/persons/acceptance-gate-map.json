@@ -1,5 +1,5 @@
 {
-  "mapVersion": "1.3",
+  "mapVersion": "1.4",
   "sourceArchitecture": "MDGsm_Persons_Module_Architecture_Decision_and_Build_Spec_v1.1_FA",
   "criteria": [
     {
@@ -297,7 +297,47 @@
       "automatedTest": "Idempotency_Uses_Keyed_Hmac_And_Artifacts_Contain_No_PII_Or_Unkeyed_Hash",
       "status": "UNMAPPED",
       "expectedBehavior": "Idempotency stores no raw payload or unkeyed low-entropy PII hash; keyed HMAC uses server-held rotatable key, and no PII/MAC appears in logs, traces, test output or CI artifacts."
+    },
+    {
+      "id": "AC-68",
+      "gate": "persons-security-tests",
+      "testFile": "tests/MDGsm.Infrastructure.IntegrationTests/Persons/GlobalSuffixSearchRateLimitTests.cs",
+      "automatedTest": "Global_Daily_Suffix_Search_Cap_Applies_Across_All_Actors",
+      "status": "UNMAPPED",
+      "expectedBehavior": "A single global UTC daily suffix-search ceiling applies across all actors and purposes; changing actor cannot bypass it."
+    },
+    {
+      "id": "AC-69",
+      "gate": "persons-security-tests",
+      "testFile": "tests/MDGsm.Api.IntegrationTests/Persons/SuffixSearchAbuseThrottleTests.cs",
+      "automatedTest": "Traversal_Pattern_Triggers_Throttle_And_Admin_Unlock_Is_Audited",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Defined distinct-suffix traversal windows trigger alert and temporary actor throttle; privileged manager can unlock with mandatory reason and immutable audit; no 24-hour account lock."
+    },
+    {
+      "id": "AC-70",
+      "gate": "persons-api-contract",
+      "testFile": "tests/MDGsm.Domain.Tests/Persons/MobileMaskingPolicyTests.cs",
+      "automatedTest": "Default_Mask_Reveals_Only_Last_Two_Digits",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Default mobile mask reveals exactly two trailing digits and masks all other digits consistently across UI/API/export; full reveal requires separately authorized flow."
+    },
+    {
+      "id": "AC-71",
+      "gate": "persons-postgres-migrations",
+      "testFile": "tests/MDGsm.Infrastructure.IntegrationTests/Persistence/GlobalMigrationOrderingTests.cs",
+      "automatedTest": "Module_Migrations_Use_One_Global_Sequence_And_Validate_Dependencies",
+      "status": "UNMAPPED",
+      "expectedBehavior": "Module-owned migration files use unique global numeric ordering; shared history records module key; missing/cyclic dependencies and duplicate global versions fail before writes."
+    },
+    {
+      "id": "AC-72",
+      "gate": "persons-consumer-registry",
+      "testFile": "tests/MDGsm.Domain.Tests/Persons/PartyIdContractSerializationTests.cs",
+      "automatedTest": "Producer_And_Consumers_Share_UUIDv7_Wire_Contract_And_RoundTrip",
+      "status": "UNMAPPED",
+      "expectedBehavior": "PartyId contracts across producer and consumers serialize to the same UUIDv7 wire representation and round-trip without CLR type coupling or Guid mix-up."
     }
   ],
-  "note": "UNMAPPED means specified with intended future test file and C# test method; no executable test/evidence is checked in yet. The target paths identify future .NET unit/API/integration test suites and do not claim those projects or tests currently exist. Only IMPLEMENTED entries are backed by checked-in tests. G1 remains blocked while required criteria are UNMAPPED."
+  "note": "UNMAPPED means specified with intended future test file and C# test method; no executable test/evidence is checked in yet. The target paths identify future .NET unit/API/integration test suites and do not claim those projects or tests currently exist. Only IMPLEMENTED entries are backed by checked-in tests. G1 remains blocked while required criteria are UNMAPPED. Additional AC-68..AC-72 map the cross-actor global search cap, abuse throttle/admin unlock, exact masking policy, global migration ordering, and cross-module PartyId serialization. All new criteria remain UNMAPPED until the named .NET tests are implemented and run."
 }
