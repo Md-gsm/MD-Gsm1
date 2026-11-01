@@ -155,13 +155,18 @@ class PersonsGatePolicyTests(unittest.TestCase):
         mapping = gates.load_json(ROOT / "docs/persons/acceptance-gate-map.json")
         for item in mapping["criteria"]:
             if item["status"] == "UNMAPPED":
-                self.assertTrue(item.get("testFile"))
-                self.assertTrue(item.get("automatedTest"))
-                candidates = list(ROOT.rglob(item["testFile"]))
-                self.assertFalse(
-                    any(item["automatedTest"] in p.read_text(encoding="utf-8", errors="replace") for p in candidates),
-                    f'{item["id"]} is UNMAPPED but its named test already exists',
-                )
+                number = int(item["id"].split("-")[1])
+                if number <= 49:
+                    self.assertIsNone(item.get("testFile"))
+                    self.assertIsNone(item.get("automatedTest"))
+                else:
+                    self.assertTrue(item.get("testFile"))
+                    self.assertTrue(item.get("automatedTest"))
+                    candidates = list(ROOT.rglob(item["testFile"]))
+                    self.assertFalse(
+                        any(item["automatedTest"] in p.read_text(encoding="utf-8", errors="replace") for p in candidates),
+                        f'{item["id"]} is UNMAPPED but its named test already exists',
+                    )
         self.assertEqual([f"AC-{n:02d}" for n in range(31, 67)], [x["id"] for x in mapping["criteria"]])
         manifest = gates.load_json(ROOT / "docs/persons/persons-module-manifest.json")
         self.assertFalse(manifest["g1Prerequisites"]["acceptanceCriteriaAc31ToAc49Mapped"])
