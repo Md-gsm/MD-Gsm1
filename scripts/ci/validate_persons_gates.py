@@ -87,7 +87,7 @@ def run_spec(root: Path) -> None:
     if manifest.get("implementationState") not in {"NOT_IMPLEMENTED", "PARTIAL", "IMPLEMENTED"}:
         raise GateFailure(f"Unknown implementationState: {manifest.get('implementationState')}")
     prereqs = manifest.get("g1Prerequisites", {})
-    required_prereqs = ["temporaryDataPolicyApproved", "mergeChecklistApproved", "requiredStatusChecksConfiguredInScm", "negativeCiEnforcementTestPassed", "jobOwnersAssigned", "acceptanceCriteriaAc31ToAc49Mapped"]
+    required_prereqs = ["temporaryDataPolicyApproved", "mergeChecklistApproved", "requiredStatusChecksConfiguredInScm", "negativeCiEnforcementTestPassed", "jobOwnersAssigned", "acceptanceCriteriaAc31ToAc49Mapped", "suffixSearchAbusePolicyApproved"]
     if manifest.get("g1Authorized") is True:
         if manifest.get("repositoryStage") != "G1_CONTRACTS":
             raise GateFailure("G1 authorization requires repositoryStage=G1_CONTRACTS.")
@@ -116,9 +116,9 @@ def run_spec(root: Path) -> None:
     criteria = mapping.get("criteria", [])
     ids = [x.get("id") for x in criteria]
     # Stage 2 expands the ordered specification map through AC-72; UNMAPPED means no executable proof yet.
-    expected = [f"AC-{i:02d}" for i in range(31, 73)]
+    expected = [f"AC-{i:02d}" for i in range(31, 74)]
     if ids != expected:
-        raise GateFailure("Acceptance map must contain AC-31..AC-72 exactly once, in order, with no gaps or extras.")
+        raise GateFailure("Acceptance map must contain AC-31..AC-73 exactly once, in order, with no gaps or extras.")
     for item in criteria:
         for key in ("gate", "status", "expectedBehavior"):
             if not str(item.get(key, "")).strip():
@@ -171,9 +171,9 @@ def run_spec(root: Path) -> None:
                 raise GateFailure(f"{item['id']} claims an implemented test but method '{item['automatedTest']}' is absent.")
     all_criteria_implemented = all(item.get("status") == "IMPLEMENTED" for item in criteria)
     if prereqs.get("acceptanceCriteriaAc31ToAc49Mapped") is True and not all_criteria_implemented:
-        raise GateFailure("Manifest claims AC-31..AC-66 are mapped, but one or more criteria are UNMAPPED.")
+        raise GateFailure("Manifest claims AC-31..AC-73 are mapped, but one or more criteria are UNMAPPED.")
     if manifest.get("g1Authorized") is True and not all_criteria_implemented:
-        raise GateFailure("G1 cannot be authorized while any AC-31..AC-66 criterion is UNMAPPED.")
+        raise GateFailure("G1 cannot be authorized while any AC-31..AC-73 criterion is UNMAPPED.")
     if "src/Modules/Persons" not in registry.get("ownerPaths", []) or "registeredConsumers" not in registry:
         raise GateFailure("Consumer registry lacks owner paths or registeredConsumers.")
     for consumer in registry.get("registeredConsumers", []):
@@ -293,7 +293,7 @@ def run_spec(root: Path) -> None:
     checksum_verifier = root / "scripts/Verify-SourceChecksums.ps1"
     if not checksum_verifier.exists() or "Get-FileHash" not in checksum_verifier.read_text(encoding="utf-8"):
         raise GateFailure("Source checksum verifier is missing or does not verify SHA-256 hashes.")
-    print("PASS: specification, policy values, AC-31..AC-66 mapping, required job IDs, disposable-test safety guards, and checksum verifier.")
+    print("PASS: specification, policy values, AC-31..AC-73 mapping, required job IDs, disposable-test safety guards, and checksum verifier.")
 
 def run_architecture(root: Path) -> None:
     expected_projects = {
