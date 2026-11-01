@@ -21,7 +21,7 @@
 | M8 | Contracts مستقل و PartyId opaque؛ بدون reference به Domain/Infrastructure/DbContext Persons |
 | M9 | DbContext مستقل هر ماژول؛ ممنوعیت DbContext سراسری به‌عنوان اصلاحیه ADR-0005 |
 | M10 | محدودیت suffix4 با سقف per-actor و global پیشنهادی، تعریف traversal، throttle موقت و unlock مدیریتی audit‌شده |
-| M11 | HMAC-SHA-256 کلیددار برای payload idempotency؛ بدون payload خام یا hash بدون کلید |
+| M11 | V1 idempotency فقط OperationId scoped به actor/client و operation name و نتیجه؛ بدون payload/hash/HMAC و بدون نیاز به key manager |
 | M12 | یکتایی موبایل در تماس‌های فعال هر Party و حفظ تاریخچه |
 | M13 | purpose/permission نسخه‌دار و ماتریس lifecycle |
 | M14 | trigger ورود به ADR-0008 هنگام نیاز به شناسه رسمی؛ تصمیم حقوقی با مالک |
@@ -37,8 +37,8 @@
 | N10 | الزام ثبت نتیجه مستقل و بدون جهت‌دهی گروه مشاور |
 | M8 | Contracts فقط مقدار opaque PartyId؛ ممنوعیت reference به Domain/Infrastructure/DbContext Persons |
 | M9 | DbContext مستقل هر ماژول با DbConnection/DbTransaction مشترک در use case اتمیک؛ بدون DbContext سراسری |
-| M10 | suffix4 با سقف ۱۰ نتیجه، ۵ درخواست/دقیقه و ۳۰ درخواست/روز برای هر actor/purpose، audit، alert و قفل موقت |
-| M11 | FindOrCreate با idempotency key سروری، payload hash، TTL بیست‌وچهار ساعت و conflict برای payload متفاوت |
+| M10 | suffix4 با سقف ۱۰ نتیجه، ۵ درخواست/دقیقه و ۳۰ درخواست/روز برای هر actor/purpose، audit، alert و throttle موقت |
+| M11 | FindOrCreate با OperationId کلاینت‌ساز در scope actor/client و operation؛ بدون ذخیره/مقایسه payload؛ retry همان نتیجه را برمی‌گرداند |
 | M12 | یکتایی موبایل در تماس‌های فعال هر Party؛ تاریخچه حفظ و افزودن مجدد پس از غیرفعال‌سازی مجاز |
 | M13 | purposeهای مجاز سمت سرور و permissionهای مستقل role/workclass؛ ماتریس گذار وضعیت Party |
 | M14 | شروع ماژول فاکتور رسمی trigger اجباری ADR-0008 و تأیید/اجرای مدیریت کلید شناسه رسمی است |
@@ -56,12 +56,12 @@
 - [ ] V1 تک‌شعبه بدون tenant؛ Scope permission + purpose + record state.
 - [ ] orchestrator در Application؛ participant contract نسخه‌دار، OperationId و idempotency/payload hash؛ Prepare فقط read-only؛ تمام DB participants در shared connection/transaction؛ failure rollback کامل.
 - [ ] participant ناشناخته/ناسازگار پیش از اولین write عملیات را متوقف می‌کند؛ DbContext هر ماژول مستقل اما enlisted در همان connection/transaction است؛ DbContext سراسری ممنوع و اصلاحیه ADR-0005 است.
-- [ ] ترتیب migration: NNNN_module_name با sequence عددی global، history واحد شامل module_key، dependencyهای صریح و بررسی چرخه پیش از write؛ ADR-0009 Proposed.
+- [ ] ترتیب migration: تخصیص در registry مرکزی Git، بازه‌های رزرو ماژولی، CI برای duplicate/out-of-range و رد اجرای late lower version؛ ADR-0009 Proposed.
 - [ ] PartyId در تمام consumer contracts wire-format UUIDv7 یکسان و round-trip دارد؛ بدون coupling به CLR type ماژول Persons.
 - [ ] outbox فقط اثر بیرونی؛ Recovery برای DB staging/compensation ندارد.
 - [ ] tokenهای profile/contact/role مستقل؛ overlap ممنوع با exclusion constraint.
 - [ ] هیچ تفسیر حقوقی مفروض نیست؛ صدور صورتحساب رسمی اشخاص حقوقی تا تصمیم O مستند مالک و تأیید ADR-0008 در HOLD می‌ماند.
-- [ ] AC-50..72 با مسیرهای آیندهٔ تست .NET و نام کلاس/متد مشخص اما UNMAPPED؛ هیچ ادعای PASS بدون تست؛ validator و تست سیاست AC-31..72 را پوشش می‌دهند.
+- [ ] AC-50..73 با مسیرهای آیندهٔ تست .NET و نام کلاس/متد مشخص اما UNMAPPED؛ هیچ ادعای PASS بدون تست؛ validator و تست سیاست AC-31..73 را پوشش می‌دهند.
 - [ ] هیچ مجوز Runtime از این بازبینی استنباط نمی‌شود.
 
 ## یافته‌های جدید این دور — پاسخ تهیه‌کنندگان و داوری مستقل
@@ -70,16 +70,27 @@
 
 | شناسه | اصلاح پیشنهادی/ثبت‌شده در نسخه جاری | داوری مستقل گروه مشاور (A/R/X/O) | شدت/مرجع/شرط |
 |---|---|---|---|
-| N1 | payload خام و hash بدون کلید حذف؛ HMAC-SHA-256 با کلید سروری نسخه‌دار، rotation و عدم انتشار در artifact؛ AC-67 |  |  |
-| N2 | Contracts و استقلال DbContext در ADR-0007؛ اصلاحیه DbContext مستقل در ADR-0005 |  |  |
+| N1 | payload خام و hash بدون کلید حذف؛ حذف مقایسهٔ payload؛ ثبت OperationId scoped و نتیجه، بدون payload/hash/HMAC؛ AC-67؛ AC-67 |  |  |
+| N2 | Contracts و استقلال DbContext در ADR-0007؛ اصلاحیهٔ پیشنهادی جداگانه در ADR-0010؛ ADR-0005 Accepted دست‌نخورده می‌ماند |  |  |
 | N3 | ADR-0009: sequence عددی سراسری، نام NNNN_module، history سراسری با module_key و dependency DAG |  |  |
 | N4 | traversal دقیق، throttle ۱۵ دقیقه‌ای، unlock مدیریتی audit‌شده؛ سقف‌ها پیشنهادی و نیازمند سنجش حجم/تأیید مالک امنیت؛ AC-69 |  |  |
 | N5 | هیچ حکم حقوقی مفروض نیست؛ صورتحساب رسمی اشخاص حقوقی تا تصمیم مستند O مالک در HOLD |  |  |
-| N6 | مسیرهای آتی .NET و کلاس/متدهای مشخص برای AC-50..72؛ همه UNMAPPED |  |  |
-| N7 | ماسک پیش‌فرض فقط دو رقم پایانی؛ AC-70 |  |  |
-| N8 | سقف روزانه global پیشنهادی ۱۰۰۰ درخواست؛ AC-68؛ تا تأیید مالک امنیت telemetry-only |  |  |
+| N6 | مسیرهای آتی .NET و کلاس/متدهای مشخص برای AC-50..73؛ همه UNMAPPED |  |  |
+| N7 | ماسک پیش‌فرض فقط دو رقم پایانی برای طول‌های بین‌المللی متغیر؛ AC-70/73 |  |  |
+| N8 | سقف global پیشنهادی ۱۰۰۰ درخواست صرفاً telemetry/alert؛ عدم رد سراسری تا تأیید مالک؛ AC-68 |  |  |
 | N9 | UUIDv7 wire serialization و round-trip بین producer/consumers؛ AC-72 |  |  |
 | N10 | نتیجه مستقل باید در جدول نتیجه گروه ثبت شود؛ جدول پاسخ تهیه‌کننده به‌تنهایی تأیید نیست |  |  |
+
+## یافته‌های جدید مالک/بازبین — پاسخ تهیه‌کننده و داوری مستقل
+
+| شناسه | موضوع | پاسخ اصلاحی تهیه‌کننده | داوری مستقل گروه مشاور |
+|---|---|---|---|
+| O1 | D2-08 و 10.7 متعارض | D2-08 با 10.7 همسان شد؛ سقف‌ها تا تأیید مالک telemetry-only و throttle فقط actor-specific است. |  |
+| O2 | کلید HMAC در on-prem V1 | مقایسهٔ payload حذف شد؛ فقط OperationId scoped و نتیجه ذخیره می‌شود؛ ADR-0010 Proposed. |  |
+| O3 | تخصیص migration با advisory lock | شماره در Git registry تخصیص می‌یابد؛ بازه‌های رزرو، CI duplicate/out-of-range و قاعدهٔ late lower version تعریف شد. |  |
+| O4 | ویرایش ADR-0005 Accepted | متن Accepted دست‌نخورده؛ اصلاحیهٔ مستقل ADR-0010 Proposed. |  |
+| O5 | دامنهٔ global cap و mask | global cap telemetry-only؛ throttle actor-only؛ ماسک دو رقم آخر برای طول متغیر. |  |
+| O6 | approval policy gate | تأیید مالک دربارهٔ حدود و enforcement پیش‌نیاز صریح G1 شد؛ هنوز false است. |  |
 
 ## نتیجه واقعی گروه مشاور — فقط توسط گروه تکمیل شود
 | شناسه | نتیجه A/R/X/O | شدت | مرجع | دلیل/اثر | اقدام و معیار آزمون |
@@ -113,4 +124,4 @@ SHA نهایی: پس از آخرین تغییر و CI موفق همان SHA تک
 
 ## درخواست مشخص از گروه مشاور
 
-لطفاً نسخه نهایی PR #11 را با توجه به جدول B1–B5 و M1–M14، بخش‌های 10.2–10.9 سند اصلی، ADR-0005، ADR-0007، ADR-0008 و ADR-0009 بازبینی کنید. نتیجه باید مستقلانه برای هر بند ثبت شود؛ مواردی که صرفاً در سند تعریف شده‌اند ولی هنوز تست/Runtime ندارند باید به‌عنوان شرط/کار آینده باقی بمانند، نه PASS اجرایی. هیچ تأیید قبلی محدوده G1 جایگزین این بازبینی معماری مرحله دوم نیست.
+لطفاً نسخه نهایی PR #11 را با توجه به جدول B1–B5 و M1–M14، بخش‌های 10.2–10.9 سند اصلی، ADR-0005، ADR-0007، ADR-0008، ADR-0009 و ADR-0010 بازبینی کنید. نتیجه باید مستقلانه برای هر بند ثبت شود؛ مواردی که صرفاً در سند تعریف شده‌اند ولی هنوز تست/Runtime ندارند باید به‌عنوان شرط/کار آینده باقی بمانند، نه PASS اجرایی. هیچ تأیید قبلی محدوده G1 جایگزین این بازبینی معماری مرحله دوم نیست.
