@@ -14,10 +14,10 @@
 7. وضعیت Party: Active/Inactive/Restricted/Archived/Merged؛ وضعیت هر role و WorkClassification مستقل Active/Inactive است.
 8. V1 تک‌شعبه و بدون tenant؛ Access Scope از permission actor، هدف عملیات و وضعیت رکورد مشتق می‌شود.
 9. concurrency tokenهای opaque در سطح profile/contact/role مستقل‌اند.
-10. نوشتن چندماژولی PostgreSQL از orchestrator واحد و participantهای هم‌زمان در connection/transaction مشترک ADR-0005 استفاده می‌کند. staging/eventual consistency/compensation برای DB ممنوع است.
+10. نوشتن چندماژولی PostgreSQL از orchestrator واحد در Application و participantهای نسخه‌دار استفاده می‌کند؛ هر ماژول DbContext مستقل خود را دارد و فقط DbConnection/DbTransaction مشترک ADR-0005 را enlist می‌کند. DbContext سراسری ممنوع است؛ staging/eventual consistency/compensation برای DB ممنوع است.
 11. Outbox فقط برای اثر بیرونی خارج PostgreSQL و پس از commit است.
 12. Merge اجرایی خارج V1 است؛ participant ناشناخته پیش از write عملیات را متوقف می‌کند و شکست DB همه writeها را rollback می‌کند؛ Recovery فقط اثر بیرونی.
-13. شناسه رسمی، نشانی مرجع‌دار، روابط نمایندگی، legal hold و merge اجرایی خارج V1 هستند. ذخیره شناسه رسمی تا تصویب ADR مدیریت کلید و تأیید مالک ممنوع است.
+13. شناسه رسمی، نشانی مرجع‌دار، روابط نمایندگی، legal hold و merge اجرایی خارج V1 هستند. ذخیره شناسه رسمی تا تصویب ADR مدیریت کلید و تأیید مالک ممنوع است. وضعیت صدور صورتحساب رسمی مالیاتی برای اشخاص حقوقی تا تصمیم حقوقی صریح مالک (با منبع و تاریخ اثر) در HOLD می‌ماند؛ این HOLD ادعای حقوقی نیست.
 14. snapshot اسناد قطعی با تغییر Party بازنویسی نمی‌شود.
 
 ## فازبندی
@@ -28,3 +28,13 @@ V1: Party حقیقی/حقوقی، موبایل/تماس، FindOrCreate، نقش 
 گروه مشاور مسئول بازبینی معماری است. مالک پروژه هم‌زمان مسئول امنیت/حریم خصوصی و تصمیم‌های قانونی/نگهداری است؛ مسئول امنیت مستقل دیگری تعریف نشده است.
 
 این ADR هیچ کلاس، جدول، migration، endpoint، worker یا UI ایجاد نمی‌کند. g1Authorized=false و Persons=NOT_IMPLEMENTED حفظ می‌شوند. پذیرش نهایی منوط به بازبینی مجدد گروه مشاور روی SHA نهایی، تأیید مالک و CI سبز است.
+
+
+## تصمیم‌های تکمیلی این بازنگری — هنوز Proposed
+
+15. Contracts هر ماژول نوع PartyId مستقل و opaque دارد و فقط UUID wire-format استاندارد را serialize می‌کند؛ هیچ reference به Domain/Infrastructure/DbContext ماژول Persons مجاز نیست. آزمون contract بین‌ماژولی باید JSON/OpenAPI serialization، UUIDv7 shape و round-trip را برای producer و هر consumer اثبات کند.
+16. DbContext هر ماژول مستقل است؛ DbContext سراسری ممنوع و این قاعده اصلاحیه ADR-0005 است.
+17. idempotency payload فقط با HMAC-SHA-256 سروری و key version ذخیره می‌شود؛ hash بدون کلید یا payload/موبایل خام در رکورد و artifact ممنوع است.
+18. migrationها دارای sequence عددی سراسری و نام NNNN_<module>_<description>.sql هستند؛ جدول history سراسری module key را نیز ثبت می‌کند و dependencyها پیش از اجرا بررسی می‌شوند. جزئیات در ADR-0009.
+19. جست‌وجوی suffix4 فقط دو رقم پایانی را در نتایج نشان می‌دهد. سقف پیشنهادی global روزانه ۱۰۰۰ درخواست علاوه بر سقف actor/purpose است و تا تأیید مالک امنیت و سنجش بار واقعی صرفاً پیشنهادی می‌ماند. قفل دائمی/۲۴ساعته حساب پذیرش ممنوع است؛ throttle موقت و unlock مدیریتی audit‌شده جایگزین است.
+20. هیچ قاعده حقوقی درباره نیاز/عدم نیاز شناسه رسمی مفروض نیست؛ صدور صورتحساب رسمی اشخاص حقوقی تا تصمیم مستند مالک در HOLD می‌ماند.
