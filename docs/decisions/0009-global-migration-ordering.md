@@ -11,31 +11,25 @@
 ## Proposed decision
 
 1. نام فایل `NNNN_<module>_<description>.sql` است. `NNNN` در زمان توسعه از registry مرکزی نسخه‌گذاری در مخزن تخصیص داده می‌شود؛ هیچ شماره‌ای با advisory lock زمان اجرا ساخته نمی‌شود.
-2. بازه‌های رزرو اولیه:
-   - Foundation/Infrastructure: `0001–0099`
-   - Persons: `0100–0199`
-   - IdentityAccess: `0200–0299`
-   - RepairOperations: `0300–0399`
-   - Finance: `0400–0499`
-   - ماژول/دامنهٔ جدید یا بلوک بعدی پس از `0500` فقط با تغییر registry مرکزی و تصمیم مستند تخصیص می‌یابد.
-3. CI برای هر فایل یکتایی شمارهٔ global، تطابق نام ماژول با مالک مسیر، قرارگرفتن شماره در بازهٔ رزروشده و عدم تکرار شماره در کل tree را کنترل می‌کند؛ duplicate و out-of-range fail می‌شوند.
+2. یک registry مرکزی و version-controlled در Git مرجع تخصیص است و حداقل `nextVersion` (شمارندهٔ یکنواخت سراسری) و فهرست تخصیص‌های قطعی شامل `version`, `module_key`, `migration_name`, `path` و dependencyهای صریح را نگه می‌دارد. تخصیص شماره فقط با تغییر همین registry در PR انجام می‌شود؛ CI باید پیوستگی/افزایش یکنواخت شمارنده، یکتایی version و name و تطابق مسیر/مالک را بررسی کند. دو PR موازی که یک شماره را تخصیص دهند، با conflict یا validator رد می‌شوند و باید شمارهٔ بعدی آزاد را بگیرند.
+3. بازه‌های اولیهٔ `0001–0099` برای Foundation/Infrastructure، `0100–0199` برای Persons، `0200–0299` برای IdentityAccess، `0300–0399` برای RepairOperations و `0400–0499` برای Finance صرفاً راهنمای تخصیص اولیه و برنامه‌ریزی‌اند؛ این بازه‌ها قید سخت CI یا شرط مالکیت دائمی نیستند. پس از مصرف/عبور از یک بازه، همان ماژول می‌تواند migration بعدی را با شمارهٔ سراسری بعدی از registry بگیرد. هر شمارهٔ تخصیص‌یافته global است و هیچ ماژولی sequence محلی ندارد.
 4. جدول `mdgsm_migration_history` واحد است و `module_key`, `migration_version`, `migration_name`, checksum و زمان اجرا را ثبت می‌کند؛ version و name هر دو unique هستند.
 5. dependencyهای بین‌ماژولی در metadata صریح و acyclic هستند؛ runner پیش از write وجود dependency و نبود cycle را بررسی می‌کند.
-6. module runner فقط فایل‌های ماژول خود را discover/validate می‌کند؛ coordinator مرکزی اجرا و history را مدیریت می‌کند، اما شماره یا فایل تخصیص نمی‌دهد.
-7. اجرا فقط به ترتیب صعودی global مجاز است. اگر `0200` اجرا شده باشد، افزودن/اجرای دیرهنگام `0105` رد می‌شود، حتی اگر dependency مستقیمی نداشته باشد؛ نسخه‌های اجراشده بازشماری یا عقب‌گرد نمی‌شوند. migration بعدی Persons باید از بلوک آیندهٔ global بالاتر از high-water mark استفاده کند؛ اگر بلوک فعلی تمام شده، توسعه تا تخصیص بلوک بعدی متوقف می‌شود.
+6. module runner فقط فایل‌های ماژول خود را discover/validate می‌کند؛ coordinator مرکزی اجرا و history را مدیریت می‌کند، اما شماره را در زمان اجرا تولید یا تخصیص نمی‌دهد. registry در زمان توسعه/PR شمارهٔ global را رزرو می‌کند.
+7. اجرای migration همچنان فقط به ترتیب صعودی global و بالاتر از high-water mark دیتابیس مجاز است. برای نمونه، پس از اجرای `0200`، migration جدید `0105` رد می‌شود؛ این محدودیت با تخصیص `0201` یا شمارهٔ بعدی آزاد به Persons یا هر ماژول دیگر رفع می‌شود. high-water mark ترتیب اجرا را enforce می‌کند، نه بازهٔ ماژول را؛ بنابراین هیچ ماژولی به‌دلیل پایان بازهٔ راهنمای اولیه متوقف نمی‌شود. migration اجراشده هرگز بازشماری یا عقب‌گرد نمی‌شود.
 8. پیش از اولین migration تجاری، registry/validator، runner و history باید در PR مستقل تکمیل و با PostgreSQL 18 Linux/Windows disposable آزموده شوند. runtime role حق DDL ندارد؛ اجرای migration با principal جداست.
 
 ## Required evidence
 
-- CI duplicate version، out-of-range و module/path mismatch را رد کند.
+- CI تکرار version/name، شمارندهٔ عقب‌گرد/پرش غیرمجاز، ثبت تخصیص خارج از registry و module/path mismatch را رد کند؛ بازه‌های راهنما به‌تنهایی fail gate نیستند.
 - dependency مفقود و cycle پیش از write رد شوند.
-- اجرای `0105` پس از ثبت `0200` رد شود؛ بلوک آیندهٔ بالاتر از high-water mark پذیرفته شود.
+- اجرای `0105` پس از ثبت `0200` رد شود؛ تخصیص و اجرای شمارهٔ بعدی آزاد (مثلاً `0201`) برای Persons یا ماژول دیگر پذیرفته شود.
 - checksum/name drift رد و اجرای مجدد idempotent باشد.
 - history، module_key و ترتیب اجرا را ثبت کند؛ Linux/Windows disposable tests سبز باشند.
 
 ## Consequences
 
-مالکیت migration در ماژول می‌ماند؛ شماره‌گذاری در Git/registry مرکزی انجام می‌شود و runtime coordinator فقط ترتیب/وابستگی/تاریخچه را enforce می‌کند. هیچ migration تجاری اضافه نمی‌شود.
+مالکیت migration در ماژول می‌ماند؛ یک شمارندهٔ یکنواخت سراسری در Git registry شماره‌ها را تخصیص می‌دهد و بازه‌های ماژولی فقط راهنمای اولیه‌اند. high-water mark ترتیب اجرای global را حفظ می‌کند، بدون آنکه توسعهٔ ماژول را به پایان بازهٔ رزروشده گره بزند. runtime coordinator فقط ترتیب/وابستگی/تاریخچه را enforce می‌کند. هیچ migration تجاری اضافه نمی‌شود.
 
 ## Status guard
 
