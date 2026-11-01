@@ -312,7 +312,7 @@
       "testFile": "tests/MDGsm.Api.IntegrationTests/Persons/SuffixSearchAbuseThrottleTests.cs",
       "automatedTest": "Traversal_Pattern_Triggers_Throttle_And_Admin_Unlock_Is_Audited",
       "status": "UNMAPPED",
-      "expectedBehavior": "Distinct-suffix traversal triggers alert and 15-minute throttle only for the offending actor; manager unlocks that actor with mandatory reason and immutable audit; no 24-hour account lock and no global reset."
+      "expectedBehavior": "After explicit owner approval and policy activation, distinct-suffix traversal triggers alert and 15-minute throttle only for the offending actor; manager unlocks that actor with mandatory reason and immutable audit; no 24-hour account lock and no global reset."
     },
     {
       "id": "AC-70",
