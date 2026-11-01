@@ -50,7 +50,7 @@ public sealed class ArchitectureBoundaryTests
             var relative = $"src/Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj";
             var project = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
             Assert.True(File.Exists(project), $"Missing Contracts project: {relative}");
-            Assert.Contains(relative.Replace('/', '\\'), solution);
+        Assert.Contains(relative.Replace('/', '\\'), solution);
 
             var xml = XDocument.Load(project);
             Assert.Empty(xml.Descendants("ProjectReference"));
