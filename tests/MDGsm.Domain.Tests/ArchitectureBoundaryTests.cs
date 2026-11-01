@@ -70,7 +70,7 @@ public sealed class ArchitectureBoundaryTests
         var solution = File.ReadAllText(Path.Combine(root, "MDGsm.sln"));
 
         Assert.True(File.Exists(project), $"Missing Persons Domain project: {relative}");
-        Assert.Contains(relative.Replace('/', '\\\\'), solution);
+        Assert.Contains(relative.Replace("/", Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal), solution);
 
         var xml = XDocument.Load(project);
         Assert.Empty(xml.Descendants("ProjectReference"));
