@@ -1,6 +1,7 @@
 # Review ownership. Enforcement ("Require review from Code Owners") is a repository setting.
-*                      @Md-gsm
-/.github/              @Md-gsm
-/docs/decisions/       @Md-gsm
-/database/             @Md-gsm
-/scripts/ci/           @Md-gsm
+# @mrdeljoe4 is the independent reviewer account; @Md-gsm is the owner/author.
+*                      @Md-gsm @mrdeljoe4
+/.github/              @Md-gsm @mrdeljoe4
+/docs/decisions/       @Md-gsm @mrdeljoe4
+/database/             @Md-gsm @mrdeljoe4
+/scripts/ci/           @Md-gsm @mrdeljoe4
