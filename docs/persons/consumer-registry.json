@@ -2,7 +2,8 @@
   "registryVersion": "1.1",
   "module": "Persons",
   "ownerPaths": [
-    "src/Modules/Persons"
+    "src/Modules/Persons",
+    "src/BuildingBlocks/MDGsm.Domain/Persons"
   ],
   "registeredConsumers": [],
   "registryPolicy": {
