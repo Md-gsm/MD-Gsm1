@@ -4,5 +4,4 @@ namespace MDGsm.Persons.Contracts;
 public static class PartyContractVersion
 {
     public const string Current = "1.0";
-    public const string ApiRoute = "/api/v1/persons";
 }
