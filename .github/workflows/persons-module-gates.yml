@@ -34,7 +34,7 @@ jobs:
         run: dotnet test .\MDGsm.sln --configuration Release --no-build --logger "trx;LogFileName=mdgsm-tests.trx"
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: foundation-test-results
           path: '**/TestResults/*.trx'
@@ -238,7 +238,7 @@ jobs:
         run: python scripts/ci/write_ci_evidence.py --root . --out artifacts/persons-ci-evidence.json
       - name: Upload CI evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: persons-ci-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/persons-ci-evidence.json
