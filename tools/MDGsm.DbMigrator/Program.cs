@@ -6,6 +6,7 @@ if (args.Any(argument => argument is "--help" or "-h"))
     Console.WriteLine("Reads ConnectionStrings__MDGsmDatabase from the process environment.");
     Console.WriteLine("By default, the target database must contain the PostgreSQL comment marker MDGSM_DISPOSABLE_TEST_DB.");
     Console.WriteLine("Use --allow-unmarked-database only for an explicitly approved deployment operation.");
+    Console.WriteLine("It additionally requires MDGSM_UNMARKED_DB_CONFIRMATION=APPLY-TO-NON-DISPOSABLE-DATABASE in the process environment.");
     return 0;
 }
 
@@ -24,6 +25,11 @@ if (string.IsNullOrWhiteSpace(connectionString))
 }
 
 var allowUnmarkedDatabase = args.Contains("--allow-unmarked-database", StringComparer.Ordinal);
+if (allowUnmarkedDatabase && Environment.GetEnvironmentVariable("MDGSM_UNMARKED_DB_CONFIRMATION") != "APPLY-TO-NON-DISPOSABLE-DATABASE")
+{
+    Console.Error.WriteLine("FAIL: --allow-unmarked-database requires MDGSM_UNMARKED_DB_CONFIRMATION=APPLY-TO-NON-DISPOSABLE-DATABASE.");
+    return 2;
+}
 try
 {
     var result = await new DatabaseMigrationRunner().ApplyPendingAsync(
