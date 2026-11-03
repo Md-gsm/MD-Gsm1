@@ -1,0 +1,6 @@
+# Review ownership. Enforcement ("Require review from Code Owners") is a repository setting.
+*                      @Md-gsm
+/.github/              @Md-gsm
+/docs/decisions/       @Md-gsm
+/database/             @Md-gsm
+/scripts/ci/           @Md-gsm
