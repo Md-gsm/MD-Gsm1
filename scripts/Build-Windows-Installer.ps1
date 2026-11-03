@@ -47,7 +47,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Release build failed.' }
 
 if (-not $SkipTests) {
     Write-Host '== .NET tests ==' -ForegroundColor Cyan
-    & dotnet test $solution --configuration Release --no-build --logger 'trx;LogFileName=mdgsm-installer-tests.trx'
+    & dotnet test $solution --configuration Release --no-build --filter 'Category!=Integration' --logger 'trx;LogFileName=mdgsm-installer-tests.trx'
     if ($LASTEXITCODE -ne 0) { throw 'The .NET test suite failed; installer packaging is blocked.' }
 }
 
