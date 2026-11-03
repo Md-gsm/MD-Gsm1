@@ -18,7 +18,18 @@ The following 13 job names are the required check set that must be configured on
 - `persons-ci-enforcement-test`
 - `persons-ci-evidence`
 
-## Remote configuration evidence — 2026-10-31
+## Live protection state — re-verified 2026-11-03
+
+`gh api repos/Md-gsm/MD-Gsm1/branches/main/protection` returns:
+
+- 13 required contexts (the list above), `strict=true`.
+- `required_approving_review_count=1`, `require_last_push_approval=true`, `dismiss_stale_reviews=true`, `require_code_owner_reviews=false`.
+- `required_signatures`, `required_linear_history`, `required_conversation_resolution` and `enforce_admins` are enabled.
+- `windows-preview-installer` now also runs on `pull_request` (no path filter) but is **not** in the required list; adding it is a Project Owner decision.
+
+`requiredStatusChecksConfiguredInScm` is therefore `true`. This section supersedes the historical 2026-10-31 snapshot below; GitHub itself remains the source of truth.
+
+## Historical snapshot — 2026-10-31 (superseded)
 
 The GitHub branch metadata endpoint for `main` returned:
 
