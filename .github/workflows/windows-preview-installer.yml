@@ -2,6 +2,8 @@ name: MD-Gsm Windows Persons Preview Installer
 
 on:
   workflow_dispatch:
+  # Always runs on every PR (no path filter) so it can be a required check without blocking docs-only PRs.
+  pull_request:
   push:
     paths:
       - 'src/Host/Desktop/**'
