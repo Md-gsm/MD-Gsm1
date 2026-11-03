@@ -69,7 +69,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await using (var command = new NpgsqlCommand("""
-            INSERT INTO persons_parties
+            INSERT INTO persons
               (party_id, party_type, business_roles, given_name, family_name, legal_name,
                national_id, legal_national_id, economic_code, responsible_person_name,
                acquaintance_source, internal_note, credit_limit_rial, default_discount_percent,
@@ -150,7 +150,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
                    (SELECT c.value FROM persons_contact_points c WHERE c.party_id=p.party_id AND c.kind=1 AND c.is_primary LIMIT 1),
                    (SELECT a.city FROM persons_addresses a WHERE a.party_id=p.party_id AND a.is_primary LIMIT 1),
                    p.created_at_utc
-            FROM persons_parties p
+            FROM persons p
             WHERE p.is_active AND (
               @term IS NULL OR
               (p.party_type=1 AND concat_ws(' ', p.given_name, p.family_name) ILIKE '%' || @term || '%') OR
@@ -181,7 +181,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
                    internal_note, credit_limit_rial, default_discount_percent, default_payment_method,
                    bank_card_last_four, repair_status_sms_enabled, ready_for_delivery_sms_enabled,
                    promotions_sms_enabled, created_at_utc
-            FROM persons_parties WHERE party_id=@id AND is_active;
+            FROM persons WHERE party_id=@id AND is_active;
             """, connection);
         command.Parameters.AddWithValue("id", id);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);

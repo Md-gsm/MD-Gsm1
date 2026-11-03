@@ -1,6 +1,6 @@
 -- Persons core schema. Apply only through the guarded, explicit MD-Gsm migration runner.
 -- Monetary values are integer Rial. Raw card PAN and authentication secrets are never stored.
-CREATE TABLE persons_parties (
+CREATE TABLE persons (
     party_id uuid PRIMARY KEY,
     party_type smallint NOT NULL CHECK (party_type IN (1, 2)),
     business_roles smallint NOT NULL CHECK (business_roles BETWEEN 1 AND 3),
@@ -31,14 +31,14 @@ CREATE TABLE persons_parties (
       (party_type = 2 AND legal_name IS NOT NULL AND given_name IS NULL AND family_name IS NULL)
     )
 );
-CREATE UNIQUE INDEX ux_persons_natural_national_id ON persons_parties(national_id)
+CREATE UNIQUE INDEX ux_persons_natural_national_id ON persons(national_id)
  WHERE party_type = 1 AND national_id IS NOT NULL AND is_active;
-CREATE UNIQUE INDEX ux_persons_legal_national_id ON persons_parties(legal_national_id)
+CREATE UNIQUE INDEX ux_persons_legal_national_id ON persons(legal_national_id)
  WHERE party_type = 2 AND legal_national_id IS NOT NULL AND is_active;
 
 CREATE TABLE persons_contact_points (
     contact_point_id uuid PRIMARY KEY,
-    party_id uuid NOT NULL REFERENCES persons_parties(party_id) ON DELETE RESTRICT,
+    party_id uuid NOT NULL REFERENCES persons(party_id) ON DELETE RESTRICT,
     kind smallint NOT NULL CHECK (kind IN (1,2,3)),
     value varchar(254) NOT NULL,
     is_primary boolean NOT NULL DEFAULT false,
@@ -51,7 +51,7 @@ CREATE UNIQUE INDEX ux_persons_primary_contact_kind ON persons_contact_points(pa
 
 CREATE TABLE persons_addresses (
     address_id uuid PRIMARY KEY,
-    party_id uuid NOT NULL REFERENCES persons_parties(party_id) ON DELETE RESTRICT,
+    party_id uuid NOT NULL REFERENCES persons(party_id) ON DELETE RESTRICT,
     country_code char(2) NOT NULL DEFAULT 'IR',
     province varchar(100) NOT NULL,
     city varchar(100) NOT NULL,
@@ -63,11 +63,11 @@ CREATE TABLE persons_addresses (
 );
 CREATE UNIQUE INDEX ux_persons_primary_address ON persons_addresses(party_id) WHERE is_primary;
 
-CREATE INDEX ix_persons_parties_name ON persons_parties (family_name, given_name) WHERE party_type = 1 AND is_active;
-CREATE INDEX ix_persons_parties_legal_name ON persons_parties (legal_name) WHERE party_type = 2 AND is_active;
-CREATE INDEX ix_persons_parties_roles ON persons_parties (business_roles) WHERE is_active;
+CREATE INDEX ix_persons_name ON persons (family_name, given_name) WHERE party_type = 1 AND is_active;
+CREATE INDEX ix_persons_legal_name ON persons (legal_name) WHERE party_type = 2 AND is_active;
+CREATE INDEX ix_persons_roles ON persons (business_roles) WHERE is_active;
 CREATE INDEX ix_persons_contact_value ON persons_contact_points (value);
 CREATE INDEX ix_persons_addresses_city ON persons_addresses (city);
 
-COMMENT ON TABLE persons_parties IS 'Persons module master identities. Financial balances and accounting ledger entries are not stored here.';
-COMMENT ON COLUMN persons_parties.bank_card_last_four IS 'Only last four digits; full card PAN is prohibited.';
+COMMENT ON TABLE persons IS 'Persons module master identities. Financial balances and accounting ledger entries are not stored here.';
+COMMENT ON COLUMN persons.bank_card_last_four IS 'Only last four digits; full card PAN is prohibited.';
