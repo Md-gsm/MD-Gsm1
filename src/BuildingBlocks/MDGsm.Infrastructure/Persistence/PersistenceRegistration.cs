@@ -1,6 +1,9 @@
+using MDGsm.Application.Persons;
+using MDGsm.Infrastructure.Persons;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace MDGsm.Infrastructure.Persistence;
 
@@ -22,6 +25,8 @@ public static class PersistenceRegistration
             options.UseNpgsql(connectionString, npgsql =>
                 npgsql.EnableRetryOnFailure(maxRetryCount: 3)));
 
+        services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
+        services.AddScoped<IPartyRepository, PostgresPartyRepository>();
         return services;
     }
 }
