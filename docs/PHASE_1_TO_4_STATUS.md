@@ -17,3 +17,16 @@
 - محافظت آخرین super_admin، تأیید دوکاناله در workflow کامل، ثبت ایمیل/موبایل و مدیریت پروفایل، و endpointها در این مرحله پیاده‌سازی نشده‌اند.
 - Build و تست PostgreSQL 18 disposable تا اجرای CI تأیید نشده‌اند. هیچ ادعای آماده‌بودن production یا G1 مطرح نیست.
 - g1Authorized=false؛ هیچ endpoint ورود، listener شبکه، credential bootstrap یا Migration اضافه نشده است.
+
+
+## مراحل ۵ تا ۷ — کنترل هم‌زمانی و آزمون PostgreSQL
+
+5. **کنترل هم‌زمانی ورود و سقف کاربران فعال:** نقطهٔ سریال‌سازی سراسری روی ردیف singleton تنظیمات تقویت شد. تراکنش SERIALIZABLE با UPDATE نسخه‌ساز روی همان ردیف اجرا می‌شود تا تراکنش‌های منتظر با snapshot قدیمی به serialization failure برسند و با snapshot تازه retry شوند. سقف بر اساس تعداد حساب‌های متمایز دارای نشست معتبر اعمال می‌شود؛ نشست دوم همان حساب ظرفیت جدید مصرف نمی‌کند.
+6. **آزمون PostgreSQL:** تست Integration روی دیتابیس جداگانهٔ CI با marker صریح disposable و loopback-only اضافه شد. تست چرخهٔ قفل ۵ تلاش/۱۵ دقیقه، ورود موفق پس از پایان قفل، تمدید lease با heartbeat، و ابطال نشست‌ها پس از تغییر رمز را از طریق Repository و Handlerهای واقعی بررسی می‌کند. مدل دیتابیس تست با EnsureCreated فقط در دیتابیس تازهٔ disposable ایجاد می‌شود؛ Migration عملیاتی جدیدی اضافه یا اجرا نمی‌شود.
+7. **آزمون ورود هم‌زمان:** چند حساب مستقل به‌طور هم‌زمان برای سقف ۲ کاربر وارد می‌شوند؛ انتظار دقیقاً دو حساب فعال است. ورود دوم حساب فعال باید مجاز باشد، بدون افزایش تعداد حساب‌های متمایز فعال.
+
+## مرزهای اجرا و شواهد
+- تست PostgreSQL فقط از `IdentityAccessTestConnectionString` استفاده می‌کند و پیش از EnsureCreated، loopback host، نام دیتابیس دارای الگوی disposable و database comment marker را بررسی می‌کند.
+- این تست به دیتابیس Persons یا دیتابیس عملیاتی متصل نمی‌شود.
+- هنوز Migration اجرایی IdentityAccess، endpoint ورود، network listener، credential bootstrap یا تغییر `g1Authorized` ایجاد نشده است.
+- نتیجهٔ نهایی مراحل ۵ تا ۷ منوط به اجرای موفق CI روی commit جدید است؛ تا آن زمان وضعیت «پیاده‌سازی‌شده، آزمون CI در انتظار» است.

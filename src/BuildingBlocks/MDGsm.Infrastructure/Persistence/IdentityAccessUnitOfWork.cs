@@ -19,8 +19,16 @@ public sealed class IdentityAccessUnitOfWork(MdGsmDbContext db) : IIdentityAcces
     await using var transaction=await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable,cancellationToken);
     try
     {
-     // Missing singleton row is a hard failure: never proceed without capacity serialization.
-     _=await db.IdentitySystemSettings.FromSqlRaw("SELECT * FROM identity.system_settings WHERE settings_id = 1 FOR UPDATE").SingleAsync(cancellationToken);
+     // A no-op UPDATE is intentional: unlike a lock-only SELECT, it creates a new
+     // row version. Under SERIALIZABLE, a waiter with an older snapshot receives
+     // SQLSTATE 40001 and the execution strategy retries with a fresh snapshot.
+     // This makes the singleton row a cross-process capacity serialization point.
+     var lockedRows = await db.Database.ExecuteSqlRawAsync(
+      "UPDATE identity.system_settings SET updated_at_utc = updated_at_utc WHERE settings_id = 1",
+      cancellationToken);
+     if (lockedRows != 1)
+      throw new InvalidOperationException("The IdentityAccess singleton session-policy row is missing.");
+     _=await db.IdentitySystemSettings.SingleAsync(x=>x.SettingsId==1,cancellationToken);
      var result=await operation(cancellationToken);
      await db.SaveChangesAsync(cancellationToken);
      await transaction.CommitAsync(cancellationToken);
