@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using MDGsm.IdentityAccess.Application;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.WebUtilities;
@@ -14,7 +13,7 @@ internal sealed class PasswordHashSubject
 }
 
 /// <summary>Uses the platform ASP.NET Core Identity v3 PBKDF2 password hasher.</summary>
-public sealed class PlatformPasswordHasher : IPasswordHasher
+public sealed class PlatformPasswordHasher : MDGsm.IdentityAccess.Application.IPasswordHasher
 {
     private readonly PasswordHasher<PasswordHashSubject> _hasher =
         new(Options.Create(new PasswordHasherOptions { CompatibilityMode = PasswordHasherCompatibilityMode.IdentityV3 }));
@@ -42,7 +41,7 @@ public sealed class PlatformPasswordHasher : IPasswordHasher
 }
 
 /// <summary>Issues 256-bit opaque bearer tokens and stores only SHA-256 digests.</summary>
-public sealed class OpaqueAccessTokenFactory : IAccessTokenFactory, IPrivacyDigest
+public sealed class OpaqueAccessTokenFactory : MDGsm.IdentityAccess.Application.IAccessTokenFactory, MDGsm.IdentityAccess.Application.IPrivacyDigest
 {
     public string CreateOpaqueToken() => WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
 
