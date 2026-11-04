@@ -45,9 +45,9 @@ public sealed class LoginHandler(
 
             string normalized;
             try { normalized = Username.Parse(command.Username).NormalizedValue; }
-            catch (FormatException)
+            catch (Exception exception) when (exception is FormatException or ArgumentNullException)
             {
-                await passwordHasher.Verify(passwordHasher.DummyHash, command.Password);
+                _ = passwordHasher.Verify(passwordHasher.DummyHash, command.Password);
                 await attempts.RecordAsync(Convert.ToHexString(privacyDigest.ComputeSha256(command.Username ?? "")),
                     command.SourceDigest, "invalid", now, ct);
                 return LoginOutcome.Fail(LoginFailure.InvalidCredentials);
@@ -115,7 +115,7 @@ public sealed class ChangeOwnPasswordHandler(
             var account = await accounts.FindByIdAsync(accountId, token);
             if (account is null || !hasher.Verify(account.PasswordHash, currentPassword)) return false;
             var hash = hasher.Hash(newPassword);
-            account.ChangePassword(hash, checked((short)(account.PasswordHashVersion + 1)));
+            account.ChangePassword(hash, hasher.CurrentVersion);
             await accounts.SaveAsync(account, token);
             await sessions.RevokeAllForAccountAsync(accountId, clock.GetUtcNow(), "password_changed", token);
             await audit.AppendAsync("identity.password.changed", accountId, accountId, "success", correlationId, token);
@@ -136,7 +136,7 @@ public sealed class AdminResetPasswordHandler(
             var target = await accounts.FindByIdAsync(targetId, token);
             if (target is null) return false;
             target.ChangePassword(hasher.Hash(temporaryPassword),
-                checked((short)(target.PasswordHashVersion + 1)), mustChangePassword: true);
+                hasher.CurrentVersion, mustChangePassword: true);
             await accounts.SaveAsync(target, token);
             await sessions.RevokeAllForAccountAsync(targetId, clock.GetUtcNow(), "administrator_password_reset", token);
             await audit.AppendAsync("identity.password.admin_reset", administratorId, targetId, "success", correlationId, token);

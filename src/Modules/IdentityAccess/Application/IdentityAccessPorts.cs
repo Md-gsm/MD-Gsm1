@@ -7,7 +7,7 @@ public interface IIdentityAccessUnitOfWork
     Task<T> ExecuteAsync<T>(Func<CancellationToken, Task<T>> operation, CancellationToken cancellationToken);
 }
 public interface IPrivacyDigest { byte[] ComputeSha256(string value); }
-public interface IPasswordHasher { string Hash(string password); bool Verify(string hash,string password); }
+public interface IPasswordHasher { short CurrentVersion { get; } string DummyHash { get; } string Hash(string password); bool Verify(string hash,string password); }
 public interface IAccessTokenFactory { string CreateOpaqueToken(); byte[] ComputeDigest(string token); }
 public interface ISessionStore { Task<bool> HasActiveSessionAsync(AccountId id,DateTimeOffset now,CancellationToken ct); Task<int> CountDistinctActiveAccountsAsync(DateTimeOffset now,CancellationToken ct); Task CreateAsync(AccountId id,byte[] tokenDigest,long credentialVersion,Guid clientInstanceId,DateTimeOffset createdAt,DateTimeOffset leaseExpiresAt,CancellationToken ct); Task RevokeAllForAccountAsync(AccountId id,DateTimeOffset now,string reason,CancellationToken ct); Task<bool> TryHeartbeatAsync(byte[] tokenDigest,long credentialVersion,DateTimeOffset now,DateTimeOffset newLeaseExpiry,CancellationToken ct); Task<bool> RevokeByDigestAsync(byte[] tokenDigest,DateTimeOffset now,string reason,CancellationToken ct); }
 public interface ILoginAttemptStore { Task RecordAsync(string loginDigest,string sourceDigest,string outcome,DateTimeOffset at,CancellationToken ct); Task<bool> IsSourceRateLimitedAsync(string sourceDigest,DateTimeOffset now,CancellationToken ct); }
