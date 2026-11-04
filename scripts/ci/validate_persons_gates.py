@@ -269,7 +269,11 @@ def run_architecture(root: Path) -> None:
     expected_projects = {
         "BuildingBlocks/MDGsm.Domain/MDGsm.Domain.csproj": set(),
         "BuildingBlocks/MDGsm.Application/MDGsm.Application.csproj": {"MDGsm.Domain"},
-        "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {"MDGsm.Application"},
+        // Shared Infrastructure may implement module-owned application ports through
+        // explicitly enumerated references; this is an inward dependency only.
+        "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {
+            "MDGsm.Application", "MDGsm.IdentityAccess.Application"
+        },
         "BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj": set(),
         "Host/Api/MDGsm.Api.csproj": {
             "MDGsm.Application", "MDGsm.Infrastructure",

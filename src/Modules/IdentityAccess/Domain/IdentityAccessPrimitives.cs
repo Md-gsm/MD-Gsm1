@@ -146,9 +146,20 @@ public sealed record SessionPolicy(int MaxActiveUsers, TimeSpan HeartbeatInterva
 
 public static class RoleCatalog
 {
+    public const string SuperAdmin = "super_admin";
+    public const string Manager = "manager";
+    public const string Receptionist = "receptionist";
+    public const string Technician = "technician";
+    public const string Warehouse = "warehouse";
+    public const string Salesperson = "salesperson";
+    public const string Purchaser = "purchaser";
+    public const string Cashier = "cashier";
+    public const string Accountant = "accountant";
+    public const string Viewer = "viewer";
+
     public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal)
     {
-        "super_admin", "manager", "receptionist", "technician", "warehouse",
-        "salesperson", "purchaser", "cashier", "accountant", "viewer"
+        SuperAdmin, Manager, Receptionist, Technician, Warehouse,
+        Salesperson, Purchaser, Cashier, Accountant, Viewer
     };
 }
