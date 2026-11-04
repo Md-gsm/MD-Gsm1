@@ -16,14 +16,19 @@ paths:
   /api/v1/persons:
     get:
       operationId: searchParties
-      summary: Search active parties
+      summary: Search active parties by name or last four mobile digits
+      description: >-
+        A term is required: either a name of at least two characters or exactly four digits matching the end of a mobile number.
+        At most 10 results are returned and mobile numbers are masked (only the last two digits are visible).
+        Per-actor rate limits are enforced by the API (owner-approved policy on PR #11).
       parameters:
         - in: query
           name: q
-          schema: { type: string, maxLength: 160 }
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 160 }
         - in: query
           name: limit
-          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+          schema: { type: integer, minimum: 1, maximum: 10, default: 10 }
       responses:
         '200':
           description: Party list
@@ -35,7 +40,12 @@ paths:
     post:
       operationId: createNaturalParty
       summary: Register a natural person
-      description: The actor identity is derived from the validated server session, never from the request body.
+      description: The actor identity is derived from the validated server session, never from the request body. Registration is idempotent by the Idempotency-Key header (V1: key only, no payload comparison).
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, format: uuid }
       requestBody:
         required: true
         content:
@@ -51,6 +61,12 @@ paths:
     post:
       operationId: createLegalParty
       summary: Register a legal entity
+      description: Idempotent by the Idempotency-Key header (V1: key only, no payload comparison).
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, format: uuid }
       requestBody:
         required: true
         content:
@@ -66,6 +82,10 @@ paths:
     get:
       operationId: getParty
       summary: Read one party
+      description: >-
+        Every read is audited with the server-derived actor. Sensitive fields (national identifier, economic code, credit limit,
+        card digits, internal note, full contact values and address) are returned only to callers holding the sensitive-read permission;
+        otherwise they are masked or omitted and sensitiveFieldsIncluded is false.
       parameters:
         - in: path
           name: partyId

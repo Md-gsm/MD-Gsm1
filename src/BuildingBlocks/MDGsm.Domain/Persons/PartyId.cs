@@ -2,13 +2,17 @@ namespace MDGsm.Domain.Persons;
 
 /// <summary>
 /// Stable UUIDv7 identity shared by natural persons and legal entities.
-/// The identifier contains no business meaning or personal information.
+/// The identifier carries no business meaning or personal data, but a UUIDv7 does embed its creation
+/// time (millisecond precision); treat it as an internal key, not as an anonymous token.
 /// </summary>
 public readonly record struct PartyId
 {
     private PartyId(Guid value) => Value = value;
 
     public Guid Value { get; }
+
+    /// <summary>True for <c>default(PartyId)</c>, which bypasses validation and must never be persisted.</summary>
+    public bool IsEmpty => Value == Guid.Empty;
 
     public static PartyId New() => new(Guid.CreateVersion7());
 
@@ -26,7 +30,8 @@ public readonly record struct PartyId
     {
         partyId = default;
 
-        if (!Guid.TryParse(value, out var parsed) || !IsUuidV7(parsed))
+        // Canonical 8-4-4-4-12 form only: braces, URNs and hyphen-less forms are rejected.
+        if (value is null || value.Length != 36 || !Guid.TryParseExact(value, "D", out var parsed) || !IsUuidV7(parsed))
         {
             return false;
         }

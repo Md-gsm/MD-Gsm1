@@ -13,7 +13,9 @@ public sealed record PartyResponse(
     PartyFinancialProfileContract Financial,
     PartyCommunicationPreferencesContract Communication,
     string? AcquaintanceSource,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    bool SensitiveFieldsIncluded = false,
+    string? WorkClassification = null);
 
 public sealed record PartyContactContract(string Kind, string Value, bool IsPrimary, bool IsMessagingAllowed);
 
@@ -25,7 +27,7 @@ public sealed record PartyAddressContract(
     string AddressLine);
 
 public sealed record PartyFinancialProfileContract(
-    long CreditLimitRial,
+    long? CreditLimitRial,
     decimal DefaultDiscountPercent,
     string DefaultPaymentMethod,
     string? BankCardLastFour);
@@ -45,6 +47,6 @@ public sealed record PartyListItemContract(
     string PartyType,
     string DisplayName,
     string[] Roles,
-    string? PrimaryMobile,
+    string? MaskedPrimaryMobile,
     string? City,
     DateTimeOffset CreatedAtUtc);

@@ -4,6 +4,13 @@ public enum ContactPointKind { Mobile = 1, Landline = 2, Email = 3 }
 
 public sealed record PartyContactPoint
 {
+    // Iranian mobile: 09XXXXXXXXX, 9XXXXXXXXX is NOT accepted, +989XXXXXXXXX, 00989XXXXXXXXX, 989XXXXXXXXX.
+    private static readonly System.Text.RegularExpressions.Regex IranianMobile =
+        new("^(?:\\+98|0098|98|0)9[0-9]{9}$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    private static readonly System.Text.RegularExpressions.Regex InternationalNumber =
+        new("^\\+[1-9][0-9]{7,14}$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
     private PartyContactPoint(ContactPointKind kind, string value, bool isPrimary, bool isMessagingAllowed)
     {
         Kind = kind;
@@ -19,12 +26,31 @@ public sealed record PartyContactPoint
 
     public static PartyContactPoint Mobile(string value, bool isPrimary = false, bool isMessagingAllowed = false)
     {
-        var normalized = PartyIdentifiers.NormalizeDigits(value).Trim().Replace(" ", "").Replace("-", "");
-        if (normalized.StartsWith("00", StringComparison.Ordinal)) normalized = "+" + normalized[2..];
-        if (normalized.StartsWith("0", StringComparison.Ordinal)) normalized = "+98" + normalized[1..];
-        if (normalized.StartsWith("98", StringComparison.Ordinal)) normalized = "+" + normalized;
-        if (!normalized.StartsWith('+') || normalized.Length is < 9 or > 16 || normalized[1..].Any(c => c is < '0' or > '9'))
-            throw new ArgumentException("Mobile number must be a valid international number; Iranian 09 numbers are normalized to +98.", nameof(value));
+        ArgumentNullException.ThrowIfNull(value);
+        var compact = PartyIdentifiers.NormalizeDigits(value).Trim().Replace(" ", "").Replace("-", "");
+        string normalized;
+
+        if (IranianMobile.IsMatch(compact))
+        {
+            // Last nine digits are the subscriber part after the leading 9.
+            normalized = "+989" + compact[^9..];
+        }
+        else if (compact.StartsWith("00", StringComparison.Ordinal) && !compact.StartsWith("0098", StringComparison.Ordinal)
+                 && InternationalNumber.IsMatch("+" + compact[2..]) && !("+" + compact[2..]).StartsWith("+98", StringComparison.Ordinal))
+        {
+            normalized = "+" + compact[2..];
+        }
+        else if (compact.StartsWith('+') && !compact.StartsWith("+98", StringComparison.Ordinal) && InternationalNumber.IsMatch(compact))
+        {
+            normalized = compact;
+        }
+        else
+        {
+            throw new ArgumentException(
+                "Mobile number must be an Iranian mobile (09XXXXXXXXX or +989XXXXXXXXX) or a valid international number; landline and malformed numbers are rejected.",
+                nameof(value));
+        }
+
         return new(ContactPointKind.Mobile, normalized, isPrimary, isMessagingAllowed);
     }
 

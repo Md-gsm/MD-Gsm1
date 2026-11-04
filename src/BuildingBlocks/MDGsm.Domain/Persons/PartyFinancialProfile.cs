@@ -26,6 +26,8 @@ public sealed record PartyFinancialProfile
     {
         if (creditLimitRial < 0) throw new ArgumentOutOfRangeException(nameof(creditLimitRial));
         if (defaultDiscountPercent is < 0 or > 100) throw new ArgumentOutOfRangeException(nameof(defaultDiscountPercent));
+        if (decimal.Round(defaultDiscountPercent, 2) != defaultDiscountPercent)
+            throw new ArgumentOutOfRangeException(nameof(defaultDiscountPercent), "At most two decimal places are supported.");
         if (!Enum.IsDefined(defaultPaymentMethod)) throw new ArgumentOutOfRangeException(nameof(defaultPaymentMethod));
         var lastFour = string.IsNullOrWhiteSpace(bankCardLastFour) ? null : PartyIdentifiers.NormalizeDigits(bankCardLastFour).Trim();
         if (lastFour is not null && (lastFour.Length != 4 || lastFour.Any(c => c is < '0' or > '9')))
