@@ -40,6 +40,11 @@ Index(account_id,lease_expires_at_utc) و partial index برای نشست‌ها
 ### identity.login_attempts
 attempt_id UUID PK؛ account_id UUID NULL FK؛ login_name_digest BYTEA (برای نام ناشناخته، keyed digest)؛ source_key_digest BYTEA (digest شناسه مبدأ حداقلی)؛ outcome CHECK success/failure/locked/throttled؛ occurred_at_utc. Index(account_id,occurred_at_utc) و index(source_key_digest,occurred_at_utc). رمز ارسال‌شده هرگز ذخیره نمی‌شود؛ نگهداری تابع سیاست retention مصوب است.
 
+### identity.recovery_challenges (تکمیل قرارداد بازیابی)
+- challenge_id UUID PK؛ account_id FK؛ challenge_digest BYTEA دقیقاً 32 بایت و UNIQUE؛ channel فقط email یا mobile؛ created_at_utc؛ expires_at_utc؛ consumed_at_utc NULL؛ revoked_at_utc NULL.
+- صدور challenge جدید در همان کانال، challengeهای مصرف‌نشده قبلی همان حساب/کانال را revoke می‌کند؛ مصرف با UPDATE شرطی و فقط یک‌بار انجام می‌شود.
+- این جدول برای پیاده‌سازی قرارداد IRecoveryStore افزوده شده و تأیید دوکاناله همچنان باید در workflow کاربردی واحد و اتمیک enforce شود.
+
 ### identity.recovery_codes
 recovery_code_id UUID PK؛ account_id FK؛ code_digest BYTEA UNIQUE؛ created_at_utc؛ used_at_utc NULL؛ revoked_at_utc NULL. کد با entropy بالا، فقط یک‌بار نمایش، فقط digest ذخیره، مصرف یک‌باره و صدور/تعویض audit می‌شود. روش دقیق تولید/تحویل نیازمند بازبینی امنیتی است.
 
@@ -58,5 +63,7 @@ singleton settings_id SMALLINT PK CHECK=1؛ max_active_users INTEGER CHECK>=1 (�
 6. مجوزها در هر درخواست سمت سرور resolve می‌شوند. scope تکنسین از رابطه تخصیص در ماژول مربوطه بررسی می‌شود، نه از شناسه ارسالی کلاینت.
 7. bootstrap یک‌باره و local-only است؛ تا commit تکمیل رمز/پروفایل، network binding و business endpoints بسته می‌مانند.
 
-## مرز Migration
-این صرفاً مدل منطقی است. فعلاً SQL در database/migrations اضافه نشود، DbSet ثبت نشود، DbMigrator اجرا نشود و به DB غیرآزمایشی متصل نشویم. بعد از ADR-0006 review و مجوز رسمی G1، migration نسخه‌دار و checksumدار باید در PostgreSQL 18 disposable، با تست تراکنش، rollback/failure و idempotence بررسی شود.
+## وضعیت پیاده‌سازی و مرز Migration
+با مجوز صریح مالک در 2026-11-04، فقط برای شاخه feature مربوط به PR #31، مدل‌های EF Core، DbSetها، mappingها، repository adapterها و Unit of Work پیاده‌سازی شده‌اند. این مجوز محدود، ممنوعیت ایجاد/اجرای Migration، اتصال به دیتابیس، فعال‌سازی endpoint یا listener شبکه و فعال‌سازی G1 را تغییر نمی‌دهد.
+هیچ SQL در database/migrations اضافه نشده، DbMigrator اجرا نشده و به هیچ دیتابیسی متصل نشده‌ایم. پیش از هر Migration، schema review و ADR-0006 review، تأیید رسمی G1، سپس تست نسخه‌دار و checksumدار در PostgreSQL 18 disposable با تراکنش، rollback/failure و idempotence الزامی است.
+

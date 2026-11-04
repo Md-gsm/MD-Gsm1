@@ -96,6 +96,23 @@ public sealed class Account
         MustChangePassword = mustChangePassword;
     }
 
+    public static Account Rehydrate(AccountId id, Username username, string passwordHash, short passwordHashVersion,
+        bool isEnabled, bool mustChangePassword, long credentialVersion, int failedAttemptCount,
+        DateTimeOffset? failureWindowStartedAt, DateTimeOffset? lockedUntil)
+    {
+        if (credentialVersion < 1) throw new ArgumentOutOfRangeException(nameof(credentialVersion));
+        if (failedAttemptCount < 0) throw new ArgumentOutOfRangeException(nameof(failedAttemptCount));
+        var account = new Account(id, username, passwordHash, passwordHashVersion, mustChangePassword)
+        {
+            IsEnabled = isEnabled,
+            CredentialVersion = credentialVersion,
+            FailedAttemptCount = failedAttemptCount,
+            FailureWindowStartedAt = failureWindowStartedAt,
+            LockedUntil = lockedUntil
+        };
+        return account;
+    }
+
     public bool IsLocked(DateTimeOffset now) => LockedUntil is { } until && until > now;
 
     public void RecordFailedLogin(DateTimeOffset now)
