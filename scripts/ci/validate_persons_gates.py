@@ -282,6 +282,14 @@ def run_architecture(root: Path) -> None:
     for module in modules:
         expected_projects[f"Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj"] = set()
 
+    # IdentityAccess is the first module allowed to add internal layers on its
+    # isolated feature branch. Contracts remain dependency-free; Application
+    # may depend only on its own Domain and public Contracts.
+    expected_projects["Modules/IdentityAccess/Domain/MDGsm.IdentityAccess.Domain.csproj"] = set()
+    expected_projects["Modules/IdentityAccess/Application/MDGsm.IdentityAccess.Application.csproj"] = {
+        "MDGsm.IdentityAccess.Domain", "MDGsm.IdentityAccess.Contracts"
+    }
+
     project_root = root / "src"
     projects = {
         path.relative_to(project_root).as_posix(): path
