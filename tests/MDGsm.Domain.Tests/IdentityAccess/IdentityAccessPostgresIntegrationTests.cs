@@ -71,7 +71,7 @@ public sealed class IdentityAccessPostgresIntegrationTests
                 UpdatedAtUtc = clock.GetUtcNow()
             });
 
-            db.IdentityAccounts.Add(CreateAccount("lockout-user", sharedPasswordHash, clock.GetUtcNow()));
+            db.IdentityAccounts.Add(CreateAccount("lockoutuser", sharedPasswordHash, clock.GetUtcNow()));
             for (var i = 1; i <= 4; i++)
                 db.IdentityAccounts.Add(CreateAccount($"capacity{i}", sharedPasswordHash, clock.GetUtcNow()));
             await db.SaveChangesAsync();
@@ -83,18 +83,14 @@ public sealed class IdentityAccessPostgresIntegrationTests
             using var scope = provider.CreateScope();
             var handler = scope.ServiceProvider.GetRequiredService<LoginHandler>();
             var result = await handler.HandleAsync(
-                new LoginCommand("lockout-user", "wrong-password", Guid.CreateVersion7(),
+                new LoginCommand("lockoutuser", "wrong-password", Guid.CreateVersion7(),
                     lockoutSource, $"lockout-{attempt}"), CancellationToken.None);
             Assert.False(result.Succeeded);
             Assert.Equal(LoginFailure.InvalidCredentials, result.Failure);
-        }
 
-        await using (var verifyLock = provider.CreateAsyncScope())
-        {
-            var db = verifyLock.ServiceProvider.GetRequiredService<MdGsmDbContext>();
-            var row = await db.IdentityAccounts.SingleAsync(x => x.LoginNameNormalized == "LOCKOUT-USER");
-            Assert.Equal(Account.FailedAttemptLimit, row.FailedAttemptCount);
-            Assert.True(row.LockedUntil > clock.GetUtcNow());
+            // Read back through a fresh scope after every attempt. This proves that
+            // the counter is committed to PostgreSQL, not merely changed in memory.
+            await AssertFailedAttemptCountPersistedAsync(provider, "LOCKOUTUSER", attempt + 1, clock);
         }
 
         clock.Advance(Account.LockDuration + TimeSpan.FromMinutes(1));
@@ -102,14 +98,14 @@ public sealed class IdentityAccessPostgresIntegrationTests
         using (var scope = provider.CreateScope())
         {
             successful = await scope.ServiceProvider.GetRequiredService<LoginHandler>()
-                .HandleAsync(new LoginCommand("lockout-user", "Correct-Password-2026!", Guid.CreateVersion7(),
+                .HandleAsync(new LoginCommand("lockoutuser", "Correct-Password-2026!", Guid.CreateVersion7(),
                     Digest(digest, "lockout-source-after-window"), "lockout-recovery"), CancellationToken.None);
         }
         Assert.True(successful.Succeeded);
         Assert.NotNull(successful.AccessToken);
         Assert.NotNull(successful.LeaseExpiresAtUtc);
 
-        var accountId = await ReadAccountId(provider, "LOCKOUT-USER");
+        var accountId = await ReadAccountId(provider, "LOCKOUTUSER");
         var token = successful.AccessToken!;
         var tokenDigest = tokenFactory.ComputeDigest(token);
         using (var scope = provider.CreateScope())
@@ -195,11 +191,14 @@ public sealed class IdentityAccessPostgresIntegrationTests
         }
     }
 
-    private static IdentityAccountRow CreateAccount(string username, string passwordHash, DateTimeOffset now) => new()
+    private static IdentityAccountRow CreateAccount(string username, string passwordHash, DateTimeOffset now)
     {
+        var parsed = Username.Parse(username);
+        return new IdentityAccountRow
+        {
         AccountId = Guid.CreateVersion7(),
-        LoginName = username,
-        LoginNameNormalized = username.ToUpperInvariant(),
+        LoginName = parsed.DisplayValue,
+        LoginNameNormalized = parsed.NormalizedValue,
         PasswordHash = passwordHash,
         PasswordHashVersion = 1,
         MustChangePassword = false,
@@ -209,7 +208,22 @@ public sealed class IdentityAccessPostgresIntegrationTests
         FailedAttemptCount = 0,
         CreatedAtUtc = now,
         UpdatedAtUtc = now
-    };
+        };
+    }
+
+    private static async Task AssertFailedAttemptCountPersistedAsync(
+        ServiceProvider provider, string normalizedUsername, int expectedCount, TimeProvider clock)
+    {
+        await using var scope = provider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<MdGsmDbContext>();
+        var row = await db.IdentityAccounts.SingleAsync(x => x.LoginNameNormalized == normalizedUsername);
+        Assert.Equal(expectedCount, row.FailedAttemptCount);
+
+        if (expectedCount == Account.FailedAttemptLimit)
+            Assert.True(row.LockedUntil > clock.GetUtcNow());
+        else
+            Assert.Null(row.LockedUntil);
+    }
 
     private static async Task<AccountId> ReadAccountId(ServiceProvider provider, string normalizedUsername)
     {
