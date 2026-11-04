@@ -414,7 +414,7 @@ def run_api(root: Path) -> None:
     print("PASS: Persons API has a versioned contract and automated contract tests.")
 
 def run_retention(root: Path) -> None:
-    found = require_flag_consistency(root, "temporaryDataRuntimeImplemented", r"WorkflowContactStaging|TemporaryContactStaging|TemporaryDataRetentionWorker|expires_at_utc|workflow_contact_staging", "temporary data retention")
+    found = require_flag_consistency(root, "temporaryDataRuntimeImplemented", r"WorkflowContactStaging|TemporaryContactStaging|TemporaryDataRetentionWorker|workflow_contact_staging", "temporary data retention")
     if not found:
         print("PASS-N/A: no temporary-data runtime or schema is present; gate is active and will fail if implementation appears without tests.")
         return

@@ -21,6 +21,12 @@ class PersonsGatePolicyTests(unittest.TestCase):
         self.assertIn("PASS-N/A", out.getvalue())
         self.assertIn("no temporary-data runtime", out.getvalue())
 
+    def test_identity_recovery_challenge_expiry_is_not_temporary_workflow_data(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            gates.run_retention(ROOT)
+        self.assertIn("PASS-N/A", out.getvalue())
+
     def test_declared_retention_implementation_without_tests_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
