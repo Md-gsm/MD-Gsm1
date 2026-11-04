@@ -40,12 +40,13 @@ public sealed class IdentityAccessPostgresIntegrationTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
+                ["IdentityAccess:PrivacyHmacKey"] = Convert.ToBase64String(Enumerable.Range(1, 32).Select(x => (byte)x).ToArray()),
                 ["ConnectionStrings:MDGsmDatabase"] = connectionString
             })
             .Build();
 
         services.AddMdGsmPersistence(configuration);
-        services.AddIdentityAccessSecurity();
+        services.AddIdentityAccessSecurity(configuration);
         services.AddSingleton<TimeProvider>(clock);
         services.AddScoped<LoginHandler>();
         services.AddScoped<SessionHeartbeatHandler>();
@@ -227,11 +228,12 @@ public sealed class IdentityAccessPostgresIntegrationTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
+                ["IdentityAccess:PrivacyHmacKey"] = Convert.ToBase64String(Enumerable.Range(1, 32).Select(x => (byte)x).ToArray()),
                 ["ConnectionStrings:MDGsmDatabase"] = connectionString
             })
             .Build();
         services.AddMdGsmPersistence(configuration);
-        services.AddIdentityAccessSecurity();
+        services.AddIdentityAccessSecurity(configuration);
         services.AddSingleton<TimeProvider>(clock);
         services.AddScoped<LoginHandler>();
         await using var provider = services.BuildServiceProvider(validateScopes: true);

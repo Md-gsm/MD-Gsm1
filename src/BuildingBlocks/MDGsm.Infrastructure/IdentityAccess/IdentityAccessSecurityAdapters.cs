@@ -41,7 +41,7 @@ public sealed class PlatformPasswordHasher : MDGsm.IdentityAccess.Application.IP
 }
 
 /// <summary>Issues 256-bit opaque bearer tokens and stores only SHA-256 digests.</summary>
-public sealed class OpaqueAccessTokenFactory : MDGsm.IdentityAccess.Application.IAccessTokenFactory, MDGsm.IdentityAccess.Application.IPrivacyDigest
+public sealed class OpaqueAccessTokenFactory : MDGsm.IdentityAccess.Application.IAccessTokenFactory
 {
     public string CreateOpaqueToken() => WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
 

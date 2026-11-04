@@ -28,11 +28,13 @@ public static class PersistenceRegistration
   services.AddScoped<IIdentityAccessUnitOfWork,IdentityAccessUnitOfWork>();
   return services;
  }
- public static IServiceCollection AddIdentityAccessSecurity(this IServiceCollection services)
+ public static IServiceCollection AddIdentityAccessSecurity(this IServiceCollection services, IConfiguration configuration)
  {
+  ArgumentNullException.ThrowIfNull(configuration);
+  var privacyDigest = new HmacPrivacyDigest(configuration);
   services.AddSingleton<IPasswordHasher,PlatformPasswordHasher>();
   services.AddSingleton<IAccessTokenFactory,OpaqueAccessTokenFactory>();
-  services.AddSingleton<IPrivacyDigest,OpaqueAccessTokenFactory>();
+  services.AddSingleton<IPrivacyDigest>(privacyDigest);
   services.AddSingleton(TimeProvider.System);
   return services;
  }

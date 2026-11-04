@@ -63,10 +63,13 @@ public sealed class LoginHandler(
                 return LoginOutcome.Fail(LoginFailure.InvalidCredentials);
             }
 
-            if (!account.IsEnabled || account.IsLocked(now) ||
-                !passwordHasher.Verify(account.PasswordHash, command.Password))
+            // Equalize PBKDF2 work for known, unknown, disabled and locked accounts.
+            var eligible = account.IsEnabled && !account.IsLocked(now);
+            var candidateHash = eligible ? account.PasswordHash : passwordHasher.DummyHash;
+            var passwordMatches = passwordHasher.Verify(candidateHash, command.Password);
+            if (!eligible || !passwordMatches)
             {
-                if (account.IsEnabled && !account.IsLocked(now))
+                if (eligible)
                 {
                     account.RecordFailedLogin(now);
                     await accounts.SaveAsync(account, ct);
@@ -131,10 +134,20 @@ public sealed class AdminResetPasswordHandler(
         string correlationId, CancellationToken ct) =>
         unitOfWork.ExecuteAsync(async token =>
         {
-            if (!await permissions.HasPermissionAsync(administratorId, "identity.accounts.reset_password", token))
+            if (!await permissions.HasPermissionAsync(administratorId, "identity.credentials.reset", token))
+            {
+                await audit.AppendAsync("identity.password.admin_reset", administratorId, targetId,
+                    "denied_missing_permission", correlationId, token);
                 return false;
+            }
             var target = await accounts.FindByIdAsync(targetId, token);
             if (target is null) return false;
+            if (await permissions.HasRoleAsync(targetId, RoleCatalog.SuperAdmin, token))
+            {
+                await audit.AppendAsync("identity.password.admin_reset", administratorId, targetId,
+                    "denied_super_admin_recovery_required", correlationId, token);
+                return false;
+            }
             target.ChangePassword(hasher.Hash(temporaryPassword),
                 hasher.CurrentVersion, mustChangePassword: true);
             await accounts.SaveAsync(target, token);
