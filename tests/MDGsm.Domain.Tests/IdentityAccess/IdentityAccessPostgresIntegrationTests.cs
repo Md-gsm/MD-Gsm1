@@ -177,7 +177,11 @@ public sealed class IdentityAccessPostgresIntegrationTests
         }
         Assert.Equal(2, activeDistinctAccounts);
 
-        var activeUsername = outcomes.Single(x => x.Outcome.Succeeded).Username;
+        var activeUsername = outcomes
+            .Where(x => x.Outcome.Succeeded)
+            .Select(x => x.Username)
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .First();
         using (var secondClient = provider.CreateScope())
         {
             var result = await secondClient.ServiceProvider.GetRequiredService<LoginHandler>()
