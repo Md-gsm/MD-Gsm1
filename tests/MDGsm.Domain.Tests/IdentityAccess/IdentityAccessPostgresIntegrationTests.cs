@@ -60,20 +60,27 @@ public sealed class IdentityAccessPostgresIntegrationTests
         await using (var setup = provider.CreateAsyncScope())
         {
             var db = setup.ServiceProvider.GetRequiredService<MdGsmDbContext>();
-            Assert.True(await db.Database.EnsureCreatedAsync(),
-                "The dedicated IdentityAccess test database must be fresh; existing tables are not reused.");
-            db.IdentitySystemSettings.Add(new IdentitySystemSettingsRow
+            await db.Database.EnsureCreatedAsync();
+            if (!await db.IdentitySystemSettings.AnyAsync(x => x.SettingsId == 1))
             {
-                SettingsId = 1,
-                MaxActiveUsers = 5,
-                HeartbeatIntervalSeconds = 30,
-                SessionLeaseSeconds = 180,
-                UpdatedAtUtc = clock.GetUtcNow()
-            });
+                db.IdentitySystemSettings.Add(new IdentitySystemSettingsRow
+                {
+                    SettingsId = 1,
+                    MaxActiveUsers = 5,
+                    HeartbeatIntervalSeconds = 30,
+                    SessionLeaseSeconds = 180,
+                    UpdatedAtUtc = clock.GetUtcNow()
+                });
+            }
 
-            db.IdentityAccounts.Add(CreateAccount("lockoutuser", sharedPasswordHash, clock.GetUtcNow()));
+            if (!await db.IdentityAccounts.AnyAsync(x => x.LoginNameNormalized == "LOCKOUTUSER"))
+                db.IdentityAccounts.Add(CreateAccount("lockoutuser", sharedPasswordHash, clock.GetUtcNow()));
             for (var i = 1; i <= 4; i++)
-                db.IdentityAccounts.Add(CreateAccount($"capacity{i}", sharedPasswordHash, clock.GetUtcNow()));
+            {
+                var normalized = $"CAPACITY{i}";
+                if (!await db.IdentityAccounts.AnyAsync(x => x.LoginNameNormalized == normalized))
+                    db.IdentityAccounts.Add(CreateAccount($"capacity{i}", sharedPasswordHash, clock.GetUtcNow()));
+            }
             await db.SaveChangesAsync();
         }
 
@@ -188,6 +195,74 @@ public sealed class IdentityAccessPostgresIntegrationTests
             var distinct = await db.IdentitySessions.Where(x => x.RevokedAtUtc == null && x.LeaseExpiresAtUtc > now)
                 .Select(x => x.AccountId).Distinct().CountAsync();
             Assert.Equal(2, distinct);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Failed_login_attempt_counter_is_committed_and_read_back_from_postgresql()
+    {
+        var connectionString = Environment.GetEnvironmentVariable("IdentityAccessTestConnectionString");
+        Assert.False(string.IsNullOrWhiteSpace(connectionString));
+        var builder = new NpgsqlConnectionStringBuilder(connectionString);
+        Assert.Contains(builder.Host, new[] { "127.0.0.1", "localhost", "::1" });
+        Assert.Matches("^mdgsm_identityaccess_disposable_[0-9]+_[0-9]+$", builder.Database);
+
+        await using (var guard = new NpgsqlConnection(connectionString))
+        {
+            await guard.OpenAsync();
+            await using var marker = new NpgsqlCommand(
+                "SELECT shobj_description(oid, 'pg_database') FROM pg_database WHERE datname = current_database();",
+                guard);
+            var comment = (string?)await marker.ExecuteScalarAsync();
+            Assert.StartsWith("MDGSM_DISPOSABLE_TEST_DB; IdentityAccess integration test only", comment);
+        }
+
+        var clock = new ManualTimeProvider(new DateTimeOffset(2026, 11, 4, 12, 0, 0, TimeSpan.Zero));
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:MDGsmDatabase"] = connectionString
+            })
+            .Build();
+        services.AddMdGsmPersistence(configuration);
+        services.AddIdentityAccessSecurity();
+        services.AddSingleton<TimeProvider>(clock);
+        services.AddScoped<LoginHandler>();
+        await using var provider = services.BuildServiceProvider(validateScopes: true);
+
+        var hasher = provider.GetRequiredService<IPasswordHasher>();
+        var digest = provider.GetRequiredService<IPrivacyDigest>();
+        var passwordHash = hasher.Hash("Correct-Password-2026!");
+        await using (var setup = provider.CreateAsyncScope())
+        {
+            var db = setup.ServiceProvider.GetRequiredService<MdGsmDbContext>();
+            await db.Database.EnsureCreatedAsync();
+            if (!await db.IdentitySystemSettings.AnyAsync(x => x.SettingsId == 1))
+                db.IdentitySystemSettings.Add(new IdentitySystemSettingsRow
+                {
+                    SettingsId = 1,
+                    MaxActiveUsers = 5,
+                    HeartbeatIntervalSeconds = 30,
+                    SessionLeaseSeconds = 180,
+                    UpdatedAtUtc = clock.GetUtcNow()
+                });
+            if (!await db.IdentityAccounts.AnyAsync(x => x.LoginNameNormalized == "PERSISTCOUNTER"))
+                db.IdentityAccounts.Add(CreateAccount("persistcounter", passwordHash, clock.GetUtcNow()));
+            await db.SaveChangesAsync();
+        }
+
+        var sourceDigest = Digest(digest, "persist-counter-source");
+        for (var attempt = 1; attempt <= Account.FailedAttemptLimit; attempt++)
+        {
+            using var scope = provider.CreateScope();
+            var outcome = await scope.ServiceProvider.GetRequiredService<LoginHandler>().HandleAsync(
+                new LoginCommand("persistcounter", "wrong-password", Guid.CreateVersion7(),
+                    sourceDigest, $"persist-counter-{attempt}"), CancellationToken.None);
+            Assert.False(outcome.Succeeded);
+            Assert.Equal(LoginFailure.InvalidCredentials, outcome.Failure);
+            await AssertFailedAttemptCountPersistedAsync(provider, "PERSISTCOUNTER", attempt, clock);
         }
     }
 
