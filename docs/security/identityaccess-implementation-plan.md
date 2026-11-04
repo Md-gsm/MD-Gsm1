@@ -1,13 +1,34 @@
 # IdentityAccess — وضعیت مراحل و گیت‌ها
-تاریخ 2026-11-04 | مراحل 1 تا 3 ثبت شده؛ پنج موضوع باقیمانده مستند/آماده‌سازی شده‌اند.
+تاریخ 2026-11-04 | پیاده‌سازی مراحل 1 تا 7 روی شاخه feature انجام شده؛ تأیید نهایی منوط به CI و بازبینی‌های release است.
 
-1. ماتریس مجوز: `identityaccess-five-open-items-fa.md`؛ تصویب مالک لازم.
-2. retention: همان سند؛ زمان‌ها پیشنهادند و بررسی حقوقی/تصویب مالک لازم.
-3. username: قرارداد و oracle تست Python در CI؛ تست .NET production، Unicode version pin، Script_Extensions معتبر و collision scan هنوز لازم.
-4. recovery: runbook در همان سند؛ threat-model review و تصمیم provider/TTL challenge لازم.
-5. security/G1: پرونده reviewer آماده؛ review مستقل و امضای مالک انجام نشده، G1 مسدود.
+## مراحل 1 تا 4 — مدل و لایه ماندگاری
+1. تصمیم‌های مالک درباره شناسه ورود، نشست‌ها، رمز، بازیابی، قفل حساب، bootstrap و نقش‌ها ثبت شده‌اند.
+2. مدل منطقی PostgreSQL 18 و قیود IdentityAccess مستند شده‌اند.
+3. Domain و Application شامل Username/Account، policy، permission catalog و handlerهای login، تغییر رمز، reset مدیریتی و heartbeat ایجاد شده‌اند.
+4. EF Core entities/configurations، DbSetها، Repository adapterهای PostgreSQL و transactional Unit of Work اضافه شده‌اند. هنوز Migration عملیاتی یا endpoint ورود وجود ندارد.
 
-روی SHA قبلی `0f6e32d893e84b2ac7319bbe639e74dcd67fe0a6`: CodeQL run 41794022182 موفق؛ installer run 41794021941 موفق؛ Persons Gates run 41794021936 در آخرین poll همه jobها جز Windows PostgreSQL که in_progress بود موفق بودند. این نتایج به SHA جدید تعمیم ندارند.
+## مراحل 5 تا 7 — هم‌زمانی و آزمون
+5. سقف کاربران فعال در سطح چند process با تراکنش SERIALIZABLE و UPDATE نسخه‌ساز روی singleton policy row سریال می‌شود. تعداد حساب‌های متمایز با نشست معتبر ملاک است؛ نشست اضافه برای حساب فعال ظرفیت تازه مصرف نمی‌کند.
+6. تست Integration روی PostgreSQL 18 disposable اضافه شده است: قفل 5 شکست/15 دقیقه، ورود پس از پایان قفل، heartbeat/تمدید lease و ابطال همه نشست‌ها پس از تغییر رمز.
+7. آزمون ورود هم‌زمان چند حساب برای سقف 2 کاربر اضافه شده است؛ دو ورود مستقل باید پذیرفته و بقیه رد شوند و ورود دوم همان حساب نباید تعداد حساب‌های فعال را افزایش دهد.
 
-پیش از runtime: تصویب ماتریس و retention؛ تست .NET؛ review recovery/bootstrap؛ review معماری گروه مشاور؛ تصمیم امنیت/حریم خصوصی مالک؛ اثبات Required Status Checks در SCM؛ تست migration/concurrency/failure/rollback/lockout/lease/revoke/audit در disposable PostgreSQL 18.
-هیچ login endpoint، middleware، session store، IdentityAccess migration، network listener یا credential عملیاتی ساخته نشده است. PR #30 Open+Draft+Unmerged؛ main بدون تغییر؛ `g1Authorized=false`.
+## تصمیم‌های مالک که تأیید شده‌اند
+- ماتریس نقش‌ها و مجوزهای پیشنهادی فعلی.
+- نگهداری سوابق حساس 24 ماه و تلاش‌های ناموفق/نشست‌ها 12 ماه.
+- بازیابی مدیر با تأیید دو کانال ایمیل و موبایل و کد اضطراری یک‌بارمصرف آفلاین.
+
+## موارد باز و گیت‌های release
+- اجرای موفق Build/Test و همه jobهای CI روی commit فعلی؛ نتایج commitهای قبلی به SHA جدید تعمیم داده نمی‌شوند.
+- اجرای موفق PostgreSQL 18 disposable integration و تست هم‌زمانی روی همین commit.
+- تست .NET کامل username normalization، Unicode version pin، Script_Extensions معتبر و collision scan.
+- threat-model review برای recovery/bootstrap، انتخاب provider و TTL چالش.
+- بازبینی معماری توسط گروه مشاور نرم‌افزار و تصمیم امنیت/حریم خصوصی مالک.
+- اثبات Required Status Checks و جلوگیری از merge در SCM؛ دسترسی فعلی GitHub نتوانسته جزئیات protection را بخواند.
+- review نهایی schema و ADR-0006؛ سپس فقط با مجوز رسمی G1 می‌توان Migration نسخه‌دار و checksumدار را در PostgreSQL 18 disposable ارزیابی کرد.
+
+## مرزهای صریح
+- g1Authorized=false باقی می‌ماند.
+- هیچ IdentityAccess migration اضافه یا اجرا نشده و هیچ دیتابیس عملیاتی متصل نشده است.
+- هیچ login endpoint، auth middleware عملیاتی، network listener یا credential bootstrap تولیدی فعال نشده است.
+- PR #31 باید Open + Draft + Unmerged بماند؛ main بدون تغییر است. هیچ merge مجاز نیست.
+- تست Integration فقط دیتابیس جداگانه‌ای را می‌پذیرد که نام و comment marker آن صریحاً disposable باشد و host آن loopback باشد.
