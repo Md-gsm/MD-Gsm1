@@ -11,4 +11,22 @@ public sealed class IdentityAccessDomainTests
  [Fact] public void PasswordChange_IncrementsCredentialVersion(){var a=new Account(AccountId.New(),Username.Parse("user123"),"old",1);a.ChangePassword("new",1);Assert.Equal(2,a.CredentialVersion);}
  [Fact] public void SessionPolicy_RequiresLeaseLongerThanHeartbeat()=>Assert.Throws<ArgumentException>(()=>new SessionPolicy(5,TimeSpan.FromSeconds(30),TimeSpan.FromSeconds(30)).Validate());
  [Fact] public void RoleCatalog_HasTenRoles()=>Assert.Equal(10,RoleCatalog.All.Count);
+ [Fact] public void PermissionMatrix_DoesNotGrantManagerSensitiveOperations()
+ {
+  Assert.True(PermissionCatalog.RoleHasPermission(RoleCatalog.Manager,"persons.update"));
+  Assert.False(PermissionCatalog.RoleHasPermission(RoleCatalog.Manager,"persons.delete"));
+  Assert.False(PermissionCatalog.RoleHasPermission(RoleCatalog.Manager,"identity.credentials.reset"));
+  Assert.False(PermissionCatalog.RoleHasPermission(RoleCatalog.Manager,"system.settings.manage"));
+ }
+ [Fact] public void PermissionMatrix_DoesNotUseWildcard()
+ {
+  Assert.DoesNotContain("*",PermissionCatalog.Catalog);
+  Assert.All(PermissionCatalog.Catalog, permission=>Assert.DoesNotContain("*",permission));
+ }
+ [Fact] public void TechnicianPermissionsAreExplicitAndLimited()
+ {
+  Assert.True(PermissionCatalog.RoleHasPermission(RoleCatalog.Technician,"repairs.worklog.write"));
+  Assert.False(PermissionCatalog.RoleHasPermission(RoleCatalog.Technician,"sales.read"));
+  Assert.False(PermissionCatalog.RoleHasPermission(RoleCatalog.Technician,"finance.read"));
+ }
 }
