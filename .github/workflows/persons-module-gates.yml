@@ -49,6 +49,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python scripts/ci/validate_persons_gates.py --gate spec
+      - name: Test IdentityAccess username policy oracle
+        run: python -m unittest scripts/ci/test_identityaccess_policy.py -v
       - name: Verify SHA256SUMS.txt matches tracked files
         run: python scripts/ci/verify_source_checksums.py
 
