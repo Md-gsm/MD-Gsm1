@@ -33,8 +33,8 @@ public static class PersistenceRegistration
     /// <summary>Registers cryptographic primitives; it does not enable authentication endpoints.</summary>
     public static IServiceCollection AddIdentityAccessSecurity(this IServiceCollection services)
     {
-        services.AddSingleton<MDGsm.IdentityAccess.Application.IPasswordHasher, IdentityAccess.PlatformPasswordHasher>();
-        services.AddSingleton<MDGsm.IdentityAccess.Application.IAccessTokenFactory, IdentityAccess.OpaqueAccessTokenFactory>();
+        services.AddSingleton<MDGsm.IdentityAccess.Application.IPasswordHasher, MDGsm.Infrastructure.IdentityAccess.PlatformPasswordHasher>();
+        services.AddSingleton<MDGsm.IdentityAccess.Application.IAccessTokenFactory, MDGsm.Infrastructure.IdentityAccess.OpaqueAccessTokenFactory>();
         services.AddSingleton<MDGsm.IdentityAccess.Application.IPrivacyDigest, IdentityAccess.OpaqueAccessTokenFactory>();
         services.AddSingleton(TimeProvider.System);
         return services;
