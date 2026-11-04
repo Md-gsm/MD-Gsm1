@@ -4,7 +4,8 @@
 مخزن: `Md-gsm/MD-Gsm1`  
 PR مرجع: [#31](https://github.com/Md-gsm/MD-Gsm1/pull/31)  
 شاخه: `feature/identityaccess-runtime-20261104`  
-Commit مبنای فعلی: `18797d3f209c371adfd652cb767c1ddb7bf1b145`
+Commit مبنای این بسته: `5b8669df31de283c8a83ac9fe1e74381ac1a5986`  
+Commit مبنای CI قبلی: `18797d3f209c371adfd652cb767c1ddb7bf1b145`
 
 ## حکم
 
