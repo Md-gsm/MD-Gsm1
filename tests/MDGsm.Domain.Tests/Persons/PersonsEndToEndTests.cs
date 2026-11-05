@@ -105,7 +105,7 @@ public sealed class PersonsEndToEndTests
         await scope.QueryFor(allowSensitive: false)
             .GetAsync(created.PartyId, scope.Transaction, default);
 
-        await scope.Transaction.RollbackAsync();
+        await scope.RollbackAsync();
 
         await using var verify = new NpgsqlCommand(
             "SELECT count(*) FROM persons_access_audit WHERE party_id = @id AND actor = @actor",
@@ -121,6 +121,9 @@ public sealed class PersonsEndToEndTests
     {
         await using var scope = await TestScope.OpenAsync();
 
+        await using (var savepoint = new NpgsqlCommand("SAVEPOINT before_natural_identity_test", scope.Connection, scope.Transaction))
+            await savepoint.ExecuteNonQueryAsync();
+
         await using var natural = new NpgsqlCommand("""
             INSERT INTO persons (party_id, party_type, business_roles, given_name, family_name,
                                  economic_code, created_by, updated_by)
@@ -129,6 +132,8 @@ public sealed class PersonsEndToEndTests
         natural.Parameters.AddWithValue("id", Guid.CreateVersion7());
         var naturalFailure = await Assert.ThrowsAsync<PostgresException>(() => natural.ExecuteNonQueryAsync());
         Assert.Equal(PostgresErrorCodes.CheckViolation, naturalFailure.SqlState);
+        await using (var rollback = new NpgsqlCommand("ROLLBACK TO SAVEPOINT before_natural_identity_test", scope.Connection, scope.Transaction))
+            await rollback.ExecuteNonQueryAsync();
 
         await using var legal = new NpgsqlCommand("""
             INSERT INTO persons (party_id, party_type, business_roles, legal_name, national_id,
@@ -275,7 +280,7 @@ public sealed class PersonsEndToEndTests
 
         public async ValueTask DisposeAsync()
         {
-            await Transaction.RollbackAsync();
+            if (!_rolledBack) await Transaction.RollbackAsync();
             await Transaction.DisposeAsync();
             await Connection.DisposeAsync();
             await _dataSource.DisposeAsync();
