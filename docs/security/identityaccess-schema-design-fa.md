@@ -67,8 +67,8 @@ singleton settings_id SMALLINT PK CHECK=1؛ max_active_users INTEGER CHECK>=1 (�
 این بخش صرفاً قرارداد منطقی است؛ نام‌ها و قیود باید در review مستقل بررسی شوند و هیچ Migration یا DbSet ایجاد نمی‌کند.
 
 ### identity.recovery_challenges
-- challenge_id UUID PK؛ account_id UUID NOT NULL FK identity.accounts ON DELETE RESTRICT؛ operation_id UUID NOT NULL UNIQUE؛ created_at_utc TIMESTAMPTZ NOT NULL؛ expires_at_utc TIMESTAMPTZ NOT NULL؛ state TEXT NOT NULL با CHECK روی Created/EmailVerified/MobileVerified/ProofsComplete/Completed/Expired/Locked/Cancelled/FailedClosed؛ attempt_count INTEGER NOT NULL CHECK >=0؛ locked_at_utc NULL؛ completed_at_utc NULL؛ cancelled_at_utc NULL؛ correlation_id UUID NOT NULL.
-- CHECK(expires_at_utc > created_at_utc) و CHECK سازگاری state با completed/cancelled timestamp.
+- challenge_id UUID PK؛ account_id UUID NOT NULL FK identity.accounts ON DELETE RESTRICT؛ created_at_utc TIMESTAMPTZ NOT NULL؛ expires_at_utc TIMESTAMPTZ NOT NULL؛ state TEXT NOT NULL با CHECK روی Created/EmailVerified/MobileVerified/ProofsComplete/Completed/Expired/Locked/Cancelled/FailedClosed؛ attempt_count INTEGER NOT NULL CHECK >=0؛ locked_at_utc NULL؛ completed_at_utc NULL؛ cancelled_at_utc NULL؛ correlation_id UUID NOT NULL.
+- UNIQUE(challenge_id,account_id) برای FKهای ترکیبی؛ CHECK(expires_at_utc > created_at_utc) و CHECK سازگاری state با completed/cancelled timestamp.
 - index(account_id,state,expires_at_utc) و index(expires_at_utc) برای cleanup کنترل‌شده.
 - یک Challenge فعال برای هر account در صورت تصویب سیاست تک‌Challenge فعال؛ partial unique index باید فقط روی stateهای فعال و با تعریف دقیق stateها ایجاد شود.
 - Challenge ID به‌تنهایی مجوز نیست؛ هیچ endpoint عمومی یا شبکه‌ای برای ایجاد/تکمیل آن تعریف نمی‌شود.
@@ -82,7 +82,7 @@ singleton settings_id SMALLINT PK CHECK=1؛ max_active_users INTEGER CHECK>=1 (�
 
 ### identity.recovery_operations
 - operation_id UUID PK؛ challenge_id UUID NOT NULL UNIQUE FK؛ account_id UUID NOT NULL FK؛ state TEXT CHECK Pending/Committed/Failed؛ created_at_utc؛ committed_at_utc NULL؛ result_code غیرحساس؛
-- UNIQUE(operation_id,account_id) و FK ترکیبی به Challenge/account؛ هیچ request body یا secret ذخیره نشود.
+- UNIQUE(operation_id,account_id) و FK ترکیبی (challenge_id,account_id) به recovery_challenges(challenge_id,account_id)؛ هیچ request body یا secret ذخیره نشود.
 - operation_id کلید idempotency است؛ retry با همان شناسه باید نتیجه durable را بخواند، نه عملیات دوم بسازد. نتیجه commit نامعلوم فقط از PostgreSQL reconcile می‌شود.
 
 ### قیود مصرف و تراکنش
