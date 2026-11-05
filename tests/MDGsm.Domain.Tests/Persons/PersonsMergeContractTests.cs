@@ -101,6 +101,51 @@ public sealed class PersonsMergeContractTests
         Assert.Null(await FindAccountIdAsync(dataSource, target));
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AC44_concurrent_merges_of_one_source_allow_exactly_one_winner()
+    {
+        await using var dataSource = OpenDataSource();
+        var source = await CreatePartyAsync(dataSource, "Source");
+        var firstTarget = await CreatePartyAsync(dataSource, "First");
+        var secondTarget = await CreatePartyAsync(dataSource, "Second");
+        await CreateFinanceAccountAsync(dataSource, source);
+        var service = new PostgresPartyMergeService(dataSource, [new PostgresPartyAccountMergeParticipant()]);
+        var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+
+        async Task<bool> Attempt(Guid target, Guid operation)
+        {
+            try
+            {
+                await service.MergeAsync(source, target, operation, "ci-merge-actor", now);
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+        }
+
+        var results = await Task.WhenAll(
+            Attempt(firstTarget, Guid.CreateVersion7()),
+            Attempt(secondTarget, Guid.CreateVersion7()));
+
+        Assert.Single(results.Where(x => x));
+        Assert.False(await IsActiveAsync(dataSource, source));
+        Assert.Contains(await FindMergedIntoAsync(dataSource, source), new Guid?[] { firstTarget, secondTarget });
+        Assert.Equal(1, await FindAccountCountForPartyAsync(dataSource, firstTarget) +
+                        await FindAccountCountForPartyAsync(dataSource, secondTarget));
+    }
+
+    private static async Task<long> FindAccountCountForPartyAsync(NpgsqlDataSource dataSource, Guid partyId)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT count(*) FROM finance_party_accounts WHERE party_id = @party;", connection);
+        command.Parameters.AddWithValue("party", partyId);
+        return (long)(await command.ExecuteScalarAsync())!;
+    }
+
     private static NpgsqlDataSource OpenDataSource()
     {
         var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__MDGsmDatabase");
