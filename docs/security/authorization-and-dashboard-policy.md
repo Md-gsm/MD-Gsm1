@@ -83,3 +83,8 @@ Scope به permission وابسته است و از مجوز دیگری به ار�
 - export artifact بعد از revoke: download دوباره Deny.
 - Bootstrap ناقص: فقط دو فرمان allow-list؛ تمام endpointهای دیگر Deny.
 - permission metadata حذف‌شده یا ناشناخته: CI fail و runtime fail-closed.
+
+
+## مرجع ماتریس granular برای تصویب مالک — 2026-11-05
+
+نسخه تفصیلی و قابل امضای ماتریس نقش/permission/scope در `docs/security/identityaccess-permission-matrix-approval-fa.md` قرار دارد. جدول‌های خلاصه قدیمی این سند فقط راهنمای سیاست‌اند و در صورت تعارض با ماتریس مصوب نهایی، نسخه مصوب و نسخه‌دار ماتریس مرجع خواهد بود. تا ثبت APPROVE یا APPROVE WITH CHANGES، هیچ grant به seed یا runtime تبدیل نمی‌شود.
