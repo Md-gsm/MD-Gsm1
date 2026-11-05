@@ -10,7 +10,7 @@
   "securityPrivacyOwner": "Project Owner",
   "securityPrivacyReviewReference": "docs/architecture/INDEPENDENT_REVIEW_CHECKLIST_FA.md — owner-reported approval on 2026-10-31 for the G0 baseline/security-preparation scope at commit 1d4e42b626fe6ca4b9a1910c94b4d4631d0c0c4b. This does not constitute the IdentityAccess G1 runtime security review; that review remains open.",
   "verifiedBy": "Project Owner confirmation recorded in repository evidence; CI independently reported by GitHub Actions.",
-  "verifiedAtUtc": "2026-11-05",
+  "verifiedAtUtc": "2026-11-03",
   "note": "PR #9 (main branch protection tool) merged to main at ce282d964314cff4f5980ec023a4c822e4f7b786. PR #8 merged to main at 43a51631e342d94757c5ad88a6e1a81ef97be0ef on 2026-10-31; the previous note saying G0 remained NOT_READY until PR #8 merged was stale and is superseded. G0 baseline evidence remains recorded separately at validatedCommit 7bcc423a87b44e19291f4f28d04858e06e74515c. The Persons/Finance stacked PR chain has a separate latest validation on PR #35 head f11dfab102795f1eddb8f1cc36e653b29a452161: Persons Module Gates run 42052119417 (13/13 jobs success), Windows Preview Installer run 42052119405 success, and CodeQL run 42052119323 success. PR #35 was merged into PR #33's feature branch, producing PR #33 head a761fed8d61a4147bf516669f22d3e31beb30584; the above CI runs are on the pre-merge PR #35 head and are not represented as a new CI run on the resulting PR #33 head. IdentityAccess G1 runtime and independent G1 reviews remain incomplete. AC-31..AC-45 are still UNMAPPED Runtime criteria; AC-46..AC-49 are IMPLEMENTED CI-enforcement/evidence tests. The combined AC-31..AC-49 gate therefore remains incomplete. G1 remains NOT_READY and g1Authorized=false.",
   "validatedCommit": "7bcc423a87b44e19291f4f28d04858e06e74515c",
   "ciWorkflowRun": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41185491539",
@@ -28,5 +28,6 @@
     "codeQlResult": "SUCCESS",
     "resultingPr33Head": "a761fed8d61a4147bf516669f22d3e31beb30584",
     "note": "Validation above is on PR #35 head before merge into PR #33 branch; rerun CI on resulting PR #33 head before claiming final chain validation."
-  }
+  },
+  "evidenceUpdatedAtUtc": "2026-11-05"
 }
