@@ -12,8 +12,6 @@ CREATE TABLE persons_temporary_workflows (
     renewal_reason varchar(500),
     renewed_by varchar(128),
     renewed_at_utc timestamptz,
-    encrypted_payload bytea,
-    encryption_key_version varchar(80) NOT NULL CHECK (btrim(encryption_key_version) <> ''),
     lifecycle_status varchar(16) NOT NULL DEFAULT 'open'
         CHECK (lifecycle_status IN ('open', 'closed', 'expired', 'purged', 'promoted')),
     idempotency_key uuid NOT NULL UNIQUE,
@@ -38,10 +36,19 @@ CREATE TABLE persons_temporary_workflows (
         (lifecycle_status <> 'promoted' AND promoted_party_id IS NULL AND promoted_at_utc IS NULL)
     ),
     CONSTRAINT ck_persons_temp_payload_lifecycle CHECK (
-        (lifecycle_status IN ('open', 'closed') AND encrypted_payload IS NOT NULL)
+        (lifecycle_status IN ('open', 'closed') AND purged_at_utc IS NULL)
         OR
-        (lifecycle_status IN ('expired', 'purged', 'promoted') AND encrypted_payload IS NULL)
+        (lifecycle_status IN ('expired', 'purged') AND purged_at_utc IS NOT NULL)
+        OR
+        (lifecycle_status = 'promoted' AND promoted_party_id IS NOT NULL AND promoted_at_utc IS NOT NULL)
     )
+);
+CREATE TABLE persons_temporary_workflow_payloads (
+    workflow_record_id uuid PRIMARY KEY
+        REFERENCES persons_temporary_workflows(workflow_record_id) ON DELETE CASCADE,
+    encrypted_payload bytea NOT NULL CHECK (octet_length(encrypted_payload) >= 28),
+    encryption_key_version varchar(80) NOT NULL CHECK (btrim(encryption_key_version) <> ''),
+    created_at_utc timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX ix_persons_temp_expiry_open
     ON persons_temporary_workflows (expires_at_utc, workflow_record_id)
@@ -53,3 +60,8 @@ COMMENT ON TABLE persons_temporary_workflows IS
     'Temporary workflow metadata and ciphertext only. Never store plaintext PII, searchable PII, or derived PII here.';
 COMMENT ON COLUMN persons_temporary_workflows.encrypted_payload IS
     'Authenticated ciphertext only; encryption/decryption and key management belong to the application boundary.';
+
+COMMENT ON TABLE persons_temporary_workflow_payloads IS
+    'Ciphertext-only payload storage separated from workflow metadata so expired payload bytes can be purged independently.';
+COMMENT ON COLUMN persons_temporary_workflow_payloads.encrypted_payload IS
+    'Authenticated ciphertext only; plaintext PII is prohibited.';
