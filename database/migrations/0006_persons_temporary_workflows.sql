@@ -52,7 +52,12 @@ CREATE TABLE persons_temporary_workflow_payloads (
 );
 CREATE INDEX ix_persons_temp_expiry_open
     ON persons_temporary_workflows (expires_at_utc, workflow_record_id)
-    WHERE lifecycle_status = 'open' AND encrypted_payload IS NOT NULL;
+    WHERE lifecycle_status = 'open'
+      AND EXISTS (
+          SELECT 1
+          FROM persons_temporary_workflow_payloads AS payload
+          WHERE payload.workflow_record_id = persons_temporary_workflows.workflow_record_id
+      );
 CREATE INDEX ix_persons_temp_owner_status
     ON persons_temporary_workflows (owner_module, lifecycle_status);
 
