@@ -202,3 +202,14 @@ G1 فقط وقتی قابل بستن است که:
 - هیچ merge به main انجام نمی‌شود.
 - هیچ login/recovery/auth middleware یا migration عملیاتی فعال نمی‌شود.
 - Recovery ایمیل‌تنها فعال نمی‌شود و SMS خارج از دامنه این فاز می‌ماند.
+
+
+## الحاقیه تصمیم جدید مالک — Recovery ایمیلی و SMS placeholder — 2026-11-05
+
+تصمیم جدید مالک، عبارت‌های قدیمی این بسته درباره ممنوعیت Recovery ایمیل‌تنها را برای فاز فعلی جایگزین می‌کند:
+- Recovery ایمیلی با OTP یک‌بارمصرف 10 دقیقه‌ای برای فاز فعلی کافی و مورد تأیید مالک محصول است.
+- این مسیر MFA یا دو عامل مستقل نیست؛ ریسک وابستگی به mailbox باید در threat model، تست‌ها و گزارش reviewer مستقل صریحاً بررسی شود.
+- SMS حذف نمی‌شود؛ فقط placeholder/adapter/configuration خالی و غیرفعال برای فاز آینده نگه داشته می‌شود. provider، SDK، credential و ارسال پیامک در این فاز اضافه نمی‌شوند و نبود آن مانع Recovery ایمیلی نیست.
+- پس از اثبات OTP ایمیل: تغییر رمز با hasher استاندارد، افزایش credential_version، revoke اتمیک تمام نشست‌ها و اجبار تغییر رمز در ورود بعدی لازم است.
+- رمز ثابت دائمی، master password و backdoor ممنوع است؛ bootstrap admin/admin فقط credential یک‌باره local-only است، نه رمز دائمی یا Recovery.
+- ماتریس مجوزها در `identityaccess-permission-matrix-approval-fa.md` برای تصمیم مالک آماده شده؛ هنوز APPROVE نشده و نباید به runtime/seed تبدیل شود.
