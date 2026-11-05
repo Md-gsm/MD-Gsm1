@@ -223,6 +223,34 @@ public sealed class PersonsEndToEndTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task National_identifier_remains_reserved_after_party_deactivation()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var nationalId = NewNationalId();
+        var first = await scope.Repository.AddNaturalAsync(
+            NewNatural("09127777777", nationalId), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+
+        await using (var deactivate = new NpgsqlCommand(
+            "UPDATE persons SET is_active = false WHERE party_id = @id", scope.Connection, scope.Transaction))
+        {
+            deactivate.Parameters.AddWithValue("id", Guid.Parse(first.PartyId));
+            Assert.Equal(1, await deactivate.ExecuteNonQueryAsync());
+        }
+
+        await using (var savepoint = new NpgsqlCommand("SAVEPOINT before_reuse_attempt", scope.Connection, scope.Transaction))
+            await savepoint.ExecuteNonQueryAsync();
+
+        var duplicate = await Assert.ThrowsAsync<DuplicatePartyIdentifierException>(() =>
+            scope.Repository.AddNaturalAsync(NewNatural("09128888888", nationalId),
+                Actor, Guid.CreateVersion7(), scope.Transaction, default));
+        Assert.DoesNotContain(nationalId, duplicate.Message, StringComparison.Ordinal);
+
+        await using var rollback = new NpgsqlCommand("ROLLBACK TO SAVEPOINT before_reuse_attempt", scope.Connection, scope.Transaction);
+        await rollback.ExecuteNonQueryAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task Database_rejects_malformed_mobile_values()
     {
         await using var scope = await TestScope.OpenAsync();
