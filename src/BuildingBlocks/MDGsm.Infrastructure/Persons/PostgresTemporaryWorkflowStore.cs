@@ -39,26 +39,37 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
 
         var created = nowUtc.ToUniversalTime();
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        await using var command = new NpgsqlCommand("""
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using (var metadata = new NpgsqlCommand("""
             INSERT INTO persons_temporary_workflows
                 (workflow_record_id, owner_module, purpose_code, created_by, created_at_utc,
-                 expires_at_utc, absolute_expires_at_utc, encrypted_payload, encryption_key_version,
-                 idempotency_key)
+                 expires_at_utc, absolute_expires_at_utc, idempotency_key)
             VALUES
-                (@id, @owner, @purpose, @actor, @created, @expires, @absolute,
-                 @payload, @key_version, @idempotency);
-            """, connection);
-        command.Parameters.AddWithValue("id", workflowRecordId);
-        command.Parameters.AddWithValue("owner", ownerModule.Trim());
-        command.Parameters.AddWithValue("purpose", purposeCode.Trim());
-        command.Parameters.AddWithValue("actor", createdBy.Trim());
-        command.Parameters.AddWithValue("created", created);
-        command.Parameters.AddWithValue("expires", created.AddDays(DefaultTtlDays));
-        command.Parameters.AddWithValue("absolute", created.AddDays(AbsoluteMaxAgeDays));
-        command.Parameters.Add("payload", NpgsqlDbType.Bytea).Value = authenticatedCiphertext.ToArray();
-        command.Parameters.AddWithValue("key_version", encryptionKeyVersion.Trim());
-        command.Parameters.AddWithValue("idempotency", idempotencyKey);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+                (@id, @owner, @purpose, @actor, @created, @expires, @absolute, @idempotency);
+            """, connection, transaction))
+        {
+            metadata.Parameters.AddWithValue("id", workflowRecordId);
+            metadata.Parameters.AddWithValue("owner", ownerModule.Trim());
+            metadata.Parameters.AddWithValue("purpose", purposeCode.Trim());
+            metadata.Parameters.AddWithValue("actor", createdBy.Trim());
+            metadata.Parameters.AddWithValue("created", created);
+            metadata.Parameters.AddWithValue("expires", created.AddDays(DefaultTtlDays));
+            metadata.Parameters.AddWithValue("absolute", created.AddDays(AbsoluteMaxAgeDays));
+            metadata.Parameters.AddWithValue("idempotency", idempotencyKey);
+            await metadata.ExecuteNonQueryAsync(cancellationToken);
+        }
+        await using (var payload = new NpgsqlCommand("""
+            INSERT INTO persons_temporary_workflow_payloads
+                (workflow_record_id, encrypted_payload, encryption_key_version)
+            VALUES (@id, @payload, @key_version);
+            """, connection, transaction))
+        {
+            payload.Parameters.AddWithValue("id", workflowRecordId);
+            payload.Parameters.Add("payload", NpgsqlDbType.Bytea).Value = authenticatedCiphertext.ToArray();
+            payload.Parameters.AddWithValue("key_version", encryptionKeyVersion.Trim());
+            await payload.ExecuteNonQueryAsync(cancellationToken);
+        }
+        await transaction.CommitAsync(cancellationToken);
     }
 
     public async Task<byte[]?> ReadCiphertextAsync(
@@ -66,12 +77,13 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var command = new NpgsqlCommand("""
-            SELECT encrypted_payload
-            FROM persons_temporary_workflows
-            WHERE workflow_record_id = @id
-              AND lifecycle_status = 'open'
-              AND expires_at_utc > @now
-              AND encrypted_payload IS NOT NULL;
+            SELECT payload.encrypted_payload
+            FROM persons_temporary_workflows AS workflow
+            INNER JOIN persons_temporary_workflow_payloads AS payload
+                ON payload.workflow_record_id = workflow.workflow_record_id
+            WHERE workflow.workflow_record_id = @id
+              AND workflow.lifecycle_status = 'open'
+              AND workflow.expires_at_utc > @now;
             """, connection);
         command.Parameters.AddWithValue("id", workflowRecordId);
         command.Parameters.AddWithValue("now", nowUtc.ToUniversalTime());
@@ -107,7 +119,10 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
                 row_version = row_version + 1
             WHERE workflow_record_id = @id
               AND lifecycle_status = 'open'
-              AND encrypted_payload IS NOT NULL
+              AND EXISTS (
+                  SELECT 1 FROM persons_temporary_workflow_payloads AS payload
+                  WHERE payload.workflow_record_id = persons_temporary_workflows.workflow_record_id
+              )
               AND expires_at_utc > @now
               AND renewal_count = 0
               AND LEAST(absolute_expires_at_utc,
@@ -133,7 +148,10 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
             WHERE workflow_record_id = @id
               AND lifecycle_status = 'open'
               AND expires_at_utc > @now
-              AND encrypted_payload IS NOT NULL;
+              AND EXISTS (
+                  SELECT 1 FROM persons_temporary_workflow_payloads AS payload
+                  WHERE payload.workflow_record_id = persons_temporary_workflows.workflow_record_id
+              );
             """, connection);
         command.Parameters.AddWithValue("id", workflowRecordId);
         command.Parameters.AddWithValue("now", nowUtc.ToUniversalTime());
@@ -152,22 +170,30 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await using var command = new NpgsqlCommand("""
             WITH due AS (
-                SELECT workflow_record_id
-                FROM persons_temporary_workflows
-                WHERE expires_at_utc <= @now
-                  AND encrypted_payload IS NOT NULL
-                  AND lifecycle_status IN ('open', 'closed')
-                ORDER BY expires_at_utc, workflow_record_id
-                FOR UPDATE SKIP LOCKED
+                SELECT workflow.workflow_record_id
+                FROM persons_temporary_workflows AS workflow
+                WHERE workflow.expires_at_utc <= @now
+                  AND workflow.lifecycle_status IN ('open', 'closed')
+                  AND EXISTS (
+                      SELECT 1 FROM persons_temporary_workflow_payloads AS payload
+                      WHERE payload.workflow_record_id = workflow.workflow_record_id
+                  )
+                ORDER BY workflow.expires_at_utc, workflow.workflow_record_id
                 LIMIT @batch_size
+                FOR UPDATE OF workflow SKIP LOCKED
+            ),
+            deleted_payloads AS (
+                DELETE FROM persons_temporary_workflow_payloads AS payload
+                USING due
+                WHERE payload.workflow_record_id = due.workflow_record_id
+                RETURNING payload.workflow_record_id
             )
-            UPDATE persons_temporary_workflows AS target
-            SET encrypted_payload = NULL,
-                lifecycle_status = 'purged',
+            UPDATE persons_temporary_workflows AS workflow
+            SET lifecycle_status = 'purged',
                 purged_at_utc = @now,
                 row_version = row_version + 1
-            FROM due
-            WHERE target.workflow_record_id = due.workflow_record_id;
+            FROM deleted_payloads
+            WHERE workflow.workflow_record_id = deleted_payloads.workflow_record_id;
             """, connection, transaction);
         command.Parameters.AddWithValue("now", nowUtc.ToUniversalTime());
         command.Parameters.AddWithValue("batch_size", batchSize);
