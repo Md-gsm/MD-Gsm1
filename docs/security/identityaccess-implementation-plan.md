@@ -12,16 +12,15 @@
 6. تست Integration روی PostgreSQL 18 disposable اضافه شده است: قفل 5 شکست/15 دقیقه، ورود پس از پایان قفل، heartbeat/تمدید lease و ابطال همه نشست‌ها پس از تغییر رمز.
 7. آزمون ورود هم‌زمان چند حساب برای سقف 2 کاربر اضافه شده است؛ دو ورود مستقل باید پذیرفته و بقیه رد شوند و ورود دوم همان حساب نباید تعداد حساب‌های فعال را افزایش دهد.
 
-## تصمیم‌های مالک که تأیید شده‌اند
-- ماتریس نقش‌ها و مجوزهای پیشنهادی فعلی.
-- نگهداری سوابق حساس 24 ماه و تلاش‌های ناموفق/نشست‌ها 12 ماه.
-- بازیابی مدیر با تأیید دو کانال ایمیل و موبایل و کد اضطراری یک‌بارمصرف آفلاین.
+## تصمیم‌های محصول ثبت‌شده در برابر پیشنهادهای نیازمند تصویب
+- شناسه ورود، قواعد پایه نشست/قفل حساب، bootstrap local-only و فهرست ۱۰ نقش در `identityaccess-owner-decisions-fa.md` ثبت شده‌اند.
+- ماتریس granular مجوز، دوره‌های retention امنیتی و جریان emergency recovery در `identityaccess-five-open-items-fa.md` پیشنهاد هستند؛ سند `identityaccess-owner-decisions-fa.md` صریحاً آن‌ها را تا تصویب/review غیرعملیاتی می‌داند. بنابراین عبارت «تأیید شده» برای این سه مورد صحیح نیست و هیچ seed/retention purge/recovery workflow نباید بر مبنای آن‌ها فعال شود.
 
 ## موارد باز و گیت‌های release
 - اجرای موفق Build/Test و همه jobهای CI روی commit فعلی؛ نتایج commitهای قبلی به SHA جدید تعمیم داده نمی‌شوند.
 - اجرای موفق PostgreSQL 18 disposable integration و تست هم‌زمانی روی همین commit.
-- تست .NET کامل username normalization، Unicode version pin، Script_Extensions معتبر و collision scan.
-- threat-model review برای recovery/bootstrap، انتخاب provider و TTL چالش.
+- `Username.Parse` در Domain پیاده‌سازی شده و تست‌های .NET پایه وجود دارند؛ اما نسخه Unicode pin، Script_Extensions معتبر، CaseFolding نسخه‌دار، collision scan و fuzz coverage کامل نیستند. Oracle پایتون جایگزین این شواهد نیست.
+- `IRecoveryStore` و adapterهای persistence برای challenge و recovery-code digest وجود دارند؛ اما orchestration/workflow، endpoint، سیاست expiry/rate-limit کامل و تست‌های end-to-end replay/race/DB-failure و threat-model review هنوز بازند.
 - بازبینی معماری توسط گروه مشاور نرم‌افزار و تصمیم امنیت/حریم خصوصی مالک.
 - اثبات Required Status Checks و جلوگیری از merge در SCM؛ دسترسی فعلی GitHub نتوانسته جزئیات protection را بخواند.
 - review نهایی schema و ADR-0006؛ سپس فقط با مجوز رسمی G1 می‌توان Migration نسخه‌دار و checksumدار را در PostgreSQL 18 disposable ارزیابی کرد.
