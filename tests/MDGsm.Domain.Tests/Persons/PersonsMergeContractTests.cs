@@ -96,6 +96,8 @@ public sealed class PersonsMergeContractTests
             source, target, Guid.CreateVersion7(), "ci-merge-actor", DateTimeOffset.UtcNow));
 
         Assert.Equal(1, failing.RecoveryCalls);
+        Assert.True(failing.RecoveryUsedSuppliedTransaction,
+            "Recovery must use the exact open connection and transaction supplied by the coordinator.");
         Assert.True(await IsActiveAsync(dataSource, source));
         Assert.Null(await FindMergedIntoAsync(dataSource, source));
         Assert.Equal(sourceAccount, await FindAccountIdAsync(dataSource, source));
@@ -237,6 +239,7 @@ public sealed class PersonsMergeContractTests
         public string ContractVersion => "1.0";
         public string MergeProtocolVersion => PostgresPartyMergeService.ProtocolVersion;
         public int RecoveryCalls { get; private set; }
+        public bool RecoveryUsedSuppliedTransaction { get; private set; }
 
         public Task<PartyMergeParticipantPreview> PreviewAsync(
             PartyMergeContext context, DbConnection connection, CancellationToken cancellationToken) =>
@@ -259,6 +262,11 @@ public sealed class PersonsMergeContractTests
             CancellationToken cancellationToken)
         {
             RecoveryCalls++;
+            RecoveryUsedSuppliedTransaction =
+                transaction.Connection is not null &&
+                ReferenceEquals(transaction.Connection, connection) &&
+                connection.State == System.Data.ConnectionState.Open &&
+                transaction.Connection.State == System.Data.ConnectionState.Open;
             return Task.CompletedTask;
         }
     }
