@@ -1,9 +1,10 @@
 namespace MDGsm.IdentityAccess.Domain;
 
 /// <summary>
-/// Explicit deny-by-default permission matrix approved for the initial role set.
-/// No wildcard permissions are used. Technician row scope is enforced separately
-/// by the API using authoritative assignment data.
+/// Proposed deny-by-default permission matrix for the initial role set; owner approval
+/// is required before this catalog is seeded or enforced in a production runtime.
+/// No wildcard permissions are used. Technician row scope must be enforced by the API
+/// using authoritative assignment data; this catalog does not implement row scoping.
 /// </summary>
 public static class PermissionCatalog
 {
