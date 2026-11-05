@@ -131,7 +131,7 @@ try {
     }
 
     $history = & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d $databaseName -t -A -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;"
-    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '4|4') { throw "Migration history verification failed: '$history'." }
+    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '5|5') { throw "Migration history verification failed: '$history'." }
     $schemaVersion = & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d $databaseName -t -A -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(version)::text FROM mdgsm_schema_version;"
     if ($LASTEXITCODE -ne 0 -or "$schemaVersion".Trim() -ne '1|1') { throw "Infrastructure schema version verification failed: '$schemaVersion'." }
 
