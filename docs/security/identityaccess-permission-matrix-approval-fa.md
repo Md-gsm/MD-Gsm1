@@ -1,7 +1,7 @@
 # ماتریس پیشنهادی مجوزهای IdentityAccess — نسخه برای تصویب مالک
 
 - تاریخ: 2026-11-05
-- وضعیت: **پیشنهاد آماده تصمیم مالک؛ هنوز تصویب نشده و نباید seed/runtime شود**
+- وضعیت: **تصویب‌شده توسط مالک محصول؛ اجرای runtime همچنان منوط به G1 مستقل و مجوز اجرایی جداگانه است**
 - اصل حاکم: deny-by-default، grant صریح، scope مستقل برای هر permission، بدون wildcard.
 - نقش‌ها: super_admin، manager، receptionist، technician، warehouse، salesperson، purchaser، cashier، accountant، viewer.
 - علامت ✓ یعنی grant پیشنهادی؛ خانه خالی یعنی Deny. این ماتریس به‌تنهایی مجوز اجرا نیست.
@@ -158,3 +158,13 @@ scope همه عملیات انبار باید `warehouse` و در صورت نی�
 - امضا/ثبت قابل راستی‌آزمایی:
 
 تا ثبت تصمیم صریح، این ماتریس proposal است و نباید به seed، migration یا runtime policy تبدیل شود.
+
+
+## 11. ثبت تصویب مالک محصول — 2026-11-06
+
+- نتیجه: **APPROVE**
+- تصمیم‌گیر: مالک محصول؛ تأیید صریح در گفت‌وگوی ChatGPT در تاریخ 2026-11-06؛ بدون ادعای امضای دیجیتال.
+- موارد تغییرخواسته در grants و قواعد scope: هیچ‌کدام.
+- دامنه تصویب: تمام grantهای علامت‌خورده، Deny خانه‌های خالی، deny-by-default، scope مستقل، محدودیت تکنسین به self/assigned، union صریح چندنقشی، separation-of-duties و audit.
+- محدودیت‌ها: تا تعیین threshold مالی price override/discount/refund/purchase approval با آستانه نامشخص Deny است. branch/warehouse فقط با assignment صریح و authoritative مجاز است.
+- این تأیید، تصویب سیاست محصول است؛ مجوز seed، migration، runtime یا عبور از G1 نیست.
