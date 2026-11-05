@@ -25,7 +25,7 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         Assert.Equal(ciphertext, stored);
 
         // Force expiry in PostgreSQL while preserving the table's created < expiry invariant.
-        await SetExpiryAsync(dataSource, id, "clock_timestamp() - interval '1 second'");
+        await SetExpiryAsync(dataSource, id);
         Assert.Null(await store.ReadCiphertextAsync(id));
         Assert.Equal(1, await store.PurgeExpiredAsync(DateTimeOffset.UtcNow));
         Assert.Null(await store.ReadCiphertextAsync(id));
@@ -86,13 +86,12 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
             "Second renewal attempt rejected", "ci-actor", explicitlyAuthorized: true));
     }
 
-    private static async Task SetExpiryAsync(NpgsqlDataSource dataSource, Guid workflowId, string sqlExpression)
+    private static async Task SetExpiryAsync(NpgsqlDataSource dataSource, Guid workflowId)
     {
-        // Expression is a compile-time test constant, never user input.
         await using var connection = await dataSource.OpenConnectionAsync();
-        await using var command = new NpgsqlCommand($"""
+        await using var command = new NpgsqlCommand("""
             UPDATE persons_temporary_workflows
-            SET expires_at_utc = {sqlExpression},
+            SET expires_at_utc = clock_timestamp() - interval '1 second',
                 row_version = row_version + 1
             WHERE workflow_record_id = @id;
             """, connection);
