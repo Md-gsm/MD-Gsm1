@@ -173,13 +173,12 @@ public sealed class PersonsEndToEndTests
             Connection = connection;
             Transaction = transaction;
             Repository = new PostgresPartyRepository(dataSource);
-            Query = new PartyDetailsQueryService(Repository, new AllowSensitiveReadAuthorizer());
         }
 
         public NpgsqlConnection Connection { get; }
         public NpgsqlTransaction Transaction { get; }
         public PostgresPartyRepository Repository { get; }
-        public PartyDetailsQueryService Query { get; }
+
 
         public static async Task<TestScope> OpenAsync()
         {
