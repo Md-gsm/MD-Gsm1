@@ -31,11 +31,11 @@
     "negativeCiEnforcementTestPassed": true,
     "jobOwnersAssigned": true,
     "acceptanceCriteriaAc31ToAc49Mapped": false,
-    "architectureAligned": true,
+    "architectureAligned": false,
     "windowsPostgres18Validated": true,
     "applicationMigrationRunnerValidated": true
   },
-  "note": "Initial Persons domain and transactional PostgreSQL registration/read repository are implemented on an isolated draft branch. Migration 0002 is included in the application-owned runner but has not been applied to any non-disposable database. API endpoints and connected desktop workflow remain blocked until IdentityAccess opaque-token validation and G1 security/architecture authorization are completed. G1 remains unauthorized; do not merge or release.",
+  "note": "Initial Persons domain and transactional PostgreSQL registration/read repository are implemented on an isolated draft branch. Migration 0002 is included in the application-owned runner but has not been applied to any non-disposable database. API endpoints and connected desktop workflow remain blocked until IdentityAccess opaque-token validation and G1 security/architecture authorization are completed. G1 remains unauthorized; do not merge or release. ADR-0014 now assigns canonical ownership for financial profile fields and defines the Persons source relocation. Current BuildingBlocks paths remain transitional; architectureAligned=false and G1 remains blocked until relocation, IdentityAccess authorization integration, and evidence are complete.",
   "validationEvidenceReference": "docs/operations/evidence/g0-ci-validation-2026-10-31.json",
   "runtimeHostBuildingBlocksRelocated": true
 }
