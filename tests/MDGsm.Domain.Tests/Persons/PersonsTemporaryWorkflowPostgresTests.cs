@@ -48,10 +48,14 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
 
         await using (var connection = await dataSource.OpenConnectionAsync())
         await using (var command = new NpgsqlCommand("""
-            UPDATE persons_temporary_workflows
-            SET expires_at_utc = clock_timestamp() - interval '1 second',
-                row_version = row_version + 1
-            WHERE owner_module = 'Persons' AND purpose_code = @purpose;
+            WITH clock AS (SELECT clock_timestamp() AS now_utc)
+            UPDATE persons_temporary_workflows AS workflow
+            SET created_at_utc = clock.now_utc - interval '2 days',
+                expires_at_utc = clock.now_utc - interval '1 second',
+                absolute_expires_at_utc = clock.now_utc + interval '28 days',
+                row_version = workflow.row_version + 1
+            FROM clock
+            WHERE workflow.owner_module = 'Persons' AND workflow.purpose_code = @purpose;
             """, connection))
         {
             command.Parameters.AddWithValue("purpose", purpose);
@@ -154,10 +158,14 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
     {
         await using var connection = await dataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand("""
-            UPDATE persons_temporary_workflows
-            SET expires_at_utc = clock_timestamp() - interval '1 second',
-                row_version = row_version + 1
-            WHERE workflow_record_id = @id;
+            WITH clock AS (SELECT clock_timestamp() AS now_utc)
+            UPDATE persons_temporary_workflows AS workflow
+            SET created_at_utc = clock.now_utc - interval '2 days',
+                expires_at_utc = clock.now_utc - interval '1 second',
+                absolute_expires_at_utc = clock.now_utc + interval '28 days',
+                row_version = workflow.row_version + 1
+            FROM clock
+            WHERE workflow.workflow_record_id = @id;
             """, connection);
         command.Parameters.AddWithValue("id", workflowId);
         Assert.Equal(1, await command.ExecuteNonQueryAsync());
