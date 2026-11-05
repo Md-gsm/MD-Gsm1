@@ -36,6 +36,74 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task AC32_worker_drains_expired_payloads_across_multiple_database_batches()
+    {
+        await using var dataSource = OpenDataSource();
+        var store = new PostgresTemporaryWorkflowStore(dataSource);
+        var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        const string purpose = "retention-batch-test";
+
+        for (var index = 0; index < 251; index++)
+        {
+            await store.CreateAsync(Guid.CreateVersion7(), "Persons", purpose, "ci-actor",
+                Guid.CreateVersion7(), now.AddDays(-2), Encrypt("temporary private data"u8), "test-key-v1");
+        }
+
+        await using (var connection = await dataSource.OpenConnectionAsync())
+        await using (var command = new NpgsqlCommand("""
+            UPDATE persons_temporary_workflows
+            SET expires_at_utc = clock_timestamp() - interval '1 second',
+                row_version = row_version + 1
+            WHERE owner_module = 'Persons' AND purpose_code = @purpose;
+            """, connection))
+        {
+            command.Parameters.AddWithValue("purpose", purpose);
+            Assert.Equal(251, await command.ExecuteNonQueryAsync());
+        }
+
+        var logger = new CapturingLogger<TemporaryWorkflowRetentionSweep>();
+        var alertLogger = new CapturingLogger<StructuredLogTemporaryWorkflowRetentionAlert>();
+        var alert = new StructuredLogTemporaryWorkflowRetentionAlert(alertLogger);
+        var sweep = new TemporaryWorkflowRetentionSweep(store, alert, logger);
+
+        Assert.Equal(TimeSpan.FromMinutes(5), TemporaryWorkflowRetentionWorker.SweepInterval);
+        Assert.True(await sweep.RunOnceAsync());
+
+        await using var verify = await dataSource.OpenConnectionAsync();
+        await using var verifyCommand = new NpgsqlCommand("""
+            SELECT count(*) FILTER (WHERE payload.workflow_record_id IS NOT NULL),
+                   count(*) FILTER (WHERE workflow.lifecycle_status = 'purged')
+            FROM persons_temporary_workflows AS workflow
+            LEFT JOIN persons_temporary_workflow_payloads AS payload
+              ON payload.workflow_record_id = workflow.workflow_record_id
+            WHERE workflow.owner_module = 'Persons' AND workflow.purpose_code = @purpose;
+            """, verify);
+        verifyCommand.Parameters.AddWithValue("purpose", purpose);
+        await using var reader = await verifyCommand.ExecuteReaderAsync();
+        Assert.True(await reader.ReadAsync());
+        Assert.Equal(0L, reader.GetInt64(0));
+        Assert.Equal(251L, reader.GetInt64(1));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AC36_person_search_does_not_discover_encrypted_temporary_workflow_payloads()
+    {
+        await using var dataSource = OpenDataSource();
+        var store = new PostgresTemporaryWorkflowStore(dataSource);
+        var term = "نام موقت غیرقابل جستجو";
+        await store.CreateAsync(Guid.CreateVersion7(), "Persons", "search-isolation-test", "ci-actor",
+            Guid.CreateVersion7(), DateTimeOffset.UtcNow, Encrypt(System.Text.Encoding.UTF8.GetBytes(term)),
+            "test-key-v1");
+
+        var repository = new PostgresPartyRepository(dataSource);
+        var results = await repository.SearchAsync(term, 10, null, default);
+
+        Assert.Empty(results);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task AC35_closed_workflow_is_not_readable_and_is_purged_after_expiry()
     {
         await using var dataSource = OpenDataSource();
