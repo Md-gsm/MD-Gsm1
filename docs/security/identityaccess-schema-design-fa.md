@@ -106,3 +106,25 @@ singleton settings_id SMALLINT PK CHECK=1؛ max_active_users INTEGER CHECK>=1 (�
 ## Bootstrap state constraints
 
 وضعیت Bootstrap باید state machine مستقل داشته باشد: Uninitialized -> Provisioning -> PasswordChangeRequired -> ProfileCompletionRequired -> Completed؛ حالت FailedClosed در خطا. فقط عملیات تغییر رمز اولیه و تکمیل پروفایل در حالت‌های میانی مجازند. هیچ business permission یا API route نباید از وضعیت bootstrap استنتاج Allow بگیرد. مقدار ثابت `admin/admin` در ADR-0013 نیازمند تصمیم تکمیلی مالک برای روش provisioning امن است؛ schema نباید default password یا credential ثابت تعریف کند.
+## تصمیم‌های مصوب مالک درباره Recovery و نشست — 2026-11-05 (بدون Migration)
+
+### تنظیمات Recovery
+- بازار هدف: ایران.
+- ایمیل: mailbox اختصاصی روی دامنه محصول؛ ارسال با SMTP relay/Transactional Email. ایجاد Mail Server مستقل داخل برنامه انتخاب نشده است. نام میزبان SMTP و جزئیات DNS در زمان استقرار تعیین می‌شوند.
+- ارائه‌دهنده SMS هنوز انتخاب نشده و باید پیش از فعال‌سازی Recovery از نظر OTP template، تحویل، SLA، خط خدماتی، API، وضعیت delivery و مدیریت خطا ارزیابی شود.
+- email_otp_ttl_seconds = 600؛ sms_otp_ttl_seconds = 300.
+- recovery_max_failed_attempts = 5؛ پس از رسیدن به حد، قفل Recovery برابر 86400 ثانیه.
+- resend_cooldown_seconds = 3600؛ max_sends_per_rolling_hour = 1؛ max_sends_per_rolling_24h = 5؛ عبور از هر حد، قفل ارسال/Recovery برابر 86400 ثانیه.
+- شمارنده‌ها و قفل با زمان PostgreSQL و transaction/atomic update اجرا شوند. شمارش حداقل per account و channel و نیز per source؛ محدودیت source نباید امکان قفل‌کردن قربانی از راه دور را به‌تنهایی ایجاد کند.
+- resend proof قبلی را باطل می‌کند. provider timeout/unknown result هرگز به‌معنی ارسال/تأیید موفق نیست.
+- این اعداد برای Recovery هستند و lockout ورود عادی را تغییر نمی‌دهند.
+
+### تنظیمات Session
+- heartbeat_interval_seconds = 30؛ session_lease_seconds = 180؛ absolute_session_ttl_seconds = 43200.
+- max_concurrent_sessions_per_account = 2.
+- max_active_distinct_accounts = 5؛ قابل تغییر توسط super_admin با permission اختصاصی و audit.
+- password change و account disable باید revoke تمام نشست‌های حساب را اتمیک انجام دهند. برای password change، credential_version نیز افزایش یابد.
+- absolute TTL از created_at_utc محاسبه می‌شود و heartbeat آن را تمدید نمی‌کند. نشست فعال باید revoked نشده، lease معتبر، absolute expiry معتبر، account enabled و credential version جاری داشته باشد.
+- کنترل دو نشست در هر حساب و سقف کل پنج حساب باید transactionally serialized باشند.
+
+این بخش مدل منطقی است؛ هیچ migration، DbSet یا runtime ایجاد/فعال نمی‌کند.
