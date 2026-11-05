@@ -70,7 +70,7 @@ public sealed class ArchitectureBoundaryTests
             root,
             "src/Modules/Finance/MDGsm.Finance.csproj",
             "..\\Contracts\\MDGsm.Finance.Contracts.csproj",
-            "..\\..\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj");
+            "..\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj");
     }
 
     [Fact]
