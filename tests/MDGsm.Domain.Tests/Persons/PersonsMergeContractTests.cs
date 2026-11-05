@@ -53,7 +53,7 @@ public sealed class PersonsMergeContractTests
         Assert.Equal(target, await FindMergedIntoAsync(dataSource, source));
         Assert.Equal(accountId, await FindAccountIdAsync(dataSource, target));
         Assert.Equal(createdAt, await FindAccountCreatedAtAsync(dataSource, target));
-        Assert.Equal(1, await CountMergeRecordsAsync(dataSource, operation));
+        Assert.Equal(1L, await CountMergeRecordsAsync(dataSource, operation));
         Assert.Null(await FindAccountIdAsync(dataSource, source));
     }
 
@@ -134,7 +134,7 @@ public sealed class PersonsMergeContractTests
         Assert.Single(results.Where(x => x));
         Assert.False(await IsActiveAsync(dataSource, source));
         Assert.Contains(await FindMergedIntoAsync(dataSource, source), new Guid?[] { firstTarget, secondTarget });
-        Assert.Equal(1, await FindAccountCountForPartyAsync(dataSource, firstTarget) +
+        Assert.Equal(1L, await FindAccountCountForPartyAsync(dataSource, firstTarget) +
                         await FindAccountCountForPartyAsync(dataSource, secondTarget));
     }
 
