@@ -12,6 +12,16 @@ namespace MDGsm.Domain.Tests.Persons;
 /// </summary>
 public sealed class PersonsEndToEndTests
 {
+    [Fact]
+    public void Persons_details_contract_does_not_expose_finance_owned_fields()
+    {
+        var properties = typeof(PartyDetails).GetProperties().Select(property => property.Name).ToHashSet(StringComparer.Ordinal);
+        Assert.DoesNotContain("CreditLimitRial", properties);
+        Assert.DoesNotContain("DefaultDiscountPercent", properties);
+        Assert.DoesNotContain("DefaultPaymentMethod", properties);
+        Assert.DoesNotContain("BankCardLastFour", properties);
+    }
+
     private const string Actor = "ci-test-user";
 
     [Fact]
@@ -74,8 +84,6 @@ public sealed class PersonsEndToEndTests
 
         Assert.NotNull(masked);
         Assert.False(masked.SensitiveFieldsIncluded);
-        Assert.Null(masked.CreditLimitRial);
-        Assert.Null(masked.BankCardLastFour);
         Assert.Null(masked.InternalNote);
         Assert.Null(masked.EconomicCode);
         Assert.EndsWith(nationalId[^3..], masked.NationalIdentifier);
@@ -85,8 +93,6 @@ public sealed class PersonsEndToEndTests
 
         Assert.NotNull(full);
         Assert.True(full.SensitiveFieldsIncluded);
-        Assert.Equal((long?)5_000_000, full.CreditLimitRial);
-        Assert.Equal("4321", full.BankCardLastFour);
         Assert.Equal(nationalId, full.NationalIdentifier);
         Assert.Null(full.ResponsiblePersonName); // Natural-person record has no legal representative.
 
@@ -121,7 +127,7 @@ public sealed class PersonsEndToEndTests
         await using var scope = await TestScope.OpenAsync();
         var nationalId = NewNationalId();
         var created = await scope.Repository.AddNaturalAsync(
-            NewNatural("09121234567", nationalId, creditLimitRial: 9_000_000, lastFour: "9876"),
+            NewNatural("09121234567", nationalId),
             Actor, Guid.CreateVersion7(), scope.Transaction, default);
 
         var result = await scope.QueryFor(allowSensitive: false)
@@ -129,8 +135,6 @@ public sealed class PersonsEndToEndTests
 
         Assert.NotNull(result);
         Assert.False(result.SensitiveFieldsIncluded);
-        Assert.Null(result.CreditLimitRial);
-        Assert.Null(result.BankCardLastFour);
         Assert.Null(result.InternalNote);
         Assert.EndsWith(nationalId[^3..], result.NationalIdentifier);
         Assert.Equal(0L, await ScalarAsync(scope,
@@ -291,15 +295,15 @@ public sealed class PersonsEndToEndTests
         new("شرکت آزمایشی", "12345678901", "1234567890", "نام مسئول شرکت",
             PartyBusinessRoles.Customer, "09126666666", null, null, null,
             "تهران", "تهران", "1234567890", "خیابان آزمایشی",
-            0, 0m, DefaultPaymentMethod.Cash, null, PartyAcquaintanceSource.Unknown,
+            PartyAcquaintanceSource.Unknown,
             "یادداشت داخلی", PartyCommunicationPreferences.Default);
 
     private static string NewNationalId() => Random.Shared.NextInt64(1_000_000_000L, 9_999_999_999L).ToString();
 
-    private static RegisterNaturalParty NewNatural(string? mobile, string? nationalId, long creditLimitRial = 0, string? lastFour = null) =>
+    private static RegisterNaturalParty NewNatural(string? mobile, string? nationalId) =>
         new(PersianTestData.AliArabicYeh, PersianTestData.RezaeiArabicYeh, PartyBusinessRoles.Customer, nationalId, mobile, null, null, null,
             "تهران", "تهران", "1234567890", "خیابان آزمایشی ۱۲",
-            creditLimitRial, 0m, DefaultPaymentMethod.Cash, lastFour, PartyAcquaintanceSource.Unknown, "یادداشت داخلی",
+            PartyAcquaintanceSource.Unknown, "یادداشت داخلی",
             PartyCommunicationPreferences.Default);
 
     private static async Task<long> ScalarAsync(TestScope scope, string sql, Guid id)
