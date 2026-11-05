@@ -11,3 +11,10 @@
 
 پیش از runtime: تصویب ماتریس و retention؛ تست .NET؛ review recovery/bootstrap؛ review معماری گروه مشاور؛ تصمیم امنیت/حریم خصوصی مالک؛ اثبات Required Status Checks در SCM؛ تست migration/concurrency/failure/rollback/lockout/lease/revoke/audit در disposable PostgreSQL 18.
 هیچ login endpoint، middleware، session store، IdentityAccess migration، network listener یا credential عملیاتی ساخته نشده است. PR #30 Open+Draft+Unmerged؛ main بدون تغییر؛ `g1Authorized=false`.
+
+
+## وضعیت جاری و ارجاع مرجع — 2026-11-05
+
+مرجع جاری وضعیت G1، PR #37 و بسته تحویل مستقل در `identityaccess-g1-review-handoff-fa.md` است. هر ارجاع قدیمی‌تر به PR #30 در این سند، وضعیت جاری شاخه/PR را نشان نمی‌دهد و برای تصمیم فعلی ملاک نیست.
+
+روی SHA `406b0d9103ada7177d4e34582ebd8e1c172e18e0` شواهد CI در حال اجرا/انتظار هستند؛ نتایج موفق SHA قبلی به این SHA تعمیم داده نمی‌شوند. IdentityAccess هنوز runtime، middleware، session store یا migration عملیاتی ندارد. ماتریس permission و retention همچنان تصویب نشده‌اند. SMS به فاز آینده موکول شده و Recovery به دلیل نبود عامل جایگزین مستقلِ مصوب غیرفعال می‌ماند. `g1Authorized=false` تا review مستقل و تصمیم صریح مالک برقرار است.
