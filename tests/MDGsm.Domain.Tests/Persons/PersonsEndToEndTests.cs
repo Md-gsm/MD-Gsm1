@@ -31,7 +31,7 @@ public sealed class PersonsEndToEndTests
         Assert.True(PartyId.TryParse(first.PartyId, out _));
         Assert.Equal(1L, await ScalarAsync(scope, "SELECT count(*) FROM persons_operations WHERE operation_id = @id", operationId));
 
-        var details = await scope.Repository.GetAsync(first.PartyId, Actor, includeSensitive: true, scope.Transaction, default);
+        var details = await await scope.Query.GetAsync(first.PartyId, Actor, scope.Transaction, default);
         Assert.NotNull(details);
         Assert.Equal(PersianTestData.AliRezaeiCanonical, details.DisplayName);   // Arabic yeh typed on input, Persian yeh stored
         Assert.Contains(details.Contacts, c => c.Kind == "Mobile" && c.Value == "+989121234567" && c.IsPrimary);
@@ -46,8 +46,8 @@ public sealed class PersonsEndToEndTests
         var created = await scope.Repository.AddNaturalAsync(
             NewNatural("09121234567", nationalId, creditLimitRial: 5_000_000, lastFour: "4321"), Actor, Guid.CreateVersion7(), scope.Transaction, default);
 
-        var masked = await scope.Repository.GetAsync(created.PartyId, Actor, includeSensitive: false, scope.Transaction, default);
-        var full = await scope.Repository.GetAsync(created.PartyId, Actor, includeSensitive: true, scope.Transaction, default);
+        var masked = await await scope.Query.GetAsync(created.PartyId, Actor, scope.Transaction, default);
+        var full = await await scope.Query.GetAsync(created.PartyId, Actor, scope.Transaction, default);
 
         Assert.NotNull(masked);
         Assert.False(masked.SensitiveFieldsIncluded);
@@ -65,6 +65,7 @@ public sealed class PersonsEndToEndTests
         Assert.Equal((long?)5_000_000, full.CreditLimitRial);
         Assert.Equal("4321", full.BankCardLastFour);
         Assert.Equal(nationalId, full.NationalIdentifier);
+        Assert.Equal("نام مسئول", full.ResponsiblePersonName);
 
         Assert.Equal(2L, await ScalarAsync(scope, "SELECT count(*) FROM persons_access_audit WHERE party_id = @id", Guid.Parse(created.PartyId)));
         Assert.Equal(1L, await ScalarAsync(scope, "SELECT count(*) FROM persons_access_audit WHERE party_id = @id AND sensitive_included", Guid.Parse(created.PartyId)));
@@ -156,6 +157,12 @@ public sealed class PersonsEndToEndTests
         return (long)(await command.ExecuteScalarAsync())!;
     }
 
+    private sealed class AllowSensitiveReadAuthorizer : IPartySensitiveReadAuthorizer
+    {
+        public Task<bool> CanReadSensitiveAsync(string authenticatedActorId, string partyId, CancellationToken cancellationToken) =>
+            Task.FromResult(true);
+    }
+
     private sealed class TestScope : IAsyncDisposable
     {
         private readonly NpgsqlDataSource _dataSource;
@@ -166,11 +173,13 @@ public sealed class PersonsEndToEndTests
             Connection = connection;
             Transaction = transaction;
             Repository = new PostgresPartyRepository(dataSource);
+            Query = new PartyDetailsQueryService(Repository, new AllowSensitiveReadAuthorizer());
         }
 
         public NpgsqlConnection Connection { get; }
         public NpgsqlTransaction Transaction { get; }
         public PostgresPartyRepository Repository { get; }
+        public PartyDetailsQueryService Query { get; }
 
         public static async Task<TestScope> OpenAsync()
         {
