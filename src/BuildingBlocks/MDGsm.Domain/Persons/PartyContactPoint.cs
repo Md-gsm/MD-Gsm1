@@ -27,7 +27,7 @@ public sealed record PartyContactPoint
     public static PartyContactPoint Mobile(string value, bool isPrimary = false, bool isMessagingAllowed = false)
     {
         ArgumentNullException.ThrowIfNull(value);
-        var compact = PartyIdentifiers.NormalizeDigits(value).Trim().Replace(" ", "").Replace("-", "");
+        var compact = string.Concat(PartyIdentifiers.NormalizeDigits(value).Where(character => !char.IsWhiteSpace(character))).Replace("-", "");
         string normalized;
 
         if (IranianMobile.IsMatch(compact))
