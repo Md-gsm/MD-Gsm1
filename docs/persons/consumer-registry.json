@@ -14,21 +14,27 @@
       "module": "Finance",
       "contract": "Persons.PartyReference",
       "purpose": "Finance stores the stable PartyId reference for its unique party-account identity.",
-      "contractVersion": "1.1"
+      "contractVersion": "1.1",
+      "mergeProtocolVersion": "1.0",
+      "mergeStatus": "BLOCKED_NOT_IMPLEMENTED"
     },
     {
       "path": "database/migrations/0004_finance_party_accounts.sql",
       "module": "Finance",
       "contract": "Persons.PartyReference",
       "purpose": "Finance-owned party-account table stores PartyId as an immutable cross-module reference.",
-      "contractVersion": "1.1"
+      "contractVersion": "1.1",
+      "mergeProtocolVersion": "1.0",
+      "mergeStatus": "BLOCKED_NOT_IMPLEMENTED"
     },
     {
       "path": "src/Modules/Finance/Contracts/PartyAccountReference.cs",
       "module": "Finance",
       "contract": "Persons.PartyReference",
       "contractVersion": "1.1",
-      "purpose": "Finance exposes the PartyId-to-account identity reference through its versioned contract."
+      "purpose": "Finance exposes the PartyId-to-account identity reference through its versioned contract.",
+      "mergeProtocolVersion": "1.0",
+      "mergeStatus": "BLOCKED_NOT_IMPLEMENTED"
     }
   ],
   "registryPolicy": {
