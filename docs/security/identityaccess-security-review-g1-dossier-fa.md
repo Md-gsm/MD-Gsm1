@@ -37,10 +37,10 @@ SHA مبنای این پرونده: 5b8669df31de283c8a83ac9fe1e74381ac1a5986
 | Opaque token | token factory و digest موجود | raw token در DB/log/artifact صفر؛ revoke فوری؛ disabled account رد |
 | Login lockout | lockout و تست PostgreSQL موجود | 5/15/15، source rate limit مستقل، concurrency و پاسخ عمومی |
 | Session | lease و سقف حساب‌های متمایز | چندپردازه، stale lease، heartbeat race، revoke و ظرفیت |
-| Authorization | permission catalog و ماتریس اولیه | deny-by-default، negative tests، row scope تکنسین در API/DB |
-| Recovery | design و recovery code digest model | threat model و تست expiry/replay/race/atomic consumption |
+| Authorization | permission catalog و ماتریس اولیه در کد وجود دارد، اما ماتریس طبق تصمیم‌نامه هنوز proposal است و API authorization/middleware متصل نیست | تصویب مالک، seed نسخه‌دار، deny-by-default، negative API tests و row scope تکنسین با داده تخصیص معتبر |
+| Recovery | `IRecoveryStore` و PostgreSQL adapter برای create/consume challenge و consume یک‌باره recovery code وجود دارند؛ orchestration/endpoint و اثبات دوکاناله end-to-end وجود ندارد | threat model و تست expiry/replay/race/DB-failure/atomic consumption و اثبات دو کانال مستقل |
 | Bootstrap | local-only و fail-closed در تصمیم | آزمون setup یک‌باره، منع network تا تکمیل، عدم وجود secret ثابت |
-| Audit/privacy | مدل audit و retention policy | append-only، allow-list، حذف secret/PII از log و purge evidence |
+| Audit/privacy | مدل audit و writer persistence وجود دارد؛ retention عددی هنوز proposal است و append-only DB privilege/purge عملیاتی اثبات نشده | تصویب مالک/بررسی حقوقی، append-only با role محدود، allow-list و تست حذف secret/PII و purge |
 | Schema | EF model و قیود موجود؛ migration عملیاتی وجود ندارد | بازبینی FK/index/check/uniqueness و سازگاری mapping با PostgreSQL 18 |
 | TLS/topology | ADR-0012 | رد certificate نامعتبر، binding صریح، firewall و عدم اتصال مستقیم Desktop به DB |
 
