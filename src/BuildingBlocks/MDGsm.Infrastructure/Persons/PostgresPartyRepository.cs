@@ -243,9 +243,14 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
     }
 
     public Task<PartyDetails?> GetAsync(
-        string partyId, string actorId, bool includeSensitive, DbTransaction? transaction, CancellationToken cancellationToken)
+        string partyId, string actorId, PartyReadAuthorization authorization, DbTransaction? transaction, CancellationToken cancellationToken)
     {
         var actor = RequireActor(actorId);
+        ArgumentNullException.ThrowIfNull(authorization);
+        if (!string.Equals(authorization.ActorId, actor, StringComparison.Ordinal) ||
+            !string.Equals(authorization.PartyId, partyId, StringComparison.Ordinal))
+            throw new UnauthorizedAccessException("Sensitive-read authorization does not match the requested actor and party.");
+        var includeSensitive = authorization.IncludeSensitive;
         if (!PartyId.TryParse(partyId, out var id)) return Task.FromResult<PartyDetails?>(null);
 
         return RunAsync<PartyDetails?>(transaction, async (connection, tx) =>
@@ -333,25 +338,33 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
                 }
             }
 
-            await using (var auditCommand = new NpgsqlCommand(
-                "INSERT INTO persons_access_audit (audit_id, party_id, actor, action, sensitive_included) VALUES (@audit, @party, @actor, 'read', @sensitive);",
-                connection, tx))
-            {
-                auditCommand.Parameters.AddWithValue("audit", Guid.CreateVersion7());
-                auditCommand.Parameters.AddWithValue("party", id.Value);
-                auditCommand.Parameters.AddWithValue("actor", actor);
-                auditCommand.Parameters.AddWithValue("sensitive", includeSensitive);
-                await auditCommand.ExecuteNonQueryAsync(cancellationToken);
-            }
+            // The audit record uses its own connection/autocommit transaction. It must survive
+            // rollback of the caller-owned business transaction (ADR-0005).
+            await RecordAccessAuditAsync(id.Value, actor, includeSensitive, cancellationToken);
 
             long? visibleCredit = includeSensitive ? credit : null;
             return new PartyDetails(id.ToString(), type, display, roles,
                 includeSensitive || national is null ? national : PartyIdentifiers.MaskIdentifier(national),
                 includeSensitive ? economic : null,
-                responsible, contacts, address, visibleCredit, discount, payment,
+                includeSensitive ? responsible : (responsible is null ? null : "***"),
+                contacts, address, visibleCredit, discount, payment,
                 includeSensitive ? lastFour : null, source, includeSensitive ? note : null,
                 preferences, created, includeSensitive, workClassification);
         }, cancellationToken);
+    }
+
+    private async Task RecordAccessAuditAsync(
+        Guid partyId, string actor, bool sensitiveIncluded, CancellationToken cancellationToken)
+    {
+        await using var auditConnection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var auditCommand = new NpgsqlCommand(
+            "INSERT INTO persons_access_audit (audit_id, party_id, actor, action, sensitive_included) VALUES (@audit, @party, @actor, 'read', @sensitive);",
+            auditConnection);
+        auditCommand.Parameters.AddWithValue("audit", Guid.CreateVersion7());
+        auditCommand.Parameters.AddWithValue("party", partyId);
+        auditCommand.Parameters.AddWithValue("actor", actor);
+        auditCommand.Parameters.AddWithValue("sensitive", sensitiveIncluded);
+        await auditCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private async Task<T> RunAsync<T>(
