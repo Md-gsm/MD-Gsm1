@@ -60,9 +60,12 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
         var note = PartyRegistrationRules.RequireInternalNote(request.InternalNote);
         var financial = PartyFinancialProfile.Create(request.CreditLimitRial, request.DefaultDiscountPercent,
             request.DefaultPaymentMethod, request.BankCardLastFour);
-        var primaryMobile = PartyContactPoint.Mobile(request.PrimaryMobile, true,
-            request.CommunicationPreferences.RepairStatusSmsEnabled || request.CommunicationPreferences.ReadyForDeliverySmsEnabled);
-        var contacts = new List<PartyContactPoint> { primaryMobile };
+        var contacts = new List<PartyContactPoint>();
+        if (!string.IsNullOrWhiteSpace(request.PrimaryMobile))
+        {
+            contacts.Add(PartyContactPoint.Mobile(request.PrimaryMobile, true,
+                request.CommunicationPreferences.RepairStatusSmsEnabled || request.CommunicationPreferences.ReadyForDeliverySmsEnabled));
+        }
         if (!string.IsNullOrWhiteSpace(request.AlternateMobile)) contacts.Add(PartyContactPoint.Mobile(request.AlternateMobile));
         if (!string.IsNullOrWhiteSpace(request.Landline)) contacts.Add(PartyContactPoint.Landline(request.Landline));
         if (!string.IsNullOrWhiteSpace(request.Email)) contacts.Add(PartyContactPoint.Email(request.Email));
