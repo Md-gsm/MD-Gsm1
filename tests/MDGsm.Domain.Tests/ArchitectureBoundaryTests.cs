@@ -69,7 +69,7 @@ public sealed class ArchitectureBoundaryTests
         AssertReferences(
             root,
             "src/Modules/Finance/MDGsm.Finance.csproj",
-            "..\\Contracts\\MDGsm.Finance.Contracts.csproj",
+            "Contracts\\MDGsm.Finance.Contracts.csproj",
             "..\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj");
     }
 
