@@ -29,6 +29,8 @@ public sealed class PartyRegistrationValueTests
     [InlineData("00989121234567")]
     [InlineData("989121234567")]
     [InlineData("0912 123 4567")]
+    [InlineData("0912\t123 4567")]
+    [InlineData("0912\u00A0123 4567")]
     [InlineData("0912-123-4567")]
     [InlineData("۰۹۱۲۱۲۳۴۵۶۷")]
     public void Iranian_mobile_forms_normalize_to_the_same_e164_value(string value)
