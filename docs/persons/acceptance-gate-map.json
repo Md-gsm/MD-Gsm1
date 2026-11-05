@@ -5,9 +5,9 @@
     {
       "id": "AC-31",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsTemporaryDataRetentionTests.cs",
+      "automatedTest": "AC31_expiry_blocks_access_at_the_exact_utc_expiry_instant",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Expiry blocks access at the exact UTC expiry instant"
     },
     {
@@ -21,17 +21,17 @@
     {
       "id": "AC-33",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsTemporaryDataRetentionTests.cs",
+      "automatedTest": "AC33_renewal_never_extends_beyond_the_absolute_thirty_day_age",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "TTL cannot be extended beyond the 30-day absolute maximum"
     },
     {
       "id": "AC-34",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsTemporaryDataRetentionTests.cs",
+      "automatedTest": "AC34_only_one_authorized_renewal_with_reason_is_accepted",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Only one authorized renewal with reason is accepted"
     },
     {
@@ -155,5 +155,5 @@
       "expectedBehavior": "CI evidence contains commit, contract versions, schema fingerprint, gate/test counts, and no raw PII."
     }
   ],
-  "note": "UNMAPPED means no executable test currently exists. Only IMPLEMENTED entries are backed by a checked-in test method. G1 remains blocked while any required criterion is UNMAPPED."
+  "note": "IMPLEMENTED entries are backed by named checked-in test methods. UNMAPPED entries still lack executable evidence for the complete expected behavior. G1 remains blocked while any required criterion is UNMAPPED."
 }
