@@ -58,8 +58,6 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
             throw new ArgumentOutOfRangeException(nameof(request));
         ArgumentNullException.ThrowIfNull(request.CommunicationPreferences);
         var note = PartyRegistrationRules.RequireInternalNote(request.InternalNote);
-        var financial = PartyFinancialProfile.Create(request.CreditLimitRial, request.DefaultDiscountPercent,
-            request.DefaultPaymentMethod, request.BankCardLastFour);
         var contacts = new List<PartyContactPoint>();
         if (!string.IsNullOrWhiteSpace(request.PrimaryMobile))
         {
@@ -106,12 +104,11 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
                 INSERT INTO persons
                   (party_id, party_type, business_roles, given_name, family_name, legal_name,
                    national_id, legal_national_id, economic_code, responsible_person_name,
-                   acquaintance_source, internal_note, credit_limit_rial, default_discount_percent,
-                   default_payment_method, bank_card_last_four, repair_status_sms_enabled,
+                   acquaintance_source, internal_note, repair_status_sms_enabled,
                    ready_for_delivery_sms_enabled, promotions_sms_enabled, created_by, updated_by, work_classification)
                 VALUES
                   (@id, @type, @roles, @given, @family, @legal, @national, @legalNational, @economic, @responsible,
-                   @source, @note, @credit, @discount, @payment, @lastFour, @repairSms, @readySms, @promoSms, @actor, @actor, @workClass);
+                   @source, @note, @repairSms, @readySms, @promoSms, @actor, @actor, @workClass);
                 """, connection, transaction))
             {
                 command.Parameters.AddWithValue("id", partyId.Value);
@@ -123,10 +120,6 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
                 AddNullable(command, "responsible", responsible);
                 command.Parameters.AddWithValue("source", (short)request.AcquaintanceSource);
                 command.Parameters.AddWithValue("note", note);
-                command.Parameters.AddWithValue("credit", financial.CreditLimitRial);
-                command.Parameters.AddWithValue("discount", financial.DefaultDiscountPercent);
-                command.Parameters.AddWithValue("payment", (short)financial.DefaultPaymentMethod);
-                AddNullable(command, "lastFour", financial.BankCardLastFour);
                 command.Parameters.AddWithValue("repairSms", request.CommunicationPreferences.RepairStatusSmsEnabled);
                 command.Parameters.AddWithValue("readySms", request.CommunicationPreferences.ReadyForDeliverySmsEnabled);
                 command.Parameters.AddWithValue("promoSms", request.CommunicationPreferences.PromotionsSmsEnabled);
@@ -266,10 +259,6 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
             string? responsible;
             PartyAcquaintanceSource source;
             string note;
-            long credit;
-            decimal discount;
-            DefaultPaymentMethod payment;
-            string? lastFour;
             PartyCommunicationPreferences preferences;
             DateTimeOffset created;
             WorkClassification? workClassification;
@@ -277,8 +266,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
             await using (var command = new NpgsqlCommand("""
                 SELECT party_type, business_roles, given_name, family_name, legal_name, national_id,
                        legal_national_id, economic_code, responsible_person_name, acquaintance_source,
-                       internal_note, credit_limit_rial, default_discount_percent, default_payment_method,
-                       bank_card_last_four, repair_status_sms_enabled, ready_for_delivery_sms_enabled,
+                       internal_note, repair_status_sms_enabled, ready_for_delivery_sms_enabled,
                        promotions_sms_enabled, created_at_utc, work_classification
                 FROM persons WHERE party_id=@id AND is_active;
                 """, connection, tx))
@@ -296,13 +284,9 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
                 responsible = reader.IsDBNull(8) ? null : reader.GetString(8);
                 source = (PartyAcquaintanceSource)reader.GetInt16(9);
                 note = reader.GetString(10);
-                credit = reader.GetInt64(11);
-                discount = reader.GetDecimal(12);
-                payment = (DefaultPaymentMethod)reader.GetInt16(13);
-                lastFour = reader.IsDBNull(14) ? null : reader.GetString(14).Trim();
-                preferences = new PartyCommunicationPreferences(reader.GetBoolean(15), reader.GetBoolean(16), reader.GetBoolean(17));
-                created = reader.GetFieldValue<DateTimeOffset>(18);
-                workClassification = reader.IsDBNull(19) ? null : (WorkClassification)reader.GetInt16(19);
+                preferences = new PartyCommunicationPreferences(reader.GetBoolean(11), reader.GetBoolean(12), reader.GetBoolean(13));
+                created = reader.GetFieldValue<DateTimeOffset>(14);
+                workClassification = reader.IsDBNull(15) ? null : (WorkClassification)reader.GetInt16(15);
             }
 
             var contacts = new List<ContactPointDto>();
@@ -345,13 +329,11 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
             // rollback of the caller-owned business transaction (ADR-0005).
             await RecordAccessAuditAsync(id.Value, actor, includeSensitive, cancellationToken);
 
-            long? visibleCredit = includeSensitive ? credit : null;
             return new PartyDetails(id.ToString(), type, display, roles,
                 includeSensitive || national is null ? national : PartyIdentifiers.MaskIdentifier(national),
                 includeSensitive ? economic : null,
                 includeSensitive ? responsible : (responsible is null ? null : "***"),
-                contacts, address, visibleCredit, discount, payment,
-                includeSensitive ? lastFour : null, source, includeSensitive ? note : null,
+                contacts, address, source, includeSensitive ? note : null,
                 preferences, created, includeSensitive, workClassification);
         }, cancellationToken);
     }
