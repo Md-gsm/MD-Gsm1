@@ -73,7 +73,7 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
     }
 
     public async Task<byte[]?> ReadCiphertextAsync(
-        Guid workflowRecordId, DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+        Guid workflowRecordId, CancellationToken cancellationToken = default)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var command = new NpgsqlCommand("""
@@ -83,10 +83,9 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
                 ON payload.workflow_record_id = workflow.workflow_record_id
             WHERE workflow.workflow_record_id = @id
               AND workflow.lifecycle_status = 'open'
-              AND workflow.expires_at_utc > @now;
+              AND workflow.expires_at_utc > clock_timestamp();
             """, connection);
         command.Parameters.AddWithValue("id", workflowRecordId);
-        command.Parameters.AddWithValue("now", nowUtc.ToUniversalTime());
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return result is byte[] bytes ? bytes : null;
     }
