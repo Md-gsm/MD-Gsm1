@@ -23,7 +23,7 @@ public sealed class PostgresPartyAccountMergeParticipant : IPartyMergeParticipan
         var (source, target) = await ReadCountsAsync(connection, null, context, cancellationToken);
         var blockers = source > 0 && target > 0 ? 1L : 0L;
         var transferable = source > 0 && target == 0 ? source : 0L;
-        return new PartyMergeParticipantPreview(Module, transferable, 0, blockers);
+        return new PartyMergeParticipantPreview(Module, source, transferable, 0, blockers);
     }
 
     public async Task PrepareAsync(
