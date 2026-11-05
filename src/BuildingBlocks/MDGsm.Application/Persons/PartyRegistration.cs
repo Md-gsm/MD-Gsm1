@@ -28,7 +28,7 @@ public sealed record RegisterNaturalParty(
 
 public sealed record RegisterLegalParty(
     string LegalName, string? LegalNationalId, string? EconomicCode, string? ResponsiblePersonName,
-    PartyBusinessRoles Roles, string PrimaryMobile, string? AlternateMobile, string? Landline, string? Email,
+    PartyBusinessRoles Roles, string? PrimaryMobile, string? AlternateMobile, string? Landline, string? Email,
     string? Province, string? City, string? PostalCode, string? AddressLine,
     PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,
     PartyCommunicationPreferences CommunicationPreferences,
