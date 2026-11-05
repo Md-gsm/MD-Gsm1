@@ -22,6 +22,7 @@ public sealed class PersonsMergeContractTests
         var preview = await service.PreviewAsync(source, target, "ci-merge-actor");
 
         Assert.True(preview.CanMerge);
+        Assert.Equal(1, preview.ActiveReferences);
         Assert.Equal(1, preview.TransferableReferences);
         Assert.Equal(0, preview.HistoricalReferences);
         Assert.Equal(0, preview.BlockingConflicts);
@@ -239,7 +240,7 @@ public sealed class PersonsMergeContractTests
 
         public Task<PartyMergeParticipantPreview> PreviewAsync(
             PartyMergeContext context, DbConnection connection, CancellationToken cancellationToken) =>
-            Task.FromResult(new PartyMergeParticipantPreview(Module, 0, 0, 0));
+            Task.FromResult(new PartyMergeParticipantPreview(Module, 0, 0, 0, 0));
 
         public Task PrepareAsync(PartyMergeContext context, DbConnection connection, DbTransaction transaction,
             CancellationToken cancellationToken) => Task.CompletedTask;
