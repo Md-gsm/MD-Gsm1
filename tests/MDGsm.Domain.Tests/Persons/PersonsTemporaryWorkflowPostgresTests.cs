@@ -26,6 +26,24 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         Assert.Null(await store.ReadCiphertextAsync(id, now.AddDays(7)));
         Assert.Equal(1, await store.PurgeExpiredAsync(now.AddDays(7)));
         Assert.Null(await store.ReadCiphertextAsync(id, now.AddDays(6)));
+        Assert.Equal(0, await store.PurgeExpiredAsync(now.AddDays(8)));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AC35_closed_workflow_is_not_readable_and_is_purged_after_expiry()
+    {
+        await using var dataSource = OpenDataSource();
+        var store = new PostgresTemporaryWorkflowStore(dataSource);
+        var id = Guid.CreateVersion7();
+        var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        await store.CreateAsync(id, "Persons", "contact-capture", "ci-actor", Guid.CreateVersion7(),
+            now, Encrypt("private payload"u8), "test-key-v1");
+
+        Assert.True(await store.CloseAsync(id, now.AddDays(1)));
+        Assert.False(await store.CloseAsync(id, now.AddDays(1)));
+        Assert.Null(await store.ReadCiphertextAsync(id, now.AddDays(1)));
+        Assert.Equal(1, await store.PurgeExpiredAsync(now.AddDays(7)));
     }
 
     [Fact]
