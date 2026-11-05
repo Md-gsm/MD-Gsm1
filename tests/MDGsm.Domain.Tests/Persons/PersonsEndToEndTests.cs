@@ -46,7 +46,7 @@ public sealed class PersonsEndToEndTests
         var created = await scope.Repository.AddNaturalAsync(
             NewNatural("09121234567", nationalId, creditLimitRial: 5_000_000, lastFour: "4321"), Actor, Guid.CreateVersion7(), scope.Transaction, default);
 
-        var masked = await scope.QueryFor(allowSensitive: true).GetAsync(created.PartyId, Actor, scope.Transaction, default);
+        var masked = await scope.QueryFor(allowSensitive: false).GetAsync(created.PartyId, Actor, scope.Transaction, default);
         var full = await scope.QueryFor(allowSensitive: true).GetAsync(created.PartyId, Actor, scope.Transaction, default);
 
         Assert.NotNull(masked);
@@ -65,10 +65,79 @@ public sealed class PersonsEndToEndTests
         Assert.Equal((long?)5_000_000, full.CreditLimitRial);
         Assert.Equal("4321", full.BankCardLastFour);
         Assert.Equal(nationalId, full.NationalIdentifier);
-        Assert.Equal("نام مسئول", full.ResponsiblePersonName);
+        Assert.Null(full.ResponsiblePersonName); // Natural-person record has no legal representative.
 
         Assert.Equal(2L, await ScalarAsync(scope, "SELECT count(*) FROM persons_access_audit WHERE party_id = @id", Guid.Parse(created.PartyId)));
         Assert.Equal(1L, await ScalarAsync(scope, "SELECT count(*) FROM persons_access_audit WHERE party_id = @id AND sensitive_included", Guid.Parse(created.PartyId)));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Denied_sensitive_read_returns_only_masked_values()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var nationalId = NewNationalId();
+        var created = await scope.Repository.AddNaturalAsync(
+            NewNatural("09121234567", nationalId, creditLimitRial: 9_000_000, lastFour: "9876"),
+            Actor, Guid.CreateVersion7(), scope.Transaction, default);
+
+        var result = await scope.QueryFor(allowSensitive: false)
+            .GetAsync(created.PartyId, Actor, scope.Transaction, default);
+
+        Assert.NotNull(result);
+        Assert.False(result.SensitiveFieldsIncluded);
+        Assert.Null(result.CreditLimitRial);
+        Assert.Null(result.BankCardLastFour);
+        Assert.Null(result.InternalNote);
+        Assert.EndsWith(nationalId[^3..], result.NationalIdentifier);
+        Assert.Equal(0L, await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_access_audit WHERE party_id = @id AND sensitive_included", Guid.Parse(created.PartyId)));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Access_audit_survives_rollback_of_the_business_transaction()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var created = await scope.Repository.AddNaturalAsync(
+            NewNatural("09125555555", NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+
+        await scope.QueryFor(allowSensitive: false)
+            .GetAsync(created.PartyId, Actor, scope.Transaction, default);
+
+        await scope.Transaction.RollbackAsync();
+
+        await using var verify = new NpgsqlCommand(
+            "SELECT count(*) FROM persons_access_audit WHERE party_id = @id AND actor = @actor",
+            scope.Connection);
+        verify.Parameters.AddWithValue("id", Guid.Parse(created.PartyId));
+        verify.Parameters.AddWithValue("actor", Actor);
+        Assert.Equal(1L, (long)(await verify.ExecuteScalarAsync())!);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Database_rejects_cross_type_identity_fields()
+    {
+        await using var scope = await TestScope.OpenAsync();
+
+        await using var natural = new NpgsqlCommand("""
+            INSERT INTO persons (party_id, party_type, business_roles, given_name, family_name,
+                                 economic_code, created_by, updated_by)
+            VALUES (@id, 1, 1, 'علی', 'رضایی', '1234567890', 'ci', 'ci');
+            """, scope.Connection, scope.Transaction);
+        natural.Parameters.AddWithValue("id", Guid.CreateVersion7());
+        var naturalFailure = await Assert.ThrowsAsync<PostgresException>(() => natural.ExecuteNonQueryAsync());
+        Assert.Equal(PostgresErrorCodes.CheckViolation, naturalFailure.SqlState);
+
+        await using var legal = new NpgsqlCommand("""
+            INSERT INTO persons (party_id, party_type, business_roles, legal_name, national_id,
+                                 created_by, updated_by)
+            VALUES (@id, 2, 1, 'شرکت نمونه', '0123456789', 'ci', 'ci');
+            """, scope.Connection, scope.Transaction);
+        legal.Parameters.AddWithValue("id", Guid.CreateVersion7());
+        var legalFailure = await Assert.ThrowsAsync<PostgresException>(() => legal.ExecuteNonQueryAsync());
+        Assert.Equal(PostgresErrorCodes.CheckViolation, legalFailure.SqlState);
     }
 
     [Fact]
@@ -132,7 +201,7 @@ public sealed class PersonsEndToEndTests
     {
         await using var scope = await TestScope.OpenAsync();
         var created = await scope.Repository.AddNaturalAsync(NewNatural("09124444444", NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
-        await scope.Repository.GetAsync(created.PartyId, Actor, includeSensitive: false, scope.Transaction, default);
+        await scope.QueryFor(allowSensitive: false).GetAsync(created.PartyId, Actor, scope.Transaction, default);
 
         await using var update = new NpgsqlCommand("UPDATE persons_access_audit SET actor = 'tampered'", scope.Connection, scope.Transaction);
         await update.ExecuteNonQueryAsync();
