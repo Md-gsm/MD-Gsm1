@@ -1,5 +1,9 @@
 # Persons Contracts
 
+## Public party contract version 2.0
+
+The public Party contract no longer accepts or returns Finance-, Pricing-, or Treasury-owned fields. Primary mobile is optional; when supplied, it must be a valid normalized mobile. These wire-contract changes are reflected in `PartyContractVersion.Current`.
+
 Reserved for versioned public contracts owned by Persons. The shared identity identifier is PartyId (UUIDv7), for natural and legal persons.
 
 ## Party identity reference (1.1)
