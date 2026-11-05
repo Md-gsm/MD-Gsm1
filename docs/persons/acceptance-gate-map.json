@@ -22,7 +22,7 @@
       "id": "AC-33",
       "gate": "persons-temporary-data-retention",
       "testFile": "PersonsTemporaryDataRetentionTests.cs",
-      "automatedTest": "AC33_renewal_never_extends_beyond_the_absolute_thirty_day_age",
+      "automatedTest": "AC33_renewal_never_extends_beyond_absolute_thirty_day_age",
       "status": "IMPLEMENTED",
       "expectedBehavior": "TTL cannot be extended beyond the 30-day absolute maximum"
     },
@@ -30,7 +30,7 @@
       "id": "AC-34",
       "gate": "persons-temporary-data-retention",
       "testFile": "PersonsTemporaryDataRetentionTests.cs",
-      "automatedTest": "AC34_only_one_authorized_renewal_with_reason_is_accepted",
+      "automatedTest": "AC34_only_one_authorized_renewal_with_a_reason_is_accepted",
       "status": "IMPLEMENTED",
       "expectedBehavior": "Only one authorized renewal with reason is accepted"
     },
