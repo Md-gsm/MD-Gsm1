@@ -13,13 +13,15 @@
       "path": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs",
       "module": "Finance",
       "contract": "Persons.PartyReference",
-      "purpose": "Finance stores the stable PartyId reference for its unique party-account identity."
+      "purpose": "Finance stores the stable PartyId reference for its unique party-account identity.",
+      "contractVersion": "1.1"
     },
     {
       "path": "database/migrations/0004_finance_party_accounts.sql",
       "module": "Finance",
       "contract": "Persons.PartyReference",
-      "purpose": "Finance-owned party-account table stores PartyId as an immutable cross-module reference."
+      "purpose": "Finance-owned party-account table stores PartyId as an immutable cross-module reference.",
+      "contractVersion": "1.1"
     }
   ],
   "registryPolicy": {
