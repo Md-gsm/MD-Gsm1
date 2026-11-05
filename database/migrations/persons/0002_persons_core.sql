@@ -33,9 +33,12 @@ CREATE TABLE persons (
     CONSTRAINT ck_persons_card_last_four_format CHECK (bank_card_last_four IS NULL OR bank_card_last_four ~ '^[0-9]{4}$'),
     CONSTRAINT ck_persons_work_classification_scope CHECK (work_classification IS NULL OR (party_type = 1 AND (business_roles & 2) = 2)),
     CONSTRAINT ck_persons_party_identity CHECK (
-      (party_type = 1 AND given_name IS NOT NULL AND family_name IS NOT NULL AND legal_name IS NULL AND legal_national_id IS NULL AND economic_code IS NULL)
+      (party_type = 1 AND given_name IS NOT NULL AND btrim(given_name) <> ''
+                    AND family_name IS NOT NULL AND btrim(family_name) <> ''
+                    AND legal_name IS NULL AND legal_national_id IS NULL AND economic_code IS NULL)
       OR
-      (party_type = 2 AND legal_name IS NOT NULL AND given_name IS NULL AND family_name IS NULL)
+      (party_type = 2 AND legal_name IS NOT NULL AND btrim(legal_name) <> ''
+                    AND given_name IS NULL AND family_name IS NULL AND national_id IS NULL)
     )
 );
 CREATE UNIQUE INDEX ux_persons_natural_national_id ON persons(national_id)
@@ -94,10 +97,13 @@ CREATE TABLE persons_operations (
     created_at_utc timestamptz NOT NULL DEFAULT now()
 );
 
--- Append-only record of who read which party. Updates and deletes are silently discarded by rules.
+-- Durable security evidence: deliberately no FK to persons so a read performed inside
+-- a caller-owned transaction remains auditable even if that transaction later rolls back.
+-- party_id is an immutable identifier reference, not a cascading ownership relation.
+-- Updates and deletes are silently discarded by rules.
 CREATE TABLE persons_access_audit (
     audit_id uuid PRIMARY KEY,
-    party_id uuid NOT NULL REFERENCES persons(party_id) ON DELETE RESTRICT,
+    party_id uuid NOT NULL,
     actor varchar(128) NOT NULL,
     action varchar(32) NOT NULL,
     sensitive_included boolean NOT NULL,
