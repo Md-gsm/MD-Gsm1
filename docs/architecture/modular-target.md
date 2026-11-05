@@ -43,6 +43,8 @@ The six technical application projects are physically located under `src/Buildin
 
 The four Contracts projects currently expose version markers only. They are compiled boundary artifacts, not implementations of the Persons, IdentityAccess, RepairOperations, or Finance business modules.
 
+The Persons domain/application/infrastructure files introduced on the isolated PR 30/32 stack currently reside under `src/BuildingBlocks/MDGsm.*` as a transitional implementation location. They are not generic shared BuildingBlocks and this physical location does not satisfy the final module boundary. ADR-0014 defines the target ownership and requires a coordinated project/namespace/DI/migration-resource/test relocation to `src/Modules/Persons/{Domain,Application,Infrastructure}` before G1. Do not treat the source-tree move as complete merely because the Contracts project exists.
+
 ## Module ownership boundaries
 
 - **Persons:** PartyId, natural/legal party identity, contact methods, and technician work-role identity.
@@ -62,4 +64,4 @@ The four Contracts projects currently expose version markers only. They are comp
 
 ## Explicit non-claims
 
-No Persons/IdentityAccess business entities, use cases, persistence mappings, business module APIs, business database migrations, or G1 authorization are present. The current dashboard Persons panel is a synthetic UI preview only. The relocation closes the physical Host/BuildingBlocks topology task; it does not claim that the Persons business module is implemented or that G1 can start.
+Persons has a partial, isolated domain and PostgreSQL persistence implementation on the PR 30/32 stack, but it is not yet relocated into its final business-module projects and has no operational API or connected Desktop workflow. IdentityAccess business authorization is not wired to Persons. The current dashboard Persons panel is a synthetic UI preview only. The Host/BuildingBlocks relocation does not complete the Persons module boundary and does not authorize G1.
