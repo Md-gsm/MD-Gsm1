@@ -159,7 +159,8 @@ public sealed class FinancePartyAccountIntegrationTests
 
     private static async Task<NpgsqlConnection> OpenMarkedConnectionAsync()
     {
-        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__MDGsmDatabase");
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__MDGsmDatabase")
+            ?? throw new InvalidOperationException("Finance integration tests require the marked disposable PostgreSQL database supplied by CI.");
         Assert.False(string.IsNullOrWhiteSpace(connectionString),
             "Finance integration tests require the marked disposable PostgreSQL database supplied by CI.");
 
