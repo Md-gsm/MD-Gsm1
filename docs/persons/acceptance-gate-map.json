@@ -13,9 +13,9 @@
     {
       "id": "AC-32",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsTemporaryWorkflowPostgresTests.cs",
+      "automatedTest": "AC32_worker_drains_expired_payloads_across_multiple_database_batches_within_deadline",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Physical purge removes expired raw temporary PII within the deadline"
     },
     {
@@ -37,9 +37,9 @@
     {
       "id": "AC-35",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsTemporaryWorkflowPostgresTests.cs",
+      "automatedTest": "AC35_postgres_sweep_retries_after_failure_emits_safe_alert_and_is_idempotent",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Cleanup worker is idempotent and retries after transient failure"
     },
     {
