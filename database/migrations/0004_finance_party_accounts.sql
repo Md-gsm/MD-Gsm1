@@ -1,12 +1,12 @@
 -- Finance-owned Party subledger account identity. PartyId is a stable cross-module reference.
 -- No cross-module FK is created. The unique constraint is the concurrency guarantee.
 -- This table stores no balance or ledger entries; balances are derived from Finance postings.
--- Actor identity is supplied only by the authenticated server-side Finance actor context.
 CREATE TABLE finance_party_accounts (
     account_id uuid PRIMARY KEY,
     party_id uuid NOT NULL,
     created_at_utc timestamptz NOT NULL DEFAULT now(),
     created_by varchar(128) NOT NULL,
+    row_version bigint NOT NULL DEFAULT 1 CHECK (row_version >= 1),
     CONSTRAINT uq_finance_party_accounts_party UNIQUE (party_id),
     CONSTRAINT ck_finance_party_accounts_created_by CHECK (btrim(created_by) <> '')
 );
