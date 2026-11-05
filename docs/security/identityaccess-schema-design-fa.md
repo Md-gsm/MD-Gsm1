@@ -60,3 +60,49 @@ singleton settings_id SMALLINT PK CHECK=1؛ max_active_users INTEGER CHECK>=1 (�
 
 ## مرز Migration
 این صرفاً مدل منطقی است. فعلاً SQL در database/migrations اضافه نشود، DbSet ثبت نشود، DbMigrator اجرا نشود و به DB غیرآزمایشی متصل نشویم. بعد از ADR-0006 review و مجوز رسمی G1، migration نسخه‌دار و checksumدار باید در PostgreSQL 18 disposable، با تست تراکنش، rollback/failure و idempotence بررسی شود.
+
+ 
+## مدل تکمیلی Emergency Recovery — منطقی و غیر اجرایی
+
+این بخش صرفاً قرارداد منطقی است؛ نام‌ها و قیود باید در review مستقل بررسی شوند و هیچ Migration یا DbSet ایجاد نمی‌کند.
+
+### identity.recovery_challenges
+- challenge_id UUID PK؛ account_id UUID NOT NULL FK identity.accounts ON DELETE RESTRICT؛ operation_id UUID NOT NULL UNIQUE؛ created_at_utc TIMESTAMPTZ NOT NULL؛ expires_at_utc TIMESTAMPTZ NOT NULL؛ state TEXT NOT NULL با CHECK روی Created/EmailVerified/MobileVerified/ProofsComplete/Completed/Expired/Locked/Cancelled/FailedClosed؛ attempt_count INTEGER NOT NULL CHECK >=0؛ locked_at_utc NULL؛ completed_at_utc NULL؛ cancelled_at_utc NULL؛ correlation_id UUID NOT NULL.
+- CHECK(expires_at_utc > created_at_utc) و CHECK سازگاری state با completed/cancelled timestamp.
+- index(account_id,state,expires_at_utc) و index(expires_at_utc) برای cleanup کنترل‌شده.
+- یک Challenge فعال برای هر account در صورت تصویب سیاست تک‌Challenge فعال؛ partial unique index باید فقط روی stateهای فعال و با تعریف دقیق stateها ایجاد شود.
+- Challenge ID به‌تنهایی مجوز نیست؛ هیچ endpoint عمومی یا شبکه‌ای برای ایجاد/تکمیل آن تعریف نمی‌شود.
+
+### identity.recovery_channel_proofs
+- proof_id UUID PK؛ challenge_id UUID NOT NULL FK recovery_challenges؛ account_id UUID NOT NULL FK accounts؛ channel TEXT NOT NULL CHECK email/mobile؛ proof_digest BYTEA NOT NULL؛ digest_key_version SMALLINT NOT NULL؛ created_at_utc، expires_at_utc؛ verified_at_utc NULL؛ consumed_at_utc NULL؛ attempt_count INTEGER NOT NULL CHECK >=0؛ revoked_at_utc NULL.
+- UNIQUE(challenge_id,channel) برای جلوگیری از جایگزینی مبهم proof در یک Challenge؛ قید یکتا روی (challenge_id,proof_id) برای مرجع ترکیبی.
+- FK ترکیبی (challenge_id,account_id) به recovery_challenges(challenge_id,account_id) تضمین می‌کند proof به همان account متصل است.
+- raw OTP، مقصد کامل ایمیل/موبایل، provider payload و secret هرگز ذخیره نشوند. اگر برای ارسال مقصد لازم است، از contact reference محافظت‌شده و حداقل‌سازی PII استفاده شود؛ ذخیره snapshot خام مقصد نیازمند تصمیم حریم خصوصی مستقل است.
+- proof تأییدشده باید فقط یک بار مصرف شود؛ replay هیچ transition یا side effect جدیدی ندارد.
+
+### identity.recovery_operations
+- operation_id UUID PK؛ challenge_id UUID NOT NULL UNIQUE FK؛ account_id UUID NOT NULL FK؛ state TEXT CHECK Pending/Committed/Failed؛ created_at_utc؛ committed_at_utc NULL؛ result_code غیرحساس؛
+- UNIQUE(operation_id,account_id) و FK ترکیبی به Challenge/account؛ هیچ request body یا secret ذخیره نشود.
+- operation_id کلید idempotency است؛ retry با همان شناسه باید نتیجه durable را بخواند، نه عملیات دوم بسازد. نتیجه commit نامعلوم فقط از PostgreSQL reconcile می‌شود.
+
+### قیود مصرف و تراکنش
+1. ترتیب lock ثابت: account سپس challenge سپس recovery_code و proofها؛ همه مسیرهای تغییر باید همین ترتیب را رعایت کنند.
+2. recovery_code با `UPDATE ... WHERE used_at_utc IS NULL AND revoked_at_utc IS NULL RETURNING` یا معادل اتمیک مصرف شود؛ تعداد ردیف برگشتی باید دقیقاً یک باشد.
+3. unique constraint روی operation_id و ارتباط challenge/account مانع استفاده از نتیجه برای حساب دیگر می‌شود.
+4. در یک transaction واحد: اعتبارسنجی challenge/proofs/code، مصرف code، ثبت operation، افزایش credential_version، revoke همه sessionها، must_change_password، Cancel سایر Challengeهای باز، audit allow-list و Completed.
+5. هر constraint violation یا خطای DB کل transaction را rollback می‌کند. عملیات با commit نامعلوم نباید با operation_id جدید تکرار شود.
+6. proof و Challengeهای منقضی‌شده با job پاکسازی غیرحساس و طبق retention مصوب مدیریت می‌شوند؛ cleanup نباید state تکمیل‌شده یا audit را حذف کند.
+
+## مدل پیشنهادی Scope برای Authorization
+
+این بخش هیچ Permission یا نقش جدیدی seed نمی‌کند:
+- permission grant فقط کلید دقیق permission و role را مشخص می‌کند؛ scope به‌صورت جداگانه با نوع scope و شناسه محدوده ثبت می‌شود.
+- مدل پیشنهادی `identity.role_permission_scopes(role_id, permission_id, scope_kind, scope_id)` با PK مرکب (role_id,permission_id,scope_kind,scope_id) و FK به role_permissions؛ `scope_kind` محدود به self/assigned/branch/warehouse/all.
+- `all` فقط grant صریح همان permission است و wildcard نیست. scope_id برای self/assigned می‌تواند null کنترل‌شده باشد؛ برای branch/warehouse باید شناسه واقعی و FK به ماژول مالک داشته باشد، اما IdentityAccess نباید مالک داده یا جدول شعبه/انبار شود.
+- ترکیب چندنقشی فقط union grantهای صریح همان permission انجام می‌شود؛ نبود context یا خطای lookup در ماژول مالک Deny است.
+- رابطه تخصیص تکنسین و رکوردهای Persons/Repair/Inventory در ماژول مالک باقی می‌ماند. IdentityAccess فقط principal و grant را ارائه می‌کند؛ query نهایی باید در ماژول مالک scope را enforce کند.
+- این طرح تا تعیین data-owner contract و بررسی چرخه وابستگی، صرفاً پیشنهاد است؛ ایجاد FK بین schemaها بدون تأیید مالکیت ممنوع.
+
+## Bootstrap state constraints
+
+وضعیت Bootstrap باید state machine مستقل داشته باشد: Uninitialized -> Provisioning -> PasswordChangeRequired -> ProfileCompletionRequired -> Completed؛ حالت FailedClosed در خطا. فقط عملیات تغییر رمز اولیه و تکمیل پروفایل در حالت‌های میانی مجازند. هیچ business permission یا API route نباید از وضعیت bootstrap استنتاج Allow بگیرد. مقدار ثابت `admin/admin` در ADR-0013 نیازمند تصمیم تکمیلی مالک برای روش provisioning امن است؛ schema نباید default password یا credential ثابت تعریف کند.
