@@ -56,7 +56,7 @@ Recovery فقط برای حساب Super Admin و فقط از کنسول محلی
 
 مدل منطقی challenge شامل شناسه تصادفی، account_id، زمان ایجاد/انقضا، state، شمارنده تلاش و correlation غیرحساس است. OTP/nonce با CSPRNG تولید و فقط digest آن ذخیره شود. challenge باید به عملیات محلی و account bind شود؛ ID ارسالی کلاینت به‌تنهایی اثبات نیست.
 
-TTL دقیق challenge/OTP، قالب کد، تعداد تلاش، resend cooldown، rate limit، provider ایمیل/SMS، الگوریتم digest/pepper و روش مدیریت کلید هنوز تصمیم اجرایی ندارند و نیازمند تصویب و review امنیتی‌اند. هیچ مقدار حدسی در runtime قرار نگیرد.
+تصمیم‌های مالک درباره TTL/تلاش/ارسال در الحاقیه 2026-11-05 ثبت شده‌اند؛ بااین‌حال هیچ Recovery runtime در این مرحله مجاز نیست. SMS صراحتاً به فاز آینده موکول شده و provider آن اکنون در دامنه این PR نیست. SMTP واقعی و الگوریتم digest/pepper و مدیریت کلید تا طراحی/بازبینی/استقرار امن باز می‌مانند.
 
 ### 1.6 تراکنش نهایی
 
@@ -102,7 +102,7 @@ TTL دقیق challenge/OTP، قالب کد، تعداد تلاش، resend cooldo
 
 ### 1.9 تصمیم‌های باز
 
-Provider ایمیل/SMS، TTL، تعداد تلاش، resend cooldown، rate-limit، digest/pepper و key rotation، تعداد/تحویل امن codeهای آفلاین، تعریف کنسول محلی مورد اعتماد، فرایند دو نفره و incident response باید تعیین و review شوند. تا آن زمان هیچ مسیر recovery عملیاتی ساخته نشود.
+SMTP relay واقعی، digest/pepper و key rotation، تعداد/تحویل امن codeهای آفلاین، تعریف کنسول محلی مورد اعتماد، فرایند دو نفره و incident response باید تعیین و review شوند. SMS provider عمداً به فاز آینده موکول شده است. تا تکمیل شروط امنیتی هیچ مسیر recovery عملیاتی ساخته نشود.
 
 **خروجی مرحله ۱:** threat model و test acceptance مستند شد؛ runtime عمداً ساخته نشد.
 
@@ -248,7 +248,7 @@ Session cap به‌صورت transactionally serialized روی ردیف تنظی�
 ### 6.1 بازار و Provider
 - بازار هدف فعلی ایران است.
 - Email از mailbox اختصاصی روی دامنه محصول ارسال می‌شود؛ برنامه Mail Server مستقل اجرا نمی‌کند. ارسال از SMTP relay یا Transactional Email provider قابل تعویض استفاده می‌کند. نام vendor/SMTP host و DNS واقعی در مرحله استقرار تعیین می‌شود.
-- SMS vendor هنوز انتخاب نشده است. تا ارزیابی و آزمون واقعی API/OTP template/delivery/status/SLA/خط خدماتی/قوانین ارسال، Recovery عملیاتی نشود.
+- SMS در این مرحله خارج از دامنه است و provider آن بعداً انتخاب و آزمون می‌شود؛ نبود SMS مانع مستندسازی و اجرای تست‌های غیرمرتبط نیست، اما Recovery چندعاملی تا تصویب عامل جایگزین و تکمیل review امنیتی غیرفعال می‌ماند.
 - هیچ API key، SMTP password یا OTP template secret در Git، appsettings، installer، migration یا log قرار نگیرد.
 
 ### 6.2 OTP و محدودیت‌ها
