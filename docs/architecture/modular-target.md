@@ -41,7 +41,7 @@ src/
 
 The six technical application projects are physically located under `src/BuildingBlocks/*` and `src/Host/*`; their solution entries and project references use those paths. The four module Contracts assemblies are separate .NET projects under `src/Modules/*/Contracts`, included in `MDGsm.sln`, and referenced by the API composition project. The architecture gate checks the complete project inventory, dependency graph, Contracts isolation/version markers, and absence of the former flat `src/MDGsm.*` roots.
 
-The four Contracts projects currently expose version markers only. They are compiled boundary artifacts, not implementations of the Persons, IdentityAccess, RepairOperations, or Finance business modules.
+The four Contracts projects are compiled boundary artifacts. Finance has begun its first isolated runtime slice: a Finance-owned Party subledger account provisioner and PostgreSQL migration. The Finance runtime references only Finance.Contracts and the published Persons.Contracts; it does not expose an API or connect to the Host. Persons, IdentityAccess, and RepairOperations remain without complete business-module runtime implementations.
 
 The Persons domain/application/infrastructure files introduced on the isolated PR 30/32 stack currently reside under `src/BuildingBlocks/MDGsm.*` as a transitional implementation location. They are not generic shared BuildingBlocks and this physical location does not satisfy the final module boundary. ADR-0014 defines the target ownership and requires a coordinated project/namespace/DI/migration-resource/test relocation to `src/Modules/Persons/{Domain,Application,Infrastructure}` before G1. Do not treat the source-tree move as complete merely because the Contracts project exists.
 
@@ -64,4 +64,4 @@ The Persons domain/application/infrastructure files introduced on the isolated P
 
 ## Explicit non-claims
 
-Persons has a partial, isolated domain and PostgreSQL persistence implementation on the PR 30/32 stack, but it is not yet relocated into its final business-module projects and has no operational API or connected Desktop workflow. IdentityAccess business authorization is not wired to Persons. The current dashboard Persons panel is a synthetic UI preview only. The Host/BuildingBlocks relocation does not complete the Persons module boundary and does not authorize G1.
+Persons has a partial, isolated domain and PostgreSQL persistence implementation on the PR 30/32 stack, but it is not yet relocated into its final business-module projects and has no operational API or connected Desktop workflow. Finance has a limited internal runtime for idempotent Party-account provisioning, but no posting/ledger workflow or Host integration. IdentityAccess business authorization is not wired to Persons. The current dashboard Persons panel is a synthetic UI preview only. These slices do not authorize production deployment or set g1Authorized=true; remaining G1 prerequisites must still be met.

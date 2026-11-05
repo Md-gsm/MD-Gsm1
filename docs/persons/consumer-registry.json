@@ -1,5 +1,5 @@
 {
-  "registryVersion": "1.2",
+  "registryVersion": "1.3",
   "module": "Persons",
   "ownerPaths": [
     "src/Modules/Persons",
@@ -8,18 +8,59 @@
     "src/BuildingBlocks/MDGsm.Infrastructure/Persons",
     "database/migrations/persons"
   ],
-  "registeredConsumers": [],
+  "registeredConsumers": [
+    {
+      "path": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs",
+      "module": "Finance",
+      "contract": "Persons.PartyReference",
+      "purpose": "Finance stores the stable PartyId reference for its unique party-account identity.",
+      "contractVersion": "1.1",
+      "mergeProtocolVersion": "1.0",
+      "mergeStatus": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "path": "database/migrations/0004_finance_party_accounts.sql",
+      "module": "Finance",
+      "contract": "Persons.PartyReference",
+      "purpose": "Finance-owned party-account table stores PartyId as an immutable cross-module reference.",
+      "contractVersion": "1.1",
+      "mergeProtocolVersion": "1.0",
+      "mergeStatus": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "path": "src/Modules/Finance/Contracts/PartyAccountReference.cs",
+      "module": "Finance",
+      "contract": "Persons.PartyReference",
+      "contractVersion": "1.1",
+      "purpose": "Finance exposes the PartyId-to-account identity reference through its versioned contract.",
+      "mergeProtocolVersion": "1.0",
+      "mergeStatus": "BLOCKED_NOT_IMPLEMENTED"
+    }
+  ],
   "registryPolicy": {
     "anyNonOwnerPartyIdReferenceRequiresRegistration": true,
     "unknownConsumerCountMustBeZero": true,
     "registrationRequiredBeforeMerge": true,
     "registrationRequiredBeforeRelease": true,
-    "scannedIdentifiers": ["PartyId", "party_id"],
-    "legacyIdentifierForbidden": ["PersonId", "person_id"]
+    "scannedIdentifiers": [
+      "PartyId",
+      "party_id"
+    ],
+    "legacyIdentifierForbidden": [
+      "PersonId",
+      "person_id"
+    ]
   },
   "plannedNotYetImplemented": [
-    {"module":"RepairWorkflow","status":"PLANNED","condition":"Register only when implemented and stores or transports PartyId."},
-    {"module":"Finance","status":"PLANNED","condition":"Register only when a reviewed Finance contract stores or transports PartyId."},
-    {"module":"PurchasingSales","status":"PLANNED","condition":"Register only when implemented and stores or transports PartyId."}
+    {
+      "module": "RepairWorkflow",
+      "status": "PLANNED",
+      "condition": "Register only when implemented and stores or transports PartyId."
+    },
+    {
+      "module": "PurchasingSales",
+      "status": "PLANNED",
+      "condition": "Register only when implemented and stores or transports PartyId."
+    }
   ]
 }

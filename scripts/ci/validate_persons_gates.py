@@ -269,7 +269,7 @@ def run_architecture(root: Path) -> None:
     expected_projects = {
         "BuildingBlocks/MDGsm.Domain/MDGsm.Domain.csproj": set(),
         "BuildingBlocks/MDGsm.Application/MDGsm.Application.csproj": {"MDGsm.Domain"},
-        "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {"MDGsm.Application"},
+        "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {"MDGsm.Application", "MDGsm.Persons.Contracts"},
         "BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj": set(),
         "Host/Api/MDGsm.Api.csproj": {
             "MDGsm.Application", "MDGsm.Infrastructure",
@@ -281,6 +281,11 @@ def run_architecture(root: Path) -> None:
     modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance")
     for module in modules:
         expected_projects[f"Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj"] = set()
+    # Finance runtime is the first authorized business-module implementation slice.
+    # It may depend only on its own Contracts and the published Persons Contracts.
+    expected_projects["Modules/Finance/MDGsm.Finance.csproj"] = {
+        "MDGsm.Finance.Contracts", "MDGsm.Persons.Contracts"
+    }
 
     project_root = root / "src"
     projects = {
@@ -341,7 +346,8 @@ def run_architecture(root: Path) -> None:
         solution_path = f"src\\Modules\\{module}\\Contracts\\MDGsm.{module}.Contracts.csproj"
         if not project.exists() or solution_path not in solution:
             raise GateFailure(f"{module} Contracts project is missing from MDGsm.sln.")
-        if not marker.exists() or 'Current = "1.0"' not in marker.read_text(encoding="utf-8"):
+        expected_version = "1.1" if module == "Finance" else "1.0"
+        if not marker.exists() or f'Current = "{expected_version}"' not in marker.read_text(encoding="utf-8"):
             raise GateFailure(f"{module} Contracts version marker is missing or invalid.")
 
     old_roots = (
