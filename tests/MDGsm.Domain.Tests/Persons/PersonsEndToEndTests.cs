@@ -31,7 +31,7 @@ public sealed class PersonsEndToEndTests
         Assert.True(PartyId.TryParse(first.PartyId, out _));
         Assert.Equal(1L, await ScalarAsync(scope, "SELECT count(*) FROM persons_operations WHERE operation_id = @id", operationId));
 
-        var details = await scope.QueryFor(allowSensitive: true).GetAsync(first.PartyId, Actor, scope.Transaction, default);
+        var details = await scope.QueryFor(allowSensitive: true).GetAsync(first.PartyId, scope.Transaction, default);
         Assert.NotNull(details);
         Assert.Equal(PersianTestData.AliRezaeiCanonical, details.DisplayName);   // Arabic yeh typed on input, Persian yeh stored
         Assert.Contains(details.Contacts, c => c.Kind == "Mobile" && c.Value == "+989121234567" && c.IsPrimary);
@@ -46,8 +46,8 @@ public sealed class PersonsEndToEndTests
         var created = await scope.Repository.AddNaturalAsync(
             NewNatural("09121234567", nationalId, creditLimitRial: 5_000_000, lastFour: "4321"), Actor, Guid.CreateVersion7(), scope.Transaction, default);
 
-        var masked = await scope.QueryFor(allowSensitive: false).GetAsync(created.PartyId, Actor, scope.Transaction, default);
-        var full = await scope.QueryFor(allowSensitive: true).GetAsync(created.PartyId, Actor, scope.Transaction, default);
+        var masked = await scope.QueryFor(allowSensitive: false).GetAsync(created.PartyId, scope.Transaction, default);
+        var full = await scope.QueryFor(allowSensitive: true).GetAsync(created.PartyId, scope.Transaction, default);
 
         Assert.NotNull(masked);
         Assert.False(masked.SensitiveFieldsIncluded);
@@ -82,7 +82,7 @@ public sealed class PersonsEndToEndTests
             Actor, Guid.CreateVersion7(), scope.Transaction, default);
 
         var result = await scope.QueryFor(allowSensitive: false)
-            .GetAsync(created.PartyId, Actor, scope.Transaction, default);
+            .GetAsync(created.PartyId, scope.Transaction, default);
 
         Assert.NotNull(result);
         Assert.False(result.SensitiveFieldsIncluded);
@@ -103,7 +103,7 @@ public sealed class PersonsEndToEndTests
             NewNatural("09125555555", NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
 
         await scope.QueryFor(allowSensitive: false)
-            .GetAsync(created.PartyId, Actor, scope.Transaction, default);
+            .GetAsync(created.PartyId, scope.Transaction, default);
 
         await scope.Transaction.RollbackAsync();
 
@@ -201,7 +201,7 @@ public sealed class PersonsEndToEndTests
     {
         await using var scope = await TestScope.OpenAsync();
         var created = await scope.Repository.AddNaturalAsync(NewNatural("09124444444", NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
-        await scope.QueryFor(allowSensitive: false).GetAsync(created.PartyId, Actor, scope.Transaction, default);
+        await scope.QueryFor(allowSensitive: false).GetAsync(created.PartyId, scope.Transaction, default);
 
         await using var update = new NpgsqlCommand("UPDATE persons_access_audit SET actor = 'tampered'", scope.Connection, scope.Transaction);
         await update.ExecuteNonQueryAsync();
@@ -224,6 +224,11 @@ public sealed class PersonsEndToEndTests
         await using var command = new NpgsqlCommand(sql, scope.Connection, scope.Transaction);
         command.Parameters.AddWithValue("id", id);
         return (long)(await command.ExecuteScalarAsync())!;
+    }
+
+    private sealed class FixedPartyActorContext : IPartyActorContext
+    {
+        public string ActorId => Actor;
     }
 
     private sealed class FixedSensitiveReadAuthorizer(bool allowSensitive) : IPartySensitiveReadAuthorizer
