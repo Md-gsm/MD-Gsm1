@@ -20,13 +20,16 @@ public sealed class PostgresPartyAccountRepository : IPartyAccountRepository
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(transaction);
-        if (transaction is not NpgsqlTransaction postgresTransaction ||
-            postgresTransaction.Connection is not { State: ConnectionState.Open } connection)
-        {
+        if (transaction is not NpgsqlTransaction postgresTransaction)
             throw new ArgumentException(
                 "Finance account provisioning requires an active Npgsql transaction.",
                 nameof(transaction));
-        }
+
+        var connection = postgresTransaction.Connection;
+        if (connection is null || connection.State != ConnectionState.Open)
+            throw new ArgumentException(
+                "Finance account provisioning requires an active Npgsql connection.",
+                nameof(transaction));
 
         await using var command = new NpgsqlCommand(
             """
