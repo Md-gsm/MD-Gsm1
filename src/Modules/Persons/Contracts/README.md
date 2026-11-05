@@ -1,8 +1,9 @@
 # Persons Contracts
 
-Reserved for versioned public contracts owned by Persons. The shared identity identifier is PartyId (UUIDv7), for natural and legal persons. No runtime contract is published yet; this folder is an architecture boundary marker only.
-
+Reserved for versioned public contracts owned by Persons. The shared identity identifier is PartyId (UUIDv7), for natural and legal persons.
 
 ## Party identity reference (1.1)
 
-`PartyReference` is the minimal cross-module reference for an existing Party. It contains only the stable PartyId and rejects an empty identifier. Consumers must obtain it from an authorized Persons workflow; it is not a substitute for creating or validating a Party.
+`PartyReference` carries the stable PartyId. Its constructor is not proof that a Party exists or is active. Consumers must call the Persons-owned `IPartyReferenceValidator` inside the same caller-owned PostgreSQL transaction before creating dependent records.
+
+The validator locks an active Party row with `FOR SHARE` until the transaction ends. Unknown and inactive Parties are rejected. This prevents a Party from being deactivated while a dependent Finance account is being provisioned. No cross-module foreign key or direct Finance ownership of Persons data is introduced.
