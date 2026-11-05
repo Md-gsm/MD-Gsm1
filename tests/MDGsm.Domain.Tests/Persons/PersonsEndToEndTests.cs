@@ -73,6 +73,26 @@ public sealed class PersonsEndToEndTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task Legal_representative_name_is_sensitive_and_masked_without_permission()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var created = await scope.Repository.AddLegalAsync(NewLegal(), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+
+        var masked = await scope.QueryFor(allowSensitive: false)
+            .GetAsync(created.PartyId, scope.Transaction, default);
+        var full = await scope.QueryFor(allowSensitive: true)
+            .GetAsync(created.PartyId, scope.Transaction, default);
+
+        Assert.NotNull(masked);
+        Assert.Equal("***", masked.ResponsiblePersonName);
+        Assert.False(masked.SensitiveFieldsIncluded);
+        Assert.NotNull(full);
+        Assert.Equal("نام مسئول شرکت", full.ResponsiblePersonName);
+        Assert.True(full.SensitiveFieldsIncluded);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task Denied_sensitive_read_returns_only_masked_values()
     {
         await using var scope = await TestScope.OpenAsync();
@@ -215,6 +235,13 @@ public sealed class PersonsEndToEndTests
 
         Assert.Equal(1L, await ScalarAsync(scope, "SELECT count(*) FROM persons_access_audit WHERE party_id = @id AND actor = 'ci-test-user'", Guid.Parse(created.PartyId)));
     }
+
+    private static RegisterLegalParty NewLegal() =>
+        new("شرکت آزمایشی", "12345678901", "1234567890", "نام مسئول شرکت",
+            PartyBusinessRoles.Customer, "09126666666", null, null, null,
+            "تهران", "تهران", "1234567890", "خیابان آزمایشی",
+            0, 0m, DefaultPaymentMethod.Cash, null, PartyAcquaintanceSource.Unknown,
+            "یادداشت داخلی", PartyCommunicationPreferences.Default);
 
     private static string NewNationalId() => Random.Shared.NextInt64(1_000_000_000L, 9_999_999_999L).ToString();
 
