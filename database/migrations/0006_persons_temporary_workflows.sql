@@ -58,7 +58,7 @@ CREATE INDEX ix_persons_temp_owner_status
 
 COMMENT ON TABLE persons_temporary_workflows IS
     'Temporary workflow metadata and ciphertext only. Never store plaintext PII, searchable PII, or derived PII here.';
-COMMENT ON COLUMN persons_temporary_workflows.encrypted_payload IS
+COMMENT ON COLUMN persons_temporary_workflow_payloads.encrypted_payload IS
     'Authenticated ciphertext only; encryption/decryption and key management belong to the application boundary.';
 
 COMMENT ON TABLE persons_temporary_workflow_payloads IS
