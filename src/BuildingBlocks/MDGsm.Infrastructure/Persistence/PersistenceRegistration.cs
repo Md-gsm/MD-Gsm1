@@ -27,6 +27,7 @@ public static class PersistenceRegistration
 
         services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
         services.AddScoped<IPartyRepository, PostgresPartyRepository>();
+        services.AddSingleton<PostgresTemporaryWorkflowStore>();
         return services;
     }
 }
