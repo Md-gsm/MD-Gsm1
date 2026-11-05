@@ -157,3 +157,87 @@ Policy evaluator (قرارداد): ورودی principal/session معتبر، per
 - مالک تصمیم رسمی G1 را ثبت کند.
 
 تا آن زمان `g1Authorized=false`؛ migration/runtime فعال نیست؛ recovery/login/auth middleware به production host وصل نمی‌شود؛ PRهای قبلی و main تغییر نمی‌کنند. این سند تأیید امنیتی یا بستن G1 نیست.
+
+ 
+## 5. تکمیل الزامات بازبینی سخت‌گیرانه (Revision 2)
+
+این بخش ابهام‌های بازبینی را به قرارداد قابل ارزیابی تبدیل می‌کند؛ هیچ مقدار پیشنهادی را به تصمیم مالک یا مقدار runtime تبدیل نمی‌کند.
+
+### 5.1 مدل Challenge و اثبات کانال‌ها
+
+مدل منطقی و قیود پیشنهادی در `identityaccess-schema-design-fa.md` تعریف می‌شود. هر Challenge به یک account فعال و یک درخواست محلی مشخص bind است. شناسه Challenge تصادفی است و به‌تنهایی capability یا مدرک اثبات نیست. هر proof دارای `challenge_id`، `account_id`، `channel`، digest، زمان ایجاد/انقضا، زمان تأیید و شمارنده تلاش مستقل است. قید یکتا برای هر (challenge, channel) و هر nonce اعمال می‌شود؛ تأیید یک کانال نمی‌تواند برای Challenge دیگر مصرف شود.
+
+State transitionها باید با compare-and-swap یا row lock و شرط state قبلی انجام شوند. transition تکراری idempotent است و state نهایی را تغییر نمی‌دهد. Challenge فعال هم‌زمان برای یک حساب طبق سیاست تک‌Challenge فعال پیشنهاد می‌شود؛ صدور Challenge جدید باید Challengeهای قبلی را اتمیک Cancel کند. این سیاست تا تصویب مالک، تصمیم اجرایی محسوب نمی‌شود.
+
+### 5.2 استقلال عوامل و ارزیابی کانال
+
+سه عامل در سه دسته‌اند: کنترل ایمیل ثبت‌شده، کنترل شماره موبایل ثبت‌شده، و possession کد آفلاین. پیش از پیاده‌سازی، threat review باید استقلال عملی دو کانال دیجیتال را ارزیابی کند؛ ایمیل و موبایل روی یک دستگاه یا با یک روش بازیابی مشترک، استقلال قوی ایجاد نمی‌کنند. اگر وابستگی مشترک شناخته شود، آن دو کانال نباید به‌عنوان دو عامل مستقل شمرده شوند و Recovery باید متوقف بماند تا روش جایگزین مورد تصویب قرار گیرد.
+
+provider باید قابلیت جلوگیری از افشای وجود حساب، TLS معتبر، عدم ثبت OTP در لاگ، محدودیت ارسال، گزارش delivery غیرحساس و مدیریت امن credential داشته باشد. SMS در برابر SIM-swap مصون فرض نمی‌شود. هیچ provider یا کانالی در این سند انتخاب نشده است.
+
+### 5.3 تراکنش، concurrency و idempotency
+
+درخواست نهایی باید دارای operation_id تصادفی و یکتا باشد. در تراکنش نهایی:
+- account، Challenge و recovery code با ترتیب قفل ثابت و یکسان lock شوند تا deadlock قابل پیش‌بینی باشد؛
+- state و expiry با زمان DB بررسی شوند، نه ساعت کلاینت؛
+- unique constraint روی code مصرف‌شده و operation_id از دوبار اجرا جلوگیری کند؛
+- همه Challengeهای باز همان حساب Cancel شوند؛
+- code مصرف‌شده، credential_version، revoke نشست‌ها، must_change_password، audit و نتیجه operation در یک commit واحد ثبت شوند؛
+- retry با همان operation_id نتیجه ذخیره‌شده را برگرداند و mutation دوم نسازد؛ operation_id جدید پس از نتیجه نامعلوم، بدون reconcile مجاز نیست.
+
+اگر اتصال هنگام commit قطع شود، پاسخ «نامشخص/در حال بررسی» است، نه موفق یا ناموفق قطعی. بازیابی نتیجه فقط با خواندن operation_id از PostgreSQL انجام می‌شود. اگر DB در دسترس نیست، هیچ retry با operation_id جدید و هیچ تغییر اعتبارنامه انجام نمی‌شود.
+
+### 5.4 قرارداد 401/403/404 و Scope
+
+- 401 فقط برای نبود/نامعتبر بودن هویت یا نشست، expiry/revoke، account disabled یا credential_version ناسازگار.
+- 403 برای principal معتبر که permission لازم را ندارد.
+- برای شناسه رکوردی که وجود یا عدم وجود آن نباید افشا شود، پاسخ بیرونی یکسان 404 برای «وجود ندارد» و «خارج از scope»؛ این رفتار باید در همه endpointهای هم‌خانواده ثابت باشد.
+- 404 عدم وجود مجوز عمومی را پنهان نمی‌کند؛ مجوز عملیات عمومی همچنان 403 است.
+- reason code دقیق فقط در audit امن داخلی ثبت می‌شود و نباید جزئیات رکورد/مالک را به caller افشا کند.
+
+### 5.5 مدل Scope و ترکیب چندنقشی
+
+Scope یک فیلتر مستقل از permission است. ترتیب ارزیابی: هویت/نشست، permission دقیق، context معتبر منبع، scope، سپس قواعد وضعیت/مالکیت دامنه. هیچ مرحله‌ای با مرحله بعدی جایگزین نمی‌شود.
+
+Scopeهای قابل مدل‌سازی (بدون اعطای خودکار):
+- `self`: داده متعلق به principal؛
+- `assigned`: رکورد دارای تخصیص فعال به principal از منبع authoritative؛
+- `branch`: شعبه‌های صریحاً تخصیص‌یافته؛
+- `warehouse`: انبارهای صریحاً تخصیص‌یافته؛
+- `all`: فقط با grant صریح و تأییدشده برای همان permission؛ wildcard یا پیش‌فرض نیست.
+
+برای چند نقش، union فقط روی grantهای صریح همان permission و همان نوع scope انجام می‌شود. Scope وسیع‌تر از نقش دیگر نباید از یک permission متفاوت به ارث برسد. نبود یا ابهام context مساوی Deny است. محدودیت دوره مالی، وضعیت سند و مالکیت aggregate، policy دامنه‌ای جداگانه و اجباری‌اند.
+
+### 5.6 Bootstrap و تعارض credential اولیه
+
+ADR-0013 عبارت `admin/admin` را برای setup اولیه ثبت کرده و هم‌زمان credential ثابت در source/config/installer/migration/log/telemetry را ممنوع کرده است. این دو عبارت بدون پروتکل provisioning امن، تعارض اجرایی دارند. این سند آن را خودسرانه حل یا رمز ثابت را تأیید نمی‌کند.
+
+پیش از runtime باید مالک تصمیم بگیرد credential اولیه چگونه به‌صورت یکتا و خارج از source توزیع/تحویل می‌شود (برای مثال secret یک‌بارمصرف تولیدشده در setup محلی با نمایش فقط یک‌باره و الزام تغییر فوری). تا ثبت تصمیم و threat review، هیچ مقدار ثابت، default password قابل حدس یا credential مشترک نباید در محصول ساخته شود. حالت Bootstrap فقط اجازه تغییر credential و تکمیل پروفایل را دارد؛ تمام routeها و عملیات دیگر، از جمله endpointهای مدیریتی و گزارش‌ها، باید Deny شوند. شبکه تا ثبت commit نهایی bootstrap غیرفعال می‌ماند.
+
+### 5.7 Session، Lockout و concurrency
+
+زمان‌ها فقط از ساعت PostgreSQL محاسبه می‌شوند. افزایش شمارنده شکست و تعیین locked_until باید اتمیک باشد؛ درخواست‌های هم‌زمان نباید پنجره یا تعداد تلاش را دور بزنند. rate limit مبدأ مکمل lockout حساب است و نباید جایگزین آن شود. برای جلوگیری از DoS ناشی از قفل‌کردن حساب قربانی، محدودیت مبدأ، پاسخ عمومی، و سیاست reset شمارنده باید مستقل و تست شوند.
+
+Session cap به‌صورت transactionally serialized روی ردیف تنظیمات singleton یا advisory lock ثابت enforce می‌شود؛ درخواست‌های هم‌زمان برای آخرین slot فقط یک winner دارند. session فعال یعنی revoked_at IS NULL و lease_expires_at > DB now و credential_version_at_issue = account.credential_version و account enabled. heartbeat پس از revoke یا credential version mismatch هرگز lease را تمدید نمی‌کند. TTL مطلق نشست، رفتار قطع طولانی شبکه و سیاست چندکلاینت باید قبل از runtime تصویب شود.
+
+### 5.8 TLS، میزبان محلی و خطاهای Provider
+
+«Local-only» باید با کنترل سیستم‌عامل و bind صریح loopback تعریف شود؛ headerهای forwarded یا آدرس اعلام‌شده از client مبنای اعتماد نیستند. bind wildcard، IPv6/IPv4 عمومی، HTTP غیر-loopback و fallback به TLS نامعتبر ممنوع است. certificate validation خاموش نمی‌شود و خطای trust/hostname/expiry fail-closed است. اگر TLS برای loopback محلی متفاوت است، روش آن باید در ADR topology ثبت شود؛ loopback بودن به‌تنهایی مجوز نادیده‌گرفتن اعتبارسنجی TLS نیست.
+
+در خطای provider، timeout، پاسخ مبهم یا delivery نامعلوم، proof تأییدشده محسوب نمی‌شود. OTP فقط پس از درخواست معتبر ایجاد و digest آن ذخیره می‌شود؛ پاسخ provider شامل secret یا متن کد در log ممنوع است. کلید pepper در secret store خارج DB نگهداری، نسخه‌گذاری و rotation آن با امکان اعتبارسنجی محدود digestهای نسخه قدیم طراحی می‌شود؛ الگوریتم و چرخه عمر تا review تصویب نشده‌اند.
+
+### 5.9 جدول پیگیری یافته‌ها
+
+| Finding | اصلاح مستندشده | وضعیت باقی‌مانده |
+|---|---|---|
+| IA-REV-01 Challenge schema | مدل و قیود در Schema Design تکمیل شد | Migration فقط پس از G1 |
+| IA-REV-02 استقلال عوامل | threat criteria و شرط توقف افزوده شد | اثبات provider/کانال و review مستقل |
+| IA-REV-03 replay/race/unknown commit | operation_id، locking، idempotency و reconcile افزوده شد | تست runtime پس از G1 |
+| IA-REV-04 API scope | مدل scope و قرارداد 401/403/404 افزوده شد | تصویب ماتریس و تست endpoint |
+| IA-REV-05 Bootstrap | تعارض admin/admin ثبت و عملیات محدود تعریف شد | تصمیم مالک درباره provisioning |
+| IA-REV-06 Session | قواعد concurrency و lease افزوده شد | تصمیم TTL مطلق/چندکلاینت |
+| IA-REV-07 Lockout | atomic counter و ضد DoS افزوده شد | پارامترهای rate limit و تست runtime |
+| IA-REV-08 Provider/Audit | قواعد secret, pepper, failure و audit تکمیل شد | انتخاب provider/retention/کلید |
+| IA-REV-09 TLS | اعتبارسنجی certificate و bind محلی صریح شد | ثبت جزئیات topology در ADR |
+
+**وضعیت:** این Revision نقص‌های مستندسازی را می‌بندد، نه گیت‌های تصمیم/پیاده‌سازی را. G1 همچنان بسته و `g1Authorized=false` است.
