@@ -28,3 +28,15 @@ MD-Gsm1 چندکاربره و چندکلاینت Windows با API مرکزی و 
 
 ## عدم اعطای مجوز
 این ADR گیت ADR-0006 را لغو نمی‌کند. اجرای runtime، SQL migration، credential تولید، network listener، فعال‌سازی Persons، تغییر production DB یا بستن G1 را مجاز نمی‌کند. `g1Authorized=false` تا بازبینی مستقل امنیت/معماری و مجوز رسمی باقی است.
+## الحاقیه تصمیم‌های مالک — 2026-11-05
+
+این الحاقیه بندهای Session و Recovery قبلی را در موارد تعارض به‌روزرسانی می‌کند:
+1. بازار هدف فعلی ایران است. ایمیل از mailbox اختصاصی روی دامنه محصول ارسال می‌شود؛ Mail Server مستقل داخل برنامه ساخته نمی‌شود و SMTP relay/Transactional Email قابل تعویض خواهد بود. vendor/SMTP host و DNS در زمان استقرار انتخاب می‌شود.
+2. SMS provider هنوز انتخاب نشده؛ انتخاب و آزمون vendor مانع بازمانده فعال‌سازی Recovery است.
+3. Email OTP TTL=10 دقیقه؛ SMS OTP TTL=5 دقیقه.
+4. Recovery: حداکثر 5 تلاش ناموفق در هر challenge؛ سپس قفل 24 ساعته. resend حداقل هر 1 ساعت؛ سقف 1 ارسال در rolling hour و 5 ارسال در rolling 24h؛ عبور از سقف، قفل 24 ساعته ارسال/Recovery. این مقادیر lockout ورود عادی (5/15m و 15m) را تغییر نمی‌دهند.
+5. Session: heartbeat=30s، lease=180s، absolute TTL=12h، حداکثر 2 نشست هم‌زمان هر حساب، حداکثر 5 حساب فعال متمایز کل سیستم. سقف کل با permission اختصاصی super_admin قابل تغییر و audit است.
+6. تغییر رمز و غیرفعال‌سازی حساب موجب revoke فوری تمام نشست‌های حساب می‌شود؛ تغییر رمز credential_version را نیز افزایش می‌دهد. revoke باید در همان تراکنش تغییر وضعیت ثبت شود و API درخواست بعدی را با مراجعه به PostgreSQL رد کند.
+7. absolute TTL از زمان ایجاد محاسبه می‌شود و با heartbeat تمدید نمی‌شود. کنترل concurrency سقف‌ها transactionally serialized است.
+
+این تصمیم‌ها مجوز runtime/migration نیستند؛ قید G1 و بازبینی مستقل همچنان برقرار است.
