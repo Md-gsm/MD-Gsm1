@@ -9,6 +9,7 @@ public sealed record PartyMergePreview(
     Guid SourcePartyId,
     Guid TargetPartyId,
     IReadOnlyList<PartyMergeParticipantPreview> Participants,
+    long ActiveReferences,
     long TransferableReferences,
     long HistoricalReferences,
     long BlockingConflicts)
@@ -75,6 +76,7 @@ public sealed class PostgresPartyMergeService
 
         await transaction.CommitAsync(cancellationToken);
         return new PartyMergePreview(sourcePartyId, targetPartyId, previews,
+            previews.Sum(x => x.ActiveReferences),
             previews.Sum(x => x.TransferableReferences),
             previews.Sum(x => x.HistoricalReferences),
             previews.Sum(x => x.BlockingConflicts));
