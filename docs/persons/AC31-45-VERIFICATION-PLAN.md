@@ -1,4 +1,6 @@
-# AC-31..AC-45 verification plan
+# AC-31..AC-49 verification plan
+
+> نام فایل فعلاً برای سازگاری با ارجاع‌های قبلی حفظ شده است؛ دامنه این سند AC-31 تا AC-49 را پوشش می‌دهد.
 
 The G0 traceability plan assigns every requirement to its gate and future executable scenario. These entries are plans, not passing tests or implemented behavior.
 
@@ -19,5 +21,16 @@ The G0 traceability plan assigns every requirement to its gate and future execut
 | AC-43 | MRG-43-BLOCKING-CONFLICT-STOP | Blocking conflicts prevent execution |
 | AC-44 | MRG-44-ATOMIC-CONCURRENT-IDEMPOTENT | Shared transaction, concurrency and idempotency |
 | AC-45 | MRG-45-HISTORICAL-SNAPSHOT-PRESERVATION | Historical snapshots remain unchanged |
+| AC-46 | CI-46-REQUIRED-JOBS-UNCONDITIONAL | Every required gate job is present, always scheduled, and cannot be bypassed with path filters |
+| AC-47 | CI-47-FAIL-CLOSED-EVIDENCE | An implemented gate with missing/invalid evidence fails closed |
+| AC-48 | CI-48-G1-EXTERNAL-EVIDENCE | G1 authorization fails without real remote SCM, approval and enforcement evidence |
+| AC-49 | CI-49-EVIDENCE-TRACEABILITY-REDACTION | CI evidence is traceable to commit/contracts/schema/gate counts and contains no raw PII |
 
 Each criterion remains UNMAPPED in the executable acceptance map until a real test file and test method exist. G1 remains unauthorized until those tests are implemented and pass.
+
+
+## وضعیت اجرایی فعلی
+
+- AC-31 تا AC-45: `UNMAPPED`؛ این ۱۵ معیار رفتار Runtime داده موقت و ادغام هستند و تا پیاده‌سازی و تست واقعی نباید PASS تلقی شوند.
+- AC-46 تا AC-49: `IMPLEMENTED`؛ تست‌های آن‌ها در `scripts/ci/test_persons_gate_policy.py` تعریف شده‌اند و در Acceptance Gate Map به فایل و متد مشخص متصل‌اند.
+- بنابراین عبارت `acceptanceCriteriaAc31ToAc49Mapped=false` به‌درستی باقی می‌ماند؛ چون وجود چهار تست CI برای AC-46..49، ۱۵ معیار Runtime باز AC-31..45 را پوشش نمی‌دهد.
