@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: MD-Gsm Persons API
-  version: 1.0.0
+  version: 2.0.0
   description: >
     Versioned contract only. Runtime routes remain disabled until IdentityAccess
     opaque-token validation, security review, and explicit G1 authorization are complete.
@@ -83,9 +83,8 @@ paths:
       operationId: getParty
       summary: Read one party
       description: >-
-        Every read is audited with the server-derived actor. Sensitive fields (national identifier, economic code, credit limit,
-        card digits, internal note, full contact values and address) are returned only to callers holding the sensitive-read permission;
-        otherwise they are masked or omitted and sensitiveFieldsIncluded is false.
+        Every read is audited with the server-derived actor. Sensitive fields (national identifier, economic code, internal note, full contact values and address) are returned only to callers holding the sensitive-read permission;
+        otherwise they are masked or omitted and sensitiveFieldsIncluded is false. Finance-owned credit limits, pricing discounts and payment-instrument metadata are not part of the Persons contract.
       parameters:
         - in: path
           name: partyId
@@ -115,13 +114,6 @@ components:
         city: { type: string, maxLength: 100 }
         postalCode: { type: string, maxLength: 20 }
         addressLine: { type: string, maxLength: 1000 }
-    FinancialProfile:
-      type: object
-      properties:
-        creditLimitRial: { type: integer, minimum: 0 }
-        defaultDiscountPercent: { type: number, minimum: 0, maximum: 100 }
-        defaultPaymentMethod: { type: string, enum: [Cash, CardToCard, BankTransfer, Pos, Credit] }
-        bankCardLastFour: { type: [string, 'null'], pattern: '^[0-9]{4}$' }
     CommunicationPreferences:
       type: object
       properties:
@@ -130,7 +122,7 @@ components:
         promotionsSmsEnabled: { type: boolean, default: false }
     CreateNaturalPartyRequest:
       type: object
-      required: [givenName, familyName, roles, primaryMobile]
+      required: [givenName, familyName, roles]
       properties:
         givenName: { type: string, maxLength: 120 }
         familyName: { type: string, maxLength: 160 }
@@ -139,18 +131,17 @@ components:
           uniqueItems: true
           items: { type: string, enum: [Customer, Colleague] }
         nationalId: { type: [string, 'null'], pattern: '^[0-9]{10}$' }
-        primaryMobile: { type: string }
+        primaryMobile: { type: [string, 'null'] }
         alternateMobile: { type: [string, 'null'] }
         landline: { type: [string, 'null'] }
         email: { type: [string, 'null'], format: email }
         address: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
-        financial: { $ref: '#/components/schemas/FinancialProfile' }
         communication: { $ref: '#/components/schemas/CommunicationPreferences' }
         acquaintanceSource: { type: [string, 'null'] }
         internalNote: { type: [string, 'null'], maxLength: 2000 }
     CreateLegalPartyRequest:
       type: object
-      required: [legalName, roles, primaryMobile]
+      required: [legalName, roles]
       properties:
         legalName: { type: string, maxLength: 300 }
         legalNationalId: { type: [string, 'null'], pattern: '^[0-9]{11}$' }
