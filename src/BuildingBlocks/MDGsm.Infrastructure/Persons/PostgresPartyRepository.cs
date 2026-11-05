@@ -356,7 +356,14 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
     private async Task RecordAccessAuditAsync(
         Guid partyId, string actor, bool sensitiveIncluded, CancellationToken cancellationToken)
     {
-        await using var auditConnection = await dataSource.OpenConnectionAsync(cancellationToken);
+        // Use a non-pooled dedicated connection: the caller may hold the only pooled connection
+        // while its ambient transaction remains open. Audit must not deadlock waiting for that pool slot.
+        var auditConnectionString = new NpgsqlConnectionStringBuilder(dataSource.ConnectionString)
+        {
+            Pooling = false
+        }.ConnectionString;
+        await using var auditConnection = new NpgsqlConnection(auditConnectionString);
+        await auditConnection.OpenAsync(cancellationToken);
         await using var auditCommand = new NpgsqlCommand(
             "INSERT INTO persons_access_audit (audit_id, party_id, actor, action, sensitive_included) VALUES (@audit, @party, @actor, 'read', @sensitive);",
             auditConnection);
