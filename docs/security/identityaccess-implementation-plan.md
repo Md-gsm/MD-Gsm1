@@ -26,5 +26,5 @@
 - قرارداد اجرایی در `identityaccess-authorization-runtime-contract-fa.md` ثبت شده است.
 - این اسناد policy design و acceptance contract هستند؛ runtime، middleware، endpoint، migration یا seed ایجاد نشده است.
 - سقف‌های مالی هنوز مشخص نیستند؛ عملیات با threshold نامعلوم Deny باقی می‌ماند.
-- قرارداد branch/warehouse با data owner، retention audit و تعریف دقیق self برای Persons همچنان نیازمند تکمیل است.
+- قرارداد مرزی branch/warehouse در `identityaccess-scope-data-owner-contract-fa.md` ثبت شده؛ اما canonical data owner و شواهد entity/schema/migration/assignment هنوز احراز نشده و این بخش بسته نیست. retention audit و تعریف دقیق self برای Persons نیز بازند.
 - G1 مستقل و مجوز اجرایی صریح لازم‌اند؛ `g1Authorized=false` باقی است.
