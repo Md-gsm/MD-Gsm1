@@ -68,6 +68,25 @@ public sealed class PartyTests
     }
 
     [Fact]
+    public void Create_rejects_no_business_role_for_both_party_types()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            NaturalPerson.Create("علی", "رضایی", PartyBusinessRoles.None));
+        Assert.Throws<ArgumentException>(() =>
+            LegalPerson.Create("شرکت نمونه", PartyBusinessRoles.None));
+    }
+
+    [Fact]
+    public void Reconstitute_rejects_no_business_role_for_both_party_types()
+    {
+        var id = PartyId.New();
+        Assert.Throws<ArgumentException>(() =>
+            NaturalPerson.Reconstitute(id, "علی", "رضایی", PartyBusinessRoles.None));
+        Assert.Throws<ArgumentException>(() =>
+            LegalPerson.Reconstitute(id, "شرکت نمونه", PartyBusinessRoles.None));
+    }
+
+    [Fact]
     public void Party_rejects_undefined_business_role_bits()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() =>
