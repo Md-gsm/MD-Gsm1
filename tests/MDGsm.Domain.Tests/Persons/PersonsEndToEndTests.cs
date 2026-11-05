@@ -42,7 +42,13 @@ public sealed class PersonsEndToEndTests
     public async Task Registration_allows_walk_in_party_without_mobile_or_other_contacts()
     {
         await using var scope = await TestScope.OpenAsync();
-        var request = NewNatural(null, NewNationalId());
+        var request = NewNatural(null, NewNationalId()) with
+        {
+            Province = null,
+            City = null,
+            PostalCode = null,
+            AddressLine = null
+        };
         var created = await scope.Repository.AddNaturalAsync(request, Actor, Guid.CreateVersion7(), scope.Transaction, default);
 
         var details = await scope.QueryFor(allowSensitive: false).GetAsync(created.PartyId, scope.Transaction, default);
