@@ -23,6 +23,7 @@ public sealed class TemporaryWorkflowRetentionSweep(
                 purged += batch;
             } while (batch == 250 && !cancellationToken.IsCancellationRequested);
 
+            cancellationToken.ThrowIfCancellationRequested();
             logger.LogInformation("Temporary workflow retention sweep completed. PurgedRows={PurgedRows}", purged);
             return true;
         }
