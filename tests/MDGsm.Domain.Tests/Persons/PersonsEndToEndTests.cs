@@ -31,7 +31,7 @@ public sealed class PersonsEndToEndTests
         Assert.True(PartyId.TryParse(first.PartyId, out _));
         Assert.Equal(1L, await ScalarAsync(scope, "SELECT count(*) FROM persons_operations WHERE operation_id = @id", operationId));
 
-        var details = await await scope.Query.GetAsync(first.PartyId, Actor, scope.Transaction, default);
+        var details = await scope.QueryFor(allowSensitive: true).GetAsync(first.PartyId, Actor, scope.Transaction, default);
         Assert.NotNull(details);
         Assert.Equal(PersianTestData.AliRezaeiCanonical, details.DisplayName);   // Arabic yeh typed on input, Persian yeh stored
         Assert.Contains(details.Contacts, c => c.Kind == "Mobile" && c.Value == "+989121234567" && c.IsPrimary);
@@ -46,8 +46,8 @@ public sealed class PersonsEndToEndTests
         var created = await scope.Repository.AddNaturalAsync(
             NewNatural("09121234567", nationalId, creditLimitRial: 5_000_000, lastFour: "4321"), Actor, Guid.CreateVersion7(), scope.Transaction, default);
 
-        var masked = await await scope.Query.GetAsync(created.PartyId, Actor, scope.Transaction, default);
-        var full = await await scope.Query.GetAsync(created.PartyId, Actor, scope.Transaction, default);
+        var masked = await scope.QueryFor(allowSensitive: true).GetAsync(created.PartyId, Actor, scope.Transaction, default);
+        var full = await scope.QueryFor(allowSensitive: true).GetAsync(created.PartyId, Actor, scope.Transaction, default);
 
         Assert.NotNull(masked);
         Assert.False(masked.SensitiveFieldsIncluded);
@@ -157,10 +157,10 @@ public sealed class PersonsEndToEndTests
         return (long)(await command.ExecuteScalarAsync())!;
     }
 
-    private sealed class AllowSensitiveReadAuthorizer : IPartySensitiveReadAuthorizer
+    private sealed class FixedSensitiveReadAuthorizer(bool allowSensitive) : IPartySensitiveReadAuthorizer
     {
         public Task<bool> CanReadSensitiveAsync(string authenticatedActorId, string partyId, CancellationToken cancellationToken) =>
-            Task.FromResult(true);
+            Task.FromResult(allowSensitive);
     }
 
     private sealed class TestScope : IAsyncDisposable
