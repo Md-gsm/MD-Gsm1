@@ -10,8 +10,6 @@ namespace MDGsm.Infrastructure.Persons;
 /// </summary>
 public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) : ITemporaryWorkflowRetentionStore
 {
-    private const int DefaultTtlDays = 7;
-    private const int AbsoluteMaxAgeDays = 30;
     private const int MaxReasonLength = 500;
 
     public async Task CreateAsync(
@@ -20,7 +18,6 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) 
         string purposeCode,
         string createdBy,
         Guid idempotencyKey,
-        DateTimeOffset nowUtc,
         ReadOnlyMemory<byte> authenticatedCiphertext,
         string encryptionKeyVersion,
         CancellationToken cancellationToken = default)
@@ -37,24 +34,22 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) 
         if (authenticatedCiphertext.Length < 28)
             throw new ArgumentException("An authenticated-encryption ciphertext (including nonce and tag) is required.", nameof(authenticatedCiphertext));
 
-        var created = nowUtc.ToUniversalTime();
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await using (var metadata = new NpgsqlCommand("""
             INSERT INTO persons_temporary_workflows
                 (workflow_record_id, owner_module, purpose_code, created_by, created_at_utc,
                  expires_at_utc, absolute_expires_at_utc, idempotency_key)
-            VALUES
-                (@id, @owner, @purpose, @actor, @created, @expires, @absolute, @idempotency);
+            SELECT @id, @owner, @purpose, @actor, timestamps.created_at_utc,
+                   timestamps.created_at_utc + interval '7 days',
+                   timestamps.created_at_utc + interval '30 days', @idempotency
+            FROM (SELECT clock_timestamp() AS created_at_utc) AS timestamps;
             """, connection, transaction))
         {
             metadata.Parameters.AddWithValue("id", workflowRecordId);
             metadata.Parameters.AddWithValue("owner", ownerModule.Trim());
             metadata.Parameters.AddWithValue("purpose", purposeCode.Trim());
             metadata.Parameters.AddWithValue("actor", createdBy.Trim());
-            metadata.Parameters.AddWithValue("created", created);
-            metadata.Parameters.AddWithValue("expires", created.AddDays(DefaultTtlDays));
-            metadata.Parameters.AddWithValue("absolute", created.AddDays(AbsoluteMaxAgeDays));
             metadata.Parameters.AddWithValue("idempotency", idempotencyKey);
             await metadata.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -92,7 +87,6 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) 
 
     public async Task<bool> RenewAsync(
         Guid workflowRecordId,
-        DateTimeOffset nowUtc,
         TimeSpan extension,
         string reason,
         string authorizedActor,
@@ -114,7 +108,7 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) 
                 renewal_count = 1,
                 renewal_reason = @reason,
                 renewed_by = @actor,
-                renewed_at_utc = @now,
+                renewed_at_utc = clock_timestamp(),
                 row_version = row_version + 1
             WHERE workflow_record_id = @id
               AND lifecycle_status = 'open'
@@ -122,13 +116,12 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) 
                   SELECT 1 FROM persons_temporary_workflow_payloads AS payload
                   WHERE payload.workflow_record_id = persons_temporary_workflows.workflow_record_id
               )
-              AND expires_at_utc > @now
+              AND expires_at_utc > clock_timestamp()
               AND renewal_count = 0
               AND LEAST(absolute_expires_at_utc,
                     expires_at_utc + (@extension_seconds * interval '1 second')) > expires_at_utc;
             """, connection);
         command.Parameters.AddWithValue("id", workflowRecordId);
-        command.Parameters.AddWithValue("now", nowUtc.ToUniversalTime());
         command.Parameters.AddWithValue("extension_seconds", checked((long)extension.TotalSeconds));
         command.Parameters.AddWithValue("reason", reason.Trim());
         command.Parameters.AddWithValue("actor", authorizedActor.Trim());
@@ -137,7 +130,7 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) 
 
 
     public async Task<bool> CloseAsync(
-        Guid workflowRecordId, DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+        Guid workflowRecordId, CancellationToken cancellationToken = default)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var command = new NpgsqlCommand("""
@@ -146,14 +139,13 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) 
                 row_version = row_version + 1
             WHERE workflow_record_id = @id
               AND lifecycle_status = 'open'
-              AND expires_at_utc > @now
+              AND expires_at_utc > clock_timestamp()
               AND EXISTS (
                   SELECT 1 FROM persons_temporary_workflow_payloads AS payload
                   WHERE payload.workflow_record_id = persons_temporary_workflows.workflow_record_id
               );
             """, connection);
         command.Parameters.AddWithValue("id", workflowRecordId);
-        command.Parameters.AddWithValue("now", nowUtc.ToUniversalTime());
         return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
     }
 
@@ -161,16 +153,7 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) 
     /// Idempotently removes ciphertext for expired rows. FOR UPDATE SKIP LOCKED permits
     /// multiple workers without double-processing the same row.
     /// </summary>
-    public Task<int> PurgeExpiredAsync(int batchSize, CancellationToken cancellationToken = default) =>
-        PurgeExpiredCoreAsync(null, batchSize, cancellationToken);
-
-    // Explicit-time overload is retained only for deterministic integration tests.
-    public Task<int> PurgeExpiredAsync(
-        DateTimeOffset nowUtc, int batchSize = 250, CancellationToken cancellationToken = default) =>
-        PurgeExpiredCoreAsync(nowUtc.ToUniversalTime(), batchSize, cancellationToken);
-
-    private async Task<int> PurgeExpiredCoreAsync(
-        DateTimeOffset? nowUtc, int batchSize, CancellationToken cancellationToken)
+    public async Task<int> PurgeExpiredAsync(int batchSize, CancellationToken cancellationToken = default)
     {
         if (batchSize is < 1 or > 5000) throw new ArgumentOutOfRangeException(nameof(batchSize));
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -179,7 +162,7 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) 
             WITH due AS (
                 SELECT workflow.workflow_record_id
                 FROM persons_temporary_workflows AS workflow
-                WHERE workflow.expires_at_utc <= COALESCE(@now, clock_timestamp())
+                WHERE workflow.expires_at_utc <= clock_timestamp()
                   AND workflow.lifecycle_status IN ('open', 'closed')
                   AND EXISTS (
                       SELECT 1 FROM persons_temporary_workflow_payloads AS payload
@@ -197,15 +180,11 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) 
             )
             UPDATE persons_temporary_workflows AS workflow
             SET lifecycle_status = 'purged',
-                purged_at_utc = COALESCE(@now, clock_timestamp()),
+                purged_at_utc = clock_timestamp(),
                 row_version = row_version + 1
             FROM deleted_payloads
             WHERE workflow.workflow_record_id = deleted_payloads.workflow_record_id;
             """, connection, transaction);
-        command.Parameters.Add(new NpgsqlParameter("now", NpgsqlDbType.TimestampTz)
-        {
-            Value = (object?)nowUtc ?? DBNull.Value
-        });
         command.Parameters.AddWithValue("batch_size", batchSize);
         var affected = await command.ExecuteNonQueryAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
