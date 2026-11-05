@@ -51,3 +51,23 @@ Break-glass فقط کنسول محلی؛ دو کانال مستقل ایمیل �
 
 ## 5. Security review و G1
 پرونده review آماده است، اما review مستقل مخصوص Runtime و جریان‌های IdentityAccess و امضای تصمیم G1 هنوز انجام نشده است. تأییدهای گزارش‌شده در 2026-10-31 در `INDEPENDENT_REVIEW_CHECKLIST_FA.md` مربوط به baseline معماری/امنیتی G0 هستند و به این دامنه G1 تعمیم داده نمی‌شوند. reviewer باید token/digest/revoke، password hash/rehash، lockout/rate limit، bootstrap، session cap/lease، permission enforcement، recovery، audit/retention، TLS/firewall و dependency boundaries را بررسی کند. سبزشدن CI جایگزین review نیست. فرم reviewer باید SHA، یافته‌ها، نتیجه و امضا داشته باشد؛ مالک باید صریحاً G1 را authorize کند. تا آن زمان `g1Authorized=false` و PR #30 Open+Draft+Unmerged.
+## 6. تصمیم‌های مالک محصول درباره Recovery و Session — 2026-11-05
+
+بندهای قبلی که TTL/تلاش/ارسال را باز اعلام می‌کردند، با تصمیم‌های زیر جایگزین می‌شوند:
+- بازار هدف: ایران؛ ایمیل: mailbox اختصاصی روی دامنه محصول و ارسال از طریق SMTP relay/Transactional Email؛ Mail Server مستقل در برنامه ساخته نمی‌شود.
+- SMS provider هنوز انتخاب نشده است؛ انتخاب vendor و آزمون delivery/OTP در ایران، مانع بازمانده قبل از فعال‌سازی Recovery است.
+- Email OTP TTL=10 دقیقه؛ SMS OTP TTL=5 دقیقه.
+- حداکثر 5 تلاش ناموفق برای هر challenge؛ قفل Recovery به مدت 24 ساعت پس از رسیدن به حد.
+- resend cooldown=1 ساعت؛ حداکثر 1 ارسال در rolling 1h و 5 ارسال در rolling 24h؛ عبور از هر سقف، قفل 24 ساعته ارسال/Recovery.
+- محدودیت‌ها در سمت سرور و با عملیات اتمیک enforce شوند؛ per-account/channel و per-source. قفل مبدأ به‌تنهایی نباید ابزار DoS علیه قربانی باشد.
+- resend proof قبلی همان کانال را باطل می‌کند؛ provider timeout/unknown result proof معتبر ایجاد نمی‌کند.
+- قفل 24 ساعته Recovery جایگزین lockout ورود عادی 5 شکست/15 دقیقه و قفل 15 دقیقه نیست.
+
+سیاست نشست مصوب:
+- heartbeat=30s؛ lease=180s؛ absolute session lifetime=12h از ایجاد.
+- حداکثر 2 نشست فعال برای هر حساب؛ حداکثر 5 حساب فعال متمایز در کل سیستم.
+- سقف کل 5 حساب با permission اختصاصی super_admin قابل تغییر و هر تغییر audit می‌شود.
+- تغییر رمز و غیرفعال‌سازی حساب، revoke فوری تمام نشست‌های آن حساب را در همان تراکنش تضمین می‌کند؛ درخواست بعدی با بررسی PostgreSQL رد می‌شود.
+
+## 7. وضعیت تصویب ماتریس و Reviewer
+تصویب این پارامترها به معنی تصویب ماتریس granular مجوزها یا retention نیست؛ آن موارد همچنان نیازمند تصمیم جداگانه مالک‌اند. تیم مستقلی که مالک پس از بررسی نهایی معرفی/مأمور می‌کند، می‌تواند Reviewer سازمانی G1 باشد؛ اما نام تیم، اعضای واجد صلاحیت، تعارض منافع، reviewer مسئول، SHA تحت بررسی، نتیجه و امضای واقعی باید در پرونده G1 ثبت شود. تا آن زمان review مستقل انجام‌شده محسوب نمی‌شود.
