@@ -42,9 +42,12 @@ public sealed class PersonsTemporaryWorkflowWorkerTests
         Assert.DoesNotContain(piiCanary, output, StringComparison.Ordinal);
     }
 
-    private sealed class SequenceRetentionStore(params object[] outcomes) : ITemporaryWorkflowRetentionStore
+    private sealed class SequenceRetentionStore : ITemporaryWorkflowRetentionStore
     {
-        private readonly Queue<object> _outcomes = new(outcomes);
+        private readonly Queue<object> _outcomes;
+
+        public SequenceRetentionStore(params object[] outcomes) => _outcomes = new Queue<object>(outcomes);
+
         public int Calls { get; private set; }
 
         public Task<int> PurgeExpiredAsync(int batchSize, CancellationToken cancellationToken = default)
