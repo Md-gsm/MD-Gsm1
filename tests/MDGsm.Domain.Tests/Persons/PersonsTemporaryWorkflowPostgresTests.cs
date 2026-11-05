@@ -39,9 +39,28 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         await store.CreateAsync(id, "Persons", "contact-capture", "ci-actor", Guid.CreateVersion7(),
             now, Encrypt("private payload"u8), "test-key-v1");
 
-        Assert.False(await store.RenewAsync(id, now.AddDays(1), TimeSpan.FromDays(1),
-            "No authorization supplied", "ci-actor", explicitlyAuthorized: false)
-            .ContinueWith<bool>(_ => false));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => store.RenewAsync(id,
+            now.AddDays(1), TimeSpan.FromDays(1), "No authorization supplied", "ci-actor",
+            explicitlyAuthorized: false));
+
+        Assert.True(await store.RenewAsync(id, now.AddDays(1), TimeSpan.FromDays(40),
+            "Owner approved temporary extension", "ci-actor", explicitlyAuthorized: true));
+
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("""
+            SELECT expires_at_utc, renewal_count
+            FROM persons_temporary_workflows
+            WHERE workflow_record_id = @id;
+            """, connection);
+        command.Parameters.AddWithValue("id", id);
+        await using var reader = await command.ExecuteReaderAsync();
+        Assert.True(await reader.ReadAsync());
+        Assert.Equal(now.AddDays(30), reader.GetFieldValue<DateTimeOffset>(0));
+        Assert.Equal((short)1, reader.GetInt16(1));
+        await reader.DisposeAsync();
+
+        Assert.False(await store.RenewAsync(id, now.AddDays(2), TimeSpan.FromDays(1),
+            "Second renewal attempt rejected", "ci-actor", explicitlyAuthorized: true));
     }
 
     private static NpgsqlDataSource OpenDataSource()
