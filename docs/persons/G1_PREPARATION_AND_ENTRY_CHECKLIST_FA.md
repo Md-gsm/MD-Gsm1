@@ -31,18 +31,18 @@
 | آزمون منفی کنترل معماری | انجام‌شده | PR #6؛ `persons-architecture-boundary` شکست خورد و PR به دلیل check شکست‌خورده blocked ماند؛ run `41177718250`. |
 | PostgreSQL 18 Linux/Windows و Application Migration Runner | اعتبارسنجی‌شده روی commit آزمایش‌شده | run `41185491539` روی HEAD نهایی PR با ۱۳/۱۳ job موفق، شامل هر دو job PostgreSQL Linux/Windows و migration runner. گزارش جامع در `g0-ci-validation-2026-10-31.json` و جزئیات PostgreSQL در `postgresql18-migration-validation-2026-10-31.json`. |
 | PostgreSQL image digest | بسته | Linux service در workflow با digest ثابت pin شده است. |
-| Required Status Checks واقعی در SCM | باز / نیازمند اقدام Admin | شاخه `main` protected است، اما `contexts=[]` و `checks=[]` و enforcement level برابر `non_admins` است؛ بنابراین هیچ Required Status Check فعالی ثبت نشده. Admin باید ۱۳ نام check در `required-status-checks.md` را ثبت و bypass را محدود کند. |
+| Required Status Checks واقعی در SCM | تأییدشده طبق گزارش Admin در 2026-11-03؛ نیازمند بازتأیید در صورت تغییر | گزارش اجرای موفق `gh api` در `docs/operations/required-status-checks.md`، هر ۱۳ check را با `strict=true` و تنظیمات حفاظت ثبت کرده است. snapshot خالی 2026-10-31 تاریخی و superseded است. اتصال ممیزی فعلی به endpoint جزئیات Branch Protection دسترسی 403 دارد؛ بنابراین این ممیزی ادعای بازخوانی زنده جدید نمی‌کند. |
 | بازبینی مستقل معماری | باز | گروه مشاور نرم‌افزار باید topology و ADRها را روی commit مشخص بازبینی و نتیجه را در مخزن ثبت کند. نام یا امضای اشخاصی جعل نشده است. |
 | بررسی امنیت/حریم خصوصی | مالکیت مشخص؛ ثبت نهایی بررسی لازم است | مسئولیت این حوزه با مالک پروژه است، نه گروه مشاور نرم‌افزار. پذیرش سیاست داده موقت در سند ثبت شده؛ بررسی نهایی امنیتی برای بسته G1 باید جداگانه و با مرجع commit مشخص ثبت شود. |
 | AC-31..AC-45 | برنامه آزمون آماده؛ تست اجرایی وجود ندارد | سناریوها در `AC31-45-VERIFICATION-PLAN.md` شناسه‌گذاری شده‌اند؛ status در acceptance map باید `UNMAPPED` بماند تا رفتار واقعی پیاده‌سازی و تست شود. |
 
 ## تفکیک بسته‌شدن G0 از مجوز G1
 
-بسته‌شدن فنی G0 از نظر سورس، ساختار، Solution، scripts/tests، CI و شواهد فنی انجام شده است: run `41185491539` روی commit `7bcc423a87b44e19291f4f28d04858e06e74515c` با ۱۳/۱۳ job موفق شد و `architectureAligned=true` ثبت شده است. برای Merge امن PR و عبور رسمی از دروازه G1، هنوز پیکربندی ۱۳ Required Status Check در SCM، بازبینی مستقل معماری گروه مشاور نرم‌افزار، و بازبینی امنیت/حریم خصوصی توسط مالک پروژه لازم‌اند؛ این موارد با سبزشدن CI جایگزین نمی‌شوند.
+بسته‌شدن فنی G0 از نظر سورس، ساختار، Solution، scripts/tests، CI و شواهد فنی انجام شده است: run `41185491539` روی commit `7bcc423a87b44e19291f4f28d04858e06e74515c` با ۱۳/۱۳ job موفق شد و `architectureAligned=true` ثبت شده است. برای Merge امن PR و عبور رسمی از دروازه G1، پیکربندی ۱۳ Required Status Check طبق گزارش Admin در 2026-11-03 ثبت شده است؛ اما بازبینی مستقل معماری G1 و بازبینی امنیت/حریم خصوصی مخصوص Runtime و جریان‌های IdentityAccess همچنان لازم‌اند. تأییدهای G0 یا سبزشدن CI جایگزین این بازبینی‌های G1 نیستند.
 
 موارد AC-31..AC-45 و Runtime اشخاص/ادغام، دامنه پیاده‌سازی و پذیرش G1 هستند؛ آن‌ها عمداً در این بسته به تست ساختگی تبدیل نمی‌شوند. بنابراین `acceptanceCriteriaAc31ToAc49Mapped=false` باقی می‌ماند و هیچ تغییر این سند مجوز شروع G1 نیست.
 
-**`g1Authorized=false` باید باقی بماند** تا شرایط رسمی ورود G1 با شواهد مستقل و تنظیمات SCM تأیید شوند.
+**`g1Authorized=false` باید باقی بماند**؛ تأیید تنظیمات SCM به‌تنهایی مجوز G1 نیست و شواهد اجرایی ACها، بازبینی امنیتی Runtime و بازبینی معماری G1 هنوز کامل نیستند.
 
 ## ساختار فیزیکی فعلی
 
@@ -65,4 +65,4 @@
 
 `foundation-build-test`, `persons-spec-lint`, `persons-architecture-boundary`, `persons-consumer-registry`, `persons-api-contract`, `persons-temporary-data-retention`, `persons-merge-contract`, `persons-postgres-migrations`, `persons-postgres-windows-migrations`, `persons-security-tests`, `persons-e2e-disposable`, `persons-ci-enforcement-test`, `persons-ci-evidence`.
 
-این ۱۳ job در Workflow تعریف و در run `41185491539` همگی موفق شده‌اند، اما Branch API روی `main` هنوز `contexts=[]` و `checks=[]` گزارش می‌کند؛ Required بودن آن‌ها فعال نیست. تا ثبت واقعی از سوی Admin، `requiredStatusChecksConfiguredInScm=false` باقی می‌ماند.
+این ۱۳ job در Workflow تعریف شده‌اند. طبق گزارش Admin در 2026-11-03، هر ۱۳ مورد در Branch Protection شاخه `main` required شده‌اند؛ جزئیات و snapshot تاریخی در `docs/operations/required-status-checks.md` آمده است. مقدار `requiredStatusChecksConfiguredInScm=true` است، با این قید که بازخوانی مستقل فعلی به‌دلیل محدودیت دسترسی API در این ممیزی ممکن نشد.
