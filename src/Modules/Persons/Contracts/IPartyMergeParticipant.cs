@@ -13,6 +13,7 @@ public sealed record PartyMergeContext(
 /// <summary>PII-free counts returned by a participant's read-only merge preview.</summary>
 public sealed record PartyMergeParticipantPreview(
     string Module,
+    long ActiveReferences,
     long TransferableReferences,
     long HistoricalReferences,
     long BlockingConflicts);
