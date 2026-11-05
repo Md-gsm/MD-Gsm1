@@ -1,6 +1,7 @@
 using MDGsm.Finance.Application;
 using MDGsm.Finance.Contracts;
 using MDGsm.Finance.Infrastructure;
+using MDGsm.Infrastructure.Persons;
 using MDGsm.Persons.Contracts;
 using Npgsql;
 using Xunit;
@@ -42,7 +43,7 @@ public sealed class FinancePartyAccountIntegrationTests
         var provisioner = new AccountsReceivableAccountProvisioner(
             new PostgresPartyAccountRepository(),
             new FixedFinanceActorContext(),
-            new FixedPartyIdentityLookup(exists: false));
+            new PostgresPartyIdentityLookup());
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() => provisioner.EnsureAsync(partyId, transaction));
         Assert.Equal(0L, await CountAsync(connection, transaction, partyId));
@@ -201,7 +202,7 @@ public sealed class FinancePartyAccountIntegrationTests
 
     private sealed class FixedPartyIdentityLookup(bool exists) : IPartyIdentityLookup
     {
-        public Task<bool> ExistsAsync(Guid partyId, CancellationToken cancellationToken = default) =>
+        public Task<bool> ExistsAsync(Guid partyId, System.Data.Common.DbTransaction transaction, CancellationToken cancellationToken = default) =>
             Task.FromResult(exists);
     }
 }

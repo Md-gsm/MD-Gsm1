@@ -28,7 +28,7 @@ public sealed class AccountsReceivableAccountProvisioner(
         if (string.IsNullOrWhiteSpace(actorId) || actorId.Length > 128)
             throw new InvalidOperationException("A valid authenticated Finance actor context is required.");
 
-        if (!await partyIdentityLookup.ExistsAsync(partyId, cancellationToken))
+        if (!await partyIdentityLookup.ExistsAsync(partyId, transaction, cancellationToken))
             throw new KeyNotFoundException("The supplied PartyId does not exist in the Persons identity boundary.");
 
         var account = await repository.GetOrCreateAsync(

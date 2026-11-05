@@ -1,4 +1,5 @@
 using MDGsm.Infrastructure.Persistence;
+using MDGsm.Persons.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,7 @@ public sealed class PersistenceRegistrationTests
 
         Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(MdGsmDbContext));
         Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(DbContextOptions<MdGsmDbContext>));
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IPartyIdentityLookup));
     }
 
     [Fact]
@@ -33,5 +35,6 @@ public sealed class PersistenceRegistrationTests
         services.AddMdGsmPersistence(configuration);
 
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MdGsmDbContext));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IPartyIdentityLookup));
     }
 }
