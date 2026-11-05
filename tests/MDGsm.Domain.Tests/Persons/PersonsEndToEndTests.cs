@@ -272,6 +272,7 @@ public sealed class PersonsEndToEndTests
     private sealed class TestScope : IAsyncDisposable
     {
         private readonly NpgsqlDataSource _dataSource;
+        private bool _rolledBack;
 
         private TestScope(NpgsqlDataSource dataSource, NpgsqlConnection connection, NpgsqlTransaction transaction)
         {
@@ -285,6 +286,17 @@ public sealed class PersonsEndToEndTests
         public NpgsqlTransaction Transaction { get; }
         public PostgresPartyRepository Repository { get; }
 
+        public PartyDetailsQueryService QueryFor(bool allowSensitive) =>
+            new(Repository, new FixedSensitiveReadAuthorizer(allowSensitive), new FixedPartyActorContext());
+
+        public async Task RollbackAsync()
+        {
+            if (_rolledBack)
+                return;
+
+            await Transaction.RollbackAsync();
+            _rolledBack = true;
+        }
 
         public static async Task<TestScope> OpenAsync()
         {
@@ -307,7 +319,7 @@ public sealed class PersonsEndToEndTests
 
         public async ValueTask DisposeAsync()
         {
-            if (!_rolledBack) await Transaction.RollbackAsync();
+            await RollbackAsync();
             await Transaction.DisposeAsync();
             await Connection.DisposeAsync();
             await _dataSource.DisposeAsync();
