@@ -31,6 +31,6 @@ Each criterion remains UNMAPPED in the executable acceptance map until a real te
 
 ## وضعیت اجرایی فعلی
 
-- AC-31 تا AC-45: `UNMAPPED`؛ این ۱۵ معیار رفتار Runtime داده موقت و ادغام هستند و تا پیاده‌سازی و تست واقعی نباید PASS تلقی شوند.
+- AC-31 تا AC-35: به تست‌های مشخص و executable متصل‌اند؛ AC-36 تا AC-45 همچنان `UNMAPPED` هستند. اتصال به تست به‌تنهایی جایگزین اجرای موفق CI نیست.
 - AC-46 تا AC-49: `IMPLEMENTED`؛ تست‌های آن‌ها در `scripts/ci/test_persons_gate_policy.py` تعریف شده‌اند و در Acceptance Gate Map به فایل و متد مشخص متصل‌اند.
-- بنابراین عبارت `acceptanceCriteriaAc31ToAc49Mapped=false` به‌درستی باقی می‌ماند؛ چون وجود چهار تست CI برای AC-46..49، ۱۵ معیار Runtime باز AC-31..45 را پوشش نمی‌دهد.
+- بنابراین `acceptanceCriteriaAc31ToAc49Mapped=false` باقی می‌ماند؛ AC-36..45 هنوز بازند و G1 همچنان مجاز نیست.
