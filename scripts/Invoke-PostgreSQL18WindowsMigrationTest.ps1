@@ -118,8 +118,8 @@ try {
     $firstRun = @(& dotnet run --project $migratorProject --configuration Release 2>&1)
     $firstExitCode = $LASTEXITCODE
     $firstRun | ForEach-Object { Write-Host $_ }
-    if ($firstExitCode -ne 0 -or (($firstRun -join "`n") -notmatch 'newlyApplied=4')) {
-        throw 'The first application migration run did not apply the expected four migrations.'
+    if ($firstExitCode -ne 0 -or (($firstRun -join "`n") -notmatch 'newlyApplied=5')) {
+        throw 'The first application migration run did not apply the expected five migrations.'
     }
 
     Write-Host 'Re-running the application-owned migration runner to verify idempotence and checksum validation...'
