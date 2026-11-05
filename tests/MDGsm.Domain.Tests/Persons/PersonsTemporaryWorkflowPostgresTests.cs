@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Cryptography;
 using MDGsm.Infrastructure.Persons;
 using Npgsql;
@@ -34,7 +35,7 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task AC32_worker_drains_expired_payloads_across_multiple_database_batches()
+    public async Task AC32_worker_drains_expired_payloads_across_multiple_database_batches_within_deadline()
     {
         await using var dataSource = OpenDataSource();
         var store = new PostgresTemporaryWorkflowStore(dataSource);
@@ -67,8 +68,12 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         var alert = new StructuredLogTemporaryWorkflowRetentionAlert(alertLogger);
         var sweep = new TemporaryWorkflowRetentionSweep(store, alert, logger);
 
-        Assert.Equal(TimeSpan.FromMinutes(5), TemporaryWorkflowRetentionWorker.SweepInterval);
+        Assert.Equal(TimeSpan.FromMinutes(15), TemporaryWorkflowRetentionWorker.SweepInterval);
+        var elapsed = Stopwatch.StartNew();
         Assert.True(await sweep.RunOnceAsync());
+        elapsed.Stop();
+        Assert.True(elapsed.Elapsed < TimeSpan.FromMinutes(30),
+            $"Physical purge exceeded the 30-minute policy deadline: {elapsed.Elapsed}.");
 
         await using var verify = await dataSource.OpenConnectionAsync();
         await using var verifyCommand = new NpgsqlCommand("""
@@ -152,6 +157,57 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
 
         Assert.False(await store.RenewAsync(id, TimeSpan.FromDays(1),
             "Second renewal attempt rejected", "ci-actor", explicitlyAuthorized: true));
+    }
+
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AC35_postgres_sweep_retries_after_failure_emits_safe_alert_and_is_idempotent()
+    {
+        await using var dataSource = OpenDataSource();
+        var postgresStore = new PostgresTemporaryWorkflowStore(dataSource);
+        var id = Guid.CreateVersion7();
+        await postgresStore.CreateAsync(id, "Persons", "retry-idempotency-test", "ci-actor",
+            Guid.CreateVersion7(), Encrypt("private payload"u8), "test-key-v1");
+        await SetExpiryAsync(dataSource, id);
+
+        const string piiCanary = "private-person@example.invalid";
+        var retryStore = new FailOnceRetentionStore(postgresStore, piiCanary);
+        var sweepLogger = new CapturingLogger<TemporaryWorkflowRetentionSweep>();
+        var alertLogger = new CapturingLogger<StructuredLogTemporaryWorkflowRetentionAlert>();
+        var alert = new StructuredLogTemporaryWorkflowRetentionAlert(alertLogger);
+        var sweep = new TemporaryWorkflowRetentionSweep(retryStore, alert, sweepLogger);
+
+        Assert.False(await sweep.RunOnceAsync());
+        Assert.True(await sweep.RunOnceAsync());
+        Assert.True(await sweep.RunOnceAsync());
+
+        Assert.Equal(3, retryStore.Calls);
+        Assert.Contains(alertLogger.Messages, message => message.Contains("SECURITY_ALERT", StringComparison.Ordinal));
+        Assert.DoesNotContain(piiCanary, string.Join(Environment.NewLine, sweepLogger.Messages), StringComparison.Ordinal);
+        Assert.DoesNotContain(piiCanary, string.Join(Environment.NewLine, alertLogger.Messages), StringComparison.Ordinal);
+        Assert.Equal(0L, await CountPayloadRowsAsync(dataSource, id));
+        Assert.Equal("purged", await ReadLifecycleStatusAsync(dataSource, id));
+    }
+
+    private sealed class FailOnceRetentionStore(
+        ITemporaryWorkflowRetentionStore inner,
+        string failureMessage) : ITemporaryWorkflowRetentionStore
+    {
+        private bool _failed;
+
+        public int Calls { get; private set; }
+
+        public Task<int> PurgeExpiredAsync(int batchSize, CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            if (!_failed)
+            {
+                _failed = true;
+                throw new InvalidOperationException(failureMessage);
+            }
+            return inner.PurgeExpiredAsync(batchSize, cancellationToken);
+        }
     }
 
     private static async Task SetExpiryAsync(NpgsqlDataSource dataSource, Guid workflowId)
