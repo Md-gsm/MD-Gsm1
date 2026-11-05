@@ -6,7 +6,8 @@
     "src/BuildingBlocks/MDGsm.Domain/Persons",
     "src/BuildingBlocks/MDGsm.Application/Persons",
     "src/BuildingBlocks/MDGsm.Infrastructure/Persons",
-    "database/migrations/persons"
+    "database/migrations/persons",
+    "database/migrations/0007_persons_party_merge.sql"
   ],
   "registeredConsumers": [
     {
@@ -16,7 +17,7 @@
       "purpose": "Finance stores the stable PartyId reference for its unique party-account identity.",
       "contractVersion": "1.1",
       "mergeProtocolVersion": "1.0",
-      "mergeStatus": "BLOCKED_NOT_IMPLEMENTED"
+      "mergeStatus": "PARTIAL_IMPLEMENTED_UNVERIFIED"
     },
     {
       "path": "database/migrations/0004_finance_party_accounts.sql",
@@ -25,7 +26,7 @@
       "purpose": "Finance-owned party-account table stores PartyId as an immutable cross-module reference.",
       "contractVersion": "1.1",
       "mergeProtocolVersion": "1.0",
-      "mergeStatus": "BLOCKED_NOT_IMPLEMENTED"
+      "mergeStatus": "PARTIAL_IMPLEMENTED_UNVERIFIED"
     },
     {
       "path": "src/Modules/Finance/Contracts/PartyAccountReference.cs",
@@ -34,7 +35,16 @@
       "contractVersion": "1.1",
       "purpose": "Finance exposes the PartyId-to-account identity reference through its versioned contract.",
       "mergeProtocolVersion": "1.0",
-      "mergeStatus": "BLOCKED_NOT_IMPLEMENTED"
+      "mergeStatus": "PARTIAL_IMPLEMENTED_UNVERIFIED"
+    },
+    {
+      "path": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs",
+      "module": "Finance",
+      "contract": "Persons.PartyReference",
+      "contractVersion": "1.1",
+      "purpose": "Finance merge participant transfers the unique active subledger-account reference only when the target has no account; otherwise it blocks.",
+      "mergeProtocolVersion": "1.0",
+      "mergeStatus": "PARTIAL_IMPLEMENTED_UNVERIFIED"
     }
   ],
   "registryPolicy": {
