@@ -1,5 +1,5 @@
 {
-  "registryVersion": "1.1",
+  "registryVersion": "1.2",
   "sourceDocument": "docs/architecture/data-ownership.md",
   "concepts": [
     {
@@ -232,6 +232,27 @@
       "ownerDomain": "زیرساخت فایل و پیوند به مالک حوزه",
       "consumers": "تعمیرات و اسناد",
       "mustNotCreate": "کپی تصاویر به‌صورت دادهٔ تکراری در هر پرونده"
+    },
+    {
+      "id": "FIN-AR-01",
+      "canonicalConcept": "سقف اعتبار و مانده/وضعیت بدهی شخص",
+      "ownerDomain": "مالی/حساب‌های دریافتنی",
+      "consumers": "اشخاص و اسناد تجاری فقط از قرارداد",
+      "mustNotCreate": "نگهداری سقف یا مانده authoritative در جدول هویت اشخاص"
+    },
+    {
+      "id": "PRICE-02",
+      "canonicalConcept": "تخفیف پیش‌فرض و قواعد قیمت قابل اعمال",
+      "ownerDomain": "موتور قیمت‌گذاری",
+      "consumers": "فروش و صورتحساب تعمیر فقط از قرارداد",
+      "mustNotCreate": "محاسبه یا نگهداری قواعد تخفیف در Persons"
+    },
+    {
+      "id": "TRE-03",
+      "canonicalConcept": "روش پرداخت پیش‌فرض و فراداده ابزار پرداخت بدون PAN",
+      "ownerDomain": "خزانه‌داری",
+      "consumers": "فروش، خرید و تعمیرات فقط از قرارداد",
+      "mustNotCreate": "ذخیره ابزار پرداخت و چرخه آن در Persons"
     }
   ]
 }
