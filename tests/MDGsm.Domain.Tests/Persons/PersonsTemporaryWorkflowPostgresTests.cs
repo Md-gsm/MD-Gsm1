@@ -15,17 +15,20 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         var store = new PostgresTemporaryWorkflowStore(dataSource);
         var id = Guid.CreateVersion7();
         var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        var created = now.AddDays(-2);
         var ciphertext = Encrypt("private contact payload"u8);
         await store.CreateAsync(id, "Persons", "contact-capture", "ci-actor", Guid.CreateVersion7(),
-            now, ciphertext, "test-key-v1");
+            created, ciphertext, "test-key-v1");
 
-        var stored = await store.ReadCiphertextAsync(id, now.AddDays(6));
+        var stored = await store.ReadCiphertextAsync(id);
         Assert.NotNull(stored);
         Assert.Equal(ciphertext, stored);
 
-        Assert.Null(await store.ReadCiphertextAsync(id, now.AddDays(7)));
-        Assert.Equal(1, await store.PurgeExpiredAsync(now.AddDays(7)));
-        Assert.Null(await store.ReadCiphertextAsync(id, now.AddDays(6)));
+        // Force expiry in PostgreSQL while preserving the table's created < expiry invariant.
+        await SetExpiryAsync(dataSource, id, "clock_timestamp() - interval '1 second'");
+        Assert.Null(await store.ReadCiphertextAsync(id));
+        Assert.Equal(1, await store.PurgeExpiredAsync(DateTimeOffset.UtcNow));
+        Assert.Null(await store.ReadCiphertextAsync(id));
         Assert.Equal(0L, await CountPayloadRowsAsync(dataSource, id));
         Assert.Equal("purged", await ReadLifecycleStatusAsync(dataSource, id));
         Assert.Equal(0, await store.PurgeExpiredAsync(now.AddDays(8)));
@@ -44,7 +47,7 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
 
         Assert.True(await store.CloseAsync(id, now.AddDays(1)));
         Assert.False(await store.CloseAsync(id, now.AddDays(1)));
-        Assert.Null(await store.ReadCiphertextAsync(id, now.AddDays(1)));
+        Assert.Null(await store.ReadCiphertextAsync(id));
         Assert.Equal(1, await store.PurgeExpiredAsync(now.AddDays(7)));
     }
 
@@ -81,6 +84,20 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
 
         Assert.False(await store.RenewAsync(id, now.AddDays(2), TimeSpan.FromDays(1),
             "Second renewal attempt rejected", "ci-actor", explicitlyAuthorized: true));
+    }
+
+    private static async Task SetExpiryAsync(NpgsqlDataSource dataSource, Guid workflowId, string sqlExpression)
+    {
+        // Expression is a compile-time test constant, never user input.
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand($"""
+            UPDATE persons_temporary_workflows
+            SET expires_at_utc = {sqlExpression},
+                row_version = row_version + 1
+            WHERE workflow_record_id = @id;
+            """, connection);
+        command.Parameters.AddWithValue("id", workflowId);
+        Assert.Equal(1, await command.ExecuteNonQueryAsync());
     }
 
     private static async Task<long> CountPayloadRowsAsync(NpgsqlDataSource dataSource, Guid workflowId)
