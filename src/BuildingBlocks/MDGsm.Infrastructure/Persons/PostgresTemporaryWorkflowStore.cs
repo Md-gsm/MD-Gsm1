@@ -31,6 +31,9 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
         ArgumentException.ThrowIfNullOrWhiteSpace(purposeCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(createdBy);
         ArgumentException.ThrowIfNullOrWhiteSpace(encryptionKeyVersion);
+        if (ownerModule.Trim().Length > 80 || purposeCode.Trim().Length > 80 ||
+            createdBy.Trim().Length > 128 || encryptionKeyVersion.Trim().Length > 80)
+            throw new ArgumentException("Temporary workflow metadata exceeds its declared database field length.");
         if (authenticatedCiphertext.Length < 28)
             throw new ArgumentException("An authenticated-encryption ciphertext (including nonce and tag) is required.", nameof(authenticatedCiphertext));
 
@@ -89,7 +92,7 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
         ArgumentException.ThrowIfNullOrWhiteSpace(authorizedActor);
         if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length < 8 || reason.Length > MaxReasonLength)
             throw new ArgumentException("A renewal reason between 8 and 500 characters is required.", nameof(reason));
-        if (extension <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(extension));
+        if (extension < TimeSpan.FromSeconds(1)) throw new ArgumentOutOfRangeException(nameof(extension));
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var command = new NpgsqlCommand("""
@@ -115,6 +118,25 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
         command.Parameters.AddWithValue("extension_seconds", checked((long)extension.TotalSeconds));
         command.Parameters.AddWithValue("reason", reason.Trim());
         command.Parameters.AddWithValue("actor", authorizedActor.Trim());
+        return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
+    }
+
+
+    public async Task<bool> CloseAsync(
+        Guid workflowRecordId, DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = new NpgsqlCommand("""
+            UPDATE persons_temporary_workflows
+            SET lifecycle_status = 'closed',
+                row_version = row_version + 1
+            WHERE workflow_record_id = @id
+              AND lifecycle_status = 'open'
+              AND expires_at_utc > @now
+              AND encrypted_payload IS NOT NULL;
+            """, connection);
+        command.Parameters.AddWithValue("id", workflowRecordId);
+        command.Parameters.AddWithValue("now", nowUtc.ToUniversalTime());
         return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
     }
 
