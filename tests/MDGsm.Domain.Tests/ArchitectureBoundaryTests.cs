@@ -57,7 +57,8 @@ public sealed class ArchitectureBoundaryTests
 
             var versionMarker = Path.Combine(Path.GetDirectoryName(project)!, "ModuleContractVersion.cs");
             Assert.True(File.Exists(versionMarker), $"Missing contract version marker: {versionMarker}");
-            Assert.Contains("Current = \"1.0\"", File.ReadAllText(versionMarker));
+            var expectedVersion = module == "Finance" ? "1.1" : "1.0";
+            Assert.Contains($"Current = \\"{expectedVersion}\\"", File.ReadAllText(versionMarker));
         }
     }
 
