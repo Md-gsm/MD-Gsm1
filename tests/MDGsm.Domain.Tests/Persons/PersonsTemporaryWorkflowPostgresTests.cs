@@ -53,7 +53,7 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         await using var dataSource = OpenDataSource();
         var store = new PostgresTemporaryWorkflowStore(dataSource);
         var id = Guid.CreateVersion7();
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         await store.CreateAsync(id, "Persons", "contact-capture", "ci-actor", Guid.CreateVersion7(),
             now, Encrypt("private payload"u8), "test-key-v1");
 
