@@ -2,13 +2,13 @@ using System.Data.Common;
 
 namespace MDGsm.Application.Persons;
 
-/// <summary>Server-side policy boundary for access to personally identifiable and financial details.</summary>
 /// <summary>Supplies the authenticated actor established by the server authentication boundary.</summary>
 public interface IPartyActorContext
 {
     string ActorId { get; }
 }
 
+/// <summary>Server-side policy boundary for access to personally identifiable and financial details.</summary>
 public interface IPartySensitiveReadAuthorizer
 {
     Task<bool> CanReadSensitiveAsync(string authenticatedActorId, string partyId, CancellationToken cancellationToken);
