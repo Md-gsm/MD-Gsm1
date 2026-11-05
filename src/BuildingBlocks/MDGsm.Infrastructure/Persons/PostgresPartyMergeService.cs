@@ -43,12 +43,15 @@ public sealed class PostgresPartyMergeService
             .OrderBy(x => x.Module, StringComparer.Ordinal)
             .ToArray();
 
-        if (_participants.Any(x => string.IsNullOrWhiteSpace(x.Module) ||
+        if (_participants.Count == 0 ||
+            !_participants.Any(x => string.Equals(x.Module, "Finance", StringComparison.Ordinal) &&
+                                    string.Equals(x.ContractVersion, "1.1", StringComparison.Ordinal)) ||
+            _participants.Any(x => string.IsNullOrWhiteSpace(x.Module) ||
                                    string.IsNullOrWhiteSpace(x.ContractVersion) ||
                                    !string.Equals(x.MergeProtocolVersion, ProtocolVersion, StringComparison.Ordinal)) ||
             _participants.Select(x => x.Module).Distinct(StringComparer.Ordinal).Count() != _participants.Count)
         {
-            throw new InvalidOperationException("Party merge participants must have unique modules and compatible versioned contracts.");
+            throw new InvalidOperationException("Party merge requires the registered Finance 1.1 participant and unique, version-compatible consumer contracts.");
         }
     }
 
@@ -112,8 +115,8 @@ public sealed class PostgresPartyMergeService
 
             foreach (var participant in _participants)
             {
-                await participant.PrepareAsync(context, connection, transaction, cancellationToken);
                 prepared.Add(participant);
+                await participant.PrepareAsync(context, connection, transaction, cancellationToken);
             }
             foreach (var participant in _participants)
                 await participant.ValidateAsync(context, connection, transaction, cancellationToken);
