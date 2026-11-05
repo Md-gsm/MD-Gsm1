@@ -281,6 +281,11 @@ def run_architecture(root: Path) -> None:
     modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance")
     for module in modules:
         expected_projects[f"Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj"] = set()
+    # Finance runtime is the first authorized business-module implementation slice.
+    # It may depend only on its own Contracts and the published Persons Contracts.
+    expected_projects["Modules/Finance/MDGsm.Finance.csproj"] = {
+        "MDGsm.Finance.Contracts", "MDGsm.Persons.Contracts"
+    }
 
     project_root = root / "src"
     projects = {

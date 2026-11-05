@@ -1,3 +1,7 @@
 # Finance Contracts
 
-Reserved for versioned financial and payroll contracts. Finance/Payroll owns salary, commission, payroll, and financial records; these do not belong to Persons. Cross-module database atomicity must follow ADR-0005. No runtime contract is published yet.
+Finance owns financial records and party subledger account identity. Persons remains the canonical owner of PartyId and personal identity.
+
+The first runtime contract is `PartyAccountReference`: it identifies the Finance-owned subledger account and the stable PartyId it belongs to. It deliberately carries no balance, credit limit, or payment instrument data. Those values must be derived from Finance-owned ledger/policy records or the canonical owner module.
+
+Account provisioning is lazy (first financial use), idempotent, and performed inside the caller-owned Finance transaction. No account is created as a side effect of Persons registration. Cross-module database atomicity follows ADR-0005.

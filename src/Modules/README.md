@@ -1,5 +1,11 @@
 # Modular application boundary
 
-This directory records the approved target topology. Modules are introduced only after G1 authorization. Each module owns its Domain, Application, Infrastructure, and versioned Contracts. Do not place cross-module implementation dependencies here; consumers reference published Contracts only.
+This directory records the approved target topology. Each module owns its Domain, Application, Infrastructure, and versioned Contracts. Cross-module implementation dependencies are prohibited; consumers reference published Contracts only.
 
-Current G0 state: four isolated, version-marker-only Contracts assemblies are compiled and included in MDGsm.sln; the API composition project references these Contracts assemblies. No module business Domain, Application, Infrastructure, API endpoint, or persistence behavior is implemented. The Host and BuildingBlocks physical relocation remains pending.
+## Current implementation state
+
+- **Finance:** G1 implementation has started with a narrowly scoped runtime slice for Finance-owned Party subledger account identity. It uses a unique PartyId constraint and transaction-bound idempotent provisioning. It does not create ledger entries, balances, API endpoints, or production deployment behavior.
+- **Persons:** domain/application/infrastructure remain transitional under BuildingBlocks and require coordinated relocation.
+- **IdentityAccess and RepairOperations:** Contracts exist; business runtime integration is not complete.
+
+The Finance slice does not change the global Persons G1 authorization flag. Production activation remains blocked until all applicable architecture, identity, security, migration, and acceptance evidence is complete.
