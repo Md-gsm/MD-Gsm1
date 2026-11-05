@@ -30,8 +30,7 @@ public sealed record RegisterLegalParty(
     string LegalName, string? LegalNationalId, string? EconomicCode, string? ResponsiblePersonName,
     PartyBusinessRoles Roles, string PrimaryMobile, string? AlternateMobile, string? Landline, string? Email,
     string? Province, string? City, string? PostalCode, string? AddressLine,
-    long CreditLimitRial, decimal DefaultDiscountPercent, DefaultPaymentMethod DefaultPaymentMethod,
-    string? BankCardLastFour, PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,
+    PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,
     PartyCommunicationPreferences CommunicationPreferences,
     WorkClassification? WorkClassification = null) : IPartyRegistrationCommon;
 
