@@ -412,8 +412,9 @@ def run_retention(root: Path) -> None:
     if not found:
         print("PASS-N/A: no temporary-data runtime or schema is present; gate is active and will fail if implementation appears without tests.")
         return
-    require_test(root, "PersonsTemporaryDataRetentionTests.cs", "Temporary data retention")
-    print("PASS: temporary-data runtime has its required automated test file.")
+    require_test(root, "PersonsTemporaryDataRetentionTests.cs", "Temporary data retention domain policy")
+    require_test(root, "PersonsTemporaryWorkflowPostgresTests.cs", "Temporary data retention PostgreSQL integration")
+    print("PASS: temporary-data runtime has domain and PostgreSQL integration tests.")
 
 def run_merge(root: Path) -> None:
     found = require_flag_consistency(root, "mergeExecutionImplemented", r"PartyMergeService|MergePartiesAsync|MergePartiesEndpoint|MergedIntoPartyId|party_merge_record", "party merge")
