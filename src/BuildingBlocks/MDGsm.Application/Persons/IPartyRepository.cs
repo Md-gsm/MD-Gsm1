@@ -30,9 +30,9 @@ public interface IPartyRepository
 
     /// <summary>
     /// Reads one party. Every read is recorded in the append-only access audit with <paramref name="actorId"/>.
-    /// Sensitive fields (national identifier, economic code, credit, card digits, note, full contact values)
-    /// are returned only when <paramref name="includeSensitive"/> is true; the caller must have verified that permission server-side.
+    /// Sensitive fields are returned only with a server-created authorization capability. Callers cannot
+    /// manufacture that capability; use PartyDetailsQueryService so policy is checked before repository access.
     /// </summary>
-    Task<PartyDetails?> GetAsync(string partyId, string actorId, bool includeSensitive, DbTransaction? transaction,
-        CancellationToken cancellationToken);
+    Task<PartyDetails?> GetAsync(string partyId, string actorId, PartyReadAuthorization authorization,
+        DbTransaction? transaction, CancellationToken cancellationToken);
 }
