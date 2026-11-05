@@ -46,7 +46,7 @@ def main() -> int:
         if p not in files:
             errors.append(f"listed but not tracked: {p}")
         elif digest(p) != h:
-            errors.append(f"checksum mismatch: {p}")
+            errors.append(f"checksum mismatch: {p} (actual sha256: {digest(p)})")
     if errors:
         print("FAIL: SHA256SUMS.txt is out of date:\n  " + "\n  ".join(errors[:50]))
         return 1
