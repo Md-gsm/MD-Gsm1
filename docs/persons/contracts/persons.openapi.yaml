@@ -13,7 +13,7 @@ servers:
 security:
   - opaqueBearer: []
 paths:
-  /api/v1/persons:
+  /api/v2/persons:
     get:
       operationId: searchParties
       summary: Search active parties by name or last four mobile digits
@@ -57,7 +57,7 @@ paths:
         '403': { description: Missing write permission }
         '409': { description: Duplicate national identifier or contact conflict }
         '422': { description: Validation failure }
-  /api/v1/persons/legal:
+  /api/v2/persons/legal:
     post:
       operationId: createLegalParty
       summary: Register a legal entity
@@ -78,7 +78,7 @@ paths:
         '403': { description: Missing write permission }
         '409': { description: Duplicate legal identifier }
         '422': { description: Validation failure }
-  /api/v1/persons/{partyId}:
+  /api/v2/persons/{partyId}:
     get:
       operationId: getParty
       summary: Read one party
@@ -151,12 +151,11 @@ components:
           type: array
           uniqueItems: true
           items: { type: string, enum: [Customer, Colleague] }
-        primaryMobile: { type: string }
+        primaryMobile: { type: [string, 'null'] }
         alternateMobile: { type: [string, 'null'] }
         landline: { type: [string, 'null'] }
         email: { type: [string, 'null'], format: email }
         address: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
-        financial: { $ref: '#/components/schemas/FinancialProfile' }
         communication: { $ref: '#/components/schemas/CommunicationPreferences' }
         acquaintanceSource: { type: [string, 'null'] }
         internalNote: { type: [string, 'null'], maxLength: 2000 }
