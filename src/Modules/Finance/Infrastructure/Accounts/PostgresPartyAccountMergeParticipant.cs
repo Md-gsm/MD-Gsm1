@@ -76,8 +76,7 @@ public sealed class PostgresPartyAccountMergeParticipant : IPartyMergeParticipan
         var (postgres, tx) = RequirePostgres(connection, transaction);
         await using var command = new NpgsqlCommand("""
             UPDATE finance_party_accounts AS account
-            SET party_id = @target,
-                row_version = row_version + 1
+            SET party_id = @target
             WHERE account.party_id = @source
               AND EXISTS (
                   SELECT 1 FROM persons_merge_finance_context AS prepared
