@@ -10,10 +10,21 @@ namespace MDGsm.Finance.Infrastructure.Accounts;
 /// Idempotently creates the single Finance-owned subledger account inside the caller's transaction.
 /// Party existence/activity and actor identity are mandatory trusted boundary dependencies.
 /// </summary>
-public sealed class PostgresPartyAccountProvisioner(
-    IPartyReferenceValidator partyReferenceValidator,
-    IFinanceActorContext actorContext)
+public sealed class PostgresPartyAccountProvisioner
 {
+    private readonly IPartyReferenceValidator _partyReferenceValidator;
+    private readonly IFinanceActorContext _actorContext;
+
+    public PostgresPartyAccountProvisioner(
+        IPartyReferenceValidator partyReferenceValidator,
+        IFinanceActorContext actorContext)
+    {
+        _partyReferenceValidator = partyReferenceValidator
+            ?? throw new ArgumentNullException(nameof(partyReferenceValidator));
+        _actorContext = actorContext
+            ?? throw new ArgumentNullException(nameof(actorContext));
+    }
+
     public async Task<PartyAccountReference> GetOrCreateAsync(
         PartyReference party,
         NpgsqlConnection connection,
@@ -32,7 +43,7 @@ public sealed class PostgresPartyAccountProvisioner(
             throw new InvalidOperationException(
                 "Party account provisioning requires READ COMMITTED isolation so a concurrent winner is visible to the replay SELECT.");
 
-        var actorId = actorContext.ActorId;
+        var actorId = _actorContext.ActorId;
         if (string.IsNullOrWhiteSpace(actorId) ||
             actorId.Length > 128 ||
             !string.Equals(actorId, actorId.Trim(), StringComparison.Ordinal) ||
@@ -42,7 +53,7 @@ public sealed class PostgresPartyAccountProvisioner(
                 "A trusted authenticated Finance actor identifier of 1-128 non-control characters is required.");
         }
 
-        var partyIsActive = await partyReferenceValidator.IsActiveAsync(
+        var partyIsActive = await _partyReferenceValidator.IsActiveAsync(
             party.PartyId, connection, transaction, cancellationToken);
         if (!partyIsActive)
             throw new InvalidOperationException("The referenced Party does not exist or is inactive.");
