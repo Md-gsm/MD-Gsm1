@@ -277,6 +277,7 @@ def run_architecture(root: Path) -> None:
             "MDGsm.RepairOperations.Contracts", "MDGsm.Finance.Contracts",
         },
         "Host/Desktop/MDGsm.Desktop.csproj": {"MDGsm.Client"},
+        "Modules/Finance/MDGsm.Finance.csproj": {"MDGsm.Finance.Contracts", "MDGsm.Persons.Contracts"},
     }
     modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance")
     for module in modules:

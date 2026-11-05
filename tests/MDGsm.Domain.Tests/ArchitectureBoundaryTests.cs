@@ -62,6 +62,17 @@ public sealed class ArchitectureBoundaryTests
     }
 
     [Fact]
+    public void Finance_runtime_depends_only_on_published_module_contracts()
+    {
+        var root = FindSolutionRoot();
+        AssertReferences(
+            root,
+            "src/Modules/Finance/MDGsm.Finance.csproj",
+            "..\\Contracts\\MDGsm.Finance.Contracts.csproj",
+            "..\\..\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj");
+    }
+
+    [Fact]
     public void Flat_legacy_project_roots_are_not_left_under_src()
     {
         var root = FindSolutionRoot();

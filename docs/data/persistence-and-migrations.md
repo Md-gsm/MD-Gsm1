@@ -12,7 +12,7 @@
 - By default, the runner refuses to operate unless the target database comment contains `MDGSM_DISPOSABLE_TEST_DB`.
 - `--allow-unmarked-database` additionally requires the environment variable `MDGSM_UNMARKED_DB_CONFIRMATION=APPLY-TO-NON-DISPOSABLE-DATABASE`; without it the tool exits with code 2. An explicitly approved deployment invocation may opt out using `--allow-unmarked-database`; credentials are read only from `ConnectionStrings__MDGsmDatabase` in the process environment.
 - The API never applies migrations on startup. Migration execution is explicit.
-- No Persons, accounting, or other business tables or migrations exist; migration 0001 creates infrastructure metadata only.
+- The repository contains Persons identity migrations 0002/0003 and the Finance Accounts Receivable party-account migration 0004. Finance migration 0004 creates only the lazy party-account identity table; no general ledger, chart of accounts, journal posting, payment settlement, or payroll schema is implemented.
 
 ## Local secret configuration
 
