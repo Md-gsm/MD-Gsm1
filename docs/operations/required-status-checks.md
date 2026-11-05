@@ -18,7 +18,7 @@ The following 13 job names are the required check set that must be configured on
 - `persons-ci-enforcement-test`
 - `persons-ci-evidence`
 
-## Live protection state — re-verified 2026-11-03
+## آخرین وضعیت تأییدشدهٔ حفاظت شاخه — 2026-11-03
 
 `gh api repos/Md-gsm/MD-Gsm1/branches/main/protection` returns:
 
@@ -27,7 +27,7 @@ The following 13 job names are the required check set that must be configured on
 - `required_signatures`, `required_linear_history`, `required_conversation_resolution` and `enforce_admins` are enabled.
 - `windows-preview-installer` now also runs on `pull_request` (no path filter) but is **not** in the required list; adding it is a Project Owner decision.
 
-`requiredStatusChecksConfiguredInScm` is therefore `true`. This section supersedes the historical 2026-10-31 snapshot below; GitHub itself remains the source of truth.
+بر اساس خروجی ثبت‌شدهٔ اجرای موفق `gh api` توسط مالک مخزن در 2026-11-03، مقدار `requiredStatusChecksConfiguredInScm=true` است. این تأیید از snapshot قدیمی 2026-10-31 جدیدتر است و آن را supersede می‌کند. اتصال GitHub مورد استفاده در این ممیزی برای endpoint جزئیات Branch Protection پاسخ 403 داده است؛ بنابراین این ممیزی، تأیید مستقل و تازه‌تری از وضعیت زنده ارائه نمی‌کند. هر تغییر بعد از 2026-11-03 باید با خروجی جدید Admin بررسی شود.
 
 ## Historical snapshot — 2026-10-31 (superseded)
 
@@ -47,7 +47,7 @@ Recommended Admin configuration:
 3. Prevent bypass for administrators and maintainers for these checks, unless a documented emergency exception is explicitly approved by the Project Owner.
 4. Keep required checks attached to the default branch rules, not just workflow YAML.
 
-The connected GitHub integration currently exposes no Branch Protection/Rulesets write action. It cannot change these settings even though the repository account has Admin permission. A repository Admin must configure them in GitHub Settings and provide an exported/screenshot/API evidence reference. Until this is verified, `requiredStatusChecksConfiguredInScm=false`.
+The connected GitHub integration currently exposes no Branch Protection/Rulesets write action. It cannot change these settings even though the repository account has Admin permission. A repository Admin must configure them in GitHub Settings and provide an exported/screenshot/API evidence reference. وضعیت مستندشده پس از تأیید Admin در 2026-11-03 برابر `requiredStatusChecksConfiguredInScm=true` است؛ اگر پیکربندی تغییر کرده باشد، باید دوباره با خروجی Admin راستی‌آزمایی شود.
 
 ## Negative enforcement test
 
@@ -76,6 +76,6 @@ A PowerShell helper is available at `scripts/Configure-MainBranchProtection.ps1`
    .\scripts\Configure-MainBranchProtection.ps1 -Apply
    ```
    The script requires typing the exact repository/branch name, preserves existing unrelated restrictions, configures strict required checks, admin enforcement, at least one approval, latest-push approval, no bypass allowances, no force pushes and no deletion, then reads the result back and verifies it.
-4. After successful configuration, perform a **new** negative PR test. The earlier PR #6 was before these required checks were configured and cannot replace that post-configuration test.
+4. پس از پیکربندی، یک آزمون منفی جدید برای اثبات enforcement واقعی Branch Protection اجرا شود. PR #6 آزمون منفی Architecture Gate است و به‌تنهایی enforcement مربوط به Required Status Checks را اثبات نمی‌کند.
 
 The script intentionally does not run automatically in CI: changing remote branch protection is an explicit repository-Admin operation. GitHub's official REST documentation lists the required fields, strict option and Administration-write permission for this endpoint: https://docs.github.com/en/rest/branches/branch-protection.
