@@ -16,6 +16,11 @@ public abstract class Party
             throw new ArgumentException("A valid PartyId is required.", nameof(id));
         }
 
+        if (businessRoles == PartyBusinessRoles.None)
+        {
+            throw new ArgumentException("At least one business role is required.", nameof(businessRoles));
+        }
+
         if ((businessRoles & ~AllowedRoles) != 0)
         {
             throw new ArgumentOutOfRangeException(
