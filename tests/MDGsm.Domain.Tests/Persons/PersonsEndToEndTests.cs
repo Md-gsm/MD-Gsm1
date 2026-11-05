@@ -77,7 +77,7 @@ public sealed class PersonsEndToEndTests
         await using var scope = await TestScope.OpenAsync();
         var nationalId = NewNationalId();
         var created = await scope.Repository.AddNaturalAsync(
-            NewNatural("09121234567", nationalId, creditLimitRial: 5_000_000, lastFour: "4321"), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+            NewNatural("09121234567", nationalId), Actor, Guid.CreateVersion7(), scope.Transaction, default);
 
         var masked = await scope.QueryFor(allowSensitive: false).GetAsync(created.PartyId, scope.Transaction, default);
         var full = await scope.QueryFor(allowSensitive: true).GetAsync(created.PartyId, scope.Transaction, default);
