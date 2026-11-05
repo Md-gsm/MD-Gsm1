@@ -12,10 +12,6 @@ public interface IPartyRegistrationCommon
     string? City { get; }
     string? PostalCode { get; }
     string? AddressLine { get; }
-    long CreditLimitRial { get; }
-    decimal DefaultDiscountPercent { get; }
-    DefaultPaymentMethod DefaultPaymentMethod { get; }
-    string? BankCardLastFour { get; }
     PartyAcquaintanceSource AcquaintanceSource { get; }
     string? InternalNote { get; }
     PartyCommunicationPreferences CommunicationPreferences { get; }
@@ -26,8 +22,7 @@ public sealed record RegisterNaturalParty(
     string GivenName, string FamilyName, PartyBusinessRoles Roles, string? NationalId,
     string? PrimaryMobile, string? AlternateMobile, string? Landline, string? Email,
     string? Province, string? City, string? PostalCode, string? AddressLine,
-    long CreditLimitRial, decimal DefaultDiscountPercent, DefaultPaymentMethod DefaultPaymentMethod,
-    string? BankCardLastFour, PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,
+    PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,
     PartyCommunicationPreferences CommunicationPreferences,
     WorkClassification? WorkClassification = null) : IPartyRegistrationCommon;
 
@@ -48,8 +43,6 @@ public sealed record PartyDetails(
     string PartyId, PartyType Type, string DisplayName, PartyBusinessRoles Roles,
     string? NationalIdentifier, string? EconomicCode, string? ResponsiblePersonName,
     IReadOnlyList<ContactPointDto> Contacts, AddressDto? PrimaryAddress,
-    long? CreditLimitRial, decimal DefaultDiscountPercent,
-    DefaultPaymentMethod DefaultPaymentMethod, string? BankCardLastFour,
     PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,
     PartyCommunicationPreferences CommunicationPreferences, DateTimeOffset CreatedAtUtc,
     bool SensitiveFieldsIncluded, WorkClassification? WorkClassification);
