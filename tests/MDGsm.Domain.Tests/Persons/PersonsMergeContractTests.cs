@@ -131,7 +131,7 @@ public sealed class PersonsMergeContractTests
             Attempt(firstTarget, Guid.CreateVersion7()),
             Attempt(secondTarget, Guid.CreateVersion7()));
 
-        Assert.Single(results.Where(x => x));
+        Assert.Single(results, succeeded => succeeded);
         Assert.False(await IsActiveAsync(dataSource, source));
         Assert.Contains(await FindMergedIntoAsync(dataSource, source), new Guid?[] { firstTarget, secondTarget });
         Assert.Equal(1L, await FindAccountCountForPartyAsync(dataSource, firstTarget) +
