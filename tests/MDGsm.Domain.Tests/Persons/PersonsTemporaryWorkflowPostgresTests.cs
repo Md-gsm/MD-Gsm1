@@ -26,6 +26,8 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         Assert.Null(await store.ReadCiphertextAsync(id, now.AddDays(7)));
         Assert.Equal(1, await store.PurgeExpiredAsync(now.AddDays(7)));
         Assert.Null(await store.ReadCiphertextAsync(id, now.AddDays(6)));
+        Assert.Equal(0L, await CountPayloadRowsAsync(dataSource, id));
+        Assert.Equal("purged", await ReadLifecycleStatusAsync(dataSource, id));
         Assert.Equal(0, await store.PurgeExpiredAsync(now.AddDays(8)));
     }
 
@@ -79,6 +81,24 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
 
         Assert.False(await store.RenewAsync(id, now.AddDays(2), TimeSpan.FromDays(1),
             "Second renewal attempt rejected", "ci-actor", explicitlyAuthorized: true));
+    }
+
+    private static async Task<long> CountPayloadRowsAsync(NpgsqlDataSource dataSource, Guid workflowId)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT count(*) FROM persons_temporary_workflow_payloads WHERE workflow_record_id = @id;", connection);
+        command.Parameters.AddWithValue("id", workflowId);
+        return (long)(await command.ExecuteScalarAsync())!;
+    }
+
+    private static async Task<string> ReadLifecycleStatusAsync(NpgsqlDataSource dataSource, Guid workflowId)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT lifecycle_status FROM persons_temporary_workflows WHERE workflow_record_id = @id;", connection);
+        command.Parameters.AddWithValue("id", workflowId);
+        return (string)(await command.ExecuteScalarAsync())!;
     }
 
     private static NpgsqlDataSource OpenDataSource()
