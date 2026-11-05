@@ -241,3 +241,46 @@ Session cap به‌صورت transactionally serialized روی ردیف تنظی�
 | IA-REV-09 TLS | اعتبارسنجی certificate و bind محلی صریح شد | ثبت جزئیات topology در ADR |
 
 **وضعیت:** این Revision نقص‌های مستندسازی را می‌بندد، نه گیت‌های تصمیم/پیاده‌سازی را. G1 همچنان بسته و `g1Authorized=false` است.
+## 6. تصمیم‌های مالک محصول — Recovery و Session (2026-11-05)
+
+این بخش تصمیم‌های مالک را جایگزین عبارت‌های قبلی «نامشخص/پیشنهادی» می‌کند؛ مرز غیرعملیاتی و g1Authorized=false بدون تغییر باقی می‌ماند.
+
+### 6.1 بازار و Provider
+- بازار هدف فعلی ایران است.
+- Email از mailbox اختصاصی روی دامنه محصول ارسال می‌شود؛ برنامه Mail Server مستقل اجرا نمی‌کند. ارسال از SMTP relay یا Transactional Email provider قابل تعویض استفاده می‌کند. نام vendor/SMTP host و DNS واقعی در مرحله استقرار تعیین می‌شود.
+- SMS vendor هنوز انتخاب نشده است. تا ارزیابی و آزمون واقعی API/OTP template/delivery/status/SLA/خط خدماتی/قوانین ارسال، Recovery عملیاتی نشود.
+- هیچ API key، SMTP password یا OTP template secret در Git، appsettings، installer، migration یا log قرار نگیرد.
+
+### 6.2 OTP و محدودیت‌ها
+| پارامتر | مقدار مصوب |
+|---|---:|
+| Email OTP TTL | 600 ثانیه (10 دقیقه) |
+| SMS OTP TTL | 300 ثانیه (5 دقیقه) |
+| حداکثر تلاش ناموفق در challenge | 5 |
+| قفل پس از رسیدن به حد تلاش | 86400 ثانیه (24 ساعت) |
+| فاصله حداقل ارسال مجدد | 3600 ثانیه (1 ساعت) |
+| سقف ارسال در rolling 1h | 1 |
+| سقف ارسال در rolling 24h | 5 |
+| قفل پس از عبور از سقف ارسال | 86400 ثانیه (24 ساعت) |
+
+- محدودیت‌ها per account + channel و per source enforce شوند؛ شمارنده‌ها اتمیک و متکی به ساعت DB باشند. قفل منبع به‌تنهایی نباید ابزار آسان DoS علیه حساب قربانی باشد.
+- resend، proof قبلی همان کانال را revoke می‌کند؛ هر OTP به همان account/challenge bind است. ارسال ناموفق/نامشخص provider proof معتبر تولید نمی‌کند.
+- این lockout صرفاً برای Recovery است؛ lockout ورود عادی 5 شکست در 15 دقیقه/قفل 15 دقیقه‌ای را تغییر نمی‌دهد.
+
+### 6.3 Session
+| پارامتر | مقدار مصوب |
+|---|---:|
+| Heartbeat | 30 ثانیه |
+| Lease | 180 ثانیه |
+| عمر مطلق نشست از زمان ایجاد | 12 ساعت |
+| نشست/دستگاه هم‌زمان هر حساب | 2 |
+| حساب فعال متمایز کل سیستم | 5، قابل تغییر توسط super_admin |
+| تغییر رمز | revoke فوری همه نشست‌های حساب |
+| غیرفعال‌سازی حساب | revoke فوری همه نشست‌های حساب |
+
+Absolute TTL با heartbeat تمدید نمی‌شود. سقف دو نشست و سقف حساب فعال باید با transaction/advisory lock enforce شود. تغییر سقف کل فقط با permission اختصاصی، audit و اعتبارسنجی بازه مجاز انجام شود. تعویض نشست در زمان پر بودن سقف per-account باید صریح، قابل مشاهده و audit شود؛ اخراج خودکار/خاموش ممنوع. «دستگاه» با client_instance_id تصادفی تعریف می‌شود، نه fingerprint سخت‌افزاری.
+
+### 6.4 تعارض‌های قبلی و مرز تصمیم
+- مقادیر 30s/180s و 5 حساب که پیش‌تر پیشنهادی بودند، اکنون همراه 12h و سقف 2 نشست/account تصمیم مالک‌اند.
+- تصمیم فعلی فقط Recovery OTP و Session را پوشش می‌دهد؛ ماتریس permission، retention و جزئیات bootstrap provisioning جداگانه باقی می‌مانند.
+- Runtime، migration، endpoint، middleware و provider credential تا تکمیل G1 و مجوز رسمی ایجاد/فعال نشوند.
