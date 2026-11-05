@@ -41,7 +41,7 @@ src/
 
 The six technical application projects are physically located under `src/BuildingBlocks/*` and `src/Host/*`; their solution entries and project references use those paths. The four module Contracts assemblies are separate .NET projects under `src/Modules/*/Contracts`, included in `MDGsm.sln`, and referenced by the API composition project. The architecture gate checks the complete project inventory, dependency graph, Contracts isolation/version markers, and absence of the former flat `src/MDGsm.*` roots.
 
-The four Contracts projects currently expose version markers only. They are compiled boundary artifacts, not implementations of the Persons, IdentityAccess, RepairOperations, or Finance business modules.
+The four Contracts projects are independent versioned boundary assemblies. Finance now has a first executable vertical slice for lazy Accounts Receivable party-account provisioning under `src/Modules/Finance`; this does not implement the general ledger, posting, settlement, payroll, or the complete Finance module. Persons, IdentityAccess, and RepairOperations remain contract-only or transitional as described by their module status.
 
 The Persons domain/application/infrastructure files introduced on the isolated PR 30/32 stack currently reside under `src/BuildingBlocks/MDGsm.*` as a transitional implementation location. They are not generic shared BuildingBlocks and this physical location does not satisfy the final module boundary. ADR-0014 defines the target ownership and requires a coordinated project/namespace/DI/migration-resource/test relocation to `src/Modules/Persons/{Domain,Application,Infrastructure}` before G1. Do not treat the source-tree move as complete merely because the Contracts project exists.
 

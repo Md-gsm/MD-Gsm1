@@ -8,18 +8,79 @@
     "src/BuildingBlocks/MDGsm.Infrastructure/Persons",
     "database/migrations/persons"
   ],
-  "registeredConsumers": [],
+  "registeredConsumers": [
+    {
+      "module": "Finance",
+      "path": "src/Modules/Finance/Contracts/IAccountsReceivableAccountProvisioner.cs",
+      "contractVersion": "1.0",
+      "mergeProtocolVersion": "1.0"
+    },
+    {
+      "module": "Finance",
+      "path": "src/Modules/Finance/Contracts/PartyAccountReference.cs",
+      "contractVersion": "1.0",
+      "mergeProtocolVersion": "1.0"
+    },
+    {
+      "module": "Finance",
+      "path": "src/Modules/Finance/Domain/PartyAccount.cs",
+      "contractVersion": "1.0",
+      "mergeProtocolVersion": "1.0"
+    },
+    {
+      "module": "Finance",
+      "path": "src/Modules/Finance/Application/IPartyAccountRepository.cs",
+      "contractVersion": "1.0",
+      "mergeProtocolVersion": "1.0"
+    },
+    {
+      "module": "Finance",
+      "path": "src/Modules/Finance/Application/AccountsReceivableAccountProvisioner.cs",
+      "contractVersion": "1.0",
+      "mergeProtocolVersion": "1.0"
+    },
+    {
+      "module": "Finance",
+      "path": "src/Modules/Finance/Infrastructure/PostgresPartyAccountRepository.cs",
+      "contractVersion": "1.0",
+      "mergeProtocolVersion": "1.0"
+    },
+    {
+      "module": "Finance",
+      "path": "database/migrations/finance/0004_finance_party_accounts.sql",
+      "contractVersion": "1.0",
+      "mergeProtocolVersion": "1.0"
+    }
+  ],
   "registryPolicy": {
     "anyNonOwnerPartyIdReferenceRequiresRegistration": true,
     "unknownConsumerCountMustBeZero": true,
     "registrationRequiredBeforeMerge": true,
     "registrationRequiredBeforeRelease": true,
-    "scannedIdentifiers": ["PartyId", "party_id"],
-    "legacyIdentifierForbidden": ["PersonId", "person_id"]
+    "scannedIdentifiers": [
+      "PartyId",
+      "party_id"
+    ],
+    "legacyIdentifierForbidden": [
+      "PersonId",
+      "person_id"
+    ]
   },
   "plannedNotYetImplemented": [
-    {"module":"RepairWorkflow","status":"PLANNED","condition":"Register only when implemented and stores or transports PartyId."},
-    {"module":"Finance","status":"PLANNED","condition":"Register only when a reviewed Finance contract stores or transports PartyId."},
-    {"module":"PurchasingSales","status":"PLANNED","condition":"Register only when implemented and stores or transports PartyId."}
+    {
+      "module": "RepairWorkflow",
+      "status": "PLANNED",
+      "condition": "Register only when implemented and stores or transports PartyId."
+    },
+    {
+      "module": "Finance",
+      "status": "PLANNED",
+      "condition": "Register only when a reviewed Finance contract stores or transports PartyId."
+    },
+    {
+      "module": "PurchasingSales",
+      "status": "PLANNED",
+      "condition": "Register only when implemented and stores or transports PartyId."
+    }
   ]
 }

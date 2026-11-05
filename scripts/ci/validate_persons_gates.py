@@ -269,7 +269,7 @@ def run_architecture(root: Path) -> None:
     expected_projects = {
         "BuildingBlocks/MDGsm.Domain/MDGsm.Domain.csproj": set(),
         "BuildingBlocks/MDGsm.Application/MDGsm.Application.csproj": {"MDGsm.Domain"},
-        "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {"MDGsm.Application"},
+        "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {"MDGsm.Application", "MDGsm.Persons.Contracts"},
         "BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj": set(),
         "Host/Api/MDGsm.Api.csproj": {
             "MDGsm.Application", "MDGsm.Infrastructure",
@@ -277,6 +277,7 @@ def run_architecture(root: Path) -> None:
             "MDGsm.RepairOperations.Contracts", "MDGsm.Finance.Contracts",
         },
         "Host/Desktop/MDGsm.Desktop.csproj": {"MDGsm.Client"},
+        "Modules/Finance/MDGsm.Finance.csproj": {"MDGsm.Finance.Contracts", "MDGsm.Persons.Contracts"},
     }
     modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance")
     for module in modules:

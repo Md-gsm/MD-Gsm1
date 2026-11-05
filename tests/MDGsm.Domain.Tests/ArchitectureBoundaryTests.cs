@@ -17,7 +17,8 @@ public sealed class ArchitectureBoundaryTests
         AssertReferences(
             root,
             "src/BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj",
-            "..\\MDGsm.Application\\MDGsm.Application.csproj");
+            "..\\MDGsm.Application\\MDGsm.Application.csproj",
+            "..\\..\\Modules\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj");
         AssertReferences(root, "src/BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj");
     }
 
@@ -59,6 +60,17 @@ public sealed class ArchitectureBoundaryTests
             Assert.True(File.Exists(versionMarker), $"Missing contract version marker: {versionMarker}");
             Assert.Contains("Current = \"1.0\"", File.ReadAllText(versionMarker));
         }
+    }
+
+    [Fact]
+    public void Finance_runtime_depends_only_on_published_module_contracts()
+    {
+        var root = FindSolutionRoot();
+        AssertReferences(
+            root,
+            "src/Modules/Finance/MDGsm.Finance.csproj",
+            "Contracts\\MDGsm.Finance.Contracts.csproj",
+            "..\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj");
     }
 
     [Fact]

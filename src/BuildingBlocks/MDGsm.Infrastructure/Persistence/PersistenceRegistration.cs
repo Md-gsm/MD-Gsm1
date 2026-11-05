@@ -1,5 +1,6 @@
 using MDGsm.Application.Persons;
 using MDGsm.Infrastructure.Persons;
+using MDGsm.Persons.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,7 @@ public static class PersistenceRegistration
 
         services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
         services.AddScoped<IPartyRepository, PostgresPartyRepository>();
+        services.AddScoped<IPartyIdentityLookup, PostgresPartyIdentityLookup>();
         return services;
     }
 }
