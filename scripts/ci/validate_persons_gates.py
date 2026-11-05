@@ -346,7 +346,8 @@ def run_architecture(root: Path) -> None:
         solution_path = f"src\\Modules\\{module}\\Contracts\\MDGsm.{module}.Contracts.csproj"
         if not project.exists() or solution_path not in solution:
             raise GateFailure(f"{module} Contracts project is missing from MDGsm.sln.")
-        if not marker.exists() or 'Current = "1.0"' not in marker.read_text(encoding="utf-8"):
+        expected_version = "1.1" if module == "Finance" else "1.0"
+        if not marker.exists() or f'Current = "{expected_version}"' not in marker.read_text(encoding="utf-8"):
             raise GateFailure(f"{module} Contracts version marker is missing or invalid.")
 
     old_roots = (
