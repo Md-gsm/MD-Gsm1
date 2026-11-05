@@ -8,7 +8,7 @@ namespace MDGsm.Infrastructure.Persons;
 /// ciphertext; this type deliberately has no API that accepts plaintext PII.
 /// Every payload read is guarded by the expiry predicate in the database.
 /// </summary>
-public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
+public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) : ITemporaryWorkflowRetentionStore
 {
     private const int DefaultTtlDays = 7;
     private const int AbsoluteMaxAgeDays = 30;
@@ -161,8 +161,16 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
     /// Idempotently removes ciphertext for expired rows. FOR UPDATE SKIP LOCKED permits
     /// multiple workers without double-processing the same row.
     /// </summary>
-    public async Task<int> PurgeExpiredAsync(
-        DateTimeOffset nowUtc, int batchSize = 250, CancellationToken cancellationToken = default)
+    public Task<int> PurgeExpiredAsync(int batchSize, CancellationToken cancellationToken = default) =>
+        PurgeExpiredCoreAsync(null, batchSize, cancellationToken);
+
+    // Explicit-time overload is retained only for deterministic integration tests.
+    public Task<int> PurgeExpiredAsync(
+        DateTimeOffset nowUtc, int batchSize = 250, CancellationToken cancellationToken = default) =>
+        PurgeExpiredCoreAsync(nowUtc.ToUniversalTime(), batchSize, cancellationToken);
+
+    private async Task<int> PurgeExpiredCoreAsync(
+        DateTimeOffset? nowUtc, int batchSize, CancellationToken cancellationToken)
     {
         if (batchSize is < 1 or > 5000) throw new ArgumentOutOfRangeException(nameof(batchSize));
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -171,7 +179,7 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
             WITH due AS (
                 SELECT workflow.workflow_record_id
                 FROM persons_temporary_workflows AS workflow
-                WHERE workflow.expires_at_utc <= @now
+                WHERE workflow.expires_at_utc <= COALESCE(@now, clock_timestamp())
                   AND workflow.lifecycle_status IN ('open', 'closed')
                   AND EXISTS (
                       SELECT 1 FROM persons_temporary_workflow_payloads AS payload
@@ -189,12 +197,15 @@ public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
             )
             UPDATE persons_temporary_workflows AS workflow
             SET lifecycle_status = 'purged',
-                purged_at_utc = @now,
+                purged_at_utc = COALESCE(@now, clock_timestamp()),
                 row_version = row_version + 1
             FROM deleted_payloads
             WHERE workflow.workflow_record_id = deleted_payloads.workflow_record_id;
             """, connection, transaction);
-        command.Parameters.AddWithValue("now", nowUtc.ToUniversalTime());
+        command.Parameters.Add(new NpgsqlParameter("now", NpgsqlDbType.TimestampTz)
+        {
+            Value = (object?)nowUtc ?? DBNull.Value
+        });
         command.Parameters.AddWithValue("batch_size", batchSize);
         var affected = await command.ExecuteNonQueryAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
