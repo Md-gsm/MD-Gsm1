@@ -14,30 +14,45 @@ import validate_persons_gates as gates  # noqa: E402
 import write_ci_evidence as evidence_writer  # noqa: E402
 
 class PersonsGatePolicyTests(unittest.TestCase):
-    def test_unimplemented_retention_gate_is_explicitly_na(self):
+    def test_declared_retention_runtime_passes_with_domain_and_postgres_tests(self):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
             gates.run_retention(ROOT)
-        self.assertIn("PASS-N/A", out.getvalue())
-        self.assertIn("no temporary-data runtime", out.getvalue())
+        self.assertIn("PASS:", out.getvalue())
+        self.assertIn("domain and PostgreSQL integration tests", out.getvalue())
+
+    def test_unimplemented_retention_gate_is_explicitly_na(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            manifest_path = dst / "docs/persons/persons-module-manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["temporaryDataRuntimeImplemented"] = False
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            (dst / "database/migrations/0006_persons_temporary_workflows.sql").unlink()
+            for name in ("PostgresTemporaryWorkflowStore.cs", "TemporaryWorkflowRetentionWorker.cs"):
+                (dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons" / name).unlink()
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                gates.run_retention(dst)
+            self.assertIn("PASS-N/A", out.getvalue())
 
     def test_declared_retention_implementation_without_tests_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
-            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
-            manifest_path = dst / "docs/persons/persons-module-manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["temporaryDataRuntimeImplemented"] = True
-            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            marker = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
-            marker.write_text("public sealed class TemporaryDataRetentionWorker {}", encoding="utf-8")
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            (dst / "tests/MDGsm.Domain.Tests/Persons/PersonsTemporaryWorkflowPostgresTests.cs").unlink()
             with self.assertRaises(gates.GateFailure):
                 gates.run_retention(dst)
 
     def test_undeclared_retention_runtime_marker_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
-            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            manifest_path = dst / "docs/persons/persons-module-manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["temporaryDataRuntimeImplemented"] = False
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             marker = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
             marker.write_text("public sealed class TemporaryDataRetentionWorker {}", encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
