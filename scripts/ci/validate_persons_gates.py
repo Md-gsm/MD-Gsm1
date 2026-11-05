@@ -389,7 +389,14 @@ def run_registry(root: Path) -> None:
         raise GateFailure(f"Unregistered PartyId consumer(s): {sorted(unknown)}")
     if stale:
         raise GateFailure(f"Registry contains consumer paths not found in source: {sorted(stale)}")
-    print(f"PASS: PartyId consumer registry reconciles. Registered external consumers: {len(registered)}; unknown: 0.")
+    allowed_classes = {"ACTIVE_TRANSFERABLE", "HISTORICAL_PRESERVE", "BLOCKING", "DERIVED_REBUILD"}
+    for consumer in reg.get("registeredConsumers", []):
+        classification = consumer.get("referenceClassification")
+        if classification not in allowed_classes:
+            raise GateFailure(
+                f"PartyId consumer '{consumer.get('path')}' must have exactly one valid referenceClassification."
+            )
+    print(f"PASS: PartyId consumer registry reconciles. Registered external consumers: {len(registered)}; unknown: 0; unclassified: 0.")
 
 def run_api(root: Path) -> None:
     manifest = load_json(root / "docs/persons/persons-module-manifest.json")
