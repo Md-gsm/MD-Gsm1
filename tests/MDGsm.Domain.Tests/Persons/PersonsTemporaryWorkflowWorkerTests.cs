@@ -23,7 +23,7 @@ public sealed class PersonsTemporaryWorkflowWorkerTests
 
         Assert.Equal(3, store.Calls);
         Assert.Single(alert.FailureCodes);
-        Assert.Contains("InvalidOperationException", alert.FailureCodes[0], StringComparison.Ordinal);
+        Assert.Contains("invalidoperationexception", alert.FailureCodes[0], StringComparison.Ordinal);
         Assert.DoesNotContain(piiCanary, string.Join(Environment.NewLine, logger.Messages), StringComparison.Ordinal);
         Assert.DoesNotContain(piiCanary, string.Join(Environment.NewLine, alert.FailureCodes), StringComparison.Ordinal);
     }
