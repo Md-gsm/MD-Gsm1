@@ -3,6 +3,12 @@ using System.Data.Common;
 namespace MDGsm.Application.Persons;
 
 /// <summary>Server-side policy boundary for access to personally identifiable and financial details.</summary>
+/// <summary>Supplies the authenticated actor established by the server authentication boundary.</summary>
+public interface IPartyActorContext
+{
+    string ActorId { get; }
+}
+
 public interface IPartySensitiveReadAuthorizer
 {
     Task<bool> CanReadSensitiveAsync(string authenticatedActorId, string partyId, CancellationToken cancellationToken);
@@ -33,15 +39,16 @@ public sealed class PartyReadAuthorization
 /// </summary>
 public sealed class PartyDetailsQueryService(
     IPartyRepository repository,
-    IPartySensitiveReadAuthorizer authorizer)
+    IPartySensitiveReadAuthorizer authorizer,
+    IPartyActorContext actorContext)
 {
     public async Task<PartyDetails?> GetAsync(
         string partyId,
-        string authenticatedActorId,
         DbTransaction? transaction,
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(partyId);
+        var authenticatedActorId = actorContext.ActorId;
         ArgumentException.ThrowIfNullOrWhiteSpace(authenticatedActorId);
 
         var allowed = await authorizer.CanReadSensitiveAsync(
