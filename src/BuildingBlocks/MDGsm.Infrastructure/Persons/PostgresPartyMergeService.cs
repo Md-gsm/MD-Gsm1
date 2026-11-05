@@ -96,7 +96,7 @@ public sealed class PostgresPartyMergeService
         var prepared = new List<IPartyMergeParticipant>();
 
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
-        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
         try
         {
             await LockPartiesInStableOrderAsync(connection, transaction, sourcePartyId, targetPartyId, cancellationToken);
