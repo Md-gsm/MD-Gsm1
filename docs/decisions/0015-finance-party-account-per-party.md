@@ -6,17 +6,19 @@
 
 ## Decision
 
-1. Finance owns the identity of a Party subledger account. Persons owns Party identity and issues the stable `PartyReference`; Persons registration never creates a financial account.
-2. A Party has at most one Finance party-account identity. PostgreSQL enforces this with a non-null unique constraint on `finance_party_accounts.party_id`; application pre-checks are not the uniqueness guarantee.
-3. Provisioning is lazy: Finance creates the account inside the first applicable financial operation, not when a Party is registered or merely assigned a role.
-4. `PostgresPartyAccountProvisioner` requires the caller's open Npgsql connection and transaction. Its upsert returns the existing account on replay and serializes concurrent first-use attempts. Account creation therefore commits or rolls back with the financial operation.
-5. The table stores only account identity and creation audit metadata. It stores no balances, credit limits, payment methods, or ledger postings. Balances are derived from posted Finance transactions.
-6. No cross-module FK to `persons` is created. The Party reference comes from the Persons contract. Party merge/deactivation does not delete or silently reassign the financial account; future transfer requires an explicit audited financial operation.
+1. Finance owns the identity of a Party subledger account. Persons owns Party identity and validates that a supplied `PartyReference` identifies an existing, active Party. Constructing the DTO alone is not proof of existence.
+2. The Persons-owned validator executes `SELECT ... FOR SHARE` using the caller's connection and transaction. Unknown or inactive Parties are rejected; the row lock prevents deactivation until the financial transaction commits or rolls back. No cross-module FK is created.
+3. A Party has at most one Finance party-account identity. PostgreSQL enforces this with a non-null unique constraint on `finance_party_accounts.party_id`; application pre-checks are not the uniqueness guarantee.
+4. Provisioning is lazy: Finance creates the account inside the first applicable financial operation, not when a Party is registered or merely assigned a role.
+5. `PostgresPartyAccountProvisioner` requires the caller's open Npgsql connection and READ COMMITTED transaction, the Persons validator, and a server-side `IFinanceActorContext`. ActorId must come from the authenticated principal, not request data.
+6. Provisioning uses `INSERT ... ON CONFLICT DO NOTHING` followed by a separate SELECT. The unique constraint resolves concurrent first-use races; READ COMMITTED ensures the subsequent statement sees the committed winner. Replays do not update the row or alter creation metadata.
+7. The table stores only account identity and creation audit metadata. It stores no balances, credit limits, payment methods, or ledger postings. No unused row_version is stored.
+8. Party deactivation does not delete or silently reassign the financial account; future transfer requires an explicit audited financial operation.
 
 ## Verification
 
-- Migration `0004_finance_party_accounts.sql` adds the unique Party constraint.
-- PostgreSQL integration tests exercise 12 concurrent first-use requests, transaction rollback, and distinct Party isolation.
+- Migration `0004_finance_party_accounts.sql` adds the unique Party constraint without a cross-module FK or unused row_version.
+- PostgreSQL integration tests exercise concurrent first-use requests, rollback, distinct Party isolation, unknown/inactive Party rejection, replay metadata preservation, and actor validation.
 - Linux and Windows migration gates apply four migrations and verify second-run idempotence.
 
 ## Non-claims
