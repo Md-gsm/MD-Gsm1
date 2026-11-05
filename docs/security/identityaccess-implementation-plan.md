@@ -18,3 +18,13 @@
 مرجع جاری وضعیت G1، PR #37 و بسته تحویل مستقل در `identityaccess-g1-review-handoff-fa.md` است. هر ارجاع قدیمی‌تر به PR #30 در این سند، وضعیت جاری شاخه/PR را نشان نمی‌دهد و برای تصمیم فعلی ملاک نیست.
 
 روی SHA `406b0d9103ada7177d4e34582ebd8e1c172e18e0` شواهد CI در حال اجرا/انتظار هستند؛ نتایج موفق SHA قبلی به این SHA تعمیم داده نمی‌شوند. IdentityAccess هنوز runtime، middleware، session store یا migration عملیاتی ندارد. ماتریس permission و retention همچنان تصویب نشده‌اند. SMS به فاز آینده موکول شده و Recovery به دلیل نبود عامل جایگزین مستقلِ مصوب غیرفعال می‌ماند. `g1Authorized=false` تا review مستقل و تصمیم صریح مالک برقرار است.
+
+
+## تصویب ماتریس و قرارداد اجرایی — 2026-11-06
+
+- مالک محصول ماتریس را بدون تغییر grants و scope rules تصویب کرده است.
+- قرارداد اجرایی در `identityaccess-authorization-runtime-contract-fa.md` ثبت شده است.
+- این اسناد policy design و acceptance contract هستند؛ runtime، middleware، endpoint، migration یا seed ایجاد نشده است.
+- سقف‌های مالی هنوز مشخص نیستند؛ عملیات با threshold نامعلوم Deny باقی می‌ماند.
+- قرارداد branch/warehouse با data owner، retention audit و تعریف دقیق self برای Persons همچنان نیازمند تکمیل است.
+- G1 مستقل و مجوز اجرایی صریح لازم‌اند؛ `g1Authorized=false` باقی است.
