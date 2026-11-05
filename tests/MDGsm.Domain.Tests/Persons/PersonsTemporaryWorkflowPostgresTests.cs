@@ -72,8 +72,8 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         var elapsed = Stopwatch.StartNew();
         Assert.True(await sweep.RunOnceAsync());
         elapsed.Stop();
-        Assert.True(elapsed.Elapsed < TimeSpan.FromMinutes(30),
-            $"Physical purge exceeded the 30-minute policy deadline: {elapsed.Elapsed}.");
+        Assert.True(TemporaryWorkflowRetentionWorker.SweepInterval + elapsed.Elapsed < TimeSpan.FromMinutes(30),
+            $"The configured sweep interval plus measured purge time exceeded the 30-minute policy deadline: {TemporaryWorkflowRetentionWorker.SweepInterval + elapsed.Elapsed}.");
 
         await using var verify = await dataSource.OpenConnectionAsync();
         await using var verifyCommand = new NpgsqlCommand("""
