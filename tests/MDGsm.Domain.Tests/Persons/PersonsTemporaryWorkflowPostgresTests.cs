@@ -14,11 +14,9 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         await using var dataSource = OpenDataSource();
         var store = new PostgresTemporaryWorkflowStore(dataSource);
         var id = Guid.CreateVersion7();
-        var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-        var created = now.AddDays(-2);
         var ciphertext = Encrypt("private contact payload"u8);
         await store.CreateAsync(id, "Persons", "contact-capture", "ci-actor", Guid.CreateVersion7(),
-            created, ciphertext, "test-key-v1");
+            ciphertext, "test-key-v1");
 
         var stored = await store.ReadCiphertextAsync(id);
         Assert.NotNull(stored);
@@ -27,11 +25,11 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         // Force expiry in PostgreSQL while preserving the table's created < expiry invariant.
         await SetExpiryAsync(dataSource, id);
         Assert.Null(await store.ReadCiphertextAsync(id));
-        Assert.Equal(1, await store.PurgeExpiredAsync(DateTimeOffset.UtcNow));
+        Assert.Equal(1, await store.PurgeExpiredAsync(250));
         Assert.Null(await store.ReadCiphertextAsync(id));
         Assert.Equal(0L, await CountPayloadRowsAsync(dataSource, id));
         Assert.Equal("purged", await ReadLifecycleStatusAsync(dataSource, id));
-        Assert.Equal(0, await store.PurgeExpiredAsync(now.AddDays(8)));
+        Assert.Equal(0, await store.PurgeExpiredAsync(250));
     }
 
     [Fact]
@@ -40,13 +38,12 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
     {
         await using var dataSource = OpenDataSource();
         var store = new PostgresTemporaryWorkflowStore(dataSource);
-        var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         const string purpose = "retention-batch-test";
 
         for (var index = 0; index < 251; index++)
         {
             await store.CreateAsync(Guid.CreateVersion7(), "Persons", purpose, "ci-actor",
-                Guid.CreateVersion7(), now.AddDays(-2), Encrypt("temporary private data"u8), "test-key-v1");
+                Guid.CreateVersion7(), Encrypt("temporary private data"u8), "test-key-v1");
         }
 
         await using (var connection = await dataSource.OpenConnectionAsync())
@@ -93,8 +90,7 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         var store = new PostgresTemporaryWorkflowStore(dataSource);
         var term = "نام موقت غیرقابل جستجو";
         await store.CreateAsync(Guid.CreateVersion7(), "Persons", "search-isolation-test", "ci-actor",
-            Guid.CreateVersion7(), DateTimeOffset.UtcNow, Encrypt(System.Text.Encoding.UTF8.GetBytes(term)),
-            "test-key-v1");
+            Guid.CreateVersion7(), Encrypt(System.Text.Encoding.UTF8.GetBytes(term)), "test-key-v1");
 
         var repository = new PostgresPartyRepository(dataSource);
         var results = await repository.SearchAsync(term, 10, null, default);
@@ -109,14 +105,14 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         await using var dataSource = OpenDataSource();
         var store = new PostgresTemporaryWorkflowStore(dataSource);
         var id = Guid.CreateVersion7();
-        var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         await store.CreateAsync(id, "Persons", "contact-capture", "ci-actor", Guid.CreateVersion7(),
-            now, Encrypt("private payload"u8), "test-key-v1");
+            Encrypt("private payload"u8), "test-key-v1");
 
-        Assert.True(await store.CloseAsync(id, now.AddDays(1)));
-        Assert.False(await store.CloseAsync(id, now.AddDays(1)));
+        Assert.True(await store.CloseAsync(id));
+        Assert.False(await store.CloseAsync(id));
         Assert.Null(await store.ReadCiphertextAsync(id));
-        Assert.Equal(1, await store.PurgeExpiredAsync(now.AddDays(7)));
+        await SetExpiryAsync(dataSource, id);
+        Assert.Equal(1, await store.PurgeExpiredAsync(250));
     }
 
     [Fact]
@@ -126,31 +122,31 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         await using var dataSource = OpenDataSource();
         var store = new PostgresTemporaryWorkflowStore(dataSource);
         var id = Guid.CreateVersion7();
-        var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         await store.CreateAsync(id, "Persons", "contact-capture", "ci-actor", Guid.CreateVersion7(),
-            now, Encrypt("private payload"u8), "test-key-v1");
+            Encrypt("private payload"u8), "test-key-v1");
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => store.RenewAsync(id,
-            now.AddDays(1), TimeSpan.FromDays(1), "No authorization supplied", "ci-actor",
+            TimeSpan.FromDays(1), "No authorization supplied", "ci-actor",
             explicitlyAuthorized: false));
 
-        Assert.True(await store.RenewAsync(id, now.AddDays(1), TimeSpan.FromDays(40),
+        Assert.True(await store.RenewAsync(id, TimeSpan.FromDays(40),
             "Owner approved temporary extension", "ci-actor", explicitlyAuthorized: true));
 
         await using var connection = await dataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand("""
-            SELECT expires_at_utc, renewal_count
+            SELECT created_at_utc, expires_at_utc, renewal_count
             FROM persons_temporary_workflows
             WHERE workflow_record_id = @id;
             """, connection);
         command.Parameters.AddWithValue("id", id);
         await using var reader = await command.ExecuteReaderAsync();
         Assert.True(await reader.ReadAsync());
-        Assert.Equal(now.AddDays(30), reader.GetFieldValue<DateTimeOffset>(0));
-        Assert.Equal((short)1, reader.GetInt16(1));
+        var createdAt = reader.GetFieldValue<DateTimeOffset>(0);
+        Assert.Equal(createdAt.AddDays(30), reader.GetFieldValue<DateTimeOffset>(1));
+        Assert.Equal((short)1, reader.GetInt16(2));
         await reader.DisposeAsync();
 
-        Assert.False(await store.RenewAsync(id, now.AddDays(2), TimeSpan.FromDays(1),
+        Assert.False(await store.RenewAsync(id, TimeSpan.FromDays(1),
             "Second renewal attempt rejected", "ci-actor", explicitlyAuthorized: true));
     }
 
