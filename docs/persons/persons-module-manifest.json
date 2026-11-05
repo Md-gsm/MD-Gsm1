@@ -5,7 +5,7 @@
   "implementationState": "PARTIAL",
   "g1Authorized": false,
   "personsApiImplemented": false,
-  "temporaryDataRuntimeImplemented": false,
+  "temporaryDataRuntimeImplemented": true,
   "mergeExecutionImplemented": false,
   "securityRuntimeImplemented": false,
   "personsBusinessMigrationsPresent": true,
@@ -35,7 +35,7 @@
     "windowsPostgres18Validated": true,
     "applicationMigrationRunnerValidated": true
   },
-  "note": "Initial Persons domain and transactional PostgreSQL registration/read repository are implemented on an isolated draft branch. Migration 0002 is included in the application-owned runner but has not been applied to any non-disposable database. API endpoints and connected desktop workflow remain blocked until IdentityAccess opaque-token validation and G1 security/architecture authorization are completed. G1 remains unauthorized; do not merge or release. ADR-0014 assigns canonical ownership for financial profile fields and defines the Persons source relocation. Host/BuildingBlocks physical relocation is recorded as complete (runtimeHostBuildingBlocksRelocated=true). architectureAligned=false is intentionally retained for broader G1 architecture/security alignment, including IdentityAccess runtime integration and the required independent G1 review; it does not mean the G0 physical relocation is unfinished.",
+  "note": "Initial Persons domain and transactional PostgreSQL registration/read repository are implemented on an isolated draft branch. Migration 0002 is included in the application-owned runner but has not been applied to any non-disposable database. API endpoints and connected desktop workflow remain blocked until IdentityAccess opaque-token validation and G1 security/architecture authorization are completed. G1 remains unauthorized; do not merge or release. ADR-0014 assigns canonical ownership for financial profile fields and defines the Persons source relocation. Host/BuildingBlocks physical relocation is recorded as complete (runtimeHostBuildingBlocksRelocated=true). architectureAligned=false is intentionally retained for broader G1 architecture/security alignment, including IdentityAccess runtime integration and the required independent G1 review; it does not mean the G0 physical relocation is unfinished. AC-31..AC-38 runtime is only partially implemented on feature/persons-ac31-45-runtime: encrypted-ciphertext staging schema/store, expiry-guarded reads, single-use bounded renewal, and an isolated cleanup worker implementation exist; host scheduling/alert transport, atomic promotion, derivative-data lifecycle, and full operational proof remain incomplete. AC-31..AC-45 are not marked complete in the acceptance map; G1 remains unauthorized.",
   "validationEvidenceReference": "docs/operations/evidence/g0-ci-validation-2026-10-31.json",
   "runtimeHostBuildingBlocksRelocated": true
 }
