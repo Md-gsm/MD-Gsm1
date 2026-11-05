@@ -6,8 +6,7 @@
     "src/BuildingBlocks/MDGsm.Domain/Persons",
     "src/BuildingBlocks/MDGsm.Application/Persons",
     "src/BuildingBlocks/MDGsm.Infrastructure/Persons",
-    "database/migrations/persons",
-    "database/migrations/0007_persons_party_merge.sql"
+    "database/migrations/persons"
   ],
   "registeredConsumers": [
     {
