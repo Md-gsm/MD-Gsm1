@@ -33,7 +33,7 @@ public sealed class TemporaryWorkflowRetentionSweep(
         }
         catch (Exception exception)
         {
-            var failureCode = "temporary_workflow_retention_sweep_failed:" + exception.GetType().Name;
+            var failureCode = "temporary_workflow_retention_sweep_failed:" + exception.GetType().Name.ToLowerInvariant();
             logger.LogError("Temporary workflow retention sweep failed. FailureCode={FailureCode}", failureCode);
             try
             {
