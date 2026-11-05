@@ -1,7 +1,7 @@
 # پرونده بازبینی امنیتی و مجوز G1
 تاریخ 2026-11-04 | آماده بازبینی؛ نه تأییدشده.
 
-مرجع: ADR-0006 opaque token؛ ADR-0012 deployment topology؛ ADR-0013 account/session/bootstrap. IdentityAccess هنوز runtime، login middleware، session store یا migration عملیاتی ندارد.
+مرجع: ADR-0006 opaque token؛ ADR-0012 deployment topology؛ ADR-0013 account/session/bootstrap. IdentityAccess هنوز runtime، login middleware، session store یا migration عملیاتی ندارد. تأیید امنیت/حریم خصوصی گزارش‌شده در 2026-10-31 در پرونده معماری، صرفاً baseline G0 را پوشش می‌دهد؛ این dossier بازبینی مستقل G1 برای Runtime و کنترل‌های IdentityAccess است و آن تأیید قدیمی به آن تعمیم داده نمی‌شود.
 
 | حوزه | شواهد الزامی | وضعیت |
 |---|---|---|
