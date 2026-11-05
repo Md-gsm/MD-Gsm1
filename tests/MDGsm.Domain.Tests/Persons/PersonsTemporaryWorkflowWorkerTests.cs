@@ -13,8 +13,7 @@ public sealed class PersonsTemporaryWorkflowWorkerTests
         var store = new SequenceRetentionStore(
             new InvalidOperationException(piiCanary),
             250,
-            4,
-            0);
+            4);
         var alert = new RecordingRetentionAlert();
         var logger = new CapturingLogger<TemporaryWorkflowRetentionSweep>();
         var sweep = new TemporaryWorkflowRetentionSweep(store, alert, logger);
@@ -22,7 +21,7 @@ public sealed class PersonsTemporaryWorkflowWorkerTests
         Assert.False(await sweep.RunOnceAsync());
         Assert.True(await sweep.RunOnceAsync());
 
-        Assert.Equal(4, store.Calls);
+        Assert.Equal(3, store.Calls);
         Assert.Single(alert.FailureCodes);
         Assert.Contains("InvalidOperationException", alert.FailureCodes[0], StringComparison.Ordinal);
         Assert.DoesNotContain(piiCanary, string.Join(Environment.NewLine, logger.Messages), StringComparison.Ordinal);
