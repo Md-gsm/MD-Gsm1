@@ -35,7 +35,7 @@ CREATE TABLE persons (
     CONSTRAINT ck_persons_party_identity CHECK (
       (party_type = 1 AND given_name IS NOT NULL AND family_name IS NOT NULL AND legal_name IS NULL AND legal_national_id IS NULL AND economic_code IS NULL)
       OR
-      (party_type = 2 AND legal_name IS NOT NULL AND given_name IS NULL AND family_name IS NULL)
+      (party_type = 2 AND legal_name IS NOT NULL AND given_name IS NULL AND family_name IS NULL AND national_id IS NULL)
     )
 );
 CREATE UNIQUE INDEX ux_persons_natural_national_id ON persons(national_id)
@@ -97,7 +97,8 @@ CREATE TABLE persons_operations (
 -- Append-only record of who read which party. Updates and deletes are silently discarded by rules.
 CREATE TABLE persons_access_audit (
     audit_id uuid PRIMARY KEY,
-    party_id uuid NOT NULL REFERENCES persons(party_id) ON DELETE RESTRICT,
+    -- No FK: read evidence survives caller rollback and business-row retention.
+    party_id uuid NOT NULL,
     actor varchar(128) NOT NULL,
     action varchar(32) NOT NULL,
     sensitive_included boolean NOT NULL,
@@ -108,3 +109,4 @@ CREATE INDEX ix_persons_access_audit_actor ON persons_access_audit (actor, occur
 
 CREATE RULE persons_access_audit_no_update AS ON UPDATE TO persons_access_audit DO INSTEAD NOTHING;
 CREATE RULE persons_access_audit_no_delete AS ON DELETE TO persons_access_audit DO INSTEAD NOTHING;
+REVOKE UPDATE, DELETE, TRUNCATE ON persons_access_audit FROM PUBLIC;
