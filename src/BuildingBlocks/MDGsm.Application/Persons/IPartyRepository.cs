@@ -16,6 +16,13 @@ public interface IPartySensitiveDataAuthorizer
     Task<bool> CanReadSensitivePartyDataAsync(string actorId, CancellationToken cancellationToken);
 }
 
+/// <summary>Safe fallback until IdentityAccess permission evaluation is explicitly wired.</summary>
+public sealed class DenyByDefaultPartySensitiveDataAuthorizer : IPartySensitiveDataAuthorizer
+{
+    public Task<bool> CanReadSensitivePartyDataAsync(string actorId, CancellationToken cancellationToken) =>
+        Task.FromResult(false);
+}
+
 public interface IPartyRepository
 {
     /// <summary>
