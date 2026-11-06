@@ -76,8 +76,11 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(ambientTransaction);
-        if (ambientTransaction is not NpgsqlTransaction transaction || transaction.Connection is not { State: System.Data.ConnectionState.Open } connection)
-            throw new ArgumentException("Quick registration requires an active PostgreSQL transaction on an open connection.", nameof(ambientTransaction));
+        if (ambientTransaction is not NpgsqlTransaction transaction)
+            throw new ArgumentException("Quick registration requires an active PostgreSQL transaction.", nameof(ambientTransaction));
+        var connection = transaction.Connection;
+        if (connection is null || connection.State != System.Data.ConnectionState.Open)
+            throw new ArgumentException("Quick registration requires an open PostgreSQL connection.", nameof(ambientTransaction));
         if (operationId == Guid.Empty)
             throw new ArgumentException("A non-empty OperationId is required for quick registration.", nameof(operationId));
         if (forceNew && !string.IsNullOrWhiteSpace(selectedPartyId))
@@ -199,12 +202,13 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
               AND merged_into_party_id IS NULL
               AND (business_roles | @roles) <> business_roles;
             """, connection, transaction);
-        command.Parameters.AddWithValue("roles", (short)request switch
+        var roles = request switch
         {
-            RegisterNaturalParty natural => (short)natural.Roles,
-            RegisterLegalParty legal => (short)legal.Roles,
+            RegisterNaturalParty natural => natural.Roles,
+            RegisterLegalParty legal => legal.Roles,
             _ => throw new ArgumentOutOfRangeException(nameof(request))
-        });
+        };
+        command.Parameters.AddWithValue("roles", (short)roles);
         command.Parameters.AddWithValue("actor", actor);
         command.Parameters.AddWithValue("party", partyId);
         await command.ExecuteNonQueryAsync(cancellationToken);
