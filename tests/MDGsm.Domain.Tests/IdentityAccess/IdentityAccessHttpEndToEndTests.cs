@@ -60,21 +60,16 @@ public sealed class IdentityAccessHttpEndToEndTests
         var roleId = Guid.CreateVersion7();
         var now = DateTimeOffset.UtcNow;
 
+        // Exercise the same ordered SQL migration path as staging before using EF.
+        // EnsureCreated must not run here: it would pre-create IdentityAccess tables
+        // and mask collisions or drift in migration 0003.
+        await new DatabaseMigrationRunner().ApplyPendingAsync(
+            connectionString, requireDisposableMarker: true);
+
         await using (var db = new MdGsmDbContext(options))
         {
-            Assert.True(await db.Database.EnsureCreatedAsync(),
-                "The isolated HTTP integration database must start empty and receive the IdentityAccess EF model.");
-            await new DatabaseMigrationRunner().ApplyPendingAsync(
-                connectionString, requireDisposableMarker: true);
-            if (!await db.IdentitySystemSettings.AnyAsync(x => x.SettingsId == 1))
-                db.IdentitySystemSettings.Add(new IdentitySystemSettingsRow
-                {
-                    SettingsId = 1,
-                    MaxActiveUsers = 5,
-                    HeartbeatIntervalSeconds = 30,
-                    SessionLeaseSeconds = 180,
-                    UpdatedAtUtc = now
-                });
+            Assert.True(await db.IdentitySystemSettings.AnyAsync(x => x.SettingsId == 1),
+                "Migration 0003 must seed the required singleton session-policy row.");
 
             var hasher = new PlatformPasswordHasher();
             var parsedUsername = Username.Parse(username);
