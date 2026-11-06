@@ -15,7 +15,7 @@
 3. `PostgresSessionIdentityResolver` در هر درخواست digest را با session زنده تطبیق می‌دهد و هم‌زمان این شروط را enforce می‌کند: `revoked_at IS NULL`، `lease_expires_at > now`، حساب فعال، تکمیل تغییر اجباری رمز و تطابق `credential_version_at_issue` با نسخهٔ جاری حساب.
 4. API lease را با `TryHeartbeatAsync` و همان digest و credential version تمدید می‌کند؛ اگر تمدید شکست بخورد درخواست 401 می‌گیرد.
 5. فقط پس از موفقیت، principal با authentication type برابر `MDGsm.Session` و claim شناسهٔ حساب ساخته می‌شود.
-6. `IAuthenticatedActorContext` فقط همین principal را می‌پذیرد. endpoint جزئیات Persons شناسهٔ actor را از این context گرفته و به repository می‌دهد.
+6. `IAuthenticatedActorContext` فقط همین principal را می‌پذیرد. endpoint جزئیات Persons پیش از خواندن، مجوز زندهٔ `persons.read` را بررسی می‌کند؛ شناسهٔ actor را فقط از این context گرفته و به repository می‌دهد.
 7. در صورت درخواست `includeSensitive=true`، repository دوباره permission زندهٔ `persons.sensitive.read` را بررسی می‌کند. تغییر یا لغو permission در درخواست بعدی اثر می‌گذارد.
 
 ## رفتار fail-closed

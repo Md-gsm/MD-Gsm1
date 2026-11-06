@@ -2,6 +2,7 @@ using MDGsm.Api.Security;
 using MDGsm.Application.Contracts;
 using MDGsm.Application.Persons;
 using MDGsm.IdentityAccess.Application;
+using MDGsm.IdentityAccess.Domain;
 using MDGsm.Infrastructure.IdentityAccess;
 using MDGsm.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -64,8 +65,13 @@ app.MapGet("/api/v1/persons/{partyId}", async (
     bool? includeSensitive,
     IPartyRepository parties,
     IAuthenticatedActorContext actor,
+    IRolePermissionStore permissions,
     CancellationToken cancellationToken) =>
 {
+    if (!await permissions.HasPermissionAsync(
+        AccountId.From(actor.AccountId), "persons.read", cancellationToken))
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+
     try
     {
         var details = await parties.GetAsync(
