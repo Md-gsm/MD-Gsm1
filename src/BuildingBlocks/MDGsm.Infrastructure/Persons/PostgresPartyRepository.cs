@@ -44,6 +44,186 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
             request, actorId, operationId, transaction, cancellationToken);
     }
 
+    public Task<PartyQuickRegistrationResult> QuickRegisterNaturalAsync(
+        RegisterNaturalParty request, string actorId, Guid operationId, bool forceNew,
+        string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        PartyRegistrationRules.ValidateRoles(request.Roles);
+        PartyRegistrationRules.ValidateWorkClassification(PartyType.NaturalPerson, request.Roles, request.WorkClassification);
+        return QuickRegisterAsync(request, PartyType.NaturalPerson,
+            PersianText.Normalize($"{request.GivenName} {request.FamilyName}"),
+            actorId, operationId, forceNew, selectedPartyId, transaction,
+            () => AddNaturalAsync(request, actorId, operationId, transaction, cancellationToken), cancellationToken);
+    }
+
+    public Task<PartyQuickRegistrationResult> QuickRegisterLegalAsync(
+        RegisterLegalParty request, string actorId, Guid operationId, bool forceNew,
+        string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        PartyRegistrationRules.ValidateRoles(request.Roles);
+        PartyRegistrationRules.ValidateWorkClassification(PartyType.LegalPerson, request.Roles, request.WorkClassification);
+        return QuickRegisterAsync(request, PartyType.LegalPerson, PersianText.Normalize(request.LegalName),
+            actorId, operationId, forceNew, selectedPartyId, transaction,
+            () => AddLegalAsync(request, actorId, operationId, transaction, cancellationToken), cancellationToken);
+    }
+
+    private async Task<PartyQuickRegistrationResult> QuickRegisterAsync(
+        IPartyRegistrationCommon request, PartyType requestedType, string requestedName,
+        string actorId, Guid operationId, bool forceNew, string? selectedPartyId,
+        DbTransaction ambientTransaction, Func<Task<PartyRegistrationResult>> create,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(ambientTransaction);
+        if (ambientTransaction is not NpgsqlTransaction transaction || transaction.Connection is not { State: System.Data.ConnectionState.Open } connection)
+            throw new ArgumentException("Quick registration requires an active PostgreSQL transaction on an open connection.", nameof(ambientTransaction));
+        if (operationId == Guid.Empty)
+            throw new ArgumentException("A non-empty OperationId is required for quick registration.", nameof(operationId));
+        if (forceNew && !string.IsNullOrWhiteSpace(selectedPartyId))
+            throw new ArgumentException("forceNew and selectedPartyId cannot be used together.", nameof(selectedPartyId));
+        var actor = RequireActor(actorId);
+
+        // Lock order is always OperationId first, then normalized mobile. This makes retries stable
+        // and prevents two quick-registration stations from creating the same mobile concurrently.
+        await using (var operationLock = new NpgsqlCommand(
+            "SELECT pg_advisory_xact_lock(hashtextextended(@key, 0));", connection, transaction))
+        {
+            operationLock.Parameters.AddWithValue("key", "persons-operation:" + operationId.ToString("D"));
+            await operationLock.ExecuteScalarAsync(cancellationToken);
+        }
+
+        await using (var replayCommand = new NpgsqlCommand(
+            "SELECT party_id FROM persons_operations WHERE operation_id = @operation;", connection, transaction))
+        {
+            replayCommand.Parameters.AddWithValue("operation", operationId);
+            var replay = await replayCommand.ExecuteScalarAsync(cancellationToken);
+            if (replay is Guid replayPartyId)
+                return new PartyQuickRegistrationResult(PartyQuickRegistrationOutcome.Replayed,
+                    replayPartyId.ToString("D"), false, Array.Empty<PartyQuickRegistrationCandidate>());
+        }
+
+        var normalizedMobile = string.IsNullOrWhiteSpace(request.PrimaryMobile)
+            ? null
+            : PartyContactPoint.Mobile(request.PrimaryMobile).Value;
+
+        if (normalizedMobile is not null && !forceNew)
+        {
+            await using (var mobileLock = new NpgsqlCommand(
+                "SELECT pg_advisory_xact_lock(hashtextextended(@key, 0));", connection, transaction))
+            {
+                mobileLock.Parameters.AddWithValue("key", "persons-mobile:" + normalizedMobile);
+                await mobileLock.ExecuteScalarAsync(cancellationToken);
+            }
+
+            var candidates = await FindMobileCandidatesAsync(connection, transaction, normalizedMobile, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(selectedPartyId))
+            {
+                var selected = candidates.SingleOrDefault(x =>
+                    string.Equals(x.PartyId, selectedPartyId, StringComparison.OrdinalIgnoreCase));
+                if (selected is null || !selected.PartyIsActive || selected.IsMerged || selected.Type != requestedType)
+                    throw new InvalidOperationException("The selected Party is not an active, unmerged candidate of the requested identity type.");
+                await AddBusinessRolesAsync(connection, transaction, Guid.Parse(selected.PartyId), request, actor, cancellationToken);
+                await RecordQuickOperationAsync(connection, transaction, operationId, Guid.Parse(selected.PartyId), actor, cancellationToken);
+                return new PartyQuickRegistrationResult(PartyQuickRegistrationOutcome.ExistingPartyMatched,
+                    selected.PartyId, false, candidates);
+            }
+
+            if (candidates.Count > 0)
+            {
+                if (candidates.Count == 1)
+                {
+                    var candidate = candidates[0];
+                    if (candidate.PartyIsActive && !candidate.IsMerged && candidate.HasActiveMobile &&
+                        candidate.Type == requestedType &&
+                        string.Equals(PersianText.Normalize(candidate.DisplayName), requestedName, StringComparison.Ordinal))
+                    {
+                        var existingId = Guid.Parse(candidate.PartyId);
+                        await AddBusinessRolesAsync(connection, transaction, existingId, request, actor, cancellationToken);
+                        await RecordQuickOperationAsync(connection, transaction, operationId, existingId, actor, cancellationToken);
+                        return new PartyQuickRegistrationResult(PartyQuickRegistrationOutcome.ExistingPartyMatched,
+                            candidate.PartyId, false, candidates);
+                    }
+                }
+
+                return new PartyQuickRegistrationResult(PartyQuickRegistrationOutcome.SelectionRequired,
+                    null, false, candidates);
+            }
+        }
+
+        var registration = await create();
+        return new PartyQuickRegistrationResult(
+            registration.Created ? PartyQuickRegistrationOutcome.Created : PartyQuickRegistrationOutcome.Replayed,
+            registration.PartyId, registration.Created, Array.Empty<PartyQuickRegistrationCandidate>());
+    }
+
+    private static async Task<IReadOnlyList<PartyQuickRegistrationCandidate>> FindMobileCandidatesAsync(
+        NpgsqlConnection connection, NpgsqlTransaction transaction, string normalizedMobile,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand("""
+            SELECT p.party_id, p.party_type, p.business_roles,
+                   CASE WHEN p.party_type = 1 THEN concat_ws(' ', p.given_name, p.family_name) ELSE p.legal_name END,
+                   p.is_active, (p.merged_into_party_id IS NOT NULL), bool_or(c.is_active)
+            FROM persons p
+            JOIN persons_contact_points c ON c.party_id = p.party_id
+            WHERE c.kind = 1 AND c.value = @mobile
+            GROUP BY p.party_id, p.party_type, p.business_roles, p.given_name, p.family_name,
+                     p.legal_name, p.is_active, p.merged_into_party_id
+            ORDER BY p.is_active DESC, bool_or(c.is_active) DESC, p.party_id;
+            """, connection, transaction);
+        command.Parameters.AddWithValue("mobile", normalizedMobile);
+        var results = new List<PartyQuickRegistrationCandidate>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+            results.Add(new PartyQuickRegistrationCandidate(
+                reader.GetGuid(0).ToString("D"), (PartyType)reader.GetInt16(1),
+                reader.GetString(3), (PartyBusinessRoles)reader.GetInt16(2),
+                reader.GetBoolean(4), reader.GetBoolean(5), reader.GetBoolean(6),
+                PartyIdentifiers.MaskPhone(normalizedMobile)));
+        return results;
+    }
+
+    private static async Task AddBusinessRolesAsync(
+        NpgsqlConnection connection, NpgsqlTransaction transaction, Guid partyId,
+        IPartyRegistrationCommon request, string actor, CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand("""
+            UPDATE persons
+            SET business_roles = (business_roles | @roles),
+                updated_at_utc = now(),
+                updated_by = @actor,
+                row_version = row_version + 1
+            WHERE party_id = @party
+              AND is_active = true
+              AND merged_into_party_id IS NULL
+              AND (business_roles | @roles) <> business_roles;
+            """, connection, transaction);
+        command.Parameters.AddWithValue("roles", (short)request switch
+        {
+            RegisterNaturalParty natural => (short)natural.Roles,
+            RegisterLegalParty legal => (short)legal.Roles,
+            _ => throw new ArgumentOutOfRangeException(nameof(request))
+        });
+        command.Parameters.AddWithValue("actor", actor);
+        command.Parameters.AddWithValue("party", partyId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task RecordQuickOperationAsync(
+        NpgsqlConnection connection, NpgsqlTransaction transaction, Guid operationId,
+        Guid partyId, string actor, CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand("""
+            INSERT INTO persons_operations (operation_id, party_id, actor)
+            VALUES (@operation, @party, @actor);
+            """, connection, transaction);
+        command.Parameters.AddWithValue("operation", operationId);
+        command.Parameters.AddWithValue("party", partyId);
+        command.Parameters.AddWithValue("actor", actor);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private Task<PartyRegistrationResult> InsertAsync(
         PartyId partyId, PartyType partyType, PartyBusinessRoles roles,
         string? givenName, string? familyName, string? legalName,
