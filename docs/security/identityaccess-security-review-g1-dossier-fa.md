@@ -54,3 +54,12 @@ SMS provider و SMTP vendor/host واقعی هنوز انتخاب/پیکربند
 روی همین SHA سه workflow زیر completed/success شده‌اند: Persons Module Gates (Run 42098140813؛ 13/13 jobs)، CodeQL (Run 42098140790؛ 1/1 job) و Windows Preview Installer (Run 42098140826؛ 1/1 job). این شواهد فقط CI همان SHA را تأیید می‌کنند و تأیید runtime یا G1 نیستند.
 
 PR #37 باز، Draft و Unmerged است و base آن `feature/persons-ac31-45-runtime` است. main توسط این PR تغییر نکرده است. reviewer مستقل، امضا و تصمیم رسمی AUTHORIZE G1 هنوز ثبت نشده‌اند؛ `g1Authorized=false` باقی می‌ماند.
+
+
+## وضعیت شواهد و تصمیم‌ها روی head فعلی PR #37 — 2026-11-06
+- head پیش از این اصلاح مستندات: `8efefe28772a850ae3ff54dfa539ee8c3ca735f6`.
+- CI روی همین SHA موفق بوده است: Persons Module Gates Run 42107521556 (13/13)، CodeQL Run 42107521572 (1/1)، Windows Preview Installer Run 42107521451 (1/1). این نتایج به commit اصلاحی بعدی منتقل نمی‌شوند و باید روی head جدید دوباره اجرا شوند.
+- ماتریس granular توسط مالک تصویب شده؛ runtime/seed همچنان gated است.
+- Recovery ایمیل‌تنها برای فاز فعلی تصویب شده؛ MFA نیست و mailbox compromise باید مستقل review شود. SMS placeholder آینده و غیرفعال است.
+- PR #41 جدا از PR #37، کد و migration IdentityAccess را به‌عنوان integration candidate پیشنهاد می‌کند؛ Open/Draft/Unmerged است. وجود کد در آن، merge یا G1 approval نیست.
+- retention امنیتی، مالک canonical branch/warehouse، review مستقل روی SHA دقیق، یافته‌ها، امضا و تصمیم AUTHORIZE G1 بازند؛ `g1Authorized=false` باقی است.

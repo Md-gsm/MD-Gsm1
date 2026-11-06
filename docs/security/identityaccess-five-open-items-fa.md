@@ -102,3 +102,13 @@ Break-glass فقط کنسول محلی؛ دو کانال مستقل ایمیل �
 - SMS حذف نشده است؛ placeholder/adapter/configuration آن برای آینده خالی و غیرفعال می‌ماند. نبود provider SMS مانع Recovery ایمیلی فاز فعلی نیست.
 - رمز ثابت دائمی، master password و backdoor ممنوع‌اند. bootstrap یک‌باره admin/admin صرفاً local-only است و با Recovery اشتباه گرفته نمی‌شود.
 - ماتریس granular آماده تصویب مالک در `identityaccess-permission-matrix-approval-fa.md` قرار دارد؛ تا ثبت تصمیم مالک، ماتریس هنوز proposal است و نباید seed/runtime شود.
+
+
+## اصلاح نهایی وضعیت تصمیم‌ها — 2026-11-06
+این الحاقیه بر وضعیت‌های قدیمی‌تر مقدم است:
+1. ماتریس مجوزها در 2026-11-06 تصویب شده؛ مرجع `identityaccess-permission-matrix-approval-fa.md` است. seed/runtime همچنان gated هستند.
+2. Recovery ایمیل‌تنها برای فاز فعلی پذیرفته شده؛ OTP یک‌بارمصرف ده‌دقیقه‌ای و digest-only. این روش MFA نیست و ریسک mailbox compromise باید مستقل review شود. SMS placeholder آینده و غیرفعال است؛ انتخاب provider blocker این فاز نیست.
+3. Retention امنیتی هنوز تصویب مالک/بررسی حقوقی ندارد؛ purge یا archival اجرایی ممنوع است.
+4. مالک canonical Branch/Warehouse و assignment با شواهد schema/code احراز نشده؛ scope fail-closed باقی می‌ماند.
+5. reviewer واقعی، SHA مورد بررسی، یافته‌ها، نتیجه و امضای قابل راستی‌آزمایی ثبت نشده؛ `g1Authorized=false`.
+PR #37 بسته طراحی مستنداتی است. PR #41 شاخه یکپارچه‌سازی جداگانه‌ای است که کد و migration IdentityAccess را پیشنهاد می‌کند؛ هیچ‌یک merge یا مجوز عملیاتی نیستند.

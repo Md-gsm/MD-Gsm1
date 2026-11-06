@@ -1,4 +1,4 @@
-# ماتریس پیشنهادی مجوزهای IdentityAccess — نسخه برای تصویب مالک
+# ماتریس مصوب مجوزهای IdentityAccess — نسخه مصوب مالک
 
 - تاریخ: 2026-11-05
 - وضعیت: **تصویب‌شده توسط مالک محصول؛ اجرای runtime همچنان منوط به G1 مستقل و مجوز اجرایی جداگانه است**
@@ -168,3 +168,8 @@ scope همه عملیات انبار باید `warehouse` و در صورت نی�
 - دامنه تصویب: تمام grantهای علامت‌خورده، Deny خانه‌های خالی، deny-by-default، scope مستقل، محدودیت تکنسین به self/assigned، union صریح چندنقشی، separation-of-duties و audit.
 - محدودیت‌ها: تا تعیین threshold مالی price override/discount/refund/purchase approval با آستانه نامشخص Deny است. branch/warehouse فقط با assignment صریح و authoritative مجاز است.
 - این تأیید، تصویب سیاست محصول است؛ مجوز seed، migration، runtime یا عبور از G1 نیست.
+
+
+## وضعیت نهایی تصویب — 2026-11-06
+این ماتریس توسط مالک محصول در 2026-11-06 تصویب شده است. دامنه تصویب: grantهای علامت‌خورده، Deny خانه‌های خالی، deny-by-default، scope مستقل برای هر permission، union صریح چندنقشی، محدودیت technician به self/assigned، separation-of-duties و audit. امضای دیجیتال/گواهی بیرونی ادعا نمی‌شود. تغییر آینده grants/scopeها نیازمند نسخه و تصویب مجدد است.
+این تصویب صرفاً سیاست محصول است؛ seed، migration، runtime، G1 یا اجازه merge ایجاد نمی‌کند. thresholdهای مالی نامشخص و scope شعبه/انبار بدون assignment authoritative همچنان Deny می‌مانند.

@@ -213,3 +213,13 @@ G1 فقط وقتی قابل بستن است که:
 - پس از اثبات OTP ایمیل: تغییر رمز با hasher استاندارد، افزایش credential_version، revoke اتمیک تمام نشست‌ها و اجبار تغییر رمز در ورود بعدی لازم است.
 - رمز ثابت دائمی، master password و backdoor ممنوع است؛ bootstrap admin/admin فقط credential یک‌باره local-only است، نه رمز دائمی یا Recovery.
 - ماتریس مجوزها در `identityaccess-permission-matrix-approval-fa.md` برای تصمیم مالک آماده شده؛ هنوز APPROVE نشده و نباید به runtime/seed تبدیل شود.
+
+
+## اصلاح دامنه شواهد و وضعیت شاخه‌ها — 2026-11-06
+- PR #37 تغییر مستنداتی است و base آن `feature/persons-ac31-45-runtime` با SHA `57d8d5551587ee14f945e470a9e17113c07c5b75` است. ادعای «نبود runtime» در متن قدیمی فقط درباره همین base/دامنه PR #37 است.
+- PR #41 شاخه مستقل با base برابر `main` است و migration `0003_identityaccess_core.sql`، کد Domain/Application/Infrastructure، middleware نشست و تست‌های PostgreSQL/HTTP را پیشنهاد می‌کند. PR #41 همچنان Open، Draft و Unmerged است؛ وجود کد به معنی merge، استقرار، فعال‌سازی G1 یا تأیید امنیتی نیست.
+- reviewer باید اسناد #37 را در کنار کد و تست‌های SHA مربوط به #41 بررسی کند.
+- ماتریس در 2026-11-06 تصویب شده؛ Recovery ایمیل‌تنها برای فاز فعلی پذیرفته شده و MFA نیست؛ SMS placeholder آینده و غیرفعال است. retention، مالک canonical branch/warehouse، review مستقل، امضا و تصمیم AUTHORIZE G1 بازند؛ `g1Authorized=false` پابرجاست.
+
+### CI روی SHA پیش از این اصلاح مستندات
+روی SHA `8efefe28772a850ae3ff54dfa539ee8c3ca735f6`، Persons Module Gates با 13/13 job، CodeQL با 1/1 و Windows Preview Installer با 1/1 موفق بوده‌اند (Runs: 42107521556، 42107521572، 42107521451). این شواهد فقط همان SHA را پوشش می‌دهند؛ پس از این commit CI روی head جدید باید دوباره اجرا شود.

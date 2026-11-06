@@ -60,3 +60,11 @@
 ## مسیر تصویب ماتریس مجوزها
 
 نسخه پیشنهادی granular برای تصمیم مالک در `identityaccess-permission-matrix-approval-fa.md` آماده شده است. تا ثبت APPROVE یا APPROVE WITH CHANGES، هیچ seed یا runtime policy از آن ساخته نمی‌شود.
+
+
+## ثبت تصمیم‌های نهایی مالک — 2026-11-06
+1. ماتریس مجوزها تصویب شد: grantهای علامت‌خورده، Deny خانه‌های خالی، deny-by-default، scope مستقل، union صریح چندنقشی، محدودیت technician به self/assigned، separation-of-duties و audit. این تصمیم مجوز seed/runtime نیست.
+2. Recovery ایمیل‌تنها تصویب شد: OTP ده‌دقیقه‌ای، یک‌بارمصرف و digest-only؛ پس از اثبات، تغییر رمز، revoke اتمیک همه نشست‌ها، افزایش credential_version و اجبار تغییر رمز در ورود بعدی. این روش MFA نیست و ریسک mailbox باید مستقل review شود.
+3. SMS فاز آینده است؛ placeholder خالی و غیرفعال می‌ماند و انتخاب provider blocker فعلی نیست.
+4. Retention امنیتی نیازمند تصویب/بررسی حقوقی؛ thresholdهای مالی باید تعیین شوند؛ مالک canonical branch/warehouse و assignment باید با شواهد کد/schema معرفی شود.
+5. این تصمیم‌ها تأیید امنیتی مستقل یا مجوز G1 نیستند؛ reviewer، یافته‌ها، امضا و تصمیم AUTHORIZE G1 هنوز لازم‌اند.
