@@ -118,7 +118,7 @@ try {
     $firstRun = @(& dotnet run --project $migratorProject --configuration Release 2>&1)
     $firstExitCode = $LASTEXITCODE
     $firstRun | ForEach-Object { Write-Host $_ }
-    if ($firstExitCode -ne 0 -or (($firstRun -join "`n") -notmatch 'newlyApplied=3')) {
+    if ($firstExitCode -ne 0 -or (($firstRun -join "`n") -notmatch 'newlyApplied=4')) {
         throw 'The first application migration run did not apply all three ordered migrations.'
     }
 
