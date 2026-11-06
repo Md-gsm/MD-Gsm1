@@ -63,7 +63,9 @@ public sealed class IdentityAccessHttpEndToEndTests
         await using (var db = new MdGsmDbContext(options))
         {
             Assert.True(await db.Database.EnsureCreatedAsync(),
-                "The isolated HTTP integration database must start empty and receive the complete EF model.");
+                "The isolated HTTP integration database must start empty and receive the IdentityAccess EF model.");
+            await new DatabaseMigrationRunner().ApplyPendingAsync(
+                connectionString, requireDisposableMarker: true);
             if (!await db.IdentitySystemSettings.AnyAsync(x => x.SettingsId == 1))
                 db.IdentitySystemSettings.Add(new IdentitySystemSettingsRow
                 {
