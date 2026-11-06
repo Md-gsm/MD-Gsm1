@@ -97,7 +97,7 @@ public sealed class PersonsEndToEndTests
         await using var scope = await TestScope.OpenAsync();
         var created = await scope.Repository.AddNaturalAsync(NewNatural("09126666666", NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
         await scope.Repository.GetAsync(created.PartyId, Actor, includeSensitive: false, scope.Transaction, default);
-        await scope.Transaction.RollbackAsync();
+        await scope.RollbackTransactionAsync();
         await using var verify = await scope.DataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand("SELECT count(*) FROM persons_access_audit WHERE party_id=@id AND actor=@actor", verify);
         command.Parameters.AddWithValue("id", Guid.Parse(created.PartyId));
@@ -208,7 +208,13 @@ public sealed class PersonsEndToEndTests
             Repository = new PostgresPartyRepository(dataSource, new AllowSensitivePartyDataAuthorizer());
         }
 
+        private bool _transactionRolledBack;
         public NpgsqlDataSource DataSource => _dataSource;
+        public async Task RollbackTransactionAsync()
+        {
+            await Transaction.RollbackAsync();
+            _transactionRolledBack = true;
+        }
         public NpgsqlConnection Connection { get; }
         public NpgsqlTransaction Transaction { get; }
         public PostgresPartyRepository Repository { get; }
@@ -234,7 +240,7 @@ public sealed class PersonsEndToEndTests
 
         public async ValueTask DisposeAsync()
         {
-            await Transaction.RollbackAsync();
+            if (!_transactionRolledBack) await Transaction.RollbackAsync();
             await Transaction.DisposeAsync();
             await Connection.DisposeAsync();
             await _dataSource.DisposeAsync();
