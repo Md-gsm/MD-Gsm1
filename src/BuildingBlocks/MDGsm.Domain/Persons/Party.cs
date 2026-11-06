@@ -16,12 +16,12 @@ public abstract class Party
             throw new ArgumentException("A valid PartyId is required.", nameof(id));
         }
 
-        if ((businessRoles & ~AllowedRoles) != 0)
+        if (businessRoles == PartyBusinessRoles.None || (businessRoles & ~AllowedRoles) != 0)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(businessRoles),
                 businessRoles,
-                "One or more unsupported business roles were supplied.");
+                "At least one supported business role must be supplied; unsupported role bits are forbidden.");
         }
 
         Id = id;
