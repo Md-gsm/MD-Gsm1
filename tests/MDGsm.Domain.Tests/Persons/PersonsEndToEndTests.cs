@@ -77,8 +77,8 @@ public sealed class PersonsEndToEndTests
             differentName, Actor, operation, forceNew: false, selectedPartyId: candidate.PartyId, scope.Transaction, default);
         Assert.Equal(PartyQuickRegistrationOutcome.ExistingPartyMatched, selected.Outcome);
         Assert.Equal(first.PartyId, selected.PartyId);
-        Assert.Equal(2L, await ScalarAsync(scope,
-            "SELECT business_roles FROM persons WHERE party_id = @id", Guid.Parse(first.PartyId)));
+        Assert.Equal(3L, await ScalarAsync(scope,
+            "SELECT business_roles::bigint FROM persons WHERE party_id = @id", Guid.Parse(first.PartyId)));
 
         var forced = await scope.Repository.QuickRegisterNaturalAsync(
             differentName, Actor, Guid.CreateVersion7(), forceNew: true, selectedPartyId: null, scope.Transaction, default);
@@ -86,7 +86,7 @@ public sealed class PersonsEndToEndTests
         Assert.True(forced.Created);
         Assert.NotEqual(first.PartyId, forced.PartyId);
         Assert.Equal(2L, await ScalarAsync(scope,
-            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550124' AND is_active", Guid.Empty));
+            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550124' AND is_active AND @id = @id", Guid.Empty));
     }
 
     [Fact]
