@@ -34,14 +34,25 @@ public sealed class LoginHandler(
     public Task<LoginOutcome> HandleAsync(LoginCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
-        if (string.IsNullOrEmpty(command.Password) || command.ClientInstanceId == Guid.Empty)
-            return Task.FromResult(LoginOutcome.Fail(LoginFailure.InvalidCredentials));
-
         return unitOfWork.ExecuteAsync(async ct =>
         {
             var now = timeProvider.GetUtcNow();
             if (await attempts.IsSourceRateLimitedAsync(command.SourceDigest, now, ct))
                 return LoginOutcome.Fail(LoginFailure.SourceRateLimited);
+
+            // Malformed requests must still consume the source rate-limit budget and
+            // perform dummy password work; otherwise empty passwords/client IDs could
+            // bypass the same throttling applied to ordinary credential failures.
+            if (string.IsNullOrEmpty(command.Password) || command.ClientInstanceId == Guid.Empty)
+            {
+                _ = passwordHasher.Verify(passwordHasher.DummyHash, command.Password ?? string.Empty);
+                var invalidLoginDigest = Convert.ToHexString(
+                    privacyDigest.ComputeSha256(command.Username ?? string.Empty));
+                await attempts.RecordAsync(invalidLoginDigest, command.SourceDigest, "invalid", now, ct);
+                await audit.AppendAsync("identity.login.failed", null, null,
+                    "invalid_credentials", command.CorrelationId, ct);
+                return LoginOutcome.Fail(LoginFailure.InvalidCredentials);
+            }
 
             string normalized;
             try { normalized = Username.Parse(command.Username).NormalizedValue; }

@@ -84,7 +84,7 @@ app.MapPost("/api/v1/identity/login", async (
     var digest = services.GetRequiredService<IPrivacyDigest>();
     // Never trust X-Forwarded-For or a client-provided source key here. The direct
     // peer address is transformed with the server-held HMAC key before persistence.
-    var source = context.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "unknown";
+    var source = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     var sourceDigest = Convert.ToHexString(digest.ComputeSha256(source));
     var outcome = await services.GetRequiredService<LoginHandler>().HandleAsync(
         new LoginCommand(request.Username, request.Password, request.ClientInstanceId,
