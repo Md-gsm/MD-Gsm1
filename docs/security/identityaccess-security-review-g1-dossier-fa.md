@@ -21,7 +21,7 @@ SHA مبنای این پرونده: 5b8669df31de283c8a83ac9fe1e74381ac1a5986
 
 ## قابلیت‌هایی که عمداً فعال نشده‌اند
 
-- Login HTTP endpoint و auth middleware عملیاتی.
+- Login HTTP endpoint و token issuance از طریق HTTP هنوز اضافه نشده است؛ middleware احراز نشست برای مسیرهای Persons اکنون عملیاتی است.
 - Listener شبکه و binding تولیدی.
 - Migration عملیاتی IdentityAccess و اتصال به دیتابیس واقعی.
 - bootstrap credential یا حساب عملیاتی admin/admin.
@@ -37,7 +37,7 @@ SHA مبنای این پرونده: 5b8669df31de283c8a83ac9fe1e74381ac1a5986
 | Opaque token | token factory و digest موجود | raw token در DB/log/artifact صفر؛ revoke فوری؛ disabled account رد |
 | Login lockout | lockout و تست PostgreSQL موجود | 5/15/15، source rate limit مستقل، concurrency و پاسخ عمومی |
 | Session | lease و سقف حساب‌های متمایز | چندپردازه، stale lease، heartbeat race، revoke و ظرفیت |
-| Authorization | permission catalog و ماتریس اولیه در کد وجود دارد، اما ماتریس طبق تصمیم‌نامه هنوز proposal است و API authorization/middleware متصل نیست | تصویب مالک، seed نسخه‌دار، deny-by-default، negative API tests و row scope تکنسین با داده تخصیص معتبر |
+| Authorization | permission catalog و adapter زنده وصل است؛ API برای مسیر Persons توکن را به نشست معتبر PostgreSQL متصل می‌کند و actor فقط از principal سمت سرور می‌آید. ماتریس طبق تصمیم‌نامه هنوز proposal است | تصویب مالک، seed نسخه‌دار، تست PostgreSQL و negative API tests، row scope تکنسین با داده تخصیص معتبر |
 | Recovery | `IRecoveryStore` و PostgreSQL adapter برای create/consume challenge و consume یک‌باره recovery code وجود دارند؛ orchestration/endpoint و اثبات دوکاناله end-to-end وجود ندارد | threat model و تست expiry/replay/race/DB-failure/atomic consumption و اثبات دو کانال مستقل |
 | Bootstrap | local-only و fail-closed در تصمیم | آزمون setup یک‌باره، منع network تا تکمیل، عدم وجود secret ثابت |
 | Audit/privacy | مدل audit و writer persistence وجود دارد؛ retention عددی هنوز proposal است و append-only DB privilege/purge عملیاتی اثبات نشده | تصویب مالک/بررسی حقوقی، append-only با role محدود، allow-list و تست حذف secret/PII و purge |

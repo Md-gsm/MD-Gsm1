@@ -5,7 +5,7 @@
 1. تصمیم‌های مالک درباره شناسه ورود، نشست‌ها، رمز، بازیابی، قفل حساب، bootstrap و نقش‌ها ثبت شده‌اند.
 2. مدل منطقی PostgreSQL 18 و قیود IdentityAccess مستند شده‌اند.
 3. Domain و Application شامل Username/Account، policy، permission catalog و handlerهای login، تغییر رمز، reset مدیریتی و heartbeat ایجاد شده‌اند.
-4. EF Core entities/configurations، DbSetها، Repository adapterهای PostgreSQL و transactional Unit of Work اضافه شده‌اند. هنوز Migration عملیاتی یا endpoint ورود وجود ندارد.
+4. EF Core entities/configurations، DbSetها، Repository adapterهای PostgreSQL و transactional Unit of Work اضافه شده‌اند. هنوز Migration عملیاتی یا endpoint ورود وجود ندارد؛ middleware نشست برای مسیرهای Persons به API متصل شده است.
 
 ## مراحل 5 تا 7 — هم‌زمانی و آزمون
 5. سقف کاربران فعال در سطح چند process با تراکنش SERIALIZABLE و UPDATE نسخه‌ساز روی singleton policy row سریال می‌شود. تعداد حساب‌های متمایز با نشست معتبر ملاک است؛ نشست اضافه برای حساب فعال ظرفیت تازه مصرف نمی‌کند.
@@ -28,6 +28,6 @@
 ## مرزهای صریح
 - g1Authorized=false باقی می‌ماند.
 - هیچ IdentityAccess migration اضافه یا اجرا نشده و هیچ دیتابیس عملیاتی متصل نشده است.
-- هیچ login endpoint، auth middleware عملیاتی، network listener یا credential bootstrap تولیدی فعال نشده است.
+- هیچ login HTTP endpoint، network listener یا credential bootstrap تولیدی فعال نشده است. Middleware اعتبارسنجی نشست فقط روی مسیرهای Persons فعال است؛ تا زمان صدور توکن از مسیر ورود و تکمیل گیت‌های انتشار، استفادهٔ production مجاز نیست.
 - PR #31 باید Open + Draft + Unmerged بماند؛ main بدون تغییر است. هیچ merge مجاز نیست.
 - تست Integration فقط دیتابیس جداگانه‌ای را می‌پذیرد که نام و comment marker آن صریحاً disposable باشد و host آن loopback باشد.

@@ -46,6 +46,18 @@ public sealed class SessionAuthenticationMiddlewareTests
     }
 
     [Fact]
+    public async Task Rejects_session_when_lease_renewal_fails()
+    {
+        var resolver = new StubResolver(new ValidatedSessionIdentity(AccountId.From(TrustedAccount), 7));
+        var context = CreateContext(CreateServices(resolver, new StubSessions(false)), "/api/v1/persons/123");
+        context.Request.Headers.Authorization = "Bearer " + new string('A', 43);
+        var called = false;
+        await new SessionAuthenticationMiddleware(_ => { called = true; return Task.CompletedTask; }).InvokeAsync(context);
+        Assert.False(called);
+        Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
+    }
+
+    [Fact]
     public async Task Rejects_missing_bearer_token()
     {
         var context = CreateContext(CreateServices(new StubResolver(null), new StubSessions(false)), "/api/v1/persons/123");
