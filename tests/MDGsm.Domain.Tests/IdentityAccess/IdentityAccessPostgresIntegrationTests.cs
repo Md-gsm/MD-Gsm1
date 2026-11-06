@@ -352,6 +352,119 @@ public sealed class IdentityAccessPostgresIntegrationTests
         Assert.Null(await resolver.ResolveAsync(digest, now, CancellationToken.None));
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Persons_read_permission_is_live_and_denies_revoked_or_disabled_access()
+    {
+        var connectionString = Environment.GetEnvironmentVariable("IdentityAccessTestConnectionString");
+        Assert.False(string.IsNullOrWhiteSpace(connectionString),
+            "Permission-store integration test requires a dedicated disposable PostgreSQL database.");
+        var builder = new NpgsqlConnectionStringBuilder(connectionString);
+        Assert.Contains(builder.Host, new[] { "127.0.0.1", "localhost", "::1" });
+        Assert.Matches("^mdgsm_identityaccess_disposable_[0-9]+_[0-9]+$", builder.Database);
+
+        await using (var guard = new NpgsqlConnection(connectionString))
+        {
+            await guard.OpenAsync();
+            await using var marker = new NpgsqlCommand(
+                "SELECT shobj_description(oid, 'pg_database') FROM pg_database WHERE datname = current_database();",
+                guard);
+            var comment = (string?)await marker.ExecuteScalarAsync();
+            Assert.StartsWith("MDGSM_DISPOSABLE_TEST_DB; IdentityAccess integration test only", comment);
+        }
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:MDGsmDatabase"] = connectionString
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddMdGsmPersistence(configuration);
+        services.AddSingleton<TimeProvider>(TimeProvider.System);
+        await using var provider = services.BuildServiceProvider(validateScopes: true);
+
+        var now = DateTimeOffset.UtcNow;
+        var username = "personsread" + Guid.NewGuid().ToString("N")[..10];
+        var account = CreateAccount(username, "integration-only-placeholder", now);
+        var roleId = Guid.CreateVersion7();
+        var permissionId = Guid.CreateVersion7();
+        await using (var setup = provider.CreateAsyncScope())
+        {
+            var db = setup.ServiceProvider.GetRequiredService<MdGsmDbContext>();
+            await db.Database.EnsureCreatedAsync();
+            db.IdentityAccounts.Add(account);
+            db.IdentityRoles.Add(new IdentityRoleRow
+            {
+                RoleId = roleId,
+                RoleKey = "integration_persons_reader_" + Guid.NewGuid().ToString("N")[..8],
+                DisplayName = "Integration Persons Reader",
+                Description = "Disposable integration test role",
+                IsSystemRole = false,
+                IsAssignable = true,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            });
+            db.IdentityPermissions.Add(new IdentityPermissionRow
+            {
+                PermissionId = permissionId,
+                PermissionKey = "persons.read",
+                DisplayName = "Read Persons",
+                Description = "Read Persons records",
+                RiskLevel = "standard",
+                IsActive = true
+            });
+            db.IdentityAccountRoles.Add(new IdentityAccountRoleRow
+            {
+                AccountId = account.AccountId,
+                RoleId = roleId,
+                AssignedAtUtc = now,
+                AssignmentReason = "integration-test"
+            });
+            db.IdentityRolePermissions.Add(new IdentityRolePermissionRow
+            {
+                RoleId = roleId,
+                PermissionId = permissionId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using (var scope = provider.CreateScope())
+        {
+            var permissions = scope.ServiceProvider.GetRequiredService<IRolePermissionStore>();
+            Assert.True(await permissions.HasPermissionAsync(
+                AccountId.From(account.AccountId), "persons.read", CancellationToken.None));
+        }
+
+        await using (var revoke = provider.CreateAsyncScope())
+        {
+            var db = revoke.ServiceProvider.GetRequiredService<MdGsmDbContext>();
+            await db.IdentityPermissions.Where(x => x.PermissionId == permissionId)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsActive, false));
+        }
+
+        using (var scope = provider.CreateScope())
+        {
+            var permissions = scope.ServiceProvider.GetRequiredService<IRolePermissionStore>();
+            Assert.False(await permissions.HasPermissionAsync(
+                AccountId.From(account.AccountId), "persons.read", CancellationToken.None));
+        }
+
+        await using (var disable = provider.CreateAsyncScope())
+        {
+            var db = disable.ServiceProvider.GetRequiredService<MdGsmDbContext>();
+            await db.IdentityAccounts.Where(x => x.AccountId == account.AccountId)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsEnabled, false));
+        }
+
+        using (var scope = provider.CreateScope())
+        {
+            var permissions = scope.ServiceProvider.GetRequiredService<IRolePermissionStore>();
+            Assert.False(await permissions.HasPermissionAsync(
+                AccountId.From(account.AccountId), "persons.read", CancellationToken.None));
+        }
+    }
+
     private static IdentityAccountRow CreateAccount(string username, string passwordHash, DateTimeOffset now)
     {
         var parsed = Username.Parse(username);
