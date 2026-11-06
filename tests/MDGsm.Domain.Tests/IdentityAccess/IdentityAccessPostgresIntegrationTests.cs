@@ -203,6 +203,18 @@ public sealed class IdentityAccessPostgresIntegrationTests
                 .Select(x => x.AccountId).Distinct().CountAsync();
             Assert.Equal(2, distinct);
         }
+
+        // Keep this shared disposable database deterministic for the other integration tests.
+        await using (var cleanup = provider.CreateAsyncScope())
+        {
+            var db = cleanup.ServiceProvider.GetRequiredService<MdGsmDbContext>();
+            var cleanupAt = clock.GetUtcNow();
+            await db.IdentitySessions.Where(x => x.RevokedAtUtc == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.RevokedAtUtc, cleanupAt)
+                    .SetProperty(x => x.RevokeReason, "integration_test_cleanup"));
+            await db.IdentitySystemSettings.Where(x => x.SettingsId == 1)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.MaxActiveUsers, 5));
+        }
     }
 
     [Fact]
@@ -353,6 +365,9 @@ public sealed class IdentityAccessPostgresIntegrationTests
         var restricted = await resolver.ResolveAsync(digest, now, CancellationToken.None);
         Assert.NotNull(restricted);
         Assert.True(restricted!.MustChangePassword);
+
+        session.RevokedAtUtc = now;
+        await db.SaveChangesAsync();
     }
 
     [Fact]
