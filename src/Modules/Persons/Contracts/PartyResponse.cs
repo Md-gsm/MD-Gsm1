@@ -28,14 +28,14 @@ public sealed record PartyAddressContract(
 
 public sealed record PartyFinancialProfileContract(
     long? CreditLimitRial,
-    decimal DefaultDiscountPercent,
-    string DefaultPaymentMethod,
+    decimal? DefaultDiscountPercent,
+    string? DefaultPaymentMethod,
     string? BankCardLastFour);
 
 public sealed record PartyCommunicationPreferencesContract(
-    bool RepairStatusSmsEnabled,
-    bool ReadyForDeliverySmsEnabled,
-    bool PromotionsSmsEnabled);
+    bool? RepairStatusSmsEnabled,
+    bool? ReadyForDeliverySmsEnabled,
+    bool? PromotionsSmsEnabled);
 
 public sealed record PartyListResponse(
     IReadOnlyList<PartyListItemContract> Items,
