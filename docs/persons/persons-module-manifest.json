@@ -37,5 +37,6 @@
   },
   "note": "Initial Persons domain and transactional PostgreSQL registration/read repository are implemented on an isolated draft branch. Migration 0002 is included in the application-owned runner but has not been applied to any non-disposable database. API endpoints and connected desktop workflow remain blocked until IdentityAccess opaque-token validation and G1 security/architecture authorization are completed. G1 remains unauthorized; do not merge or release.",
   "validationEvidenceReference": "docs/operations/evidence/g0-ci-validation-2026-10-31.json",
-  "runtimeHostBuildingBlocksRelocated": true
+  "runtimeHostBuildingBlocksRelocated": true,
+  "personsInternalCodePlacement": "TRANSITIONAL_BUILDINGBLOCKS_PER_ADR_0014"
 }
