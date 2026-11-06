@@ -158,7 +158,7 @@ jobs:
           dotnet run --project tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj --configuration Release --no-restore
           dotnet run --project tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj --configuration Release --no-build
           history="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;")"
-          test "$history" = '4|4'
+          test "$history" = '5|5'
           schema_version="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(version)::text FROM mdgsm_schema_version;")"
           test "$schema_version" = '1|1'
           identity_tables="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'identity' AND table_type = 'BASE TABLE';")"
@@ -180,7 +180,7 @@ jobs:
           createdb "$restore_db"
           pg_restore --exit-on-error --dbname "$restore_db" "$backup_file"
           restored_history="$(psql -d "$restore_db" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;")"
-          test "$restored_history" = '4|4'
+          test "$restored_history" = '5|5'
           restored_identity_tables="$(psql -d "$restore_db" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'identity' AND table_type = 'BASE TABLE';")"
           test "$restored_identity_tables" = '11'
           restored_audit_trigger="$(psql -d "$restore_db" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_trigger WHERE tgname = 'trg_identity_security_audit_no_update_delete' AND NOT tgisinternal;")"

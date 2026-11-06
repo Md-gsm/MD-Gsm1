@@ -6,7 +6,7 @@ public sealed record CreateLegalPartyRequest(
     string? EconomicCode,
     string? ResponsiblePersonName,
     string[] Roles,
-    string PrimaryMobile,
+    string? PrimaryMobile,
     string? AlternateMobile,
     string? Landline,
     string? Email,

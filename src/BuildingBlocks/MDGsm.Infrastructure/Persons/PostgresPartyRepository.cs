@@ -61,9 +61,12 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         var note = PartyRegistrationRules.RequireInternalNote(request.InternalNote);
         var financial = PartyFinancialProfile.Create(request.CreditLimitRial, request.DefaultDiscountPercent,
             request.DefaultPaymentMethod, request.BankCardLastFour);
-        var primaryMobile = PartyContactPoint.Mobile(request.PrimaryMobile, true,
-            request.CommunicationPreferences.RepairStatusSmsEnabled || request.CommunicationPreferences.ReadyForDeliverySmsEnabled);
-        var contacts = new List<PartyContactPoint> { primaryMobile };
+        var contacts = new List<PartyContactPoint>();
+        if (!string.IsNullOrWhiteSpace(request.PrimaryMobile))
+        {
+            contacts.Add(PartyContactPoint.Mobile(request.PrimaryMobile, true,
+                request.CommunicationPreferences.RepairStatusSmsEnabled || request.CommunicationPreferences.ReadyForDeliverySmsEnabled));
+        }
         if (!string.IsNullOrWhiteSpace(request.AlternateMobile)) contacts.Add(PartyContactPoint.Mobile(request.AlternateMobile));
         if (!string.IsNullOrWhiteSpace(request.Landline)) contacts.Add(PartyContactPoint.Landline(request.Landline));
         if (!string.IsNullOrWhiteSpace(request.Email)) contacts.Add(PartyContactPoint.Email(request.Email));
@@ -358,7 +361,14 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
 
     private async Task AppendReadAuditAsync(Guid partyId, string actor, bool sensitive, CancellationToken cancellationToken)
     {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        // The caller may still hold a pooled connection in its ambient transaction. Use a
+        // dedicated non-pooled connection so a small pool (including pool size 1) cannot deadlock.
+        var auditConnectionString = new NpgsqlConnectionStringBuilder(dataSource.ConnectionString)
+        {
+            Pooling = false
+        }.ConnectionString;
+        await using var connection = new NpgsqlConnection(auditConnectionString);
+        await connection.OpenAsync(cancellationToken);
         await using var auditTransaction = await connection.BeginTransactionAsync(cancellationToken);
         await using var command = new NpgsqlCommand(
             "INSERT INTO persons_access_audit (audit_id, party_id, actor, action, sensitive_included) VALUES (@audit, @party, @actor, 'read', @sensitive);",

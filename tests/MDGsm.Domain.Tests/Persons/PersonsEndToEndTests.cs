@@ -241,6 +241,29 @@ public sealed class PersonsEndToEndTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task Registration_allows_walk_in_party_without_mobile_or_other_contacts()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var request = NewNatural(null, NewNationalId()) with
+        {
+            Province = null,
+            City = null,
+            PostalCode = null,
+            AddressLine = null
+        };
+        var created = await scope.Repository.AddNaturalAsync(
+            request, Actor, Guid.CreateVersion7(), scope.Transaction, default);
+        var details = await scope.Repository.GetAsync(
+            created.PartyId, Actor, includeSensitive: false, scope.Transaction, default);
+        Assert.NotNull(details);
+        Assert.Empty(details.Contacts);
+        Assert.Null(details.PrimaryAddress);
+        var results = await scope.Repository.SearchAsync(PersianTestData.AliRezaeiCanonical, 10, scope.Transaction, default);
+        Assert.Null(Assert.Single(results).MaskedPrimaryMobile);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task Database_rejects_malformed_mobile_values()
     {
         await using var scope = await TestScope.OpenAsync();
@@ -280,7 +303,7 @@ public sealed class PersonsEndToEndTests
 
     private static string NewNationalId() => Random.Shared.NextInt64(1_000_000_000L, 9_999_999_999L).ToString();
 
-    private static RegisterNaturalParty NewNatural(string mobile, string? nationalId, long creditLimitRial = 0, string? lastFour = null) =>
+    private static RegisterNaturalParty NewNatural(string? mobile, string? nationalId, long creditLimitRial = 0, string? lastFour = null) =>
         new(PersianTestData.AliArabicYeh, PersianTestData.RezaeiArabicYeh, PartyBusinessRoles.Customer, nationalId, mobile, null, null, null,
             "تهران", "تهران", "1234567890", "خیابان آزمایشی ۱۲",
             creditLimitRial, 0m, DefaultPaymentMethod.Cash, lastFour, PartyAcquaintanceSource.Unknown, "یادداشت داخلی",
