@@ -92,7 +92,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
         await using (var operationLock = new NpgsqlCommand(
             "SELECT pg_advisory_xact_lock(hashtextextended(@key, 0));", connection, transaction))
         {
-            operationLock.Parameters.AddWithValue("key", "persons-operation:" + operationId.ToString("D"));
+            operationLock.Parameters.AddWithValue("key", operationId.ToString("D"));
             await operationLock.ExecuteScalarAsync(cancellationToken);
         }
 
@@ -110,8 +110,12 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
             ? null
             : PartyContactPoint.Mobile(request.PrimaryMobile).Value;
 
-        if (normalizedMobile is not null && !forceNew)
+        if (normalizedMobile is null && !string.IsNullOrWhiteSpace(selectedPartyId))
+            throw new ArgumentException("Selecting an existing Party requires a mobile number to validate the candidate.", nameof(selectedPartyId));
+
+        if (normalizedMobile is not null)
         {
+            // forceNew still takes the same lock so it cannot race with an ordinary quick registration.
             await using (var mobileLock = new NpgsqlCommand(
                 "SELECT pg_advisory_xact_lock(hashtextextended(@key, 0));", connection, transaction))
             {
@@ -119,7 +123,9 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
                 await mobileLock.ExecuteScalarAsync(cancellationToken);
             }
 
-            var candidates = await FindMobileCandidatesAsync(connection, transaction, normalizedMobile, cancellationToken);
+            var candidates = forceNew
+                ? Array.Empty<PartyQuickRegistrationCandidate>()
+                : await FindMobileCandidatesAsync(connection, transaction, normalizedMobile, cancellationToken);
             if (!string.IsNullOrWhiteSpace(selectedPartyId))
             {
                 var selected = candidates.SingleOrDefault(x =>
