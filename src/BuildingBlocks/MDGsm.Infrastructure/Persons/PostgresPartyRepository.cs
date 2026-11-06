@@ -191,6 +191,18 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource) : IPart
         NpgsqlConnection connection, NpgsqlTransaction transaction, Guid partyId,
         IPartyRegistrationCommon request, string actor, CancellationToken cancellationToken)
     {
+        await using (var lockCommand = new NpgsqlCommand("""
+            SELECT party_id
+            FROM persons
+            WHERE party_id = @party AND is_active = true AND merged_into_party_id IS NULL
+            FOR UPDATE;
+            """, connection, transaction))
+        {
+            lockCommand.Parameters.AddWithValue("party", partyId);
+            if (await lockCommand.ExecuteScalarAsync(cancellationToken) is null)
+                throw new InvalidOperationException("The selected Party is no longer active and unmerged.");
+        }
+
         await using var command = new NpgsqlCommand("""
             UPDATE persons
             SET business_roles = (business_roles | @roles),
