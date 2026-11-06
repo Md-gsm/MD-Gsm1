@@ -13,6 +13,16 @@ public static class PartySearchLimits
 public interface IPartyRepository
 {
     /// <summary>
+    /// Quick registration resolves an existing exact mobile under a transaction-scoped mobile lock.
+    /// Ambiguous or different-name matches are returned for explicit user choice; forceNew is an explicit override.
+    /// </summary>
+    Task<PartyQuickRegistrationResult> QuickRegisterNaturalAsync(RegisterNaturalParty request, string actorId,
+        Guid operationId, bool forceNew, DbTransaction transaction, CancellationToken cancellationToken);
+
+    Task<PartyQuickRegistrationResult> QuickRegisterLegalAsync(RegisterLegalParty request, string actorId,
+        Guid operationId, bool forceNew, DbTransaction transaction, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Registers a natural person idempotently by <paramref name="operationId"/> (V1: OperationId only, no payload comparison).
     /// When <paramref name="transaction"/> is supplied the write joins that caller-owned transaction (ADR-0005) and is not committed here.
     /// </summary>
