@@ -302,7 +302,8 @@ public sealed class IdentityAccessPostgresIntegrationTests
 
         var now = DateTimeOffset.UtcNow;
         var accountId = Guid.CreateVersion7();
-        var account = CreateAccount($"sessionresolver{Guid.NewGuid():N}"[..30], "integration-only-placeholder", now);
+        var username = "sessionresolver" + Guid.NewGuid().ToString("N")[..12];
+        var account = CreateAccount(username, "integration-only-placeholder", now);
         account.AccountId = accountId;
         var digest = SHA256.HashData(Guid.NewGuid().ToByteArray());
         var session = new IdentitySessionRow
@@ -324,7 +325,7 @@ public sealed class IdentityAccessPostgresIntegrationTests
         var valid = await resolver.ResolveAsync(digest, now, CancellationToken.None);
         Assert.NotNull(valid);
         Assert.Equal(AccountId.From(accountId), valid!.AccountId);
-        Assert.Equal(1L, valid.CredentialVersion);
+        Assert.Equal(1L, valid!.CredentialVersion);
 
         session.LeaseExpiresAtUtc = now.AddSeconds(-1);
         await db.SaveChangesAsync();
