@@ -87,7 +87,7 @@ public sealed class PostgresIdentityAccessStores(MdGsmDbContext db, TimeProvider
  }
  public async Task CreateChallengeAsync(AccountId accountId,byte[] challengeDigest,string channel,DateTimeOffset expiresAt,CancellationToken ct)
  {
-  RequireDigest(challengeDigest,nameof(challengeDigest));if(channel is not ("email" or "mobile"))throw new ArgumentOutOfRangeException(nameof(channel));
+  RequireDigest(challengeDigest,nameof(challengeDigest));if(channel != "email")throw new ArgumentOutOfRangeException(nameof(channel));
   var now=clock.GetUtcNow();
   await db.IdentityRecoveryChallenges.Where(x=>x.AccountId==accountId.Value&&x.Channel==channel&&x.ConsumedAtUtc==null&&x.RevokedAtUtc==null)
    .ExecuteUpdateAsync(s=>s.SetProperty(x=>x.RevokedAtUtc,now),ct);
@@ -96,7 +96,7 @@ public sealed class PostgresIdentityAccessStores(MdGsmDbContext db, TimeProvider
  }
  public async Task<bool> ConsumeChallengeAsync(AccountId accountId,byte[] challengeDigest,string channel,DateTimeOffset now,CancellationToken ct)
  {
-  if(challengeDigest is not {Length:32}||channel is not ("email" or "mobile"))return false;
+  if(challengeDigest is not {Length:32}||channel != "email")return false;
   return await db.IdentityRecoveryChallenges.Where(x=>x.AccountId==accountId.Value&&x.ChallengeDigest==challengeDigest&&x.Channel==channel&&x.ConsumedAtUtc==null&&x.RevokedAtUtc==null&&x.ExpiresAtUtc>now)
    .ExecuteUpdateAsync(s=>s.SetProperty(x=>x.ConsumedAtUtc,now),ct)==1;
  }

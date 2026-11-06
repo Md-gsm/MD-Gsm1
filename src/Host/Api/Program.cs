@@ -133,8 +133,14 @@ app.MapGet("/api/v1/persons/{partyId}", async (
     IRolePermissionStore permissions,
     CancellationToken cancellationToken) =>
 {
-    if (!await permissions.HasPermissionAsync(
-        AccountId.From(actor.AccountId), "persons.read", cancellationToken))
+    var accountId = AccountId.From(actor.AccountId);
+    // Technician row scope depends on authoritative repair-assignment ownership,
+    // which is not yet available in this integration candidate. Fail closed rather
+    // than treating the broad persons.read grant as permission to read every party.
+    if (await permissions.HasRoleAsync(accountId, RoleCatalog.Technician, cancellationToken))
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+
+    if (!await permissions.HasPermissionAsync(accountId, "persons.read", cancellationToken))
         return Results.StatusCode(StatusCodes.Status403Forbidden);
 
     try

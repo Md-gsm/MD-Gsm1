@@ -1,8 +1,8 @@
 namespace MDGsm.IdentityAccess.Domain;
 
 /// <summary>
-/// Proposed deny-by-default permission matrix for the initial role set; owner approval
-/// is required before this catalog is seeded or enforced in a production runtime.
+/// Owner-approved deny-by-default permission matrix for the initial role set (2026-11-06).
+/// Approval defines policy only: it does not seed runtime grants or authorize G1.
 /// No wildcard permissions are used. Technician row scope must be enforced by the API
 /// using authoritative assignment data; this catalog does not implement row scoping.
 /// </summary>

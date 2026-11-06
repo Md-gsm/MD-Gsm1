@@ -70,7 +70,7 @@ CREATE TABLE identity.recovery_challenges (
  challenge_id uuid PRIMARY KEY, account_id uuid NOT NULL, challenge_digest bytea NOT NULL, channel text NOT NULL,
  created_at_utc timestamptz NOT NULL, expires_at_utc timestamptz NOT NULL, consumed_at_utc timestamptz, revoked_at_utc timestamptz,
  CONSTRAINT ck_identity_recovery_challenges_digest_length CHECK(octet_length(challenge_digest)=32),
- CONSTRAINT ck_identity_recovery_challenges_channel CHECK(channel IN('email','mobile')),
+ CONSTRAINT ck_identity_recovery_challenges_channel CHECK(channel='email'),
  CONSTRAINT fk_identity_recovery_challenges_account FOREIGN KEY(account_id) REFERENCES identity.accounts(account_id) ON DELETE RESTRICT
 );
 CREATE UNIQUE INDEX ux_identity_recovery_challenges_digest ON identity.recovery_challenges(challenge_digest);
