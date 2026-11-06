@@ -28,7 +28,7 @@
 - login HTTP endpoint و اتصال handler ورود به host هنوز اضافه نشده؛ بنابراین این تغییر توکن را از طریق HTTP صادر نمی‌کند. این مورد عمداً از scope این اصلاح خارج نگه داشته شده است.
 - migration و permission seed تولیدی، bootstrap credential و network listener تولیدی فعال نشده‌اند.
 - TLS/firewall و deployment topology باید قبل از هر اتصال شبکه‌ای production بازبینی شوند.
-- آزمون middleware با fakeها اضافه شده است؛ آزمون PostgreSQL واقعی برای session resolution و تست end-to-end با session واقعی باید در CI disposable اجرا و سبز شود.
+- آزمون middleware با fakeها اضافه شده است. آزمون PostgreSQL واقعی resolver نیز برای نشست معتبر، منقضی، لغوشده، حساب غیرفعال، credential version قدیمی و تغییر اجباری رمز اضافه شده و باید در CI disposable سبز شود؛ تست end-to-end HTTP با توکن واقعاً صادرشده و تست‌های PostgreSQL مجوزِ حذف‌شده/مفقود و خطای DB همچنان بازند.
 - تست‌های صریح session منقضی/revoked، account disabled، credential version stale، permission revoked، missing permission و DB failure باید با PostgreSQL واقعی پوشش داده شوند.
 
 این commit به‌تنهایی G1 را تأیید یا production را فعال نمی‌کند. `g1Authorized=false` باقی می‌ماند؛ PRها Draft و Unmerged می‌مانند و `main` تغییر نمی‌کند.
