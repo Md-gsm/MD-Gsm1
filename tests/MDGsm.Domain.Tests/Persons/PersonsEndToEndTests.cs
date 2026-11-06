@@ -146,6 +146,40 @@ public sealed class PersonsEndToEndTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task Database_rejects_cross_type_identity_columns()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        await using var connection = await scope.DataSource.OpenConnectionAsync();
+
+        await using (var legalTx = await connection.BeginTransactionAsync())
+        {
+            await using var legal = new NpgsqlCommand("""
+                INSERT INTO persons (party_id, party_type, business_roles, legal_name, national_id, created_by, updated_by)
+                VALUES (@id, 2, 1, 'شرکت آزمایشی', '1234567890', 'ci', 'ci');
+                """, connection, legalTx);
+            legal.Parameters.AddWithValue("id", Guid.CreateVersion7());
+            var failure = await Assert.ThrowsAsync<PostgresException>(() => legal.ExecuteNonQueryAsync());
+            Assert.Equal(PostgresErrorCodes.CheckViolation, failure.SqlState);
+            Assert.Equal("ck_persons_party_identity", failure.ConstraintName);
+            await legalTx.RollbackAsync();
+        }
+
+        await using (var naturalTx = await connection.BeginTransactionAsync())
+        {
+            await using var natural = new NpgsqlCommand("""
+                INSERT INTO persons (party_id, party_type, business_roles, given_name, family_name, economic_code, created_by, updated_by)
+                VALUES (@id, 1, 1, 'علی', 'رضایی', '1234567890', 'ci', 'ci');
+                """, connection, naturalTx);
+            natural.Parameters.AddWithValue("id", Guid.CreateVersion7());
+            var failure = await Assert.ThrowsAsync<PostgresException>(() => natural.ExecuteNonQueryAsync());
+            Assert.Equal(PostgresErrorCodes.CheckViolation, failure.SqlState);
+            Assert.Equal("ck_persons_party_identity", failure.ConstraintName);
+            await naturalTx.RollbackAsync();
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task Database_rejects_malformed_mobile_values()
     {
         await using var scope = await TestScope.OpenAsync();
