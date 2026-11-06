@@ -10,6 +10,12 @@ public static class PartySearchLimits
     public const int MaxTermLength = 160;
 }
 
+/// <summary>Server-side authorization for sensitive Persons data; implementations resolve current IdentityAccess permissions and fail closed.</summary>
+public interface IPartySensitiveDataAuthorizer
+{
+    Task<bool> CanReadSensitivePartyDataAsync(string actorId, CancellationToken cancellationToken);
+}
+
 public interface IPartyRepository
 {
     /// <summary>
