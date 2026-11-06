@@ -45,6 +45,9 @@ public sealed class IdentityAccessHttpEndToEndTests
             Assert.StartsWith("MDGSM_DISPOSABLE_TEST_DB; IdentityAccess integration test only", comment);
         }
 
+        await using var disposableDatabase = await DisposableDatabase.CreateAsync(connectionString);
+        connectionString = disposableDatabase.ConnectionString;
+
         var privacyKey = Convert.ToBase64String(Enumerable.Range(1, 32).Select(x => (byte)x).ToArray());
         var options = new DbContextOptionsBuilder<MdGsmDbContext>().UseNpgsql(connectionString).Options;
         var username = "httpflow" + Guid.NewGuid().ToString("N")[..12];
@@ -182,4 +185,38 @@ public sealed class IdentityAccessHttpEndToEndTests
             new LoginRequest(username, "incorrect-password", Guid.CreateVersion7()));
         Assert.Equal(HttpStatusCode.Unauthorized, wrongPassword.StatusCode);
     }
+    private sealed class DisposableDatabase(string adminConnectionString, string databaseName, string connectionString)
+        : IAsyncDisposable
+    {
+        public string ConnectionString { get; } = connectionString;
+
+        public static async Task<DisposableDatabase> CreateAsync(string sourceConnectionString)
+        {
+            var source = new NpgsqlConnectionStringBuilder(sourceConnectionString);
+            var databaseName = $"mdgsm_identityaccess_disposable_{Environment.ProcessId}_{DateTime.UtcNow.Ticks}";
+            var admin = new NpgsqlConnectionStringBuilder(sourceConnectionString) { Database = "postgres" };
+            await using (var connection = new NpgsqlConnection(admin.ConnectionString))
+            {
+                await connection.OpenAsync();
+                await using var create = new NpgsqlCommand($"CREATE DATABASE \"{databaseName}\"", connection);
+                await create.ExecuteNonQueryAsync();
+                await using var comment = new NpgsqlCommand(
+                    $"COMMENT ON DATABASE \"{databaseName}\" IS 'MDGSM_DISPOSABLE_TEST_DB; IdentityAccess HTTP end-to-end test'",
+                    connection);
+                await comment.ExecuteNonQueryAsync();
+            }
+
+            source.Database = databaseName;
+            return new DisposableDatabase(admin.ConnectionString, databaseName, source.ConnectionString);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await using var connection = new NpgsqlConnection(adminConnectionString);
+            await connection.OpenAsync();
+            await using var drop = new NpgsqlCommand($"DROP DATABASE IF EXISTS \"{databaseName}\" WITH (FORCE)", connection);
+            await drop.ExecuteNonQueryAsync();
+        }
+    }
+
 }
