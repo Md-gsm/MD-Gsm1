@@ -102,7 +102,7 @@ public sealed class PersonsEndToEndTests
             markerConnection))
             Assert.Contains("MDGSM_DISPOSABLE_TEST_DB", (string?)await marker.ExecuteScalar() ?? string.Empty);
 
-        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var start = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var mobile = "09125550125";
         async Task<PartyQuickRegistrationResult> RegisterAsync(string actor)
         {
@@ -118,7 +118,7 @@ public sealed class PersonsEndToEndTests
 
         var firstTask = RegisterAsync("ci-quick-station-1");
         var secondTask = RegisterAsync("ci-quick-station-2");
-        start.SetResult();
+        start.SetResult(true);
         var results = await Task.WhenAll(firstTask, secondTask);
 
         Assert.Single(results, x => x.Outcome == PartyQuickRegistrationOutcome.Created);
