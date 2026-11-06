@@ -74,7 +74,7 @@ app.MapGet("/api/v1/persons/{partyId}", async (
     }
     catch (UnauthorizedAccessException)
     {
-        return Results.Forbid();
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 });
 
