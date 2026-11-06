@@ -26,6 +26,117 @@ public sealed class PersonsEndToEndTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task Quick_registration_same_mobile_and_same_name_reuses_party_and_adds_role()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var mobile = "09125550123";
+        var first = await scope.Repository.AddNaturalAsync(
+            NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+
+        var quick = await scope.Repository.QuickRegisterNaturalAsync(
+            NewNatural(mobile, NewNationalId()) with { Roles = PartyBusinessRoles.Customer | PartyBusinessRoles.Colleague },
+            Actor, Guid.CreateVersion7(), forceNew: false, selectedPartyId: null, scope.Transaction, default);
+
+        Assert.Equal(PartyQuickRegistrationOutcome.ExistingPartyMatched, quick.Outcome);
+        Assert.Equal(first.PartyId, quick.PartyId);
+        Assert.False(quick.Created);
+        Assert.Empty(quick.Candidates);
+        Assert.Equal(3L, await ScalarAsync(scope,
+            "SELECT business_roles FROM persons WHERE party_id = @id", Guid.Parse(first.PartyId)));
+        Assert.Equal(1L, await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550123' AND is_active", Guid.Empty));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Quick_registration_requires_explicit_choice_for_different_name_and_supports_force_new()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var mobile = "09125550124";
+        var first = await scope.Repository.AddNaturalAsync(
+            NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+        var operation = Guid.CreateVersion7();
+        var differentName = NewNatural(mobile, NewNationalId()) with
+        {
+            GivenName = "سارا",
+            FamilyName = "محمدی",
+            Roles = PartyBusinessRoles.Colleague
+        };
+
+        var ambiguous = await scope.Repository.QuickRegisterNaturalAsync(
+            differentName, Actor, operation, forceNew: false, selectedPartyId: null, scope.Transaction, default);
+
+        Assert.Equal(PartyQuickRegistrationOutcome.SelectionRequired, ambiguous.Outcome);
+        Assert.Null(ambiguous.PartyId);
+        var candidate = Assert.Single(ambiguous.Candidates);
+        Assert.Equal(first.PartyId, candidate.PartyId);
+        Assert.Equal("سارا محمدی", differentName.GivenName + " " + differentName.FamilyName);
+        Assert.Equal(1L, await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550124' AND is_active", Guid.Empty));
+
+        var selected = await scope.Repository.QuickRegisterNaturalAsync(
+            differentName, Actor, operation, forceNew: false, selectedPartyId: candidate.PartyId, scope.Transaction, default);
+        Assert.Equal(PartyQuickRegistrationOutcome.ExistingPartyMatched, selected.Outcome);
+        Assert.Equal(first.PartyId, selected.PartyId);
+        Assert.Equal(2L, await ScalarAsync(scope,
+            "SELECT business_roles FROM persons WHERE party_id = @id", Guid.Parse(first.PartyId)));
+
+        var forced = await scope.Repository.QuickRegisterNaturalAsync(
+            differentName, Actor, Guid.CreateVersion7(), forceNew: true, selectedPartyId: null, scope.Transaction, default);
+        Assert.Equal(PartyQuickRegistrationOutcome.Created, forced.Outcome);
+        Assert.True(forced.Created);
+        Assert.NotEqual(first.PartyId, forced.PartyId);
+        Assert.Equal(2L, await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550124' AND is_active", Guid.Empty));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Concurrent_quick_registration_of_same_mobile_creates_exactly_one_party()
+    {
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__MDGsmDatabase");
+        Assert.False(string.IsNullOrWhiteSpace(connectionString));
+        await using var dataSource = NpgsqlDataSource.Create(connectionString!);
+        await using (var markerConnection = await dataSource.OpenConnectionAsync())
+        await using (var marker = new NpgsqlCommand(
+            "SELECT coalesce(shobj_description(oid, 'pg_database'), '') FROM pg_database WHERE datname = current_database()",
+            markerConnection))
+            Assert.Contains("MDGSM_DISPOSABLE_TEST_DB", (string?)await marker.ExecuteScalar() ?? string.Empty);
+
+        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var mobile = "09125550125";
+        async Task<PartyQuickRegistrationResult> RegisterAsync(string actor)
+        {
+            await using var connection = await dataSource.OpenConnectionAsync();
+            await using var transaction = await connection.BeginTransactionAsync();
+            await start.Task;
+            var result = await new PostgresPartyRepository(dataSource).QuickRegisterNaturalAsync(
+                NewNatural(mobile, NewNationalId()), actor, Guid.CreateVersion7(),
+                forceNew: false, selectedPartyId: null, transaction, default);
+            await transaction.CommitAsync();
+            return result;
+        }
+
+        var firstTask = RegisterAsync("ci-quick-station-1");
+        var secondTask = RegisterAsync("ci-quick-station-2");
+        start.SetResult();
+        var results = await Task.WhenAll(firstTask, secondTask);
+
+        Assert.Single(results, x => x.Outcome == PartyQuickRegistrationOutcome.Created);
+        Assert.Single(results, x => x.Outcome == PartyQuickRegistrationOutcome.ExistingPartyMatched);
+        Assert.Single(results.Select(x => x.PartyId).Distinct());
+        await using var verifyConnection = await dataSource.OpenConnectionAsync();
+        await using var verify = new NpgsqlCommand("""
+            SELECT count(DISTINCT p.party_id)
+            FROM persons p
+            JOIN persons_contact_points c ON c.party_id = p.party_id
+            WHERE c.kind = 1 AND c.value = '+98912555125' AND c.is_active;
+            """, verifyConnection);
+        Assert.Equal(1L, (long)(await verify.ExecuteScalarAsync())!);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task Registration_is_atomic_idempotent_and_normalizes_persian_text()
     {
         await using var scope = await TestScope.OpenAsync();
