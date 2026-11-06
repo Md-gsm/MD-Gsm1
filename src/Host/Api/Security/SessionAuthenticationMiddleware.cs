@@ -6,17 +6,21 @@ using Microsoft.AspNetCore.Http;
 namespace MDGsm.Api.Security;
 
 /// <summary>
-/// Authenticates protected Persons API requests using only an opaque Bearer token.
+/// Authenticates protected API requests using only an opaque Bearer token.
 /// The token is digested and resolved against PostgreSQL; client-supplied actor IDs are ignored.
+/// Sessions requiring a password change are restricted to the password-change endpoint.
 /// </summary>
 public sealed class SessionAuthenticationMiddleware(RequestDelegate next)
 {
     private const string SessionAuthenticationType = "MDGsm.Session";
     private const string PersonsPrefix = "/api/v1/persons";
+    private const string PasswordChangePath = "/api/v1/identity/password/change";
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (!context.Request.Path.StartsWithSegments(PersonsPrefix, StringComparison.OrdinalIgnoreCase))
+        var isPersonsRequest = context.Request.Path.StartsWithSegments(PersonsPrefix, StringComparison.OrdinalIgnoreCase);
+        var isPasswordChangeRequest = string.Equals(context.Request.Path.Value, PasswordChangePath, StringComparison.OrdinalIgnoreCase);
+        if (!isPersonsRequest && !isPasswordChangeRequest)
         {
             await next(context);
             return;
@@ -54,6 +58,14 @@ public sealed class SessionAuthenticationMiddleware(RequestDelegate next)
         if (identity is null)
         {
             await Unauthorized(context);
+            return;
+        }
+
+        if (identity.MustChangePassword && !isPasswordChangeRequest)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(
+                new { error = "password_change_required" }, context.RequestAborted);
             return;
         }
 

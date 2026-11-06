@@ -12,6 +12,7 @@ using Xunit;
 
 namespace MDGsm.Domain.Tests.IdentityAccess;
 
+[Collection("IdentityAccessPostgres")]
 public sealed class IdentityAccessPostgresIntegrationTests
 {
     [Fact]
@@ -349,7 +350,9 @@ public sealed class IdentityAccessPostgresIntegrationTests
         session.CredentialVersionAtIssue = 2;
         account.MustChangePassword = true;
         await db.SaveChangesAsync();
-        Assert.Null(await resolver.ResolveAsync(digest, now, CancellationToken.None));
+        var restricted = await resolver.ResolveAsync(digest, now, CancellationToken.None);
+        Assert.NotNull(restricted);
+        Assert.True(restricted!.MustChangePassword);
     }
 
     [Fact]
@@ -388,7 +391,7 @@ public sealed class IdentityAccessPostgresIntegrationTests
         var username = "personsread" + Guid.NewGuid().ToString("N")[..10];
         var account = CreateAccount(username, "integration-only-placeholder", now);
         var roleId = Guid.CreateVersion7();
-        var permissionId = Guid.CreateVersion7();
+        var permissionId = Guid.Empty;
         await using (var setup = provider.CreateAsyncScope())
         {
             var db = setup.ServiceProvider.GetRequiredService<MdGsmDbContext>();
@@ -405,15 +408,27 @@ public sealed class IdentityAccessPostgresIntegrationTests
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now
             });
-            db.IdentityPermissions.Add(new IdentityPermissionRow
+            var readPermission = await db.IdentityPermissions
+                .SingleOrDefaultAsync(x => x.PermissionKey == "persons.read");
+            if (readPermission is null)
             {
-                PermissionId = permissionId,
-                PermissionKey = "persons.read",
-                DisplayName = "Read Persons",
-                Description = "Read Persons records",
-                RiskLevel = "standard",
-                IsActive = true
-            });
+                permissionId = Guid.CreateVersion7();
+                readPermission = new IdentityPermissionRow
+                {
+                    PermissionId = permissionId,
+                    PermissionKey = "persons.read",
+                    DisplayName = "Read Persons",
+                    Description = "Read Persons records",
+                    RiskLevel = "standard",
+                    IsActive = true
+                };
+                db.IdentityPermissions.Add(readPermission);
+            }
+            else
+            {
+                permissionId = readPermission.PermissionId;
+                readPermission.IsActive = true;
+            }
             db.IdentityAccountRoles.Add(new IdentityAccountRoleRow
             {
                 AccountId = account.AccountId,

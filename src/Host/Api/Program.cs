@@ -2,6 +2,7 @@ using MDGsm.Api.Security;
 using MDGsm.Application.Contracts;
 using MDGsm.Application.Persons;
 using MDGsm.IdentityAccess.Application;
+using MDGsm.IdentityAccess.Contracts;
 using MDGsm.IdentityAccess.Domain;
 using MDGsm.Infrastructure.IdentityAccess;
 using MDGsm.Infrastructure.Persistence;
@@ -16,7 +17,14 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddMdGsmPersistence(builder.Configuration);
 builder.Services.AddSingleton<IAccessTokenFactory, OpaqueAccessTokenFactory>();
+builder.Services.AddSingleton<IPasswordHasher, PlatformPasswordHasher>();
+// Construct the HMAC key lazily. The login endpoint explicitly returns 503 when
+// secure server configuration is absent; the API can still expose liveness safely.
+builder.Services.AddSingleton<IPrivacyDigest>(sp =>
+    new HmacPrivacyDigest(sp.GetRequiredService<IConfiguration>()));
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<LoginHandler>();
+builder.Services.AddScoped<ChangeOwnPasswordHandler>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthenticatedActorContext, HttpAuthenticatedActorContext>();
 
@@ -59,6 +67,63 @@ app.MapGet("/health/ready", async (IServiceProvider services, IConfiguration con
 
 app.MapGet("/api/v1/system/info", (HttpContext context) =>
     Results.Ok(new ApiResponse<SystemInfo>(new SystemInfo("MD-Gsm", "v1", "foundation"), context.TraceIdentifier)));
+
+app.MapPost("/api/v1/identity/login", async (
+    LoginRequest request,
+    HttpContext context,
+    IConfiguration configuration,
+    IServiceProvider services,
+    CancellationToken cancellationToken) =>
+{
+    if (!configuration.GetValue<bool>("IdentityAccess:HttpLoginEnabled")
+        || string.IsNullOrWhiteSpace(configuration.GetConnectionString(PersistenceRegistration.ConnectionStringName))
+        || string.IsNullOrWhiteSpace(configuration[HmacPrivacyDigest.ConfigurationKey]))
+        return Results.Json(new { error = "identity_access_not_configured" },
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+
+    var digest = services.GetRequiredService<IPrivacyDigest>();
+    // Never trust X-Forwarded-For or a client-provided source key here. The direct
+    // peer address is transformed with the server-held HMAC key before persistence.
+    var source = context.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "unknown";
+    var sourceDigest = Convert.ToHexString(digest.ComputeSha256(source));
+    var outcome = await services.GetRequiredService<LoginHandler>().HandleAsync(
+        new LoginCommand(request.Username, request.Password, request.ClientInstanceId,
+            sourceDigest, context.TraceIdentifier), cancellationToken);
+
+    if (!outcome.Succeeded)
+    {
+        if (outcome.Failure == LoginFailure.SourceRateLimited)
+            return Results.Json(new { error = "login_rate_limited" },
+                statusCode: StatusCodes.Status429TooManyRequests);
+        if (outcome.Failure == LoginFailure.SessionCapacityReached)
+            return Results.Json(new { error = "session_capacity_reached" },
+                statusCode: StatusCodes.Status409Conflict);
+        return Results.Json(new { error = "invalid_credentials" },
+            statusCode: StatusCodes.Status401Unauthorized);
+    }
+
+    return Results.Ok(new LoginResponse(outcome.AccessToken!, outcome.LeaseExpiresAtUtc!.Value,
+        outcome.MustChangePassword));
+});
+
+app.MapPost("/api/v1/identity/password/change", async (
+    ChangePasswordRequest request,
+    IAuthenticatedActorContext actor,
+    ChangeOwnPasswordHandler handler,
+    HttpContext context,
+    CancellationToken cancellationToken) =>
+{
+    if (string.IsNullOrEmpty(request.NewPassword) || request.NewPassword.Length < 12
+        || request.NewPassword.Length > 128
+        || string.Equals(request.CurrentPassword, request.NewPassword, StringComparison.Ordinal))
+        return Results.BadRequest(new { error = "password_policy_failed" });
+
+    var changed = await handler.HandleAsync(AccountId.From(actor.AccountId),
+        request.CurrentPassword, request.NewPassword, context.TraceIdentifier, cancellationToken);
+    return changed
+        ? Results.NoContent()
+        : Results.Json(new { error = "invalid_credentials" }, statusCode: StatusCodes.Status401Unauthorized);
+});
 
 app.MapGet("/api/v1/persons/{partyId}", async (
     string partyId,

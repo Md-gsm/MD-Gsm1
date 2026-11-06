@@ -52,3 +52,12 @@ Break-glass فقط کنسول محلی؛ دو کانال مستقل ایمیل �
 
 ## 5. Security review و G1
 پرونده review آماده است، اما review مستقل و امضای مالک انجام نشده. reviewer باید token/digest/revoke، password hash/rehash، lockout/rate limit، bootstrap، session cap/lease، permission enforcement، recovery، audit/retention، TLS/firewall و dependency boundaries را بررسی کند. سبزشدن CI جایگزین review نیست. فرم reviewer باید SHA، یافته‌ها، نتیجه و امضا داشته باشد؛ مالک باید صریحاً G1 را authorize کند. تا آن زمان `g1Authorized=false` و PR #31 Open+Draft+Unmerged.
+
+
+## به‌روزرسانی 2026-11-06 — اتصال HTTP ورود
+
+- مسیر `POST /api/v1/identity/login` اکنون به `LoginHandler` متصل شده و توکن opaque را فقط پس از ثبت digest نشست در PostgreSQL بازمی‌گرداند.
+- مسیر `POST /api/v1/identity/password/change` اضافه شده است؛ نشست اجباری فقط همین مسیر را می‌تواند فراخوانی کند و پس از تغییر رمز تمام نشست‌ها revoke و credential version افزایش می‌یابد.
+- تست سرتاسری با API host واقعی و PostgreSQL موقت اضافه شده است: login HTTP، دریافت token، محدودیت must-change، تغییر رمز، رد token قبلی، ورود مجدد و عبور تا مجوز Persons.
+- برای جلوگیری از فعال‌شدن ناخواسته، HTTP login فقط با `IdentityAccess:HttpLoginEnabled=true` فعال می‌شود؛ مقدار پیش‌فرض خاموش است.
+- این موارد هنوز تا اجرای موفق CI روی head جدید و بازبینی امنیتی مستقل «تأییدشده» محسوب نمی‌شوند. هیچ migration تولیدی، bootstrap credential، listener/TLS تولیدی یا G1 authorization فعال نشده است.

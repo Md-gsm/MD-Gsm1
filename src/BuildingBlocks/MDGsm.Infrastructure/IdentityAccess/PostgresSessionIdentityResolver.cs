@@ -8,6 +8,8 @@ namespace MDGsm.Infrastructure.IdentityAccess;
 /// <summary>
 /// Resolves bearer-token digests against PostgreSQL on every protected request.
 /// No account ID, credential version, or session state is accepted from the client.
+/// A must-change-password session is returned as a restricted identity so the API
+/// can permit only the password-change operation until the requirement is cleared.
 /// </summary>
 public sealed class PostgresSessionIdentityResolver(MdGsmDbContext db) : ISessionIdentityResolver
 {
@@ -25,12 +27,12 @@ public sealed class PostgresSessionIdentityResolver(MdGsmDbContext db) : ISessio
                 && session.LeaseExpiresAtUtc > now
                 && session.CredentialVersionAtIssue == account.CredentialVersion
                 && account.IsEnabled
-                && !account.MustChangePassword
-            select new { account.AccountId, account.CredentialVersion })
+            select new { account.AccountId, account.CredentialVersion, account.MustChangePassword })
             .SingleOrDefaultAsync(ct);
 
         return match is null
             ? null
-            : new ValidatedSessionIdentity(AccountId.From(match.AccountId), match.CredentialVersion);
+            : new ValidatedSessionIdentity(
+                AccountId.From(match.AccountId), match.CredentialVersion, match.MustChangePassword);
     }
 }
