@@ -184,7 +184,7 @@ jobs:
           reservation_indexes="$(psql -d "$restore_db" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexname IN ('ux_persons_natural_national_id','ux_persons_legal_national_id') AND indexdef NOT ILIKE '%is_active%';")"
           test "$reservation_indexes" = '2'
           psql -d "$restore_db" -v ON_ERROR_STOP=1 <<'SQL'
-          DO $
+          DO $$
           BEGIN
             INSERT INTO persons (party_id, party_type, business_roles, given_name, family_name, national_id, created_by, updated_by, is_active)
             VALUES ('10000000-0000-7000-8000-000000000001', 1, 1, 'آزمون', 'غیرفعال', '9876543210', 'ci', 'ci', false);
@@ -202,7 +202,7 @@ jobs:
               RAISE EXCEPTION 'Inactive legal-person national identifier was reused.';
             EXCEPTION WHEN unique_violation THEN NULL;
             END;
-          END $;
+          END $$;
           SQL
           restored_identity_tables="$(psql -d "$restore_db" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'identity' AND table_type = 'BASE TABLE';")"
           test "$restored_identity_tables" = '11'
