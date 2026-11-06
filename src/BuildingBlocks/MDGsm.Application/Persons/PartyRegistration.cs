@@ -48,10 +48,10 @@ public sealed record PartyDetails(
     string PartyId, PartyType Type, string DisplayName, PartyBusinessRoles Roles,
     string? NationalIdentifier, string? EconomicCode, string? ResponsiblePersonName,
     IReadOnlyList<ContactPointDto> Contacts, AddressDto? PrimaryAddress,
-    long? CreditLimitRial, decimal DefaultDiscountPercent,
-    DefaultPaymentMethod DefaultPaymentMethod, string? BankCardLastFour,
-    PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,
-    PartyCommunicationPreferences CommunicationPreferences, DateTimeOffset CreatedAtUtc,
+    long? CreditLimitRial, decimal? DefaultDiscountPercent,
+    DefaultPaymentMethod? DefaultPaymentMethod, string? BankCardLastFour,
+    PartyAcquaintanceSource? AcquaintanceSource, string? InternalNote,
+    PartyCommunicationPreferences? CommunicationPreferences, DateTimeOffset CreatedAtUtc,
     bool SensitiveFieldsIncluded, WorkClassification? WorkClassification);
 
 public sealed record ContactPointDto(string Kind, string Value, bool IsPrimary, bool IsMessagingAllowed);
