@@ -144,6 +144,8 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             endpoint = dst / "src/Host/Api/Endpoints/Persons/PersonsEndpoints.cs"
             endpoint.write_text('app.MapGroup("/api/v1/persons");', encoding="utf-8")
+            contract = dst / "docs/persons/contracts/persons.openapi.yaml"
+            contract.unlink()
             with self.assertRaises(gates.GateFailure):
                 gates.run_api(dst)
 
