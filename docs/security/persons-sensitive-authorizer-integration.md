@@ -1,25 +1,34 @@
 # اتصال مجوز داده‌های حساس Persons به IdentityAccess
 
-وضعیت: اتصال adapter و ثبت DI در شاخه integration انجام شده؛ فعال‌سازی مسیر درخواست production هنوز مسدود است.
+وضعیت: زنجیرهٔ احراز هویت نشست تا مجوز دادهٔ حساس در کد API متصل شده است؛ فعال‌سازی عملیاتی کامل همچنان به گیت‌های انتشار و آزمون PostgreSQL نیاز دارد.
 
-## تصمیم و قرارداد
+## قرارداد مجوز
 - کلید دقیق مجوز: `persons.sensitive.read`.
-- کلید در `PermissionCatalog` ثبت شده و طبق ماتریس فعلی فقط نقش `super_admin` آن را به‌صورت پیش‌فرض دارد. نقش‌های دیگر باید با تصمیم صریح مالک و تغییر ماتریس مجوز بگیرند.
+- کلید در `PermissionCatalog` ثبت شده و طبق ماتریس فعلی فقط نقش `super_admin` آن را به‌صورت پیش‌فرض دارد.
 - `IdentityAccessPartySensitiveDataAuthorizer` از `IRolePermissionStore.HasPermissionAsync` استفاده می‌کند؛ fallback یا wildcard ندارد.
-- ثبت DI در `AddMdGsmPersistence` انجام شده است. وقتی اتصال DB تنظیم نشده باشد، registration زود برمی‌گردد و repository همچنان deny-by-default باقی می‌ماند.
-- Query مجوز account را به `identity.accounts` join می‌کند و حساب غیرفعال را رد می‌کند. Permission باید فعال باشد. نتیجه cache نمی‌شود؛ تغییر role/permission در query بعدی دیده می‌شود.
-- شناسه actor باید UUID غیرخالی با قالب D باشد. شناسه نامعتبر بدون query رد می‌شود. خطای store به‌صورت exception منتشر می‌شود و هیچ داده حساسی برگردانده نمی‌شود.
+- Query مجوز account را به `identity.accounts` join می‌کند و حساب غیرفعال و permission غیرفعال را رد می‌کند. نتیجه cache نمی‌شود.
+- خطای permission store fail-closed است و هیچ دادهٔ حساسی برنمی‌گرداند.
 
-## مرز امنیتی که هنوز باید تکمیل شود
-`IPartyRepository.GetAsync` یک `actorId` دریافت می‌کند. این مقدار فقط وقتی قابل اعتماد است که لایه API آن را از نشست معتبر سمت سرور استخراج کند؛ هرگز از body، query string، header دلخواه یا مقدار ارسالی Desktop پذیرفته نشود.
+## زنجیرهٔ اعتماد فعال در API
+1. مسیرهای `/api/v1/persons/**` فقط Bearer token با قالب opaque صادرشده توسط token factory را می‌پذیرند؛ actor ID از body/query/header خوانده نمی‌شود.
+2. API توکن خام را log یا persist نمی‌کند؛ SHA-256 digest را محاسبه می‌کند.
+3. `PostgresSessionIdentityResolver` در هر درخواست digest را با session زنده تطبیق می‌دهد و هم‌زمان این شروط را enforce می‌کند: `revoked_at IS NULL`، `lease_expires_at > now`، حساب فعال، تکمیل تغییر اجباری رمز و تطابق `credential_version_at_issue` با نسخهٔ جاری حساب.
+4. API lease را با `TryHeartbeatAsync` و همان digest و credential version تمدید می‌کند؛ اگر تمدید شکست بخورد درخواست 401 می‌گیرد.
+5. فقط پس از موفقیت، principal با authentication type برابر `MDGsm.Session` و claim شناسهٔ حساب ساخته می‌شود.
+6. `IAuthenticatedActorContext` فقط همین principal را می‌پذیرد. endpoint جزئیات Persons شناسهٔ actor را از این context گرفته و به repository می‌دهد.
+7. در صورت درخواست `includeSensitive=true`، repository دوباره permission زندهٔ `persons.sensitive.read` را بررسی می‌کند. تغییر یا لغو permission در درخواست بعدی اثر می‌گذارد.
 
-در شاخه فعلی هنوز login HTTP endpoint، authentication middleware، token/session validation و API actor-context عملیاتی وجود ندارد. بنابراین adapter به permission store وصل شده، اما مسیر درخواست production هنوز به هویت نشست معتبر متصل نشده است. صرف معتبر بودن UUID اثبات هویت نیست.
+## رفتار fail-closed
+- توکن مفقود/بدقالب، ناشناخته، منقضی یا revoke شده: 401.
+- نبود تنظیمات یا سرویس‌های نشست: 503؛ هیچ fallback به دسترسی ناشناس وجود ندارد.
+- خطای DB یا permission store: خطای درخواست؛ هرگز allow نمی‌شود.
+- endpointهای health و system-info خارج از محدودهٔ protected Persons باقی می‌مانند.
 
-پیش از فعال‌سازی runtime باید:
-1. API فقط opaque access token را از محل مورد توافق دریافت کند.
-2. digest توکن با SHA-256 محاسبه و session را در DB با `revoked_at IS NULL`، `lease_expires_at > now`، حساب فعال و `credential_version` جاری اعتبارسنجی کند.
-3. account ID فقط از رکورد session معتبر استخراج و به `GetAsync` داده شود.
-4. هیچ actor ID کلاینت‌ساخت به repository نرسد.
-5. تست end-to-end برای token نامعتبر/منقضی/لغوشده، account غیرفعال، credential version قدیمی، مجوز حذف‌شده، نبود مجوز و خطای DB اجرا شود.
+## مواردی که هنوز مجوز انتشار/فعال‌سازی می‌خواهند
+- login HTTP endpoint و اتصال handler ورود به host هنوز اضافه نشده؛ بنابراین این تغییر توکن را از طریق HTTP صادر نمی‌کند. این مورد عمداً از scope این اصلاح خارج نگه داشته شده است.
+- migration و permission seed تولیدی، bootstrap credential و network listener تولیدی فعال نشده‌اند.
+- TLS/firewall و deployment topology باید قبل از هر اتصال شبکه‌ای production بازبینی شوند.
+- آزمون middleware با fakeها اضافه شده است؛ آزمون PostgreSQL واقعی برای session resolution و تست end-to-end با session واقعی باید در CI disposable اجرا و سبز شود.
+- تست‌های صریح session منقضی/revoked، account disabled، credential version stale، permission revoked، missing permission و DB failure باید با PostgreSQL واقعی پوشش داده شوند.
 
-هیچ migration یا permission seed production در این تغییر اضافه نشده است. `g1Authorized=false` باقی می‌ماند و هیچ endpoint، listener، credential bootstrap یا production migration فعال نمی‌شود.
+این commit به‌تنهایی G1 را تأیید یا production را فعال نمی‌کند. `g1Authorized=false` باقی می‌ماند؛ PRها Draft و Unmerged می‌مانند و `main` تغییر نمی‌کند.
