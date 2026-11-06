@@ -118,8 +118,8 @@ try {
     $firstRun = @(& dotnet run --project $migratorProject --configuration Release 2>&1)
     $firstExitCode = $LASTEXITCODE
     $firstRun | ForEach-Object { Write-Host $_ }
-    if ($firstExitCode -ne 0 -or (($firstRun -join "`n") -notmatch 'newlyApplied=2')) {
-        throw 'The first application migration run did not apply exactly one migration.'
+    if ($firstExitCode -ne 0 -or (($firstRun -join "`n") -notmatch 'newlyApplied=3')) {
+        throw 'The first application migration run did not apply all three ordered migrations.'
     }
 
     Write-Host 'Re-running the application-owned migration runner to verify idempotence and checksum validation...'
@@ -131,7 +131,7 @@ try {
     }
 
     $history = & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d $databaseName -t -A -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;"
-    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '2|2') { throw "Migration history verification failed: '$history'." }
+    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '3|3') { throw "Migration history verification failed: '$history'." }
     $schemaVersion = & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d $databaseName -t -A -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(version)::text FROM mdgsm_schema_version;"
     if ($LASTEXITCODE -ne 0 -or "$schemaVersion".Trim() -ne '1|1') { throw "Infrastructure schema version verification failed: '$schemaVersion'." }
 
