@@ -25,6 +25,21 @@ Migration 0003 creates the IdentityAccess schema and singleton `identity.system_
 
 Migration 0003 deliberately does **not** create an administrator, password, recovery secret, role assignment, permission catalog seed, or role-permission grant. The proposed role/permission matrix requires explicit owner approval; until a separately reviewed seed/bootstrap operation exists, permission checks deny access by default. No credential is embedded in SQL, source, CI, or repository secrets.
 
+## IdentityAccess runtime database role
+
+The reviewed grant template is `database/operations/identityaccess-runtime-role-grants.sql`. Run it as the database deployment/owner identity after migrations. It creates only a `NOLOGIN` group role named `mdgsm_runtime`; the DBA must create the actual API login outside the repository and explicitly grant it membership. No password or login credential belongs in SQL, CI, or source control.
+
+The grant template is deliberately conservative:
+- read-only access to roles, permissions and assignments;
+- existing-account read/update for login, lockout and password-change fields, but no account INSERT (bootstrap/provisioning remains separate);
+- session and login-attempt lifecycle access;
+- recovery challenge issue/consume and recovery-code consume only;
+- INSERT-only security audit access;
+- a column-only no-op UPDATE on the singleton settings row to serialize session capacity;
+- no DDL, ownership, DELETE, TRUNCATE, permission/role writes, or schema CREATE.
+
+This is the IdentityAccess schema grant set, not a complete application-wide API role. Persons/business tables require their own separately reviewed grant matrix before the same login can serve those routes. Re-run and review the grant script after schema changes; do not introduce broad default privileges.
+
 ## Staging deployment protocol
 
 1. Provision an isolated PostgreSQL 18 staging database. Never point staging at production or a developer database.

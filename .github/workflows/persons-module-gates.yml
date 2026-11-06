@@ -167,7 +167,11 @@ jobs:
           test "$session_policy" = '5|30|180'
           audit_trigger="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_trigger WHERE tgname = 'trg_identity_security_audit_no_update_delete' AND NOT tgisinternal;")"
           test "$audit_trigger" = '1'
-          echo "PASS: application migration runner applied and recorded the all three ordered migrations exactly once; IdentityAccess has 11 tables, the required singleton session policy, and an append-only audit trigger."
+          psql -d "$MDGSM_TEST_DB" -v ON_ERROR_STOP=1 -c "CREATE ROLE mdgsm_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;"
+          psql -d "$MDGSM_TEST_DB" -v ON_ERROR_STOP=1 -f database/operations/identityaccess-runtime-role-grants.sql
+          grant_checks="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT has_table_privilege('mdgsm_runtime','identity.sessions','SELECT,INSERT')::text || '|' || has_column_privilege('mdgsm_runtime','identity.sessions','revoked_at_utc','UPDATE')::text || '|' || has_table_privilege('mdgsm_runtime','identity.security_audit_events','INSERT')::text || '|' || has_table_privilege('mdgsm_runtime','identity.security_audit_events','UPDATE')::text || '|' || has_table_privilege('mdgsm_runtime','identity.accounts','INSERT')::text || '|' || has_schema_privilege('mdgsm_runtime','identity','CREATE')::text;")"
+          test "$grant_checks" = 'true|true|true|false|false|false'
+          echo "PASS: migrations, repeat/idempotence, IdentityAccess schema invariants, and least-privilege runtime grants verified."
       - name: Run Persons PostgreSQL end-to-end integration test
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "Category=Integration" --no-restore
   persons-postgres-windows-migrations:
