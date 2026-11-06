@@ -20,7 +20,7 @@ public interface IPartyRepository
         Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken);
 
     Task<PartyQuickRegistrationResult> QuickRegisterLegalAsync(RegisterLegalParty request, string actorId,
-        Guid operationId, bool forceNew, DbTransaction transaction, CancellationToken cancellationToken);
+        Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken);
 
     /// <summary>
     /// Registers a natural person idempotently by <paramref name="operationId"/> (V1: OperationId only, no payload comparison).
