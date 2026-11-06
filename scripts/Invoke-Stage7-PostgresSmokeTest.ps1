@@ -79,7 +79,7 @@ try {
     & dotnet run --project $MigratorProjectPath --configuration Release
     if ($LASTEXITCODE -ne 0) { throw "Application migration runner failed. Database '$dbName' is retained." }
     $history = & $PsqlPath -h $PostgresHost -p "$PostgresPort" -U $AdminUser -d $dbName -t -A -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;"
-    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '3|3') { throw "Schema migration history verification failed. Found: $history. Database '$dbName' is retained." }
+    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '4|4') { throw "Schema migration history verification failed. Found: $history. Database '$dbName' is retained." }
     $env:ASPNETCORE_URLS = 'http://127.0.0.1:5080'
     $api = Start-Process -FilePath 'dotnet' -ArgumentList @('run', '--project', ('"' + $ApiProjectPath + '"'), '--no-launch-profile') -PassThru -WindowStyle Hidden
     try {
