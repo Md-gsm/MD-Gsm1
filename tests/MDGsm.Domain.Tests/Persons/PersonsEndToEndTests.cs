@@ -85,7 +85,7 @@ public sealed class PersonsEndToEndTests
     {
         await using var scope = await TestScope.OpenAsync();
         var created = await scope.Repository.AddNaturalAsync(NewNatural("09125555555", NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
-        var denied = new PostgresPartyRepository(scope.DataSource, new DenySensitivePartyDataAuthorizer());
+        var denied = new PostgresPartyRepository(scope.DataSource);
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             denied.GetAsync(created.PartyId, Actor, includeSensitive: true, scope.Transaction, default));
     }
@@ -189,11 +189,6 @@ public sealed class PersonsEndToEndTests
         await using var command = new NpgsqlCommand(sql, scope.Connection, scope.Transaction);
         command.Parameters.AddWithValue("id", id);
         return (long)(await command.ExecuteScalarAsync())!;
-    }
-
-    private sealed class DenySensitivePartyDataAuthorizer : IPartySensitiveDataAuthorizer
-    {
-        public Task<bool> CanReadSensitivePartyDataAsync(string actorId, CancellationToken cancellationToken) => Task.FromResult(false);
     }
 
     private sealed class AllowSensitivePartyDataAuthorizer : IPartySensitiveDataAuthorizer
