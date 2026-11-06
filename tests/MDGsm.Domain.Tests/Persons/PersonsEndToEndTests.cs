@@ -65,9 +65,44 @@ public sealed class PersonsEndToEndTests
         Assert.Equal((long?)5_000_000, full.CreditLimitRial);
         Assert.Equal("4321", full.BankCardLastFour);
         Assert.Equal(nationalId, full.NationalIdentifier);
+        Assert.NotNull(full.DefaultDiscountPercent);
+        Assert.NotNull(full.DefaultPaymentMethod);
+        Assert.NotNull(full.AcquaintanceSource);
+        Assert.NotNull(full.CommunicationPreferences);
 
         Assert.Equal(2L, await ScalarAsync(scope, "SELECT count(*) FROM persons_access_audit WHERE party_id = @id", Guid.Parse(created.PartyId)));
         Assert.Equal(1L, await ScalarAsync(scope, "SELECT count(*) FROM persons_access_audit WHERE party_id = @id AND sensitive_included", Guid.Parse(created.PartyId)));
+        Assert.Null(masked.DefaultDiscountPercent);
+        Assert.Null(masked.DefaultPaymentMethod);
+        Assert.Null(masked.AcquaintanceSource);
+        Assert.Null(masked.CommunicationPreferences);
+        Assert.Equal("م*** م****", PartyIdentifiers.MaskPersonName("مدیر مسئول"));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Sensitive_read_is_denied_without_server_authorization()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var created = await scope.Repository.AddNaturalAsync(NewNatural("09125555555", NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+        var denied = new PostgresPartyRepository(scope.DataSource, new DenySensitivePartyDataAuthorizer());
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            denied.GetAsync(created.PartyId, Actor, includeSensitive: true, scope.Transaction, default));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Read_audit_survives_rollback_of_the_callers_transaction()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var created = await scope.Repository.AddNaturalAsync(NewNatural("09126666666", NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+        await scope.Repository.GetAsync(created.PartyId, Actor, includeSensitive: false, scope.Transaction, default);
+        await scope.Transaction.RollbackAsync();
+        await using var verify = await scope.DataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("SELECT count(*) FROM persons_access_audit WHERE party_id=@id AND actor=@actor", verify);
+        command.Parameters.AddWithValue("id", Guid.Parse(created.PartyId));
+        command.Parameters.AddWithValue("actor", Actor);
+        Assert.Equal(1L, (long)(await command.ExecuteScalarAsync())!);
     }
 
     [Fact]
@@ -156,6 +191,16 @@ public sealed class PersonsEndToEndTests
         return (long)(await command.ExecuteScalarAsync())!;
     }
 
+    private sealed class DenySensitivePartyDataAuthorizer : IPartySensitiveDataAuthorizer
+    {
+        public Task<bool> CanReadSensitivePartyDataAsync(string actorId, CancellationToken cancellationToken) => Task.FromResult(false);
+    }
+
+    private sealed class AllowSensitivePartyDataAuthorizer : IPartySensitiveDataAuthorizer
+    {
+        public Task<bool> CanReadSensitivePartyDataAsync(string actorId, CancellationToken cancellationToken) => Task.FromResult(actorId == Actor);
+    }
+
     private sealed class TestScope : IAsyncDisposable
     {
         private readonly NpgsqlDataSource _dataSource;
@@ -165,9 +210,10 @@ public sealed class PersonsEndToEndTests
             _dataSource = dataSource;
             Connection = connection;
             Transaction = transaction;
-            Repository = new PostgresPartyRepository(dataSource);
+            Repository = new PostgresPartyRepository(dataSource, new AllowSensitivePartyDataAuthorizer());
         }
 
+        public NpgsqlDataSource DataSource => _dataSource;
         public NpgsqlConnection Connection { get; }
         public NpgsqlTransaction Transaction { get; }
         public PostgresPartyRepository Repository { get; }
