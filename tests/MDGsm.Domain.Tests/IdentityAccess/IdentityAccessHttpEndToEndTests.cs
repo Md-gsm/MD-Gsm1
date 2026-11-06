@@ -6,9 +6,12 @@ using MDGsm.IdentityAccess.Domain;
 using MDGsm.Infrastructure.IdentityAccess;
 using MDGsm.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
 using Xunit;
 
@@ -59,7 +62,8 @@ public sealed class IdentityAccessHttpEndToEndTests
 
         await using (var db = new MdGsmDbContext(options))
         {
-            await db.Database.EnsureCreatedAsync();
+            Assert.True(await db.Database.EnsureCreatedAsync(),
+                "The isolated HTTP integration database must start empty and receive the complete EF model.");
             if (!await db.IdentitySystemSettings.AnyAsync(x => x.SettingsId == 1))
                 db.IdentitySystemSettings.Add(new IdentitySystemSettingsRow
                 {
@@ -136,13 +140,26 @@ public sealed class IdentityAccessHttpEndToEndTests
         }
 
         using var factory = new WebApplicationFactory<global::Program>()
-            .WithWebHostBuilder(web => web.ConfigureAppConfiguration((_, config) =>
-                config.AddInMemoryCollection(new Dictionary<string, string?>
+            .WithWebHostBuilder(web =>
+            {
+                web.ConfigureAppConfiguration((_, config) =>
+                    config.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["ConnectionStrings:MDGsmDatabase"] = connectionString,
+                        ["IdentityAccess:PrivacyHmacKey"] = privacyKey,
+                        ["IdentityAccess:HttpLoginEnabled"] = "true"
+                    }));
+                // Override both EF and the raw-Npgsql adapter data source so the real
+                // host is guaranteed to use this test's newly-created isolated database.
+                web.ConfigureTestServices(services =>
                 {
-                    ["ConnectionStrings:MDGsmDatabase"] = connectionString,
-                    ["IdentityAccess:PrivacyHmacKey"] = privacyKey,
-                    ["IdentityAccess:HttpLoginEnabled"] = "true"
-                })));
+                    services.RemoveAll<DbContextOptions<MdGsmDbContext>>();
+                    services.RemoveAll<MdGsmDbContext>();
+                    services.AddDbContext<MdGsmDbContext>(options => options.UseNpgsql(connectionString));
+                    services.RemoveAll<NpgsqlDataSource>();
+                    services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
+                });
+            });
         using var client = factory.CreateClient();
 
         var partyUrl = "/api/v1/persons/" + Guid.CreateVersion7().ToString("D");
