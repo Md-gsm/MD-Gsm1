@@ -67,7 +67,12 @@ public sealed class PostgresIdentityAccessStores(MdGsmDbContext db, TimeProvider
   return await db.IdentityLoginAttempts.CountAsync(x=>x.SourceKeyDigest==digest&&x.Outcome!="success"&&x.OccurredAtUtc>now.AddMinutes(-5),ct)>=20;
  }
  public Task<bool> HasPermissionAsync(AccountId id,string permissionKey,CancellationToken ct)=>
-  (from ar in db.IdentityAccountRoles join rp in db.IdentityRolePermissions on ar.RoleId equals rp.RoleId join p in db.IdentityPermissions on rp.PermissionId equals p.PermissionId where ar.AccountId==id.Value&&p.PermissionKey==permissionKey&&p.IsActive select p.PermissionId).AnyAsync(ct);
+  (from account in db.IdentityAccounts
+   join ar in db.IdentityAccountRoles on account.AccountId equals ar.AccountId
+   join rp in db.IdentityRolePermissions on ar.RoleId equals rp.RoleId
+   join p in db.IdentityPermissions on rp.PermissionId equals p.PermissionId
+   where account.AccountId==id.Value && account.IsEnabled && p.PermissionKey==permissionKey && p.IsActive
+   select p.PermissionId).AnyAsync(ct);
  public Task<bool> HasRoleAsync(AccountId id,string roleKey,CancellationToken ct)=>
   (from ar in db.IdentityAccountRoles join role in db.IdentityRoles on ar.RoleId equals role.RoleId where ar.AccountId==id.Value&&role.RoleKey==roleKey select role.RoleId).AnyAsync(ct);
  public async Task AppendAsync(string eventType,AccountId? actor,AccountId? subject,string outcome,string correlationId,CancellationToken ct)

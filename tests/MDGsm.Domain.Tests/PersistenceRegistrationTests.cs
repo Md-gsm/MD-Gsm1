@@ -33,5 +33,6 @@ public sealed class PersistenceRegistrationTests
         services.AddMdGsmPersistence(configuration);
 
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MdGsmDbContext));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MDGsm.Application.Persons.IPartySensitiveDataAuthorizer));
     }
 }

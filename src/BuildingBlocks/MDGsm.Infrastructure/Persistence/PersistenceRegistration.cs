@@ -17,6 +17,7 @@ public static class PersistenceRegistration
   services.AddDbContext<MdGsmDbContext>(o=>o.UseNpgsql(cs,n=>n.EnableRetryOnFailure(maxRetryCount:3)));
   services.AddSingleton(_=>NpgsqlDataSource.Create(cs));
   services.AddScoped<IPartyRepository,PostgresPartyRepository>();
+  services.AddScoped<IPartySensitiveDataAuthorizer,IdentityAccessPartySensitiveDataAuthorizer>();
   services.AddScoped<PostgresIdentityAccessStores>();
   services.AddScoped<IAccountStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<ISessionStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
