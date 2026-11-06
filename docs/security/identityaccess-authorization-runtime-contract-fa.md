@@ -206,3 +206,12 @@ Endpoint بدون metadata باید در startup/contract validation fail شود
 - [ ] هیچ Critical/High باز نماند مگر پذیرش ریسک مستند و امضاشده.
 
 **نتیجه:** ماتریس از نظر سیاست محصول مصوب است؛ قرارداد اجرایی در این سند تدوین شده؛ runtime implementation و تست runtime هنوز انجام نشده و G1 بسته است.
+
+
+## تطبیق قرارداد با پیاده‌سازی PR #41 — 2026-11-07
+- Session policy جاری: 5 حساب فعال متمایز، heartbeat=30s، lease=180s؛ عمر مطلق و سقف نشست per-account وجود ندارد.
+- ماتریس permission در کاتالوگ Domain تعریف شده، اما Migration هیچ permission/role/grant seed نمی‌کند؛ approval policy به معنی grant اجرایی نیست.
+- endpoint جزئیات Persons permission `persons.read` را بررسی می‌کند. چون منبع authoritative repair assignment هنوز موجود نیست، PR #41 حساب‌های دارای role technician را برای این مسیر fail-closed و 403 می‌کند؛ scopeهای self/assigned/branch/warehouse هنوز runtime-ready نیستند.
+- Recovery فقط persistence primitive دارد؛ orchestration، endpoint، ارسال ایمیل و rate-limit/attempt workflow در کد حاضر نیست. در اصلاح PR #41، Store و schema دیگر کانال mobile را نمی‌پذیرند.
+- PR #41 روی SHA `87b4f13f04b1ad7655ffd7efd4bff028fe2a21b1` شامل اصلاحات fail-closed است؛ CI آن SHA باید کامل شود و نتایج قبلی به آن منتقل نمی‌شوند.
+- `g1Authorized=false`؛ این قرارداد مجوز فعال‌سازی نیست.

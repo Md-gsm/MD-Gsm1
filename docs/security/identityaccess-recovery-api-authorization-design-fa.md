@@ -316,3 +316,10 @@ Absolute TTL با heartbeat تمدید نمی‌شود. سقف دو نشست و 
 - SMS فقط placeholder آینده و غیرفعال است؛ هیچ provider، SDK، credential، ارسال یا تست وابسته به SMS در این فاز وجود ندارد. کد آفلاین نیز عامل اجباری یا مسیر bypass نیست.
 - OTP معتبر و منقضی‌نشده برای همان account/challenge مجاز است؛ OTP تکراری/منقضی/حدس‌زده‌شده/متعلق به حساب دیگر رد می‌شود؛ مصرف هم‌زمان دقیقاً یک commit موفق دارد؛ خطای provider/DB یا نتیجه commit نامعلوم proof موفق محسوب نمی‌شود.
 - این تصمیم فقط قرارداد طراحی است. Recovery runtime، migration یا endpoint تا review مستقل، تست روی SHA مشخص و مجوز رسمی G1 ممنوع است؛ `g1Authorized=false` باقی می‌ماند.
+
+
+## تصمیم اجرایی جاری — 2026-11-07
+- Recovery ایمیل‌تنها برای این فاز تصویب شده است؛ OTP یک‌بارمصرف 10 دقیقه‌ای و digest-only، حداکثر 5 تلاش، قفل 24 ساعته، resend حداقل هر 1 ساعت، حداکثر 1 ارسال در rolling hour و 5 ارسال در rolling 24h؛ نقض سقف قفل 24 ساعته دارد.
+- پس از اثبات OTP، تغییر رمز + افزایش credential_version + revoke اتمیک همه نشست‌های حساب + اجبار تغییر رمز در ورود بعدی الزامی است.
+- این flow MFA نیست و تا threat-model review، SMTP configuration، endpoint/orchestration، rate-limit اتمیک و تست replay/race/expiry/failure آماده نشوند، Recovery runtime فعال نیست.
+- SMS فقط placeholder آینده و غیرفعال است؛ schema و Store این فاز نباید کانال mobile را بپذیرند. offline recovery code عامل اجباری یا bypass نیست.

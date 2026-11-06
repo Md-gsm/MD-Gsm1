@@ -28,3 +28,11 @@
 - سقف‌های مالی هنوز مشخص نیستند؛ عملیات با threshold نامعلوم Deny باقی می‌ماند.
 - قرارداد مرزی branch/warehouse در `identityaccess-scope-data-owner-contract-fa.md` ثبت شده؛ اما canonical data owner و شواهد entity/schema/migration/assignment هنوز احراز نشده و این بخش بسته نیست. retention audit و تعریف دقیق self برای Persons نیز بازند.
 - G1 مستقل و مجوز اجرایی صریح لازم‌اند؛ `g1Authorized=false` باقی است.
+
+
+## وضعیت جاری پیاده‌سازی — 2026-11-07
+- PR #41 کد login/password change/session validation و Migration IdentityAccess دارد؛ متن‌های قدیمی این سند درباره نبود کامل runtime/login endpoint تاریخی‌اند.
+- Session policy فعلی 5 active accounts / 30s heartbeat / 180s lease است؛ absolute TTL=12h یا سقف 2 نشست/account در سیاست جاری وجود ندارد.
+- Recovery endpoint/workflow و email delivery هنوز پیاده‌سازی نشده‌اند؛ Store و schema primitive به‌تنهایی Recovery را کامل نمی‌کنند.
+- Permission matrix تصویب شده اما seed نشده است. Technician Persons detail تا تعیین منبع assignment، fail-closed است؛ سایر scopeهای row/branch/warehouse آماده نیستند.
+- retention، canonical data owner برای Branch/Warehouse/assignment، threshold مالی، SMTP deployment، TLS/topology و review مستقل بازند. `g1Authorized=false`.

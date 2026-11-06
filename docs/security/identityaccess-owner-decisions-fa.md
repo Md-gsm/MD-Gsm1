@@ -68,3 +68,11 @@
 3. SMS فاز آینده است؛ placeholder خالی و غیرفعال می‌ماند و انتخاب provider blocker فعلی نیست.
 4. Retention امنیتی نیازمند تصویب/بررسی حقوقی؛ thresholdهای مالی باید تعیین شوند؛ مالک canonical branch/warehouse و assignment باید با شواهد کد/schema معرفی شود.
 5. این تصمیم‌ها تأیید امنیتی مستقل یا مجوز G1 نیستند؛ reviewer، یافته‌ها، امضا و تصمیم AUTHORIZE G1 هنوز لازم‌اند.
+
+
+## تصمیم‌های نهایی مالک — 2026-11-06/07
+- ماتریس granular مجوز با deny-by-default، منع wildcard، اجتماع مجوزهای صریح چندنقشی، scope مستقل سمت API، محدودیت تکنسین به self/assigned و جداسازی وظایف تصویب شد. خانه خالی Deny است. تصویب policy به معنی seed یا فعال‌سازی runtime نیست.
+- Recovery ایمیل‌تنها تصویب شد: OTP یک‌بارمصرف 10 دقیقه‌ای، digest-only، حداکثر 5 تلاش و قفل 24 ساعته؛ resend حداقل هر 1 ساعت، حداکثر 1 بار در rolling hour و 5 بار در rolling 24h؛ نقض سقف قفل 24 ساعته دارد. پس از اثبات OTP: تغییر رمز، افزایش credential_version، revoke اتمیک همه نشست‌ها و الزام تغییر رمز در ورود بعدی.
+- ایمیل‌تنها MFA نیست؛ ریسک mailbox compromise باید مستقل review شود. SMS در این فاز placeholder غیرفعال است؛ هیچ provider/SDK/credential/send/test وجود ندارد. offline code عامل اجباری یا bypass نیست.
+- سیاست نشست: برنامه باز + heartbeat/lease؛ سقف آغازین 5 حساب فعال متمایز قابل تنظیم؛ 30s/180s فقط liveness است؛ absolute TTL یا سقف 2 نشست/account تصویب نشده.
+- retention امنیتی، مالک canonical داده‌های Branch/Warehouse/assignment، threshold مالی و review مستقل هنوز بازند. `g1Authorized=false`.
