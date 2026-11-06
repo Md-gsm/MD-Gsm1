@@ -130,7 +130,7 @@ public sealed class PersonsEndToEndTests
             SELECT count(DISTINCT p.party_id)
             FROM persons p
             JOIN persons_contact_points c ON c.party_id = p.party_id
-            WHERE c.kind = 1 AND c.value = '+98912555125' AND c.is_active;
+            WHERE c.kind = 1 AND c.value = '+989125550125' AND c.is_active;
             """, verifyConnection);
         Assert.Equal(1L, (long)(await verify.ExecuteScalarAsync())!);
     }
