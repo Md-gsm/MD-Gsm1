@@ -16,7 +16,7 @@ public sealed class IdentityAccessPartySensitiveDataAuthorizerTests
         var authorizer = new IdentityAccessPartySensitiveDataAuthorizer(store);
 
         Assert.True(await authorizer.CanReadSensitivePartyDataAsync(AccountGuid.ToString("D"), default));
-        Assert.Equal(AccountId.From(AccountGuid), store.LastAccountId);
+        Assert.Equal(AccountId.From(AccountGuid), store.LastAccountId!.Value);
         Assert.Equal(IdentityAccessPartySensitiveDataAuthorizer.PermissionKey, store.LastPermissionKey);
     }
 

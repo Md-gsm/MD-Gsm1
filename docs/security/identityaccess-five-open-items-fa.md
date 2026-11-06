@@ -10,6 +10,7 @@
 | persons.create | ✓ | ✓ | ✓ | | | ✓ | ✓ | | ✓ | |
 | persons.update | ✓ | ✓ | ✓ | | | | | | ✓ | |
 | persons.delete | ✓ | | | | | | | | | |
+| persons.sensitive.read | ✓ | | | | | | | | | |
 | repairs.read | ✓ | ✓ | ✓ | ✓* | | | | | ✓ | ✓ |
 | repairs.create/update | ✓ | ✓ | ✓ | | | | | | | |
 | repairs.assign | ✓ | ✓ | | | | | | | | |
@@ -37,7 +38,7 @@
 | system.settings.read | ✓ | ✓ | | | | | | | | |
 | system.settings.manage | ✓ | | | | | | | | | |
 
-*تکنسین فقط رکوردهای تخصیص‌یافته. کاتالوگ granular: persons.read/create/update/delete؛ repairs.read/create/update/assign/complete/deliver/worklog.write/parts.consume؛ inventory.read/receipt.create/issue.create/count.execute؛ sales.read/create/price.override؛ purchasing.read/create؛ cash.read/receipt.create/payment.create؛ finance.read/voucher.create/voucher.delete/period.close؛ identity.accounts.read/create/update، identity.credentials.reset، identity.roles.assign، identity.permissions.manage، identity.sessions.revoke، identity.settings.manage، identity.recovery.execute؛ system.settings.read/manage.
+*تکنسین فقط رکوردهای تخصیص‌یافته. کاتالوگ granular: persons.read/create/update/delete؛ persons.sensitive.read؛ repairs.read/create/update/assign/complete/deliver/worklog.write/parts.consume؛ inventory.read/receipt.create/issue.create/count.execute؛ sales.read/create/price.override؛ purchasing.read/create؛ cash.read/receipt.create/payment.create؛ finance.read/voucher.create/voucher.delete/period.close؛ identity.accounts.read/create/update، identity.credentials.reset، identity.roles.assign، identity.permissions.manage، identity.sessions.revoke، identity.settings.manage، identity.recovery.execute؛ system.settings.read/manage.
 manager مجوز مدیریت حساب/نقش/امنیت ندارد. حذف سند نهایی ممنوع و فقط reversal/correction؛ accountant می‌تواند دوره را ببندد ولی بازگشایی در ماتریس نیست. این ماتریس پیشنهاد است؛ تصویب مالک قبل از seed لازم است.
 
 ## 2. Retention سوابق امنیتی
