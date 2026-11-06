@@ -158,10 +158,10 @@ jobs:
           dotnet run --project tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj --configuration Release --no-restore
           dotnet run --project tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj --configuration Release --no-build
           history="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;")"
-          test "$history" = '2|2'
+          test "$history" = '3|3'
           schema_version="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(version)::text FROM mdgsm_schema_version;")"
           test "$schema_version" = '1|1'
-          echo "PASS: application migration runner applied and recorded the current migration exactly once."
+          echo "PASS: application migration runner applied and recorded the all three ordered migrations exactly once."
       - name: Run Persons PostgreSQL end-to-end integration test
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "Category=Integration" --no-restore
   persons-postgres-windows-migrations:
