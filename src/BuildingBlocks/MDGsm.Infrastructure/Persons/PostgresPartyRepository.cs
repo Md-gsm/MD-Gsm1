@@ -14,8 +14,9 @@ namespace MDGsm.Infrastructure.Persons;
 /// <see cref="DuplicatePartyIdentifierException"/> an ambient transaction is aborted by PostgreSQL and must be rolled back.
 /// Actor identity must come from the trusted API boundary.
 /// </summary>
-public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartySensitiveDataAuthorizer sensitiveDataAuthorizer) : IPartyRepository
+public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartySensitiveDataAuthorizer? sensitiveDataAuthorizer = null) : IPartyRepository
 {
+    private readonly IPartySensitiveDataAuthorizer _sensitiveDataAuthorizer = sensitiveDataAuthorizer ?? new DenyByDefaultPartySensitiveDataAuthorizer();
     public Task<PartyRegistrationResult> AddNaturalAsync(
         RegisterNaturalParty request, string actorId, Guid operationId, DbTransaction? transaction, CancellationToken cancellationToken)
     {
@@ -246,7 +247,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         string partyId, string actorId, bool includeSensitive, DbTransaction? transaction, CancellationToken cancellationToken)
     {
         var actor = RequireActor(actorId);
-        if (includeSensitive && !await sensitiveDataAuthorizer.CanReadSensitivePartyDataAsync(actor, cancellationToken))
+        if (includeSensitive && !await _sensitiveDataAuthorizer.CanReadSensitivePartyDataAsync(actor, cancellationToken))
             throw new UnauthorizedAccessException("The actor is not authorized to read sensitive Persons data.");
         if (!PartyId.TryParse(partyId, out var id)) return null;
 
