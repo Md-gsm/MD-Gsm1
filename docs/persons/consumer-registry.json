@@ -1,5 +1,5 @@
 {
-  "registryVersion": "1.2",
+  "registryVersion": "1.3",
   "module": "Persons",
   "ownerPaths": [
     "src/Modules/Persons",
@@ -8,18 +8,44 @@
     "src/BuildingBlocks/MDGsm.Infrastructure/Persons",
     "database/migrations/persons"
   ],
-  "registeredConsumers": [],
+  "registeredConsumers": [
+    {
+      "module": "ApiHost",
+      "path": "src/Host/Api/Program.cs",
+      "contractVersion": "Persons.Contracts/1.0",
+      "mergeProtocolVersion": "1.0",
+      "purpose": "Protected GET party-details endpoint; actor identity comes from validated IdentityAccess session context."
+    }
+  ],
   "registryPolicy": {
     "anyNonOwnerPartyIdReferenceRequiresRegistration": true,
     "unknownConsumerCountMustBeZero": true,
     "registrationRequiredBeforeMerge": true,
     "registrationRequiredBeforeRelease": true,
-    "scannedIdentifiers": ["PartyId", "party_id"],
-    "legacyIdentifierForbidden": ["PersonId", "person_id"]
+    "scannedIdentifiers": [
+      "PartyId",
+      "party_id"
+    ],
+    "legacyIdentifierForbidden": [
+      "PersonId",
+      "person_id"
+    ]
   },
   "plannedNotYetImplemented": [
-    {"module":"RepairWorkflow","status":"PLANNED","condition":"Register only when implemented and stores or transports PartyId."},
-    {"module":"Finance","status":"PLANNED","condition":"Register only when a reviewed Finance contract stores or transports PartyId."},
-    {"module":"PurchasingSales","status":"PLANNED","condition":"Register only when implemented and stores or transports PartyId."}
+    {
+      "module": "RepairWorkflow",
+      "status": "PLANNED",
+      "condition": "Register only when implemented and stores or transports PartyId."
+    },
+    {
+      "module": "Finance",
+      "status": "PLANNED",
+      "condition": "Register only when a reviewed Finance contract stores or transports PartyId."
+    },
+    {
+      "module": "PurchasingSales",
+      "status": "PLANNED",
+      "condition": "Register only when implemented and stores or transports PartyId."
+    }
   ]
 }
