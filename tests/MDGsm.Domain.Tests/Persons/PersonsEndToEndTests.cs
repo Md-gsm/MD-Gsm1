@@ -42,9 +42,9 @@ public sealed class PersonsEndToEndTests
         Assert.False(quick.Created);
         Assert.Empty(quick.Candidates);
         Assert.Equal(3L, await ScalarAsync(scope,
-            "SELECT business_roles FROM persons WHERE party_id = @id", Guid.Parse(first.PartyId)));
+            "SELECT business_roles::bigint FROM persons WHERE party_id = @id", Guid.Parse(first.PartyId)));
         Assert.Equal(1L, await ScalarAsync(scope,
-            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550123' AND is_active", Guid.Empty));
+            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550123' AND is_active AND @id = @id", Guid.Empty));
     }
 
     [Fact]
@@ -70,9 +70,8 @@ public sealed class PersonsEndToEndTests
         Assert.Null(ambiguous.PartyId);
         var candidate = Assert.Single(ambiguous.Candidates);
         Assert.Equal(first.PartyId, candidate.PartyId);
-        Assert.Equal("سارا محمدی", differentName.GivenName + " " + differentName.FamilyName);
         Assert.Equal(1L, await ScalarAsync(scope,
-            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550124' AND is_active", Guid.Empty));
+            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550124' AND is_active AND @id = @id", Guid.Empty));
 
         var selected = await scope.Repository.QuickRegisterNaturalAsync(
             differentName, Actor, operation, forceNew: false, selectedPartyId: candidate.PartyId, scope.Transaction, default);
