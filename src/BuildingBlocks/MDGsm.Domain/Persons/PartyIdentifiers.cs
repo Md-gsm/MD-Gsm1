@@ -28,6 +28,14 @@ public static class PartyIdentifiers
         return value.Length <= 3 ? new string('*', value.Length) : new string('*', value.Length - 3) + value[^3..];
     }
 
+    /// <summary>Masks a person's name, retaining only the first character of each name part.</summary>
+    public static string MaskPersonName(string value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        var parts = value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return string.Join(' ', parts.Select(part => part.Length <= 1 ? "*" : part[..1] + new string('*', Math.Min(part.Length - 1, 7))));
+    }
+
     /// <summary>Masks an email address, keeping only the domain.</summary>
     public static string MaskEmail(string value)
     {
