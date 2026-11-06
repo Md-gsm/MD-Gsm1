@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Domain;
 using MDGsm.Infrastructure.IdentityAccess;
@@ -270,6 +271,84 @@ public sealed class IdentityAccessPostgresIntegrationTests
             Assert.Equal(LoginFailure.InvalidCredentials, outcome.Failure);
             await AssertFailedAttemptCountPersistedAsync(provider, "PERSISTCOUNTER", attempt, clock);
         }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Session_identity_resolution_rejects_expired_revoked_disabled_stale_credentials_and_mandatory_password_change()
+    {
+        var connectionString = Environment.GetEnvironmentVariable("IdentityAccessTestConnectionString");
+        Assert.False(string.IsNullOrWhiteSpace(connectionString),
+            "Session resolver integration test requires a dedicated disposable PostgreSQL database.");
+        var builder = new NpgsqlConnectionStringBuilder(connectionString);
+        Assert.Contains(builder.Host, new[] { "127.0.0.1", "localhost", "::1" });
+        Assert.Matches("^mdgsm_identityaccess_disposable_[0-9]+_[0-9]+$", builder.Database);
+
+        await using (var guard = new NpgsqlConnection(connectionString))
+        {
+            await guard.OpenAsync();
+            await using var marker = new NpgsqlCommand(
+                "SELECT shobj_description(oid, 'pg_database') FROM pg_database WHERE datname = current_database();",
+                guard);
+            var comment = (string?)await marker.ExecuteScalarAsync();
+            Assert.StartsWith("MDGSM_DISPOSABLE_TEST_DB; IdentityAccess integration test only", comment);
+        }
+
+        var options = new DbContextOptionsBuilder<MdGsmDbContext>()
+            .UseNpgsql(connectionString)
+            .Options;
+        await using var db = new MdGsmDbContext(options);
+        await db.Database.EnsureCreatedAsync();
+
+        var now = DateTimeOffset.UtcNow;
+        var accountId = Guid.CreateVersion7();
+        var account = CreateAccount($"sessionresolver{Guid.NewGuid():N}"[..30], "integration-only-placeholder", now);
+        account.AccountId = accountId;
+        var digest = SHA256.HashData(Guid.NewGuid().ToByteArray());
+        var session = new IdentitySessionRow
+        {
+            SessionId = Guid.CreateVersion7(),
+            AccountId = accountId,
+            TokenDigest = digest,
+            CreatedAtUtc = now,
+            LastSeenAtUtc = now,
+            LeaseExpiresAtUtc = now.AddMinutes(3),
+            CredentialVersionAtIssue = 1,
+            ClientInstanceId = Guid.CreateVersion7()
+        };
+        db.IdentityAccounts.Add(account);
+        db.IdentitySessions.Add(session);
+        await db.SaveChangesAsync();
+
+        var resolver = new PostgresSessionIdentityResolver(db);
+        var valid = await resolver.ResolveAsync(digest, now, CancellationToken.None);
+        Assert.NotNull(valid);
+        Assert.Equal(AccountId.From(accountId), valid!.AccountId);
+        Assert.Equal(1L, valid.CredentialVersion);
+
+        session.LeaseExpiresAtUtc = now.AddSeconds(-1);
+        await db.SaveChangesAsync();
+        Assert.Null(await resolver.ResolveAsync(digest, now, CancellationToken.None));
+
+        session.LeaseExpiresAtUtc = now.AddMinutes(3);
+        session.RevokedAtUtc = now;
+        await db.SaveChangesAsync();
+        Assert.Null(await resolver.ResolveAsync(digest, now, CancellationToken.None));
+
+        session.RevokedAtUtc = null;
+        account.IsEnabled = false;
+        await db.SaveChangesAsync();
+        Assert.Null(await resolver.ResolveAsync(digest, now, CancellationToken.None));
+
+        account.IsEnabled = true;
+        account.CredentialVersion = 2;
+        await db.SaveChangesAsync();
+        Assert.Null(await resolver.ResolveAsync(digest, now, CancellationToken.None));
+
+        session.CredentialVersionAtIssue = 2;
+        account.MustChangePassword = true;
+        await db.SaveChangesAsync();
+        Assert.Null(await resolver.ResolveAsync(digest, now, CancellationToken.None));
     }
 
     private static IdentityAccountRow CreateAccount(string username, string passwordHash, DateTimeOffset now)
