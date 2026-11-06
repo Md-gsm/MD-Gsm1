@@ -96,11 +96,12 @@ public sealed class PersonsEndToEndTests
         var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__MDGsmDatabase");
         Assert.False(string.IsNullOrWhiteSpace(connectionString));
         await using var dataSource = NpgsqlDataSource.Create(connectionString!);
-        await using (var markerConnection = await dataSource.OpenConnectionAsync())
-        await using (var marker = new NpgsqlCommand(
+        await using var markerConnection = await dataSource.OpenConnectionAsync();
+        await using var marker = new NpgsqlCommand(
             "SELECT coalesce(shobj_description(oid, 'pg_database'), '') FROM pg_database WHERE datname = current_database()",
-            markerConnection))
-            Assert.Contains("MDGSM_DISPOSABLE_TEST_DB", (string?)await marker.ExecuteScalar() ?? string.Empty);
+            markerConnection);
+        var databaseMarker = (string?)await marker.ExecuteScalarAsync();
+        Assert.Contains("MDGSM_DISPOSABLE_TEST_DB", databaseMarker ?? string.Empty);
 
         var start = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var mobile = "09125550125";
