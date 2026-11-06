@@ -123,3 +123,40 @@ Scope grant در IdentityAccess می‌تواند `scope_kind` و `scope_id` ر�
 ## 10. وضعیت گیت
 
 این قرارداد، مرز معماری را مشخص می‌کند ولی به‌دلیل نبود شواهد canonical source و sign-off ماژول مالک، موضوع Data Owner را **کامل/بسته اعلام نمی‌کند**. تا تکمیل شروط بخش 9، branch/warehouse authorization باید fail-closed بماند. این تغییر هیچ runtime، endpoint، middleware، migration، seed، FK، permission grant یا DB mutation ایجاد نمی‌کند. `g1Authorized=false` بدون تغییر باقی می‌ماند.
+
+## 11. الحاقیه ممیزی سورس و شواهد مالکیت — 2026-11-07
+
+این الحاقیه بر اساس ممیزی درخت کامل شاخه `integration/persons-identityaccess-g1` با SHA زیر تهیه شده است:
+
+- SHA بررسی‌شده: `87b4f13f04b1ad7655ffd7efd4bff028fe2a21b1`
+- تعداد فایل‌های درخت بررسی‌شده: 242 فایل؛ درخت کامل و بدون truncation دریافت شد.
+- فهرست migrationهای ثبت‌شده در `docs/data/persistence-and-migrations.md`: زیرساخت 0001، اشخاص 0002 و IdentityAccess 0003.
+- در مسیرهای کد، migrationها و درخت کامل این SHA، موجودیت/جدول canonical برای Branch، Warehouse، عضویت حساب-شعبه یا تخصیص حساب-انبار یافت نشد.
+
+### 11.1 مالکیت Repair Assignment
+
+سند `src/Modules/RepairOperations/Contracts/README.md` صریحاً مالکیت مهارت‌ها، قابلیت‌ها، زمان‌بندی و assignment تعمیرکار را به ماژول RepairOperations نسبت می‌دهد. هویت/نقش کاری تکنسین متعلق به Persons است و از طریق PartyId ارجاع می‌شود.
+
+با این حال همان README تصریح می‌کند که هنوز runtime contract منتشر نشده است. در درخت ممیزی‌شده، فایل `ModuleContractVersion.cs` صرفاً نشانگر نسخه قرارداد است؛ به‌تنهایی قرارداد اجرایی یا منبع داده assignment نیست. هیچ aggregate/table/migration/repository/query یا endpoint اجرایی برای repair assignment در شواهد این SHA پیدا نشد.
+
+**نتیجه:** مالک دامنه‌ای Repair Assignment برابر RepairOperations است؛ اما منبع authoritative عملیاتی هنوز وجود ندارد/اثبات نشده است. بنابراین این کشف، مالکیت مفهومی را روشن می‌کند ولی مجوز پیاده‌سازی resolver یا اعطای scope ایجاد نمی‌کند.
+
+### 11.2 مرز IdentityAccess
+
+در migration `0003_identityaccess_core.sql`، جدول `identity.account_roles` رابطه حساب با نقش امنیتی را نگه می‌دارد. این جدول تخصیص تعمیرکار به تعمیر، عضویت شعبه یا تخصیص انبار نیست و نباید به‌عنوان منبع scope دامنه مصرف شود. جدول‌های permission و role-permission نیز صرفاً مجوزهای امنیتی‌اند.
+
+### 11.3 وضعیت Branch و Warehouse
+
+در درخت کامل SHA بررسی‌شده، هیچ ماژول/قرارداد canonical برای Branch یا Warehouse و هیچ migration برای موجودیت‌ها، روابط branch-membership، warehouse-branch یا account-warehouse assignment وجود نداشت. بنابراین مالک داده این روابط در نسخه فعلی مخزن **قابل تعیین نیست**؛ نباید نام ماژول، schema، جدول، کلید یا FK حدس زده شود.
+
+### 11.4 رفتار اجرایی فعلی و تصمیم
+
+در `src/Host/Api/Program.cs`، endpoint جزئیات اشخاص پیش از بررسی مجوز عمومی، هر حساب دارای نقش Technician را با HTTP 403 رد می‌کند. توضیح کد صریحاً می‌گوید authoritative repair-assignment ownership هنوز در دسترس نیست. این محدودیت باید تا ارائه منبع authoritative حفظ شود.
+
+اقدام‌های مجاز بعدی:
+1. طراحی/پیاده‌سازی aggregate، persistence و قرارداد versioned برای assignment در مالک دامنه RepairOperations؛ پس از تصویب دامنه و مجوز مربوط.
+2. تعیین مالک محصولی و معماری Branch و Warehouse و سپس ایجاد/ثبت ماژول canonical و روابط lifecycle آن‌ها.
+3. پس از وجود شواهد و قراردادهای اجرایی، طراحی resolverهای سمت سرور و تست‌های IDOR، لغو assignment، concurrency و fail-closed.
+4. تا آن زمان، هیچ scope از client، cache، `identity.account_roles` یا نقش Technician استنتاج نشود و هیچ migration حدسی ساخته نشود.
+
+این ممیزی هیچ کد اجرایی، migration، جدول، seed، grant یا تغییر DB ایجاد نکرده است. `g1Authorized=false` بدون تغییر باقی می‌ماند.
