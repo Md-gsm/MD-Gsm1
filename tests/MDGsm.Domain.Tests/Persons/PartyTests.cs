@@ -74,6 +74,23 @@ public sealed class PartyTests
             NaturalPerson.Create("علی", "رضایی", (PartyBusinessRoles)8));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Natural_and_legal_parties_reject_none_roles_on_create_and_reconstitution(bool legal)
+    {
+        if (legal)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => LegalPerson.Create("شرکت نمونه", PartyBusinessRoles.None));
+            Assert.Throws<ArgumentOutOfRangeException>(() => LegalPerson.Reconstitute(PartyId.New(), "شرکت نمونه", PartyBusinessRoles.None));
+        }
+        else
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => NaturalPerson.Create("علی", "رضایی", PartyBusinessRoles.None));
+            Assert.Throws<ArgumentOutOfRangeException>(() => NaturalPerson.Reconstitute(PartyId.New(), "علی", "رضایی", PartyBusinessRoles.None));
+        }
+    }
+
     [Fact]
     public void Identity_is_immutable_after_creation()
     {

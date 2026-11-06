@@ -13,4 +13,5 @@ public sealed record CreateNaturalPartyRequest(
     PartyFinancialProfileContract Financial,
     PartyCommunicationPreferencesContract Communication,
     string? AcquaintanceSource,
-    string? InternalNote);
+    string? InternalNote,
+    string? WorkClassification = null);

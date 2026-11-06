@@ -14,7 +14,11 @@ public sealed class LegalPerson : Party
             throw new ArgumentException("A non-empty legal name is required.", nameof(legalName));
         }
 
-        LegalName = legalName.Trim();
+        LegalName = PersianText.Normalize(legalName);
+        if (LegalName.Length == 0 || LegalName.Length > 300)
+        {
+            throw new ArgumentException("A legal name between 1 and 300 characters is required.", nameof(legalName));
+        }
     }
 
     public override PartyType Type => PartyType.LegalPerson;

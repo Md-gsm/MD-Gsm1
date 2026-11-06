@@ -44,6 +44,26 @@ public sealed class PartyIdTests
     }
 
     [Fact]
+    public void TryParse_accepts_only_the_canonical_hyphenated_form()
+    {
+        var id = PartyId.New();
+
+        Assert.False(PartyId.TryParse("{" + id + "}", out _));
+        Assert.False(PartyId.TryParse(id.Value.ToString("N"), out _));
+        Assert.False(PartyId.TryParse("urn:uuid:" + id, out _));
+        Assert.False(PartyId.TryParse(" " + id, out _));
+        Assert.True(PartyId.TryParse(id.ToString().ToUpperInvariant(), out var parsed));
+        Assert.Equal(id, parsed);
+    }
+
+    [Fact]
+    public void Default_value_is_reported_as_empty()
+    {
+        Assert.True(default(PartyId).IsEmpty);
+        Assert.False(PartyId.New().IsEmpty);
+    }
+
+    [Fact]
     public void Equal_values_have_value_equality()
     {
         var original = PartyId.New();

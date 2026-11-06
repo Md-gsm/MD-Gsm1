@@ -63,6 +63,23 @@ public sealed class ArchitectureBoundaryTests
     }
 
     [Fact]
+    public void Persons_internal_placement_is_explicitly_transitional_and_blocked_before_g1()
+    {
+        var root = FindSolutionRoot();
+        var manifest = File.ReadAllText(Path.Combine(root, "docs", "persons", "persons-module-manifest.json"));
+        var adr = File.ReadAllText(Path.Combine(root, "docs", "decisions", "0014-persons-module-ownership.md"));
+
+        Assert.Contains("\"personsInternalCodePlacement\": \"TRANSITIONAL_BUILDINGBLOCKS_PER_ADR_0014\"", manifest);
+        Assert.Contains("پیش از G1 authorization", adr, StringComparison.OrdinalIgnoreCase);
+
+        var personsRoot = Path.Combine(root, "src", "Modules", "Persons");
+        var implementationFiles = Directory.EnumerateFiles(personsRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}Contracts{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .ToArray();
+        Assert.Empty(implementationFiles);
+    }
+
+    [Fact]
     public void Flat_legacy_project_roots_are_not_left_under_src()
     {
         var root = FindSolutionRoot();

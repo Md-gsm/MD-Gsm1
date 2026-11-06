@@ -10,8 +10,8 @@ public sealed class NaturalPerson : Party
         PartyBusinessRoles businessRoles)
         : base(id, businessRoles)
     {
-        GivenName = RequireText(givenName, nameof(givenName));
-        FamilyName = RequireText(familyName, nameof(familyName));
+        GivenName = RequireText(givenName, nameof(givenName), 120);
+        FamilyName = RequireText(familyName, nameof(familyName), 160);
     }
 
     public override PartyType Type => PartyType.NaturalPerson;
@@ -35,13 +35,19 @@ public sealed class NaturalPerson : Party
         PartyBusinessRoles businessRoles = PartyBusinessRoles.Customer) =>
         new(id, givenName, familyName, businessRoles);
 
-    private static string RequireText(string value, string parameterName)
+    private static string RequireText(string value, string parameterName, int maxLength)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
             throw new ArgumentException("A non-empty value is required.", parameterName);
         }
 
-        return value.Trim();
+        var normalized = PersianText.Normalize(value);
+        if (normalized.Length == 0 || normalized.Length > maxLength)
+        {
+            throw new ArgumentException($"A value between 1 and {maxLength} characters is required.", parameterName);
+        }
+
+        return normalized;
     }
 }

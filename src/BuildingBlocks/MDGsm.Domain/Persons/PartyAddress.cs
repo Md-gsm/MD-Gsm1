@@ -25,7 +25,7 @@ public sealed record PartyAddress
     {
         static string Required(string? value, string name, int max)
         {
-            var text = value?.Trim();
+            var text = value is null ? null : PersianText.Normalize(value);
             if (string.IsNullOrWhiteSpace(text) || text.Length > max)
                 throw new ArgumentException($"A value between 1 and {max} characters is required.", name);
             return text;
