@@ -1,7 +1,7 @@
 # آماده‌سازی و دروازه ورود G1 — ماژول اشخاص MD-Gsm
 
-**آخرین تطبیق وضعیت:** 2026-11-07  
-**Main baseline پس از ادغام PR #46:** `5638dbc4767a18d1e930748aad7eff7fb9e9f1a7`  
+**آخرین تطبیق وضعیت:** 2026-11-08  
+**Main baseline پس از PR #51:** `f011c94d52bc06c7e213abb6e480180e9ea73f40`  
 **وضعیت:** پیاده‌سازی جزئی؛ G1 مجاز نیست؛ `g1Authorized=false`.  
 **مخزن یگانه:** `Md-gsm/MD-Gsm1`.
 
@@ -21,21 +21,21 @@
 |---|---|---|
 | هویت Party و مدل دامنه | بخشی پیاده‌سازی شده | به معنی تکمیل همه use caseها نیست |
 | Persistence اشخاص | PostgreSQL repository و migration موجود | Migration فقط در دیتابیس disposable اعتبارسنجی شده |
-| API جزئیات شخص | `GET /api/v1/persons/{partyId}` پیاده‌سازی شده | endpoint محافظت‌شده؛ فیلد حساس نیازمند مجوز است |
+| API جزئیات شخص | `GET /api/v2/persons/{partyId}` پیاده‌سازی شده | endpoint محافظت‌شده؛ فیلد حساس نیازمند مجوز است |
 | API ایجاد شخص | ناقص/پیاده‌سازی‌نشده | ثبت عملیاتی از API قابل اعلام نیست |
-| جست‌وجوی اشخاص | ناقص/پیاده‌سازی‌نشده | نباید به‌عنوان قابلیت آماده معرفی شود |
+| جست‌وجوی اشخاص | SearchAsync در Repository وجود دارد؛ API exposed نیست | suffix-4/name، حداکثر ۱۰ نتیجه؛ SQL مقدار موبایل اصلی را برمی‌گرداند و masking/authorization باید پیش از API تکمیل شود |
 | Contact Point | بخشی از مدل/قرارداد موجود، چرخه کامل ناقص | افزودن/ویرایش/تأیید/غیرفعال‌سازی و تاریخچه نیازمند تکمیل و تست است |
 | UI اشخاص | پیش‌نمایش نمایشی | داده‌ها ساختگی‌اند؛ فرم عملیاتی متصل به API نیست |
 | IdentityAccess session/security runtime | بخشی پیاده‌سازی شده | نیازمند تکمیل و بازبینی امنیتی مستقل |
 | HTTP login/password change | مسیرهای کد و تست یکپارچه موجود | ورود HTTP feature-gated و به‌صورت پیش‌فرض خاموش است؛ production rollout مجاز نیست |
 | Bootstrap مدیر و بازیابی اضطراری | طراحی/تصمیم‌ها ثبت شده، پذیرش اجرایی نهایی باز | credential تولیدی یا recovery عملیاتی تأیید نشده |
-| پاک‌سازی داده موقت | Runtime هنوز پیاده‌سازی نشده | سیاست مصوب جایگزین worker و تست اجرایی نیست |
-| اجرای Merge اشخاص | پیاده‌سازی نشده | قرارداد/چک‌لیست به معنی اجرای واقعی نیست |
+| داده موقت | store رمزنگاری‌شده و retention worker به‌صورت partial وجود دارد | alert delivery و AC-31..38 criterion-level acceptance هنوز باز است |
+| اجرای Merge اشخاص | coordinator تراکنشی و Finance participant به‌صورت partial وجود دارد | consumer coverage و AC-39..45 کامل/نقشه‌برداری نشده‌اند |
 | Migration روی دیتابیس واقعی | انجام نشده | CI فقط disposable PostgreSQL را تغییر داده است |
 
 ## ۳. شواهد تاریخی CI پیش از ادغام PR #40
 
-این Run IDها مربوط به main تاریخی پیش از PR #40 با commit `194720455d01a5f88b1996ed9b100b7bc7ec363b` هستند و شواهد CI برای main فعلی `5638dbc4767a18d1e930748aad7eff7fb9e9f1a7` و نیز برای Merge Commit فعلی پس از PR #46 محسوب نمی‌شوند:
+این Run IDها مربوط به main تاریخی پیش از PR #40 با commit `194720455d01a5f88b1996ed9b100b7bc7ec363b` هستند و برای main فعلی شواهد محسوب نمی‌شوند:
 
 | کنترل | Run | نتیجه |
 |---|---:|---|
@@ -44,7 +44,7 @@
 | Windows Preview Installer | `42381030763` | موفق |
 | Project Charter Owner Gate | `42381030735` | موفق |
 
-این شواهد صرفاً تاریخی‌اند. PR #48 و PR #46 ادغام شده‌اند؛ baseline فعلی main پس از PR #46 برابر `5638dbc4767a18d1e930748aad7eff7fb9e9f1a7` است. اجرای CI روی headهای PR، جایگزین اجرای CI روی merge commit نیست. اجرای تازه باید دقیقاً به همین SHA متصل و ثبت شود؛ تا آن زمان وضعیت CI این commit Pending است. ساخت Installer به معنی پذیرش تصویری یا عملیاتی کل برنامه نیست.
+این شواهد صرفاً تاریخی‌اند. PR #50 و PR #51 پس از آن ادغام شده‌اند. روی main فعلی `f011c94d52bc06c7e213abb6e480180e9ea73f40`، ۱۵/۱۵ check-run موفق است: Persons Gates 13/13، CodeQL و Charter Gate. ۱۴ context از این ۱۵ مورد Required هستند؛ CodeQL موفق ولی غیرالزامی است. Windows Preview Installer روی این SHA اجرا نشده و ساخت Installer به معنی پذیرش تصویری/عملیاتی نیست. PostgreSQL فقط روی دیتابیس disposable اعتبارسنجی شده است.
 
 ## ۴. وضعیت گیت‌های G0/G1
 
@@ -54,12 +54,12 @@
 | جهت وابستگی و جداسازی Contracts | تست‌شده | فقط مرز فنی؛ نه تکمیل همه ماژول‌ها |
 | سیاست داده موقت | تصویب در سطح سیاست | Runtime و آزمون اجرایی پاک‌سازی باز است |
 | چک‌لیست قرارداد Merge | تصویب در سطح معیار | اجرای واقعی Merge و تست مشارکت‌کنندگان باز است |
-| کنترل‌های CI روی main | CI جاری موفق | وضعیت Required Checks در SCM طبق آخرین ممیزی مخزن ثبت شده؛ بازخوانی مستقیم جزئیات Branch Protection در این اجرای همگام‌سازی به علت محدودیت 403 ممکن نشد؛ مرجع: `docs/operations/required-status-checks.md` |
+| کنترل‌های CI روی main | ۱۵/۱۵ check-run موفق؛ ۱۴ context Required | main protected؛ جزئیات کامل endpoint برای این اتصال 403 است. مقادیر review/signature طبق REST readback مالک در `docs/operations/required-status-checks.md` ثبت شده‌اند |
 | آزمون منفی معماری | انجام‌شده در PR #6 | شواهد تاریخی شکست کنترل معماری؛ جایگزین کنترل‌های جاری نیست |
 | PostgreSQL 18 Linux/Windows و Migration Runner | موفق در CI جاری | فقط دیتابیس‌های disposable؛ بدون تغییر دیتابیس واقعی |
 | بازبینی مستقل معماری روی commit جاری | باز/نیازمند مدرک | گزارش قدیمی روی commit قدیمی به‌تنهایی پذیرش commit فعلی نیست |
 | بازبینی امنیت و حریم خصوصی روی commit جاری | باز/نیازمند مدرک | سبزشدن CodeQL جایگزین threat-model/security review نیست |
-| AC-31..AC-45 و پذیرش runtime | باز | هر معیار باید به رفتار و تست واقعی متصل شود |
+| AC-31..AC-45 و پذیرش runtime | باز/UNMAPPED | تست‌های متمرکز جزئی وجود دارند؛ هیچ criterion-level mapping کامل پذیرفته نشده است |
 | پذیرش نهایی UI و نصب | باز | Installer CI موفق است؛ بررسی بصری/کاربری نهایی باید ثبت شود |
 | مجوز صریح G1 | صادر نشده | `g1Authorized=false` |
 
