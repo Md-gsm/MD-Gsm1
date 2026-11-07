@@ -61,6 +61,24 @@ The four Contracts projects currently expose version markers only. They are comp
 - Default phone region is IR (+98); digit normalization and domestic mobile normalization follow ADR-0004.
 - Secrets are supplied through protected environment/configuration facilities and must never enter this public repository.
 
+## Current implementation status (main, 2026-11-07)
+
+The topology and ownership rules above describe the target boundaries; the following records the actual implementation without changing those boundaries.
+
+- **Persons:** partial business implementation exists. The shared BuildingBlocks transition placement currently contains the Party domain/application/infrastructure implementation; a protected `GET /api/v1/persons/{partyId}` detail API is present, with PostgreSQL-backed persistence and sensitive-field permission enforcement. Persons business migration(s) are present in the application-owned migration runner. Create/search APIs, complete Contact Point lifecycle, full operational UI, temporary-data cleanup runtime and merge execution are not complete.
+- **IdentityAccess:** server-side security/session runtime is present. HTTP login and password-change paths have been implemented and covered by disposable PostgreSQL/API integration tests; HTTP login remains feature-gated and disabled by default. Production bootstrap, final admin recovery, production listener/TLS rollout and independent security acceptance remain open.
+- **Contracts:** four separately compiled Contracts projects are present and included in the solution/API composition. Their existence does not imply complete business implementations in RepairOperations or Finance.
+- **Persistence validation:** current main CI validated the application migration runner against disposable PostgreSQL 18 on Linux and Windows. No production/real-data database migration is claimed.
+- **Desktop:** the preview dashboard/Persons panel still uses synthetic preview data; it is not the complete operational Persons UI and does not prove end-to-end write flows.
+
 ## Explicit non-claims
 
-No Persons/IdentityAccess business entities, use cases, persistence mappings, business module APIs, business database migrations, or G1 authorization are present. The current dashboard Persons panel is a synthetic UI preview only. The relocation closes the physical Host/BuildingBlocks topology task; it does not claim that the Persons business module is implemented or that G1 can start.
+This repository is **not** a fully implemented ERP, and Persons/IdentityAccess are not complete or G1-authorized. The presence of a partial API, runtime components, business migrations or Contracts projects must not be described as completion of the whole module. `g1Authorized=false` remains in force. No production authentication deployment, production data migration, or activation of Persons is authorized by this status description.
+
+Main validation snapshot for commit `194720455d01a5f88b1996ed9b100b7bc7ec363b`:
+- Persons Module Gates run `42381030785`: 13/13 jobs successful, including disposable PostgreSQL 18 Linux/Windows.
+- CodeQL run `42381030784`: successful.
+- Windows Preview Installer run `42381030763`: successful.
+- Project Charter Owner Gate run `42381030735`: successful.
+
+These are CI/installer results only; they do not replace independent review, operational acceptance or owner authorization.
