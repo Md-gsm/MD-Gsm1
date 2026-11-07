@@ -21,6 +21,12 @@ class PersonsGatePolicyTests(unittest.TestCase):
         self.assertIn("PASS-N/A", out.getvalue())
         self.assertIn("no temporary-data runtime", out.getvalue())
 
+    def test_identity_recovery_challenge_expiry_is_not_temporary_workflow_data(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            gates.run_retention(ROOT)
+        self.assertIn("PASS-N/A", out.getvalue())
+
     def test_declared_retention_implementation_without_tests_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
@@ -138,6 +144,8 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             endpoint = dst / "src/Host/Api/Endpoints/Persons/PersonsEndpoints.cs"
             endpoint.write_text('app.MapGroup("/api/v1/persons");', encoding="utf-8")
+            contract = dst / "docs/persons/contracts/persons.openapi.yaml"
+            contract.unlink()
             with self.assertRaises(gates.GateFailure):
                 gates.run_api(dst)
 

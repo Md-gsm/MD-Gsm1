@@ -31,7 +31,7 @@ jobs:
       - name: Build Release
         run: dotnet build .\MDGsm.sln --configuration Release --no-restore
       - name: Test Release
-        run: dotnet test .\MDGsm.sln --configuration Release --no-build --logger "trx;LogFileName=mdgsm-tests.trx"
+        run: dotnet test .\MDGsm.sln --configuration Release --no-build --filter "Category!=Integration" --logger "trx;LogFileName=mdgsm-tests.trx"
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
@@ -49,6 +49,10 @@ jobs:
         with:
           python-version: '3.12'
       - run: python scripts/ci/validate_persons_gates.py --gate spec
+      - name: Test IdentityAccess username policy oracle
+        run: python -m unittest scripts/ci/test_identityaccess_policy.py -v
+      - name: Report exact source checksums for integrity repair
+        run: sha256sum tests/MDGsm.Domain.Tests/IdentityAccess/IdentityAccessHttpEndToEndTests.cs .github/workflows/persons-module-gates.yml
       - name: Verify SHA256SUMS.txt matches tracked files
         run: python scripts/ci/verify_source_checksums.py
 
@@ -131,7 +135,9 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - name: Restore application migrator
-        run: dotnet restore tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj
+        run: |
+          dotnet restore tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj
+          dotnet restore tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj
       - name: Create marked disposable database (psql is used only for database bootstrap)
         shell: bash
         run: |
@@ -142,6 +148,11 @@ jobs:
           psql -d postgres -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE \"$db\" IS 'MDGSM_DISPOSABLE_TEST_DB; created by Linux PostgreSQL CI';"
           echo "MDGSM_TEST_DB=$db" >> "$GITHUB_ENV"
           echo "ConnectionStrings__MDGsmDatabase=Host=127.0.0.1;Port=5432;Database=$db;Username=postgres;Timeout=15;Command Timeout=120" >> "$GITHUB_ENV"
+          identity_db="mdgsm_identityaccess_disposable_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          [[ "$identity_db" =~ ^mdgsm_identityaccess_disposable_[0-9]+_[0-9]+$ ]]
+          psql -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$identity_db\";"
+          psql -d postgres -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE \"$identity_db\" IS 'MDGSM_DISPOSABLE_TEST_DB; IdentityAccess integration test only';"
+          echo "IdentityAccessTestConnectionString=Host=127.0.0.1;Port=5432;Database=$identity_db;Username=postgres;Timeout=15;Command Timeout=120" >> "$GITHUB_ENV"
       - name: Apply migrations through the application-owned runner and verify idempotence
         shell: bash
         run: |
@@ -149,10 +160,36 @@ jobs:
           dotnet run --project tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj --configuration Release --no-restore
           dotnet run --project tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj --configuration Release --no-build
           history="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;")"
-          test "$history" = '1|1'
+          test "$history" = '3|3'
           schema_version="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(version)::text FROM mdgsm_schema_version;")"
           test "$schema_version" = '1|1'
-          echo "PASS: application migration runner applied and recorded the current migration exactly once."
+          identity_tables="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'identity' AND table_type = 'BASE TABLE';")"
+          test "$identity_tables" = '11'
+          session_policy="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT max_active_users::text || '|' || heartbeat_interval_seconds::text || '|' || session_lease_seconds::text FROM identity.system_settings WHERE settings_id = 1;")"
+          test "$session_policy" = '5|30|180'
+          audit_trigger="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_trigger WHERE tgname = 'trg_identity_security_audit_no_update_delete' AND NOT tgisinternal;")"
+          test "$audit_trigger" = '1'
+          psql -d "$MDGSM_TEST_DB" -v ON_ERROR_STOP=1 -c "CREATE ROLE mdgsm_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;"
+          psql -d "$MDGSM_TEST_DB" -v ON_ERROR_STOP=1 -f database/operations/identityaccess-runtime-role-grants.sql
+          grant_checks="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT (has_table_privilege('mdgsm_runtime','identity.sessions','SELECT') AND has_table_privilege('mdgsm_runtime','identity.sessions','INSERT'))::text || '|' || has_column_privilege('mdgsm_runtime','identity.sessions','revoked_at_utc','UPDATE')::text || '|' || has_table_privilege('mdgsm_runtime','identity.security_audit_events','INSERT')::text || '|' || has_table_privilege('mdgsm_runtime','identity.security_audit_events','UPDATE')::text || '|' || has_table_privilege('mdgsm_runtime','identity.accounts','INSERT')::text || '|' || has_schema_privilege('mdgsm_runtime','identity','CREATE')::text;")"
+          test "$grant_checks" = 'true|true|true|false|false|false'
+          # The grant script is intentionally safe to re-apply after reviewed schema changes.
+          psql -d "$MDGSM_TEST_DB" -v ON_ERROR_STOP=1 -f database/operations/identityaccess-runtime-role-grants.sql
+          backup_file="$RUNNER_TEMP/mdgsm-staging-smoke.backup"
+          restore_db="mdgsm_restore_disposable_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          [[ "$restore_db" =~ ^mdgsm_restore_disposable_[0-9]+_[0-9]+$ ]]
+          pg_dump --format=custom --file "$backup_file" "$MDGSM_TEST_DB"
+          createdb "$restore_db"
+          pg_restore --exit-on-error --dbname "$restore_db" "$backup_file"
+          restored_history="$(psql -d "$restore_db" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;")"
+          test "$restored_history" = '3|3'
+          restored_identity_tables="$(psql -d "$restore_db" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'identity' AND table_type = 'BASE TABLE';")"
+          test "$restored_identity_tables" = '11'
+          restored_audit_trigger="$(psql -d "$restore_db" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_trigger WHERE tgname = 'trg_identity_security_audit_no_update_delete' AND NOT tgisinternal;")"
+          test "$restored_audit_trigger" = '1'
+          echo "PASS: migrations, repeat/idempotence, IdentityAccess schema invariants, least-privilege grants, and backup/restore verification passed."
+      - name: Run Persons PostgreSQL end-to-end integration test
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "Category=Integration" --no-restore
   persons-postgres-windows-migrations:
     name: persons-postgres-windows-migrations
     runs-on: windows-latest

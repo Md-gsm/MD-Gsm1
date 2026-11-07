@@ -79,7 +79,7 @@ try {
     & dotnet run --project $MigratorProjectPath --configuration Release
     if ($LASTEXITCODE -ne 0) { throw "Application migration runner failed. Database '$dbName' is retained." }
     $history = & $PsqlPath -h $PostgresHost -p "$PostgresPort" -U $AdminUser -d $dbName -t -A -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;"
-    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '1|1') { throw "Schema migration history verification failed. Found: $history. Database '$dbName' is retained." }
+    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '3|3') { throw "Schema migration history verification failed. Found: $history. Database '$dbName' is retained." }
     $env:ASPNETCORE_URLS = 'http://127.0.0.1:5080'
     $api = Start-Process -FilePath 'dotnet' -ArgumentList @('run', '--project', ('"' + $ApiProjectPath + '"'), '--no-launch-profile') -PassThru -WindowStyle Hidden
     try {
@@ -97,7 +97,7 @@ try {
         if ($ready.status -ne 'ready') { throw 'API readiness did not report ready.' }
         $info = Invoke-RestMethod 'http://127.0.0.1:5080/api/v1/system/info' -TimeoutSec 5
         if ($info.data.product -ne 'MD-Gsm') { throw 'System info contract returned unexpected product.' }
-        Write-Host 'PASS: PostgreSQL connection, infrastructure migration, API liveness/readiness, and system-info endpoint.' -ForegroundColor Green
+        Write-Host 'PASS: PostgreSQL connection, ordered schema migrations, API liveness/readiness, and system-info endpoint.' -ForegroundColor Green
         Write-Host "Database retained for inspection: $dbName"
     }
     finally {

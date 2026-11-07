@@ -1,0 +1,178 @@
+openapi: 3.1.0
+info:
+  title: MD-Gsm Persons API
+  version: 1.0.0
+  description: >
+    Versioned contract only. Runtime routes remain disabled until IdentityAccess
+    opaque-token validation, security review, and explicit G1 authorization are complete.
+servers:
+  - url: https://{host}
+    variables:
+      host:
+        default: localhost
+security:
+  - opaqueBearer: []
+paths:
+  /api/v1/persons:
+    get:
+      operationId: searchParties
+      summary: Search active parties by name or last four mobile digits
+      description: >-
+        A term is required: either a name of at least two characters or exactly four digits matching the end of a mobile number.
+        At most 10 results are returned and mobile numbers are masked (only the last two digits are visible).
+        Per-actor rate limits are enforced by the API (owner-approved policy on PR #11).
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 160 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 10, default: 10 }
+      responses:
+        '200':
+          description: Party list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PartyListResponse' }
+        '401': { description: Missing, invalid, expired, or revoked opaque session token }
+        '403': { description: Authenticated user lacks Persons read permission }
+    post:
+      operationId: createNaturalParty
+      summary: Register a natural person
+      description: The actor identity is derived from the validated server session, never from the request body. Registration is idempotent by the Idempotency-Key header (V1: key only, no payload comparison).
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateNaturalPartyRequest' }
+      responses:
+        '201': { description: Party created }
+        '401': { description: Missing or invalid session }
+        '403': { description: Missing write permission }
+        '409': { description: Duplicate national identifier or contact conflict }
+        '422': { description: Validation failure }
+  /api/v1/persons/legal:
+    post:
+      operationId: createLegalParty
+      summary: Register a legal entity
+      description: Idempotent by the Idempotency-Key header (V1: key only, no payload comparison).
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateLegalPartyRequest' }
+      responses:
+        '201': { description: Legal party created }
+        '401': { description: Missing or invalid session }
+        '403': { description: Missing write permission }
+        '409': { description: Duplicate legal identifier }
+        '422': { description: Validation failure }
+  /api/v1/persons/{partyId}:
+    get:
+      operationId: getParty
+      summary: Read one party
+      description: >-
+        Every read is audited with the server-derived actor. Sensitive fields (national identifier, economic code, credit limit,
+        card digits, internal note, full contact values and address) are returned only to callers holding the sensitive-read permission;
+        otherwise they are masked or omitted and sensitiveFieldsIncluded is false.
+      parameters:
+        - in: path
+          name: partyId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Party details }
+        '401': { description: Missing or invalid session }
+        '403': { description: Missing read permission }
+        '404': { description: Party not found }
+components:
+  securitySchemes:
+    opaqueBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: >
+        Random opaque token. The server stores only its cryptographic hash and
+        checks session/account/revocation state against PostgreSQL on every request.
+  schemas:
+    PartyAddress:
+      type: object
+      required: [countryCode, province, city, postalCode, addressLine]
+      properties:
+        countryCode: { type: string, minLength: 2, maxLength: 2, default: IR }
+        province: { type: string, maxLength: 100 }
+        city: { type: string, maxLength: 100 }
+        postalCode: { type: string, maxLength: 20 }
+        addressLine: { type: string, maxLength: 1000 }
+    FinancialProfile:
+      type: object
+      properties:
+        creditLimitRial: { type: integer, minimum: 0 }
+        defaultDiscountPercent: { type: number, minimum: 0, maximum: 100 }
+        defaultPaymentMethod: { type: string, enum: [Cash, CardToCard, BankTransfer, Pos, Credit] }
+        bankCardLastFour: { type: [string, 'null'], pattern: '^[0-9]{4}$' }
+    CommunicationPreferences:
+      type: object
+      properties:
+        repairStatusSmsEnabled: { type: boolean, default: true }
+        readyForDeliverySmsEnabled: { type: boolean, default: true }
+        promotionsSmsEnabled: { type: boolean, default: false }
+    CreateNaturalPartyRequest:
+      type: object
+      required: [givenName, familyName, roles, primaryMobile]
+      properties:
+        givenName: { type: string, maxLength: 120 }
+        familyName: { type: string, maxLength: 160 }
+        roles:
+          type: array
+          uniqueItems: true
+          items: { type: string, enum: [Customer, Colleague] }
+        nationalId: { type: [string, 'null'], pattern: '^[0-9]{10}$' }
+        primaryMobile: { type: string }
+        alternateMobile: { type: [string, 'null'] }
+        landline: { type: [string, 'null'] }
+        email: { type: [string, 'null'], format: email }
+        address: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
+        financial: { $ref: '#/components/schemas/FinancialProfile' }
+        communication: { $ref: '#/components/schemas/CommunicationPreferences' }
+        acquaintanceSource: { type: [string, 'null'] }
+        internalNote: { type: [string, 'null'], maxLength: 2000 }
+    CreateLegalPartyRequest:
+      type: object
+      required: [legalName, roles, primaryMobile]
+      properties:
+        legalName: { type: string, maxLength: 300 }
+        legalNationalId: { type: [string, 'null'], pattern: '^[0-9]{11}$' }
+        economicCode: { type: [string, 'null'], pattern: '^[0-9]{10,14}$' }
+        responsiblePersonName: { type: [string, 'null'], maxLength: 200 }
+        roles:
+          type: array
+          uniqueItems: true
+          items: { type: string, enum: [Customer, Colleague] }
+        primaryMobile: { type: string }
+        alternateMobile: { type: [string, 'null'] }
+        landline: { type: [string, 'null'] }
+        email: { type: [string, 'null'], format: email }
+        address: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
+        financial: { $ref: '#/components/schemas/FinancialProfile' }
+        communication: { $ref: '#/components/schemas/CommunicationPreferences' }
+        acquaintanceSource: { type: [string, 'null'] }
+        internalNote: { type: [string, 'null'], maxLength: 2000 }
+    PartyListResponse:
+      type: object
+      required: [items, limit, hasMore]
+      properties:
+        items: { type: array, items: { type: object } }
+        limit: { type: integer }
+        hasMore: { type: boolean }

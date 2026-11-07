@@ -1,10 +1,22 @@
 {
-  "registryVersion": "1.1",
+  "registryVersion": "1.3",
   "module": "Persons",
   "ownerPaths": [
-    "src/Modules/Persons"
+    "src/Modules/Persons",
+    "src/BuildingBlocks/MDGsm.Domain/Persons",
+    "src/BuildingBlocks/MDGsm.Application/Persons",
+    "src/BuildingBlocks/MDGsm.Infrastructure/Persons",
+    "database/migrations/persons"
   ],
-  "registeredConsumers": [],
+  "registeredConsumers": [
+    {
+      "module": "ApiHost",
+      "path": "src/Host/Api/Program.cs",
+      "contractVersion": "Persons.Contracts/1.0",
+      "mergeProtocolVersion": "1.0",
+      "purpose": "Protected GET party-details endpoint; actor identity comes from validated IdentityAccess session context."
+    }
+  ],
   "registryPolicy": {
     "anyNonOwnerPartyIdReferenceRequiresRegistration": true,
     "unknownConsumerCountMustBeZero": true,
@@ -23,7 +35,7 @@
     {
       "module": "RepairWorkflow",
       "status": "PLANNED",
-      "condition": "Register only when the module is implemented and stores or transports PartyId."
+      "condition": "Register only when implemented and stores or transports PartyId."
     },
     {
       "module": "Finance",

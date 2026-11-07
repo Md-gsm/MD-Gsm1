@@ -269,7 +269,11 @@ def run_architecture(root: Path) -> None:
     expected_projects = {
         "BuildingBlocks/MDGsm.Domain/MDGsm.Domain.csproj": set(),
         "BuildingBlocks/MDGsm.Application/MDGsm.Application.csproj": {"MDGsm.Domain"},
-        "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {"MDGsm.Application"},
+        # Shared Infrastructure may implement module-owned application ports through
+        # explicitly enumerated references; this is an inward dependency only.
+        "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {
+            "MDGsm.Application", "MDGsm.IdentityAccess.Application"
+        },
         "BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj": set(),
         "Host/Api/MDGsm.Api.csproj": {
             "MDGsm.Application", "MDGsm.Infrastructure",
@@ -281,6 +285,14 @@ def run_architecture(root: Path) -> None:
     modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance")
     for module in modules:
         expected_projects[f"Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj"] = set()
+
+    # IdentityAccess is the first module allowed to add internal layers on its
+    # isolated feature branch. Contracts remain dependency-free; Application
+    # may depend only on its own Domain and public Contracts.
+    expected_projects["Modules/IdentityAccess/Domain/MDGsm.IdentityAccess.Domain.csproj"] = set()
+    expected_projects["Modules/IdentityAccess/Application/MDGsm.IdentityAccess.Application.csproj"] = {
+        "MDGsm.IdentityAccess.Domain", "MDGsm.IdentityAccess.Contracts"
+    }
 
     project_root = root / "src"
     projects = {
@@ -402,7 +414,7 @@ def run_api(root: Path) -> None:
     print("PASS: Persons API has a versioned contract and automated contract tests.")
 
 def run_retention(root: Path) -> None:
-    found = require_flag_consistency(root, "temporaryDataRuntimeImplemented", r"WorkflowContactStaging|TemporaryContactStaging|TemporaryDataRetentionWorker|expires_at_utc|workflow_contact_staging", "temporary data retention")
+    found = require_flag_consistency(root, "temporaryDataRuntimeImplemented", r"WorkflowContactStaging|TemporaryContactStaging|TemporaryDataRetentionWorker|workflow_contact_staging", "temporary data retention")
     if not found:
         print("PASS-N/A: no temporary-data runtime or schema is present; gate is active and will fail if implementation appears without tests.")
         return
