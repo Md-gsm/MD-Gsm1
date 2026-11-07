@@ -13,9 +13,11 @@ A new, independently authored foundation for the MD-Gsm accounting application. 
 
 These are foundational controls and design constraints, not a claim that production authentication or a complete hardened deployment already exists.
 
-## Not implemented yet
+## Current implementation limits
 
-No business tables or migrations, accounting workflows, financial posting, authentication/authorization, token issuance, production installer, or production deployment pipeline. The PostgreSQL persistence foundation is present, but it does not create or modify any database.
+The repository has moved beyond the original clean foundation. The Persons module has a protected detail-read API and PostgreSQL-backed persistence/security boundaries; Persons business migrations and the application-owned migration runner are present. IdentityAccess has runtime security/session components and an HTTP login/password-change path guarded by configuration (HTTP login remains disabled by default). These facts do not mean that the complete Persons workflow, production authentication deployment, or G1 has been accepted.
+
+Still incomplete or not production-enabled: Persons create/search and full Contact Point lifecycle, production bootstrap and recovery, full operational Desktop write UI, temporary-data cleanup runtime, cross-module Person merge execution, and complete Finance/accounting workflows. No production/real-data database migration has been performed.
 
 ## Requirements
 
@@ -79,34 +81,32 @@ The desktop has a WPF dashboard shell driven by the screenshot-derived menu cata
 
 - Current preview package: v0.2.10. See `CHANGELOG_V0.2.10_FA.md` and `README_PREVIEW_FA.md` for the Persian product branding, product/date block on the right, quick actions on the left, 10% responsive insets, default today-delivery tab and self-contained Windows installer steps. The v0.2.3 report is historical UI restoration evidence; the v0.1.1 validation report remains historical foundation evidence.
 
-## Persons module source preparation — G0 (not G1-authorized)
+## Persons and IdentityAccess — current repository status (2026-11-07)
 
-This package is a clean Stage9-based source preparation branch for introducing the Persons module. It intentionally adds **no** Persons entity, API endpoint, business DbSet, SQL Persons table, or Persons migration. The reserved source folders define module boundaries only.
+The source contains partial, real Persons and IdentityAccess implementation; it is not a design-only skeleton and it is not G1-authorized.
 
-Preparation assets:
+- `docs/persons/persons-module-manifest.json` is the machine-readable status source. Current state: `repositoryStage=G1_CONTRACTS`, `implementationState=PARTIAL`, `g1Authorized=false`.
+- Persons includes the protected detail endpoint `GET /api/v1/persons/{partyId}`, PostgreSQL-backed repository/persistence, a business migration in the application-owned migration runner, and permission checks for sensitive fields.
+- Persons create/search endpoints, complete Contact Point lifecycle, full operational Desktop forms and write wiring, temporary-data cleanup runtime, and merge execution remain incomplete.
+- IdentityAccess includes server-side session/security runtime and a tested HTTP login/password-change path. HTTP login is feature-gated and defaults off; production bootstrap, final recovery protocol, production listener/TLS deployment and independent security acceptance remain open.
+- The Contracts assemblies exist as separately compiled boundary projects; their presence does not imply that all four business modules are implemented.
+- CI has validated disposable PostgreSQL 18 Linux/Windows migration paths. This is not a migration of a production or real-data database.
+- Preview dashboard/Persons UI data remains synthetic and is not a substitute for operational API-connected UI.
 
-- `docs/persons/G1_PREPARATION_AND_ENTRY_CHECKLIST_FA.md` — G1 entry conditions and remaining external approvals.
-- `docs/persons/persons-module-manifest.json` — machine-readable stage and gate state; `g1Authorized` must remain `false` until evidence is complete.
-- `docs/persons/acceptance-gate-map.json` — AC-31..AC-45 are UNMAPPED because executable tests do not exist; AC-46..AC-49 link to checked-in policy tests.
-- `docs/persons/consumer-registry.json` — current runtime consumers (none yet) and rules for registering future consumers.
-- `docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md` and `docs/persons/MERGE_CONTRACT_CHECKLIST_FA.md` — accepted policy and design checklist; business runtime and executable acceptance tests are still pending.
-- `.github/workflows/persons-module-gates.yml` — 13 CI jobs, including Windows restore/build/test, disposable PostgreSQL 18.6 Linux and Windows integration, and redacted evidence enforcement. Both database jobs invoke the application-owned `tools/MDGsm.DbMigrator`; the Windows job installs a checksum-verified PostgreSQL 18.6-5 server.
-- `scripts/ci/validate_persons_gates.py` — fail-closed static gate checks. Runtime checks report PASS-N/A only when machine checks prove that the related feature is absent.
-- `scripts/ci/write_ci_evidence.py` — produces a commit-bound CI evidence manifest with redaction checks and fails closed if any required gate or test is missing, skipped, or failing.
-- `scripts/Validate-Stage9-Baseline.ps1` — Windows local restore/build/test plus source gates. It validates the Python runtime first and supports `py -3`; it rejects the Microsoft Store execution alias as a missing runtime and reports that condition separately from an actual gate failure.
-- `scripts/Verify-SourceChecksums.ps1` — verify the package source checksums listed in `SHA256SUMS.txt`.
-- `docs/operations/required-status-checks.md` — exact required CI check names and the remote merge-blocking test requirement.
+### Current main validation
 
-### Current validation status
+Main commit: `194720455d01a5f88b1996ed9b100b7bc7ec363b`.
 
-Latest PR-head validation: commit `7bcc423a87b44e19291f4f28d04858e06e74515c`; GitHub Actions run `41185491539` completed SUCCESS with all 13 jobs passing, including Windows Release build/test, architecture controls, disposable PostgreSQL 18.6 Linux/Windows and migration-runner idempotence. The Windows preview installer build also passed in run `41185066512` on `de9ffc1aab96e8954abff417a32f51cd6bb3e362`; only documentation changed between that commit and the latest validated PR head.
+- Persons Module Gates: run `42381030785` — 13/13 jobs successful, including PostgreSQL Linux/Windows.
+- CodeQL: run `42381030784` — successful.
+- Windows Preview Installer: run `42381030763` — successful.
+- Project Charter Owner Gate: run `42381030735` — successful.
 
-### Hard stop before G1
+The run records are commit-bound. Recheck them after any subsequent code change; these results do not automatically validate a later PR head.
 
-`g1Authorized` is `false`. The sole active repository is Md-gsm/MD-Gsm1; no parallel md-gsm repository is part of the project. The Host/BuildingBlocks source relocation and module Contracts boundary projects are physically present; current-head CI passed in run `41185491539` (13/13). AC-31..AC-45 remain UNMAPPED because their business runtime and executable tests are G1 work. Exact Required Status Checks and bypass settings still require repository Admin evidence; independent architecture review by the Group of Software Advisers remains unrecorded. Policy/checklist acceptance, CI job ownership, and the negative architecture enforcement test are recorded.
+### G1 hard stop
 
-No production/real-data database was accessed or changed. The existing Stage9 infrastructure migration was not modified.
-
+`g1Authorized=false` remains mandatory. Do not interpret successful CI, the presence of migrations, or a preview installer as permission to enable Persons, apply migrations to a real database, release production authentication, or close G1. The remaining entry conditions and evidence are tracked in `docs/persons/G1_PREPARATION_AND_ENTRY_CHECKLIST_FA.md` and `docs/persons/g1-entry-evidence.json`.
 
 ## Windows preview package v0.2.8 — grid alignment and dashboard background
 
