@@ -37,6 +37,9 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             marker = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
             marker.write_text("public sealed class TemporaryDataRetentionWorker {}", encoding="utf-8")
+            retention_test = dst / "tests/MDGsm.Domain.Tests/Persons/PersonsTemporaryDataRetentionTests.cs"
+            if retention_test.exists():
+                retention_test.unlink()
             with self.assertRaises(gates.GateFailure):
                 gates.run_retention(dst)
 

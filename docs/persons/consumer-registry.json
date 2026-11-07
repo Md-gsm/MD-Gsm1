@@ -1,12 +1,13 @@
 {
-  "registryVersion": "1.3",
+  "registryVersion": "1.4",
   "module": "Persons",
   "ownerPaths": [
     "src/Modules/Persons",
     "src/BuildingBlocks/MDGsm.Domain/Persons",
     "src/BuildingBlocks/MDGsm.Application/Persons",
     "src/BuildingBlocks/MDGsm.Infrastructure/Persons",
-    "database/migrations/persons"
+    "database/migrations/persons",
+    "database/migrations/0008_persons_party_merge.sql"
   ],
   "registeredConsumers": [
     {
@@ -15,6 +16,34 @@
       "contractVersion": "Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
       "purpose": "Protected GET party-details endpoint; actor identity comes from validated IdentityAccess session context."
+    },
+    {
+      "module": "Finance",
+      "path": "database/migrations/0006_finance_party_accounts.sql",
+      "contractVersion": "Finance.Schema/1.0; Persons.Contracts/2.0",
+      "mergeProtocolVersion": "1.0",
+      "purpose": "Finance-owned one-to-one Party subledger account identity; no balance or ledger data."
+    },
+    {
+      "module": "Finance",
+      "path": "src/Modules/Finance/Contracts/PartyAccountReference.cs",
+      "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
+      "mergeProtocolVersion": "1.0",
+      "purpose": "Published reference to Finance-owned Party account identity."
+    },
+    {
+      "module": "Finance",
+      "path": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs",
+      "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
+      "mergeProtocolVersion": "1.0",
+      "purpose": "Finance participant for controlled Party merge; preserves ledger history and blocks dual-account conflicts."
+    },
+    {
+      "module": "Finance",
+      "path": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs",
+      "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
+      "mergeProtocolVersion": "1.0",
+      "purpose": "Transaction-bound idempotent provisioning of Finance-owned Party account identity."
     }
   ],
   "registryPolicy": {
