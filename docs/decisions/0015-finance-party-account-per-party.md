@@ -17,9 +17,9 @@
 
 ## Verification
 
-- Migration `0004_finance_party_accounts.sql` adds the unique Party constraint without a cross-module FK. Forward-only migration `0005_remove_unused_finance_party_row_version.sql` removes the unused row_version; migration 0004 remains immutable.
+- Migration `0006_finance_party_accounts.sql` adds the unique Party constraint without a cross-module FK. The unused row_version was omitted from this initial, not-yet-applied migration; no deployed migration is edited or replaced.
 - PostgreSQL integration tests exercise concurrent first-use requests, rollback, distinct Party isolation, unknown/inactive Party rejection, replay metadata preservation, and actor validation.
-- Linux and Windows migration gates apply four migrations and verify second-run idempotence.
+- Linux and Windows migration gates apply the complete eight-version sequence (0001–0008) and verify second-run idempotence.
 
 ## Non-claims
 
