@@ -18,7 +18,8 @@ public sealed class ArchitectureBoundaryTests
             root,
             "src/BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj",
             "..\\MDGsm.Application\\MDGsm.Application.csproj",
-            "..\\..\\Modules\\IdentityAccess\\Application\\MDGsm.IdentityAccess.Application.csproj");
+            "..\\..\\Modules\\IdentityAccess\\Application\\MDGsm.IdentityAccess.Application.csproj",
+            "..\\..\\Modules\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj");
         AssertReferences(root, "src/BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj");
     }
 
@@ -34,7 +35,8 @@ public sealed class ArchitectureBoundaryTests
             "..\\..\\Modules\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj",
             "..\\..\\Modules\\IdentityAccess\\Contracts\\MDGsm.IdentityAccess.Contracts.csproj",
             "..\\..\\Modules\\RepairOperations\\Contracts\\MDGsm.RepairOperations.Contracts.csproj",
-            "..\\..\\Modules\\Finance\\Contracts\\MDGsm.Finance.Contracts.csproj");
+            "..\\..\\Modules\\Finance\\Contracts\\MDGsm.Finance.Contracts.csproj",
+            "..\\..\\Modules\\Finance\\MDGsm.Finance.csproj");
         AssertReferences(
             root,
             "src/Host/Desktop/MDGsm.Desktop.csproj",
@@ -58,7 +60,9 @@ public sealed class ArchitectureBoundaryTests
 
             var versionMarker = Path.Combine(Path.GetDirectoryName(project)!, "ModuleContractVersion.cs");
             Assert.True(File.Exists(versionMarker), $"Missing contract version marker: {versionMarker}");
-            Assert.Contains("Current = \"1.0\"", File.ReadAllText(versionMarker));
+            var expectedVersion = module == "Finance" ? "1.1" : "1.0";
+            var expectedMarker = "Current = " + (char)34 + expectedVersion + (char)34;
+            Assert.Contains(expectedMarker, File.ReadAllText(versionMarker));
         }
     }
 

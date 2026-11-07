@@ -33,6 +33,10 @@ The arrows express allowed dependency/call direction, not a claim that every bus
 - Persons business migration(s) and the application-owned DbMigrator exist. Current CI validates them against disposable PostgreSQL 18 Linux/Windows databases only; no production/real-data database was migrated.
 - The dashboard/Persons preview UI continues to use synthetic data and is not the operational Persons workflow.
 
+## Draft PR #50 runtime delta (not merged)
+
+The main-based reconstruction branch adds a limited temporary-workflow retention implementation and a transactional Party-merge coordinator with a Finance account participant. Finance also receives a transaction-bound Party-account provisioner. The branch keeps the accepted Persons Contracts 2.0 wire surface and uses separate versioned internal cross-module contracts. These components are partial: they do not complete Persons/Finance workflows, AC-31..AC-45 runtime acceptance, or G1. See the PR branch manifest and ownership registry for exact boundaries. No production migration is performed.
+
 ## Liveness and readiness
 
 `GET /health/live` indicates only that the API process is responding. It is not a readiness, migration, authentication, or accounting health check. `GET /health/ready` checks configured database reachability; it does not certify schema compatibility or production security.

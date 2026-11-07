@@ -75,6 +75,18 @@ The topology and ownership rules above describe the target boundaries; the follo
 
 This repository is **not** a fully implemented ERP, and Persons/IdentityAccess are not complete or G1-authorized. The presence of a partial API, runtime components, business migrations or Contracts projects must not be described as completion of the whole module. `g1Authorized=false` remains in force. No production authentication deployment, production data migration, or activation of Persons is authorized by this status description.
 
+## Draft PR #50 branch delta (unmerged)
+
+The following is present only on the main-based reconstruction branch until PR #50 is accepted and merged:
+
+- A partial Persons temporary-workflow persistence/retention slice: encrypted payload storage, bounded expiry/renewal, purge worker and alert adapter.
+- A partial transactional Party-merge coordinator with a Finance participant for Finance-owned Party subledger account references.
+- Finance account identity provisioning and versioned Persons/Finance contracts; the Finance runtime is a separate project and consumes only published contracts.
+- Three new migrations are sequenced after the accepted main baseline: `0006_finance_party_accounts.sql`, `0007_persons_temporary_workflows.sql`, and `0008_persons_party_merge.sql`. The duplicate national-identifier migration and obsolete intermediate row-version migration from PR #47 were not imported.
+- The branch retains main's newer Persons Contracts 2.0 API surface, sensitive-data authorization, IdentityAccess persistence and host composition rather than replacing them with older PR #47 versions. No main-only files are removed.
+
+These are partial runtime slices, not complete Persons or Finance modules. AC-31..AC-45 remain unmapped as runtime acceptance criteria; PostgreSQL validation is limited to disposable CI databases. No production migration, G1 activation, or change to `g1Authorized=false` is authorized by this branch.
+
 Main validation snapshot for commit `194720455d01a5f88b1996ed9b100b7bc7ec363b`:
 - Persons Module Gates run `42381030785`: 13/13 jobs successful, including disposable PostgreSQL 18 Linux/Windows.
 - CodeQL run `42381030784`: successful.
