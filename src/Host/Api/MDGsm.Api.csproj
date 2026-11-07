@@ -7,5 +7,6 @@
     <ProjectReference Include="..\..\Modules\IdentityAccess\Contracts\MDGsm.IdentityAccess.Contracts.csproj" />
     <ProjectReference Include="..\..\Modules\RepairOperations\Contracts\MDGsm.RepairOperations.Contracts.csproj" />
     <ProjectReference Include="..\..\Modules\Finance\Contracts\MDGsm.Finance.Contracts.csproj" />
+    <ProjectReference Include="..\..\Modules\Finance\MDGsm.Finance.csproj" />
   </ItemGroup>
 </Project>

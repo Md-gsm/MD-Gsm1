@@ -2,6 +2,7 @@ using MDGsm.Application.Persons;
 using MDGsm.IdentityAccess.Application;
 using MDGsm.Infrastructure.IdentityAccess;
 using MDGsm.Infrastructure.Persons;
+using MDGsm.Persons.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,10 @@ public static class PersistenceRegistration
   services.AddDbContext<MdGsmDbContext>(o=>o.UseNpgsql(cs,n=>n.EnableRetryOnFailure(maxRetryCount:3)));
   services.AddSingleton(_=>NpgsqlDataSource.Create(cs));
   services.AddScoped<IPartyRepository,PostgresPartyRepository>();
+  services.AddScoped<IPartyReferenceValidator,PostgresPartyReferenceValidator>();
+  services.AddSingleton<PostgresTemporaryWorkflowStore>();
+  services.AddSingleton<ITemporaryWorkflowRetentionAlert,StructuredLogTemporaryWorkflowRetentionAlert>();
+  services.AddHostedService<TemporaryWorkflowRetentionWorker>();
   services.AddScoped<IPartySensitiveDataAuthorizer,IdentityAccessPartySensitiveDataAuthorizer>();
   services.AddScoped<PostgresIdentityAccessStores>();
   services.AddScoped<IAccountStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
