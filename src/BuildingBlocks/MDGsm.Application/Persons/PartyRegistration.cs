@@ -43,7 +43,7 @@ public sealed record PartyDetails(
     string? NationalIdentifier, string? EconomicCode, string? ResponsiblePersonName,
     IReadOnlyList<ContactPointDto> Contacts, AddressDto? PrimaryAddress,
     PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,
-    PartyCommunicationPreferences CommunicationPreferences, DateTimeOffset CreatedAtUtc,
+    PartyCommunicationPreferences? CommunicationPreferences, DateTimeOffset CreatedAtUtc,
     bool SensitiveFieldsIncluded, WorkClassification? WorkClassification);
 
 public sealed record ContactPointDto(string Kind, string Value, bool IsPrimary, bool IsMessagingAllowed);
