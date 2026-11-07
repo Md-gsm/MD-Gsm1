@@ -17,7 +17,7 @@ These are foundational controls and design constraints, not a claim that product
 
 The repository has moved beyond the original clean foundation. The Persons module has a protected detail-read API and PostgreSQL-backed persistence/security boundaries; Persons business migrations and the application-owned migration runner are present. IdentityAccess has runtime security/session components and an HTTP login/password-change path guarded by configuration (HTTP login remains disabled by default). These facts do not mean that the complete Persons workflow, production authentication deployment, or G1 has been accepted.
 
-Still incomplete or not production-enabled: Persons create/search and full Contact Point lifecycle, production bootstrap and recovery, full operational Desktop write UI, temporary-data cleanup runtime, cross-module Person merge execution, and complete Finance/accounting workflows. No production/real-data database migration has been performed.
+Still incomplete or not production-enabled: Persons create/search and full Contact Point lifecycle, production bootstrap and recovery, full operational Desktop write UI, complete temporary-data lifecycle acceptance, full Party merge acceptance, and complete Finance/accounting workflows. Partial runtime slices exist; none is complete module acceptance. No production/real-data database migration has been performed.
 
 ## Requirements
 
@@ -37,6 +37,8 @@ dotnet test .\MDGsm.sln --no-build
 Run the API with `dotnet run --project .\src\Host\Api\MDGsm.Api.csproj`. The `/health/live` endpoint means process liveness only.
 
 ## Governance
+
+- `docs/roadmap/PROJECT_ROADMAP_AND_ACCEPTANCE_PLAN_FA.md` — نقشه راه مرجع، معیار خروج و یافته‌های ممیزی.
 
 - `docs/governance/PROJECT_GOVERNANCE_CHARTER_FA.md` — the binding project charter. All contributors and coding agents must follow it; only the project owner may authorize changes.
 - `AGENTS.md` — mandatory startup instructions for coding agents and automated contributors.
@@ -86,8 +88,8 @@ The desktop has a WPF dashboard shell driven by the screenshot-derived menu cata
 The source contains partial, real Persons and IdentityAccess implementation; it is not a design-only skeleton and it is not G1-authorized.
 
 - `docs/persons/persons-module-manifest.json` is the machine-readable status source. Current state: `repositoryStage=G1_CONTRACTS`, `implementationState=PARTIAL`, `g1Authorized=false`.
-- Persons includes the protected detail endpoint `GET /api/v1/persons/{partyId}`, PostgreSQL-backed repository/persistence, a business migration in the application-owned migration runner, and permission checks for sensitive fields.
-- Persons create/search endpoints, complete Contact Point lifecycle, full operational Desktop forms and write wiring, temporary-data cleanup runtime, and merge execution remain incomplete.
+- Persons includes the protected detail endpoint `GET /api/v2/persons/{partyId}`, PostgreSQL-backed repository/persistence, a business migration in the application-owned migration runner, and permission checks for sensitive fields.
+- Persons create/search API exposure, Contact Point lifecycle, operational Desktop write UI, full temporary-data acceptance and full Party merge acceptance remain incomplete. SearchAsync exists in the repository (suffix-4/name search, max 10) but is not API-exposed and returns active primary mobile value; masking and DTO minimization remain privacy gates.
 - IdentityAccess includes server-side session/security runtime and a tested HTTP login/password-change path. HTTP login is feature-gated and defaults off; production bootstrap, final recovery protocol, production listener/TLS deployment and independent security acceptance remain open.
 - The Contracts assemblies exist as separately compiled boundary projects; their presence does not imply that all four business modules are implemented.
 - CI has validated disposable PostgreSQL 18 Linux/Windows migration paths. This is not a migration of a production or real-data database.
@@ -104,7 +106,11 @@ The following successful runs belong to the pre-PR-40 main commit `194720455d01a
 
 PR #45 and PR #46 have since been merged. Current main after PR #46 is `5638dbc4767a18d1e930748aad7eff7fb9e9f1a7`. The listed run IDs are historical pre-PR-40 evidence and do not validate this merge commit. No workflow runs or combined status checks are currently recorded for this exact merge commit; fresh CI evidence bound to this SHA remains pending.
 
-### G1 hard stop
+### Current main CI evidence (2026-11-08)
+
+Exact main SHA `f011c94d52bc06c7e213abb6e480180e9ea73f40`: 15/15 check-runs successful. Fourteen contexts are required; persons-spec-lint is required, codeql-csharp is successful but non-required. Windows Preview Installer was not run on this SHA. PostgreSQL checks use disposable databases only.
+
+## G1 hard stop
 
 `g1Authorized=false` remains mandatory. Do not interpret successful CI, the presence of migrations, or a preview installer as permission to enable Persons, apply migrations to a real database, release production authentication, or close G1. The remaining entry conditions and evidence are tracked in `docs/persons/G1_PREPARATION_AND_ENTRY_CHECKLIST_FA.md` and `docs/persons/g1-entry-evidence.json`.
 
