@@ -36,6 +36,16 @@ class PersonsGatePolicyTests(unittest.TestCase):
                 target = dst / relative
                 if target.exists():
                     target.unlink()
+            registration = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persistence/PersistenceRegistration.cs"
+            registration_text = registration.read_text(encoding="utf-8")
+            registration.write_text(
+                "\\n".join(
+                    line for line in registration_text.splitlines()
+                    if "PostgresTemporaryWorkflowStore" not in line
+                    and "TemporaryWorkflowRetentionWorker" not in line
+                ) + "\\n",
+                encoding="utf-8",
+            )
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
                 gates.run_retention(dst)
@@ -62,6 +72,10 @@ class PersonsGatePolicyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
             shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults"))
+            manifest_path = dst / "docs/persons/persons-module-manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["temporaryDataRuntimeImplemented"] = False
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             marker = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
             marker.write_text("public sealed class TemporaryDataRetentionWorker {}", encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
