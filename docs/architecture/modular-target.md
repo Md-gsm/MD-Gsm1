@@ -75,22 +75,14 @@ The topology and ownership rules above describe the target boundaries; the follo
 
 This repository is **not** a fully implemented ERP, and Persons/IdentityAccess are not complete or G1-authorized. The presence of a partial API, runtime components, business migrations or Contracts projects must not be described as completion of the whole module. `g1Authorized=false` remains in force. No production authentication deployment, production data migration, or activation of Persons is authorized by this status description.
 
-## Draft PR #50 branch delta (unmerged)
+## Current main integration status after PR #50
 
-The following is present only on the main-based reconstruction branch until PR #50 is accepted and merged:
+PR #50 was reviewed and merged into main at `2754e261d05f1e0410de51dbfbd5909ad638eb33`.
 
-- A partial Persons temporary-workflow persistence/retention slice: encrypted payload storage, bounded expiry/renewal, purge worker and alert adapter.
-- A partial transactional Party-merge coordinator with a Finance participant for Finance-owned Party subledger account references.
-- Finance account identity provisioning and versioned Persons/Finance contracts; the Finance runtime is a separate project and consumes only published contracts.
-- Three new migrations are sequenced after the accepted main baseline: `0006_finance_party_accounts.sql`, `0007_persons_temporary_workflows.sql`, and `0008_persons_party_merge.sql`. The duplicate national-identifier migration and obsolete intermediate row-version migration from PR #47 were not imported.
-- The branch retains main's newer Persons Contracts 2.0 API surface, sensitive-data authorization, IdentityAccess persistence and host composition rather than replacing them with older PR #47 versions. No main-only files are removed.
+- Main now contains a partial Persons temporary-workflow persistence/retention slice: encrypted payload storage, bounded expiry/renewal, purge worker and alert adapter.
+- Main now contains a partial transactional Party-merge coordinator with a Finance participant for Finance-owned Party subledger account references.
+- Finance account identity provisioning and versioned Persons/Finance contracts are integrated; Finance runtime remains a separate project and consumes published contracts.
+- Migrations `0006_finance_party_accounts.sql`, `0007_persons_temporary_workflows.sql`, and `0008_persons_party_merge.sql` follow the accepted 0001–0005 baseline. The duplicate national-identifier migration and obsolete intermediate row-version migration from PR #47 were not imported.
+- The integration preserves main's newer Persons Contracts 2.0 API surface, sensitive-data authorization, IdentityAccess persistence and host composition; no main-only files were removed.
 
-These are partial runtime slices, not complete Persons or Finance modules. AC-31..AC-45 remain unmapped as runtime acceptance criteria; PostgreSQL validation is limited to disposable CI databases. No production migration, G1 activation, or change to `g1Authorized=false` is authorized by this branch.
-
-Main validation snapshot for commit `194720455d01a5f88b1996ed9b100b7bc7ec363b`:
-- Persons Module Gates run `42381030785`: 13/13 jobs successful, including disposable PostgreSQL 18 Linux/Windows.
-- CodeQL run `42381030784`: successful.
-- Windows Preview Installer run `42381030763`: successful.
-- Project Charter Owner Gate run `42381030735`: successful.
-
-These are CI/installer results only; they do not replace independent review, operational acceptance or owner authorization.
+These are partial runtime slices, not complete Persons or Finance modules. AC-31..AC-45 remain `UNMAPPED` in the executable acceptance map; some focused tests exist, but they do not prove the complete acceptance criteria. PostgreSQL validation is limited to disposable CI databases. PR-head Persons gates run `42408907287`, CodeQL run `42408907310`, Windows Preview Installer run `42408907249`, and Charter Gate run `42409265387` succeeded on PR head `3c113e77169c8b6e1ab882df2ef49d2c39f0222c`. The merge commit has not had a separate CI run. No production migration, G1 activation, or change to `g1Authorized=false` is authorized.
