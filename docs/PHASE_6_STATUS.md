@@ -1,5 +1,7 @@
 # Stage 6 — Persistence foundation
 
+> **Historical stage record.** The statements below describe the original Stage 6 baseline and are not claims about the current repository as a whole. Persons business migrations and IdentityAccess persistence/runtime were added in later work. Current status is maintained in `docs/architecture/overview.md`, `docs/security/security-model.md`, and `docs/persons/G1_PREPARATION_AND_ENTRY_CHECKLIST_FA.md`. Current CI validates application-owned migrations only against disposable PostgreSQL 18 Linux/Windows databases; no production/real-data database has been migrated.
+
 ## Implemented
 
 - Decision recorded: PostgreSQL + EF Core/Npgsql, server-side database access only.
