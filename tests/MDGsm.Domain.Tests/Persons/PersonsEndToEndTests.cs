@@ -24,8 +24,6 @@ public sealed class PersonsEndToEndTests
 
     private const string Actor = "ci-test-user";
 
-    private const string Actor = "ci-test-user";
-
     [Fact]
     [Trait("Category", "Integration")]
     public async Task Quick_registration_same_mobile_and_same_name_reuses_party_and_adds_role()
