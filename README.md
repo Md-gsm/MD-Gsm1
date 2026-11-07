@@ -6,7 +6,7 @@ A new, independently authored foundation for the MD-Gsm accounting application. 
 
 1. **Architecture baseline:** physically separated Host and BuildingBlocks projects, four isolated versioned module Contracts projects, and automated project-inventory/dependency-boundary tests; the target topology is documented in docs/architecture/modular-target.md.
 2. **Configuration and logging:** non-secret API defaults in `appsettings.json`, console logging, and operating guidance for secrets and sensitive log data.
-3. **Security design baseline:** trust boundaries and requirements for future identity, roles, authorization, and transport security.
+3. **Security baseline and partial IdentityAccess runtime:** trust boundaries, server-side session/security components, and tested HTTP login/password-change paths; production activation remains gated.
 4. **API contracts:** typed success envelope, versioned technical route, Problem Details errors, request IDs, and contract tests.
 5. **Desktop-to-API connection:** typed HTTP client, configurable local API URL and timeout, UI connection check, and client error handling tests.
 6. **Persistence foundation:** PostgreSQL + EF Core/Npgsql decision, conditional DbContext registration, a database-aware readiness endpoint, and migration/secret-handling rules.
