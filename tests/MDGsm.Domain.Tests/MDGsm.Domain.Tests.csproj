@@ -21,5 +21,6 @@
     <ProjectReference Include="..\..\src\Modules\IdentityAccess\Domain\MDGsm.IdentityAccess.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\IdentityAccess\Application\MDGsm.IdentityAccess.Application.csproj" />
     <ProjectReference Include="..\..\src\Modules\IdentityAccess\Contracts\MDGsm.IdentityAccess.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Finance\MDGsm.Finance.csproj" />
   </ItemGroup>
 </Project>

@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDGsm.IdentityAccess.Domain
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDGsm.IdentityAccess.Application", "src\Modules\IdentityAccess\Application\MDGsm.IdentityAccess.Application.csproj", "{A7B2C301-7C1D-4C55-9F10-000000000002}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDGsm.Finance", "src\Modules\Finance\MDGsm.Finance.csproj", "{5E4B7393-A6CB-4A5B-9D6C-1D84C890A00D}"
+EndProject
 Global
  GlobalSection(SolutionConfigurationPlatforms) = preSolution
   Debug|Any CPU = Debug|Any CPU
@@ -92,5 +94,9 @@ Global
   {A7B2C301-7C1D-4C55-9F10-000000000002}.Debug|Any CPU.Build.0 = Debug|Any CPU
   {A7B2C301-7C1D-4C55-9F10-000000000002}.Release|Any CPU.ActiveCfg = Release|Any CPU
   {A7B2C301-7C1D-4C55-9F10-000000000002}.Release|Any CPU.Build.0 = Release|Any CPU
+  {5E4B7393-A6CB-4A5B-9D6C-1D84C890A00D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {5E4B7393-A6CB-4A5B-9D6C-1D84C890A00D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {5E4B7393-A6CB-4A5B-9D6C-1D84C890A00D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {5E4B7393-A6CB-4A5B-9D6C-1D84C890A00D}.Release|Any CPU.Build.0 = Release|Any CPU
  EndGlobalSection
 EndGlobal

@@ -272,19 +272,20 @@ def run_architecture(root: Path) -> None:
         # Shared Infrastructure may implement module-owned application ports through
         # explicitly enumerated references; this is an inward dependency only.
         "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {
-            "MDGsm.Application", "MDGsm.IdentityAccess.Application"
+            "MDGsm.Application", "MDGsm.IdentityAccess.Application", "MDGsm.Persons.Contracts"
         },
         "BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj": set(),
         "Host/Api/MDGsm.Api.csproj": {
             "MDGsm.Application", "MDGsm.Infrastructure",
             "MDGsm.Persons.Contracts", "MDGsm.IdentityAccess.Contracts",
-            "MDGsm.RepairOperations.Contracts", "MDGsm.Finance.Contracts",
+            "MDGsm.RepairOperations.Contracts", "MDGsm.Finance.Contracts", "MDGsm.Finance",
         },
         "Host/Desktop/MDGsm.Desktop.csproj": {"MDGsm.Client"},
     }
     modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance")
     for module in modules:
         expected_projects[f"Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj"] = set()
+    expected_projects["Modules/Finance/MDGsm.Finance.csproj"] = {"MDGsm.Finance.Contracts", "MDGsm.Persons.Contracts"}
 
     # IdentityAccess is the first module allowed to add internal layers on its
     # isolated feature branch. Contracts remain dependency-free; Application
@@ -353,7 +354,8 @@ def run_architecture(root: Path) -> None:
         solution_path = f"src\\Modules\\{module}\\Contracts\\MDGsm.{module}.Contracts.csproj"
         if not project.exists() or solution_path not in solution:
             raise GateFailure(f"{module} Contracts project is missing from MDGsm.sln.")
-        if not marker.exists() or 'Current = "1.0"' not in marker.read_text(encoding="utf-8"):
+        expected_version = "1.1" if module == "Finance" else "1.0"
+        if not marker.exists() or f'Current = "{expected_version}"' not in marker.read_text(encoding="utf-8"):
             raise GateFailure(f"{module} Contracts version marker is missing or invalid.")
 
     old_roots = (
@@ -384,7 +386,7 @@ def run_registry(root: Path) -> None:
             rel = p.relative_to(root).as_posix()
             if not (rel.startswith("src/") or rel.startswith("database/migrations/")):
                 continue
-            if any(rel.startswith(path + "/") for path in owner_paths):
+            if rel in owner_paths or any(rel.startswith(path + "/") for path in owner_paths):
                 continue
             content = p.read_text(encoding="utf-8", errors="replace")
             if rx.search(content):
@@ -414,7 +416,7 @@ def run_api(root: Path) -> None:
     print("PASS: Persons API has a versioned contract and automated contract tests.")
 
 def run_retention(root: Path) -> None:
-    found = require_flag_consistency(root, "temporaryDataRuntimeImplemented", r"WorkflowContactStaging|TemporaryContactStaging|TemporaryDataRetentionWorker|workflow_contact_staging", "temporary data retention")
+    found = require_flag_consistency(root, "temporaryDataRuntimeImplemented", r"WorkflowContactStaging|TemporaryContactStaging|TemporaryDataRetentionWorker|TemporaryWorkflowRetentionWorker|PostgresTemporaryWorkflowStore|persons_temporary_workflows|workflow_contact_staging", "temporary data retention")
     if not found:
         print("PASS-N/A: no temporary-data runtime or schema is present; gate is active and will fail if implementation appears without tests.")
         return
