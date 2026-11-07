@@ -210,6 +210,51 @@ public sealed class PersonsEndToEndTests
         Assert.Equal(1L, await ScalarAsync(scope, "SELECT count(*) FROM persons_access_audit WHERE party_id = @id AND actor = 'ci-test-user'", Guid.Parse(created.PartyId)));
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Natural_and_legal_national_identifiers_remain_reserved_after_deactivation()
+    {
+        await using (var naturalScope = await TestScope.OpenAsync())
+        {
+            var nationalId = NewNationalId();
+            var first = await naturalScope.Repository.AddNaturalAsync(NewNatural("09127777777", nationalId), Actor, Guid.CreateVersion7(), naturalScope.Transaction, default);
+            await using (var deactivate = new NpgsqlCommand("UPDATE persons SET is_active = false WHERE party_id = @id", naturalScope.Connection, naturalScope.Transaction))
+            {
+                deactivate.Parameters.AddWithValue("id", Guid.Parse(first.PartyId));
+                Assert.Equal(1, await deactivate.ExecuteNonQueryAsync());
+            }
+            await using (var savepoint = new NpgsqlCommand("SAVEPOINT before_natural_identifier_reuse", naturalScope.Connection, naturalScope.Transaction))
+                await savepoint.ExecuteNonQueryAsync();
+            var duplicate = await Assert.ThrowsAsync<DuplicatePartyIdentifierException>(() => naturalScope.Repository.AddNaturalAsync(NewNatural("09128888888", nationalId), Actor, Guid.CreateVersion7(), naturalScope.Transaction, default));
+            Assert.DoesNotContain(nationalId, duplicate.Message, StringComparison.Ordinal);
+            await using var rollback = new NpgsqlCommand("ROLLBACK TO SAVEPOINT before_natural_identifier_reuse", naturalScope.Connection, naturalScope.Transaction);
+            await rollback.ExecuteNonQueryAsync();
+        }
+        await using (var legalScope = await TestScope.OpenAsync())
+        {
+            var legalNationalId = Random.Shared.NextInt64(10_000_000_000L, 99_999_999_999L).ToString();
+            var first = await legalScope.Repository.AddLegalAsync(NewLegal(legalNationalId), Actor, Guid.CreateVersion7(), legalScope.Transaction, default);
+            await using (var deactivate = new NpgsqlCommand("UPDATE persons SET is_active = false WHERE party_id = @id", legalScope.Connection, legalScope.Transaction))
+            {
+                deactivate.Parameters.AddWithValue("id", Guid.Parse(first.PartyId));
+                Assert.Equal(1, await deactivate.ExecuteNonQueryAsync());
+            }
+            await using (var savepoint = new NpgsqlCommand("SAVEPOINT before_legal_identifier_reuse", legalScope.Connection, legalScope.Transaction))
+                await savepoint.ExecuteNonQueryAsync();
+            var duplicate = await Assert.ThrowsAsync<DuplicatePartyIdentifierException>(() => legalScope.Repository.AddLegalAsync(NewLegal(legalNationalId), Actor, Guid.CreateVersion7(), legalScope.Transaction, default));
+            Assert.DoesNotContain(legalNationalId, duplicate.Message, StringComparison.Ordinal);
+            await using var rollback = new NpgsqlCommand("ROLLBACK TO SAVEPOINT before_legal_identifier_reuse", legalScope.Connection, legalScope.Transaction);
+            await rollback.ExecuteNonQueryAsync();
+        }
+    }
+
+    private static RegisterLegalParty NewLegal(string legalNationalId) =>
+        new("شرکت آزمایشی", legalNationalId, "1234567890", "نام مسئول شرکت",
+            PartyBusinessRoles.Customer, "09126666666", null, null, null,
+            "تهران", "تهران", "1234567890", "خیابان آزمایشی",
+            0, 0m, DefaultPaymentMethod.Cash, null, PartyAcquaintanceSource.Unknown,
+            "یادداشت داخلی", PartyCommunicationPreferences.Default);
+
     private static string NewNationalId() => Random.Shared.NextInt64(1_000_000_000L, 9_999_999_999L).ToString();
 
     private static RegisterNaturalParty NewNatural(string mobile, string? nationalId, long creditLimitRial = 0, string? lastFour = null) =>
