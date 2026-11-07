@@ -13,7 +13,7 @@ namespace MDGsm.Api.Security;
 public sealed class SessionAuthenticationMiddleware(RequestDelegate next)
 {
     private const string SessionAuthenticationType = "MDGsm.Session";
-    private const string PersonsPrefix = "/api/v1/persons";
+    private const string PersonsPrefix = "/api/v2/persons";
     private const string PasswordChangePath = "/api/v1/identity/password/change";
 
     public async Task InvokeAsync(HttpContext context)
