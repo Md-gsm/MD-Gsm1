@@ -399,7 +399,7 @@ def run_registry(root: Path) -> None:
 
 def run_api(root: Path) -> None:
     manifest = load_json(root / "docs/persons/persons-module-manifest.json")
-    found = runtime_marker_found(root, r"/api/v1/persons|MapPersonsEndpoints|PersonsEndpointGroup|PersonController")
+    found = runtime_marker_found(root, r"/api/v[12]/persons|MapPersonsEndpoints|PersonsEndpointGroup|PersonController")
     declared = bool(manifest.get("personsApiImplemented", False))
     if found != declared:
         raise GateFailure(f"Persons API implementation state mismatch: manifest={declared}, route/endpoint marker={found}.")
@@ -434,7 +434,7 @@ def run_merge(root: Path) -> None:
     print("PASS: merge code has required contract-test file.")
 
 def run_security(root: Path) -> None:
-    found = runtime_marker_found(root, r"/api/v1/persons|MapPersonsEndpoints|PersonController")
+    found = runtime_marker_found(root, r"/api/v[12]/persons|MapPersonsEndpoints|PersonController")
     if not found:
         print("PASS-N/A: no Persons API endpoints exist yet; no unauthenticated Persons surface is exposed.")
         return
@@ -447,7 +447,7 @@ def run_e2e(root: Path) -> None:
     declared_schema = bool(manifest.get("personsBusinessMigrationsPresent", False))
     if schema_found != declared_schema:
         raise GateFailure(f"Persons schema manifest mismatch: declared={declared_schema}, migration-marker-found={schema_found}.")
-    found = runtime_marker_found(root, r"/api/v1/persons|MapPersonsEndpoints|CREATE\s+TABLE\s+(IF\s+NOT\s+EXISTS\s+)?persons\b")
+    found = runtime_marker_found(root, r"/api/v[12]/persons|MapPersonsEndpoints|CREATE\s+TABLE\s+(IF\s+NOT\s+EXISTS\s+)?persons\b")
     if not found:
         print("PASS-N/A: Persons API and business schema are absent; E2E test gate is active for later implementation.")
         return
