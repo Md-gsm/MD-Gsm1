@@ -165,7 +165,7 @@ public sealed class IdentityAccessHttpEndToEndTests
             });
         using var client = factory.CreateClient();
 
-        var partyUrl = "/api/v1/persons/" + Guid.CreateVersion7().ToString("D");
+        var partyUrl = "/api/v2/persons/" + Guid.CreateVersion7().ToString("D");
         var noToken = await client.GetAsync(partyUrl);
         Assert.Equal(HttpStatusCode.Unauthorized, noToken.StatusCode);
 
