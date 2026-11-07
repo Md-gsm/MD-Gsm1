@@ -42,7 +42,7 @@ public sealed record PartyDetails(
     string PartyId, PartyType Type, string DisplayName, PartyBusinessRoles Roles,
     string? NationalIdentifier, string? EconomicCode, string? ResponsiblePersonName,
     IReadOnlyList<ContactPointDto> Contacts, AddressDto? PrimaryAddress,
-    PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,
+    PartyAcquaintanceSource? AcquaintanceSource, string? InternalNote,
     PartyCommunicationPreferences? CommunicationPreferences, DateTimeOffset CreatedAtUtc,
     bool SensitiveFieldsIncluded, WorkClassification? WorkClassification);
 
