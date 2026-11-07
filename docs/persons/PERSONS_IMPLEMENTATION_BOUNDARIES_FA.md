@@ -19,8 +19,10 @@
 
 ## وضعیت واقعی API، Runtime و UI در main
 
-- endpoint محافظت‌شده `GET /api/v1/persons/{partyId}` برای جزئیات شخص پیاده‌سازی شده است. هویت actor از مرز نشست IdentityAccess که در PostgreSQL اعتبارسنجی می‌شود به دست می‌آید؛ فیلدهای حساس به مجوز زنده `persons.sensitive.read` نیاز دارند.
-- APIهای ایجاد و جست‌وجوی شخص و چرخه کامل Contact Point هنوز کامل نیستند.
+- endpoint محافظت‌شده `GET /api/v2/persons/{partyId}` برای جزئیات شخص پیاده‌سازی شده است. هویت actor از مرز نشست IdentityAccess که در PostgreSQL اعتبارسنجی می‌شود به دست می‌آید؛ فیلدهای حساس به مجوز زنده `persons.sensitive.read` نیاز دارند.
+- Repository دارای `SearchAsync` با suffix چهاررقمی موبایل/جست‌وجوی نام و سقف ۱۰ نتیجه است، اما Search API هنوز exposed نیست. Query فعلی مقدار موبایل اصلی فعال را برمی‌گرداند؛ masking در SQL/DTO، authorization و rate-limit باید پیش از انتشار API تکمیل و تست شوند.
+- ثبت و QuickRegister در Repository وجود دارند؛ API/UX عملیاتی و چرخه کامل Contact Point همچنان ناقص‌اند.
+- store رمزنگاری‌شده/retention worker داده موقت و transactional Party merge coordinator با Finance participant به‌صورت partial در main هستند؛ این‌ها پذیرش کامل AC-31..45 نیستند.
 - Runtime امنیت/نشست IdentityAccess در سمت سرور وجود دارد. مسیرهای HTTP ورود و تغییر رمز پیاده‌سازی و در تست API به‌همراه PostgreSQL موقت پوشش داده شده‌اند؛ ورود HTTP با تنظیم `IdentityAccess:HttpLoginEnabled` کنترل می‌شود و مقدار پیش‌فرض آن خاموش است. این وضعیت مجوز استقرار تولیدی یا فعال‌سازی G1 نیست.
 - UI پیش‌نمایش فعلی هنوز داده ساختگی دارد و فرم عملیاتی ثبت/ویرایش متصل به API محسوب نمی‌شود.
 - `g1Authorized=false` باقی می‌ماند؛ اجرای عملیات نوشتن عملیاتی، استقرار احراز هویت تولیدی و فعال‌سازی ماژول به عبور از گیت‌های مستقل و مجوز صریح مالک نیاز دارد.
