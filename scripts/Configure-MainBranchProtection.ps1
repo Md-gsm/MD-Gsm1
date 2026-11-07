@@ -18,7 +18,8 @@ $RequiredChecks = @(
     'persons-security-tests',
     'persons-e2e-disposable',
     'persons-ci-enforcement-test',
-    'persons-ci-evidence'
+    'persons-ci-evidence',
+    'project-charter-owner-gate'
 )
 
 function Invoke-GhJson {
@@ -61,7 +62,9 @@ $checksResponse = Invoke-GhJson -Arguments @('api', "repos/$Repository/commits/$
 $checkRuns = @($checksResponse.check_runs)
 $missing = @()
 $notGreen = @()
-foreach ($required in $RequiredChecks) {
+# The charter gate is a PR/push workflow check. It is required for merges but is not part of the established module-check preflight.
+$PreflightRequiredChecks = @($RequiredChecks | Where-Object { $_ -ne 'project-charter-owner-gate' })
+foreach ($required in $PreflightRequiredChecks) {
     $matchingChecks = @($checkRuns | Where-Object { $_.name -eq $required })
     if ($matchingChecks.Count -eq 0) {
         $missing += $required
@@ -140,7 +143,7 @@ $tempFile = Join-Path ([IO.Path]::GetTempPath()) ("mdgsm-main-protection-" + [Gu
 try {
     if (-not $Apply) {
         Write-Host 'PREVIEW COMPLETE — no GitHub settings were changed.' -ForegroundColor Green
-        Write-Host 'Planned policy: PR required; all 12 current CI jobs required; branch must be up to date; admin enforcement enabled; force-push and branch deletion disabled; conversation resolution required.'
+        Write-Host 'Planned policy: PR required; all 12 established module CI checks plus the owner-only charter gate required; branch must be up to date; admin enforcement enabled; force-push and branch deletion disabled; conversation resolution required.'
         Write-Host 'Approval count is intentionally 0 because no independent reviewer account/team was confirmed. This can be raised after reviewer assignment.'
         Write-Host 'To apply after reviewing this report, run:'
         Write-Host ".\scripts\Configure-MainBranchProtection.ps1 -Apply"

@@ -49,6 +49,7 @@ The four Contracts projects currently expose version markers only. They are comp
 - **RepairOperations:** technician skills, capabilities, scheduling, and assignment.
 - **Finance/Payroll:** salary, commission, payroll and financial records.
 - **IdentityAccess:** opaque access-token lifecycle, account/session state, authentication and authorization.
+- **Organization:** branch and warehouse master records, organizational structure, and user membership/scope. Inventory owns quantities, stock movements, and transfers.
 - Each module publishes versioned Contracts. Consumers depend on Contracts, not another module's internal Domain or Infrastructure implementation.
 - Cross-module database atomicity follows ADR-0005.
 - Access-token behavior follows ADR-0006.
