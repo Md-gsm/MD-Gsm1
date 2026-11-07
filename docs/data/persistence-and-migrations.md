@@ -20,6 +20,20 @@
 | 0001 | `0001_infrastructure_schema_version.sql` | Legacy infrastructure schema marker |
 | 0002 | `persons/0002_persons_core.sql` | Persons master data, contact/address, idempotency and access audit |
 | 0003 | `0003_identityaccess_core.sql` | IdentityAccess accounts, roles, permissions, sessions, login attempts, recovery, audit and singleton session policy |
+| 0004 | `0004_persons_reserve_national_identifiers.sql` | Persons national-identifier reservation and uniqueness safeguards |
+| 0005 | `0005_persons_nonblank_identity_names.sql` | Persons nonblank identity-name constraints |
+
+## Draft PR #50 branch-only migration additions (not yet in main)
+
+These migrations are appended after the accepted main sequence 0001–0005. They are applied only by disposable CI databases until PR #50 is reviewed and merged; no real-data database has been migrated.
+
+| Version | File | Scope |
+|---|---|---|
+| 0006 | `0006_finance_party_accounts.sql` | Finance-owned unique Party subledger account identity; no cross-module FK or balance duplication |
+| 0007 | `0007_persons_temporary_workflows.sql` | Temporary workflow metadata and encrypted payload lifecycle |
+| 0008 | `0008_persons_party_merge.sql` | Persons-owned Party merge operation records and merge-state columns |
+
+The duplicate national-identifier migration from the older feature branch was not imported because main already owns version 0004. The unused row-version follow-up was folded out before application; migration 0006 is the single initial Finance schema migration. Linux and Windows migration gates therefore verify the eight-version sequence on the draft branch.
 
 Migration 0003 creates the IdentityAccess schema and singleton `identity.system_settings` row (5 active accounts, 30-second heartbeat, 180-second lease), required by `IdentityAccessUnitOfWork`.
 
