@@ -12,4 +12,9 @@
 - ماتریس granular، retention و recovery در `identityaccess-five-open-items-fa.md` پیشنهاد شده‌اند و تا تصویب/review اجرایی نیستند.
 - audit secret-free و append-only.
 
-عدم مجوز: تا review امنیتی/معماری و مجوز رسمی G1، `g1Authorized=false`؛ بدون login endpoint، migration عملیاتی، listener شبکه یا Persons write.
+عدم مجوز: تا review امنیتی/معماری و مجوز رسمی G1، `g1Authorized=false`؛ وجود مسیر login در کد به معنی فعال‌بودن آن نیست (feature flag به‌صورت پیش‌فرض خاموش است). هیچ production listener، migration روی دیتابیس واقعی یا Persons write مجاز نشده است.
+
+
+## یادداشت وضعیت اجرا — 2026-11-07
+
+این سند مرجع تصمیم‌های محصول 2026-11-04 است، نه فهرست وضعیت endpointها. در main مسیرهای HTTP login و password change در کد و تست یکپارچه وجود دارند، اما HTTP login به‌صورت پیش‌فرض خاموش است و production bootstrap/recovery/listener هنوز پذیرفته نشده‌اند. جزئیات جاری در `docs/security/identityaccess-five-open-items-fa.md` و `docs/persons/G1_PREPARATION_AND_ENTRY_CHECKLIST_FA.md` نگهداری می‌شود.
