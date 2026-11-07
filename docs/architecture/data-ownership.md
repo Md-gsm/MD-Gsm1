@@ -54,14 +54,14 @@
 - هر مدل جدید در بازبینی باید شناسهٔ این فهرست یا درخواست ثبت مفهوم جدید را ارجاع دهد.
 
 
-## وضعیت پیاده‌سازی در main — 2026-11-07
+## وضعیت پیاده‌سازی در main — 2026-11-08
 
 این رجیستری مالکیت مفهومی و معماری را تعیین می‌کند؛ درج یک مالک در جدول به معنی ساخته‌شدن جدول فیزیکی یا تکمیل ماژول نیست. برای جلوگیری از برداشت اشتباه، وضعیت اجرایی فعلی چنین است:
 
-- Persons مالک هویت Party و Contact Point باقی می‌ماند. در main بخشی از مدل، persistence و endpoint محافظت‌شده جزئیات شخص پیاده‌سازی شده؛ ایجاد/جست‌وجو، چرخه کامل تماس، پاک‌سازی داده موقت و اجرای Merge هنوز کامل نیست.
+- Persons مالک هویت Party و Contact Point باقی می‌ماند. در main بخشی از مدل، persistence و endpoint محافظت‌شده جزئیات شخص پیاده‌سازی شده؛ Repository ثبت/QuickRegister/SearchAsync دارد اما Search API exposed نیست؛ چرخه کامل تماس، پذیرش داده موقت و پذیرش کامل Merge هنوز کامل نیست.
 - IdentityAccess مالک حساب، نشست و مجوز است. بخشی از Runtime امنیت/نشست و مسیر HTTP ورود/تغییر رمز وجود دارد؛ ورود HTTP feature-gated و پیش‌فرض خاموش است و تکمیل production bootstrap/recovery و بازبینی امنیتی باقی مانده است.
-- ماژول‌های Finance، RepairOperations، Inventory و دیگر حوزه‌ها صرفاً به دلیل وجود Contracts یا ثبت مالکیت در این رجیستری، کامل یا فعال محسوب نمی‌شوند.
+- Finance یک برش محدود runtime برای Party-account identity و participant ادغام دارد، نه دفترکل/مانده/حسابداری کامل. RepairOperations فعلاً Contracts دارد؛ Inventory نیز هنوز runtime کامل ندارد. وجود Contracts یا ثبت مالکیت به معنی تکمیل/فعال‌بودن نیست.
 - Migrationهای اشخاص در مخزن و Migration Runner وجود دارند؛ اعتبارسنجی فعلی در CI روی PostgreSQL موقت Linux/Windows انجام شده و هیچ دیتابیس واقعی/تولیدی مهاجرت داده نشده است.
-- وضعیت جزئی قابلیت‌ها در `docs/persons/persons-module-manifest.json` و `docs/persons/G1_PREPARATION_AND_ENTRY_CHECKLIST_FA.md` ثبت می‌شود.
+- در main پس از PR #50، store/retention worker داده موقت و transactional Party-merge coordinator به‌صورت partial وجود دارند؛ این‌ها معادل پذیرش کامل AC-31..45 نیستند. وضعیت جزئی قابلیت‌ها در `docs/persons/persons-module-manifest.json` و `docs/persons/G1_PREPARATION_AND_ENTRY_CHECKLIST_FA.md` ثبت می‌شود.
 
 این یادداشت فقط شفاف‌سازی وضعیت اجراست و هیچ مالکیت داده، قرارداد، مرز مسئولیت یا تصمیم معماری را تغییر نمی‌دهد.
