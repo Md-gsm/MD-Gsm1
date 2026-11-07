@@ -4,7 +4,7 @@ namespace MDGsm.Application.Persons;
 
 public interface IPartyRegistrationCommon
 {
-    string PrimaryMobile { get; }
+    string? PrimaryMobile { get; }
     string? AlternateMobile { get; }
     string? Landline { get; }
     string? Email { get; }
@@ -24,7 +24,7 @@ public interface IPartyRegistrationCommon
 
 public sealed record RegisterNaturalParty(
     string GivenName, string FamilyName, PartyBusinessRoles Roles, string? NationalId,
-    string PrimaryMobile, string? AlternateMobile, string? Landline, string? Email,
+    string? PrimaryMobile, string? AlternateMobile, string? Landline, string? Email,
     string? Province, string? City, string? PostalCode, string? AddressLine,
     long CreditLimitRial, decimal DefaultDiscountPercent, DefaultPaymentMethod DefaultPaymentMethod,
     string? BankCardLastFour, PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,
@@ -33,7 +33,7 @@ public sealed record RegisterNaturalParty(
 
 public sealed record RegisterLegalParty(
     string LegalName, string? LegalNationalId, string? EconomicCode, string? ResponsiblePersonName,
-    PartyBusinessRoles Roles, string PrimaryMobile, string? AlternateMobile, string? Landline, string? Email,
+    PartyBusinessRoles Roles, string? PrimaryMobile, string? AlternateMobile, string? Landline, string? Email,
     string? Province, string? City, string? PostalCode, string? AddressLine,
     long CreditLimitRial, decimal DefaultDiscountPercent, DefaultPaymentMethod DefaultPaymentMethod,
     string? BankCardLastFour, PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,

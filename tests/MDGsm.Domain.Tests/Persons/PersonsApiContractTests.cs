@@ -14,6 +14,9 @@ public sealed class PersonsApiContractTests
         Assert.Contains("/api/v1/persons/{partyId}:", contract, StringComparison.Ordinal);
         Assert.Contains("opaqueBearer:", contract, StringComparison.Ordinal);
         Assert.Contains("scheme: bearer", contract, StringComparison.Ordinal);
+        Assert.Contains("required: [givenName, familyName, roles]", contract, StringComparison.Ordinal);
+        Assert.Contains("required: [legalName, roles]", contract, StringComparison.Ordinal);
+        Assert.Contains("primaryMobile: { type: [string, 'null'] }", contract, StringComparison.Ordinal);
     }
 
     private static string FindRepositoryRoot()

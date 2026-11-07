@@ -5,7 +5,7 @@ public sealed record CreateNaturalPartyRequest(
     string FamilyName,
     string[] Roles,
     string? NationalId,
-    string PrimaryMobile,
+    string? PrimaryMobile,
     string? AlternateMobile,
     string? Landline,
     string? Email,
