@@ -14,7 +14,7 @@ public sealed class PersonsSecurityTests
         {
             RequestServices = new ServiceCollection().BuildServiceProvider()
         };
-        context.Request.Path = "/api/v1/persons/01936f3e-7b2a-7abc-8def-0123456789ab";
+        context.Request.Path = "/api/v2/persons/01936f3e-7b2a-7abc-8def-0123456789ab";
         context.Response.Body = new MemoryStream();
         var nextCalled = false;
 

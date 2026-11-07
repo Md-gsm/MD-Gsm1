@@ -26,6 +26,16 @@ public sealed class DenyByDefaultPartySensitiveDataAuthorizer : IPartySensitiveD
 public interface IPartyRepository
 {
     /// <summary>
+    /// Resolves an existing party by normalized mobile inside a caller-owned transaction.
+    /// Ambiguous or different-name matches require explicit selection; forceNew is an explicit override.
+    /// </summary>
+    Task<PartyQuickRegistrationResult> QuickRegisterNaturalAsync(RegisterNaturalParty request, string actorId,
+        Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken);
+
+    Task<PartyQuickRegistrationResult> QuickRegisterLegalAsync(RegisterLegalParty request, string actorId,
+        Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Registers a natural person idempotently by <paramref name="operationId"/> (V1: OperationId only, no payload comparison).
     /// When <paramref name="transaction"/> is supplied the write joins that caller-owned transaction (ADR-0005) and is not committed here.
     /// </summary>

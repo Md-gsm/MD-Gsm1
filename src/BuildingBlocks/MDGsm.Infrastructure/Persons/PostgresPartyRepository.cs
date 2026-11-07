@@ -45,6 +45,209 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             request, actorId, operationId, transaction, cancellationToken);
     }
 
+    public Task<PartyQuickRegistrationResult> QuickRegisterNaturalAsync(
+        RegisterNaturalParty request, string actorId, Guid operationId, bool forceNew,
+        string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        PartyRegistrationRules.ValidateRoles(request.Roles);
+        PartyRegistrationRules.ValidateWorkClassification(PartyType.NaturalPerson, request.Roles, request.WorkClassification);
+        return QuickRegisterAsync(request, PartyType.NaturalPerson,
+            PersianText.Normalize($"{request.GivenName} {request.FamilyName}"),
+            actorId, operationId, forceNew, selectedPartyId, transaction,
+            () => AddNaturalAsync(request, actorId, operationId, transaction, cancellationToken), cancellationToken);
+    }
+
+    public Task<PartyQuickRegistrationResult> QuickRegisterLegalAsync(
+        RegisterLegalParty request, string actorId, Guid operationId, bool forceNew,
+        string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        PartyRegistrationRules.ValidateRoles(request.Roles);
+        PartyRegistrationRules.ValidateWorkClassification(PartyType.LegalPerson, request.Roles, request.WorkClassification);
+        return QuickRegisterAsync(request, PartyType.LegalPerson, PersianText.Normalize(request.LegalName),
+            actorId, operationId, forceNew, selectedPartyId, transaction,
+            () => AddLegalAsync(request, actorId, operationId, transaction, cancellationToken), cancellationToken);
+    }
+
+    private async Task<PartyQuickRegistrationResult> QuickRegisterAsync(
+        IPartyRegistrationCommon request, PartyType requestedType, string requestedName,
+        string actorId, Guid operationId, bool forceNew, string? selectedPartyId,
+        DbTransaction ambientTransaction, Func<Task<PartyRegistrationResult>> create,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(ambientTransaction);
+        if (ambientTransaction is not NpgsqlTransaction transaction)
+            throw new ArgumentException("Quick registration requires an active PostgreSQL transaction.", nameof(ambientTransaction));
+        var connection = transaction.Connection;
+        if (connection is null || connection.State != System.Data.ConnectionState.Open)
+            throw new ArgumentException("Quick registration requires an open PostgreSQL connection.", nameof(ambientTransaction));
+        if (operationId == Guid.Empty)
+            throw new ArgumentException("A non-empty OperationId is required for quick registration.", nameof(operationId));
+        if (forceNew && !string.IsNullOrWhiteSpace(selectedPartyId))
+            throw new ArgumentException("forceNew and selectedPartyId cannot be used together.", nameof(selectedPartyId));
+        var actor = RequireActor(actorId);
+
+        // Lock order is always OperationId first, then normalized mobile. This makes retries stable
+        // and prevents two quick-registration stations from creating the same mobile concurrently.
+        await using (var operationLock = new NpgsqlCommand(
+            "SELECT pg_advisory_xact_lock(hashtextextended(@key, 0));", connection, transaction))
+        {
+            operationLock.Parameters.AddWithValue("key", operationId.ToString("D"));
+            await operationLock.ExecuteScalarAsync(cancellationToken);
+        }
+
+        await using (var replayCommand = new NpgsqlCommand(
+            "SELECT party_id FROM persons_operations WHERE operation_id = @operation;", connection, transaction))
+        {
+            replayCommand.Parameters.AddWithValue("operation", operationId);
+            var replay = await replayCommand.ExecuteScalarAsync(cancellationToken);
+            if (replay is Guid replayPartyId)
+                return new PartyQuickRegistrationResult(PartyQuickRegistrationOutcome.Replayed,
+                    replayPartyId.ToString("D"), false, Array.Empty<PartyQuickRegistrationCandidate>());
+        }
+
+        var normalizedMobile = string.IsNullOrWhiteSpace(request.PrimaryMobile)
+            ? null
+            : PartyContactPoint.Mobile(request.PrimaryMobile).Value;
+
+        if (normalizedMobile is null && !string.IsNullOrWhiteSpace(selectedPartyId))
+            throw new ArgumentException("Selecting an existing Party requires a mobile number to validate the candidate.", nameof(selectedPartyId));
+
+        if (normalizedMobile is not null)
+        {
+            // forceNew still takes the same lock so it cannot race with an ordinary quick registration.
+            await using (var mobileLock = new NpgsqlCommand(
+                "SELECT pg_advisory_xact_lock(hashtextextended(@key, 0));", connection, transaction))
+            {
+                mobileLock.Parameters.AddWithValue("key", "persons-mobile:" + normalizedMobile);
+                await mobileLock.ExecuteScalarAsync(cancellationToken);
+            }
+
+            var candidates = forceNew
+                ? Array.Empty<PartyQuickRegistrationCandidate>()
+                : await FindMobileCandidatesAsync(connection, transaction, normalizedMobile, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(selectedPartyId))
+            {
+                var selected = candidates.SingleOrDefault(x =>
+                    string.Equals(x.PartyId, selectedPartyId, StringComparison.OrdinalIgnoreCase));
+                if (selected is null || !selected.PartyIsActive || selected.IsMerged || !selected.HasActiveMobile || selected.Type != requestedType)
+                    throw new InvalidOperationException("The selected Party is not an active candidate of the requested identity type.");
+                await AddBusinessRolesAsync(connection, transaction, Guid.Parse(selected.PartyId), request, actor, cancellationToken);
+                await RecordQuickOperationAsync(connection, transaction, operationId, Guid.Parse(selected.PartyId), actor, cancellationToken);
+                return new PartyQuickRegistrationResult(PartyQuickRegistrationOutcome.ExistingPartyMatched,
+                    selected.PartyId, false, candidates);
+            }
+
+            if (candidates.Count > 0)
+            {
+                if (candidates.Count == 1)
+                {
+                    var candidate = candidates[0];
+                    if (candidate.PartyIsActive && !candidate.IsMerged && candidate.HasActiveMobile &&
+                        candidate.Type == requestedType &&
+                        string.Equals(PersianText.Normalize(candidate.DisplayName), requestedName, StringComparison.Ordinal))
+                    {
+                        var existingId = Guid.Parse(candidate.PartyId);
+                        await AddBusinessRolesAsync(connection, transaction, existingId, request, actor, cancellationToken);
+                        await RecordQuickOperationAsync(connection, transaction, operationId, existingId, actor, cancellationToken);
+                        return new PartyQuickRegistrationResult(PartyQuickRegistrationOutcome.ExistingPartyMatched,
+                            candidate.PartyId, false, candidates);
+                    }
+                }
+
+                return new PartyQuickRegistrationResult(PartyQuickRegistrationOutcome.SelectionRequired,
+                    null, false, candidates);
+            }
+        }
+
+        var registration = await create();
+        return new PartyQuickRegistrationResult(
+            registration.Created ? PartyQuickRegistrationOutcome.Created : PartyQuickRegistrationOutcome.Replayed,
+            registration.PartyId, registration.Created, Array.Empty<PartyQuickRegistrationCandidate>());
+    }
+
+    private static async Task<IReadOnlyList<PartyQuickRegistrationCandidate>> FindMobileCandidatesAsync(
+        NpgsqlConnection connection, NpgsqlTransaction transaction, string normalizedMobile,
+        CancellationToken cancellationToken)
+    {
+        // Merge execution is intentionally disabled and the current Persons schema has no merge marker.
+        // Keep IsMerged false until an approved merge schema and runtime are implemented together.
+        await using var command = new NpgsqlCommand("""
+            SELECT p.party_id, p.party_type, p.business_roles,
+                   CASE WHEN p.party_type = 1 THEN concat_ws(' ', p.given_name, p.family_name) ELSE p.legal_name END,
+                   p.is_active, false AS is_merged, bool_or(c.is_active)
+            FROM persons p
+            JOIN persons_contact_points c ON c.party_id = p.party_id
+            WHERE c.kind = 1 AND c.value = @mobile
+            GROUP BY p.party_id, p.party_type, p.business_roles, p.given_name, p.family_name,
+                     p.legal_name, p.is_active
+            ORDER BY p.is_active DESC, bool_or(c.is_active) DESC, p.party_id;
+            """, connection, transaction);
+        command.Parameters.AddWithValue("mobile", normalizedMobile);
+        var results = new List<PartyQuickRegistrationCandidate>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+            results.Add(new PartyQuickRegistrationCandidate(
+                reader.GetGuid(0).ToString("D"), (PartyType)reader.GetInt16(1),
+                reader.GetString(3), (PartyBusinessRoles)reader.GetInt16(2),
+                reader.GetBoolean(4), reader.GetBoolean(5), reader.GetBoolean(6),
+                PartyIdentifiers.MaskPhone(normalizedMobile)));
+        return results;
+    }
+
+    private static async Task AddBusinessRolesAsync(
+        NpgsqlConnection connection, NpgsqlTransaction transaction, Guid partyId,
+        IPartyRegistrationCommon request, string actor, CancellationToken cancellationToken)
+    {
+        await using (var lockCommand = new NpgsqlCommand("""
+            SELECT party_id
+            FROM persons
+            WHERE party_id = @party AND is_active = true
+            FOR UPDATE;
+            """, connection, transaction))
+        {
+            lockCommand.Parameters.AddWithValue("party", partyId);
+            if (await lockCommand.ExecuteScalarAsync(cancellationToken) is null)
+                throw new InvalidOperationException("The selected Party is no longer active.");
+        }
+
+        await using var command = new NpgsqlCommand("""
+            UPDATE persons
+            SET business_roles = (business_roles | @roles),
+                updated_at_utc = now(),
+                updated_by = @actor,
+                row_version = row_version + 1
+            WHERE party_id = @party
+              AND is_active = true
+              AND (business_roles | @roles) <> business_roles;
+            """, connection, transaction);
+        var roles = request switch
+        {
+            RegisterNaturalParty natural => natural.Roles,
+            RegisterLegalParty legal => legal.Roles,
+            _ => throw new ArgumentOutOfRangeException(nameof(request))
+        };
+        command.Parameters.AddWithValue("roles", (short)roles);
+        command.Parameters.AddWithValue("actor", actor);
+        command.Parameters.AddWithValue("party", partyId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task RecordQuickOperationAsync(
+        NpgsqlConnection connection, NpgsqlTransaction transaction, Guid operationId,
+        Guid partyId, string actor, CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand("""
+            INSERT INTO persons_operations (operation_id, party_id, actor)
+            VALUES (@operation, @party, @actor);
+            """, connection, transaction);
+        command.Parameters.AddWithValue("operation", operationId);
+        command.Parameters.AddWithValue("party", partyId);
+        command.Parameters.AddWithValue("actor", actor);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private Task<PartyRegistrationResult> InsertAsync(
         PartyId partyId, PartyType partyType, PartyBusinessRoles roles,
         string? givenName, string? familyName, string? legalName,
@@ -59,8 +262,6 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             throw new ArgumentOutOfRangeException(nameof(request));
         ArgumentNullException.ThrowIfNull(request.CommunicationPreferences);
         var note = PartyRegistrationRules.RequireInternalNote(request.InternalNote);
-        var financial = PartyFinancialProfile.Create(request.CreditLimitRial, request.DefaultDiscountPercent,
-            request.DefaultPaymentMethod, request.BankCardLastFour);
         var contacts = new List<PartyContactPoint>();
         if (!string.IsNullOrWhiteSpace(request.PrimaryMobile))
         {
@@ -107,12 +308,11 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
                 INSERT INTO persons
                   (party_id, party_type, business_roles, given_name, family_name, legal_name,
                    national_id, legal_national_id, economic_code, responsible_person_name,
-                   acquaintance_source, internal_note, credit_limit_rial, default_discount_percent,
-                   default_payment_method, bank_card_last_four, repair_status_sms_enabled,
+                   acquaintance_source, internal_note, repair_status_sms_enabled,
                    ready_for_delivery_sms_enabled, promotions_sms_enabled, created_by, updated_by, work_classification)
                 VALUES
                   (@id, @type, @roles, @given, @family, @legal, @national, @legalNational, @economic, @responsible,
-                   @source, @note, @credit, @discount, @payment, @lastFour, @repairSms, @readySms, @promoSms, @actor, @actor, @workClass);
+                   @source, @note, @repairSms, @readySms, @promoSms, @actor, @actor, @workClass);
                 """, connection, transaction))
             {
                 command.Parameters.AddWithValue("id", partyId.Value);
@@ -124,10 +324,6 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
                 AddNullable(command, "responsible", responsible);
                 command.Parameters.AddWithValue("source", (short)request.AcquaintanceSource);
                 command.Parameters.AddWithValue("note", note);
-                command.Parameters.AddWithValue("credit", financial.CreditLimitRial);
-                command.Parameters.AddWithValue("discount", financial.DefaultDiscountPercent);
-                command.Parameters.AddWithValue("payment", (short)financial.DefaultPaymentMethod);
-                AddNullable(command, "lastFour", financial.BankCardLastFour);
                 command.Parameters.AddWithValue("repairSms", request.CommunicationPreferences.RepairStatusSmsEnabled);
                 command.Parameters.AddWithValue("readySms", request.CommunicationPreferences.ReadyForDeliverySmsEnabled);
                 command.Parameters.AddWithValue("promoSms", request.CommunicationPreferences.PromotionsSmsEnabled);
@@ -264,10 +460,6 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             string? responsible;
             PartyAcquaintanceSource source;
             string note;
-            long credit;
-            decimal discount;
-            DefaultPaymentMethod payment;
-            string? lastFour;
             PartyCommunicationPreferences preferences;
             DateTimeOffset created;
             WorkClassification? workClassification;
@@ -275,8 +467,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             await using (var command = new NpgsqlCommand("""
                 SELECT party_type, business_roles, given_name, family_name, legal_name, national_id,
                        legal_national_id, economic_code, responsible_person_name, acquaintance_source,
-                       internal_note, credit_limit_rial, default_discount_percent, default_payment_method,
-                       bank_card_last_four, repair_status_sms_enabled, ready_for_delivery_sms_enabled,
+                       internal_note, repair_status_sms_enabled, ready_for_delivery_sms_enabled,
                        promotions_sms_enabled, created_at_utc, work_classification
                 FROM persons WHERE party_id=@id AND is_active;
                 """, connection, tx))
@@ -294,13 +485,9 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
                 responsible = reader.IsDBNull(8) ? null : reader.GetString(8);
                 source = (PartyAcquaintanceSource)reader.GetInt16(9);
                 note = reader.GetString(10);
-                credit = reader.GetInt64(11);
-                discount = reader.GetDecimal(12);
-                payment = (DefaultPaymentMethod)reader.GetInt16(13);
-                lastFour = reader.IsDBNull(14) ? null : reader.GetString(14).Trim();
-                preferences = new PartyCommunicationPreferences(reader.GetBoolean(15), reader.GetBoolean(16), reader.GetBoolean(17));
-                created = reader.GetFieldValue<DateTimeOffset>(18);
-                workClassification = reader.IsDBNull(19) ? null : (WorkClassification)reader.GetInt16(19);
+                preferences = new PartyCommunicationPreferences(reader.GetBoolean(11), reader.GetBoolean(12), reader.GetBoolean(13));
+                created = reader.GetFieldValue<DateTimeOffset>(14);
+                workClassification = reader.IsDBNull(15) ? null : (WorkClassification)reader.GetInt16(15);
             }
 
             var contacts = new List<ContactPointDto>();
@@ -339,15 +526,11 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
                 }
             }
 
-            long? visibleCredit = includeSensitive ? credit : null;
             return new PartyDetails(id.ToString(), type, display, roles,
                 includeSensitive || national is null ? national : PartyIdentifiers.MaskIdentifier(national),
                 includeSensitive ? economic : null,
                 includeSensitive || responsible is null ? responsible : PartyIdentifiers.MaskPersonName(responsible),
-                contacts, address, visibleCredit,
-                includeSensitive ? discount : null,
-                includeSensitive ? payment : null,
-                includeSensitive ? lastFour : null,
+                contacts, address,
                 includeSensitive ? source : null,
                 includeSensitive ? note : null,
                 includeSensitive ? preferences : null,

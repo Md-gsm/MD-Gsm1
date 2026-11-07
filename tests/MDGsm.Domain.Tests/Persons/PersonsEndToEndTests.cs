@@ -12,7 +12,155 @@ namespace MDGsm.Domain.Tests.Persons;
 /// </summary>
 public sealed class PersonsEndToEndTests
 {
+    [Fact]
+    public void Persons_details_contract_does_not_expose_finance_owned_fields()
+    {
+        var properties = typeof(PartyDetails).GetProperties().Select(property => property.Name).ToHashSet(StringComparer.Ordinal);
+        Assert.DoesNotContain("CreditLimitRial", properties);
+        Assert.DoesNotContain("DefaultDiscountPercent", properties);
+        Assert.DoesNotContain("DefaultPaymentMethod", properties);
+        Assert.DoesNotContain("BankCardLastFour", properties);
+    }
+
     private const string Actor = "ci-test-user";
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Quick_registration_same_mobile_and_same_name_reuses_party_and_adds_role()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var mobile = "09125550123";
+        var first = await scope.Repository.AddNaturalAsync(
+            NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+
+        var quick = await scope.Repository.QuickRegisterNaturalAsync(
+            NewNatural(mobile, NewNationalId()) with { Roles = PartyBusinessRoles.Customer | PartyBusinessRoles.Colleague },
+            Actor, Guid.CreateVersion7(), forceNew: false, selectedPartyId: null, scope.Transaction, default);
+
+        Assert.Equal(PartyQuickRegistrationOutcome.ExistingPartyMatched, quick.Outcome);
+        Assert.Equal(first.PartyId, quick.PartyId);
+        Assert.False(quick.Created);
+        var matchedCandidate = Assert.Single(quick.Candidates);
+        Assert.Equal(first.PartyId, matchedCandidate.PartyId);
+        Assert.False(matchedCandidate.IsMerged);
+        Assert.Equal(3L, await ScalarAsync(scope,
+            "SELECT business_roles::bigint FROM persons WHERE party_id = @id", Guid.Parse(first.PartyId)));
+        Assert.Equal(1L, await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550123' AND is_active AND @id = @id", Guid.Empty));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Quick_registration_requires_explicit_choice_for_different_name_and_supports_force_new()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var mobile = "09125550124";
+        var first = await scope.Repository.AddNaturalAsync(
+            NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+        var operation = Guid.CreateVersion7();
+        var differentName = NewNatural(mobile, NewNationalId()) with
+        {
+            GivenName = "سارا",
+            FamilyName = "محمدی",
+            Roles = PartyBusinessRoles.Colleague
+        };
+
+        var ambiguous = await scope.Repository.QuickRegisterNaturalAsync(
+            differentName, Actor, operation, forceNew: false, selectedPartyId: null, scope.Transaction, default);
+
+        Assert.Equal(PartyQuickRegistrationOutcome.SelectionRequired, ambiguous.Outcome);
+        Assert.Null(ambiguous.PartyId);
+        var candidate = Assert.Single(ambiguous.Candidates);
+        Assert.Equal(first.PartyId, candidate.PartyId);
+        Assert.Equal(1L, await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550124' AND is_active AND @id = @id", Guid.Empty));
+
+        var selected = await scope.Repository.QuickRegisterNaturalAsync(
+            differentName, Actor, operation, forceNew: false, selectedPartyId: candidate.PartyId, scope.Transaction, default);
+        Assert.Equal(PartyQuickRegistrationOutcome.ExistingPartyMatched, selected.Outcome);
+        Assert.Equal(first.PartyId, selected.PartyId);
+        Assert.Equal(3L, await ScalarAsync(scope,
+            "SELECT business_roles::bigint FROM persons WHERE party_id = @id", Guid.Parse(first.PartyId)));
+
+        var forced = await scope.Repository.QuickRegisterNaturalAsync(
+            differentName, Actor, Guid.CreateVersion7(), forceNew: true, selectedPartyId: null, scope.Transaction, default);
+        Assert.Equal(PartyQuickRegistrationOutcome.Created, forced.Outcome);
+        Assert.True(forced.Created);
+        Assert.NotEqual(first.PartyId, forced.PartyId);
+        Assert.Equal(2L, await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550124' AND is_active AND @id = @id", Guid.Empty));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Quick_registration_rejects_selection_when_the_matching_mobile_is_inactive()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        const string mobile = "09125550126";
+        var first = await scope.Repository.AddNaturalAsync(
+            NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+
+        await using (var deactivate = new NpgsqlCommand("""
+            UPDATE persons_contact_points
+            SET is_active = false
+            WHERE party_id = @party AND kind = 1 AND value = '+989125550126';
+            """, scope.Connection, scope.Transaction))
+        {
+            deactivate.Parameters.AddWithValue("party", Guid.Parse(first.PartyId));
+            Assert.Equal(1, await deactivate.ExecuteNonQueryAsync());
+        }
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            scope.Repository.QuickRegisterNaturalAsync(
+                NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(),
+                forceNew: false, selectedPartyId: first.PartyId, scope.Transaction, default));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Concurrent_quick_registration_of_same_mobile_creates_exactly_one_party()
+    {
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__MDGsmDatabase");
+        Assert.False(string.IsNullOrWhiteSpace(connectionString));
+        await using var dataSource = NpgsqlDataSource.Create(connectionString!);
+        await using var markerConnection = await dataSource.OpenConnectionAsync();
+        await using var marker = new NpgsqlCommand(
+            "SELECT coalesce(shobj_description(oid, 'pg_database'), '') FROM pg_database WHERE datname = current_database()",
+            markerConnection);
+        var databaseMarker = (string?)await marker.ExecuteScalarAsync();
+        Assert.Contains("MDGSM_DISPOSABLE_TEST_DB", databaseMarker ?? string.Empty);
+
+        var start = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var mobile = "09125550125";
+        async Task<PartyQuickRegistrationResult> RegisterAsync(string actor)
+        {
+            await using var connection = await dataSource.OpenConnectionAsync();
+            await using var transaction = await connection.BeginTransactionAsync();
+            await start.Task;
+            var result = await new PostgresPartyRepository(dataSource).QuickRegisterNaturalAsync(
+                NewNatural(mobile, NewNationalId()), actor, Guid.CreateVersion7(),
+                forceNew: false, selectedPartyId: null, transaction, default);
+            await transaction.CommitAsync();
+            return result;
+        }
+
+        var firstTask = RegisterAsync("ci-quick-station-1");
+        var secondTask = RegisterAsync("ci-quick-station-2");
+        start.SetResult(true);
+        var results = await Task.WhenAll(firstTask, secondTask);
+
+        Assert.Single(results, x => x.Outcome == PartyQuickRegistrationOutcome.Created);
+        Assert.Single(results, x => x.Outcome == PartyQuickRegistrationOutcome.ExistingPartyMatched);
+        Assert.Single(results.Select(x => x.PartyId).Distinct());
+        await using var verifyConnection = await dataSource.OpenConnectionAsync();
+        await using var verify = new NpgsqlCommand("""
+            SELECT count(DISTINCT p.party_id)
+            FROM persons p
+            JOIN persons_contact_points c ON c.party_id = p.party_id
+            WHERE c.kind = 1 AND c.value = '+989125550125' AND c.is_active;
+            """, verifyConnection);
+        Assert.Equal(1L, (long)(await verify.ExecuteScalarAsync())!);
+    }
 
     [Fact]
     [Trait("Category", "Integration")]
@@ -44,15 +192,13 @@ public sealed class PersonsEndToEndTests
         await using var scope = await TestScope.OpenAsync();
         var nationalId = NewNationalId();
         var created = await scope.Repository.AddNaturalAsync(
-            NewNatural("09121234567", nationalId, creditLimitRial: 5_000_000, lastFour: "4321"), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+            NewNatural("09121234567", nationalId), Actor, Guid.CreateVersion7(), scope.Transaction, default);
 
         var masked = await scope.Repository.GetAsync(created.PartyId, Actor, includeSensitive: false, scope.Transaction, default);
         var full = await scope.Repository.GetAsync(created.PartyId, Actor, includeSensitive: true, scope.Transaction, default);
 
         Assert.NotNull(masked);
         Assert.False(masked.SensitiveFieldsIncluded);
-        Assert.Null(masked.CreditLimitRial);
-        Assert.Null(masked.BankCardLastFour);
         Assert.Null(masked.InternalNote);
         Assert.Null(masked.EconomicCode);
         Assert.EndsWith(nationalId[^3..], masked.NationalIdentifier);
@@ -62,18 +208,12 @@ public sealed class PersonsEndToEndTests
 
         Assert.NotNull(full);
         Assert.True(full.SensitiveFieldsIncluded);
-        Assert.Equal((long?)5_000_000, full.CreditLimitRial);
-        Assert.Equal("4321", full.BankCardLastFour);
         Assert.Equal(nationalId, full.NationalIdentifier);
-        Assert.NotNull(full.DefaultDiscountPercent);
-        Assert.NotNull(full.DefaultPaymentMethod);
         Assert.NotNull(full.AcquaintanceSource);
         Assert.NotNull(full.CommunicationPreferences);
 
         Assert.Equal(2L, await ScalarAsync(scope, "SELECT count(*) FROM persons_access_audit WHERE party_id = @id", Guid.Parse(created.PartyId)));
         Assert.Equal(1L, await ScalarAsync(scope, "SELECT count(*) FROM persons_access_audit WHERE party_id = @id AND sensitive_included", Guid.Parse(created.PartyId)));
-        Assert.Null(masked.DefaultDiscountPercent);
-        Assert.Null(masked.DefaultPaymentMethod);
         Assert.Null(masked.AcquaintanceSource);
         Assert.Null(masked.CommunicationPreferences);
         Assert.Equal("م*** م****", PartyIdentifiers.MaskPersonName("مدیر مسئول"));
@@ -275,16 +415,14 @@ public sealed class PersonsEndToEndTests
         new("شرکت آزمایشی", legalNationalId, "1234567890", "نام مسئول شرکت",
             PartyBusinessRoles.Customer, "09126666666", null, null, null,
             "تهران", "تهران", "1234567890", "خیابان آزمایشی",
-            0, 0m, DefaultPaymentMethod.Cash, null, PartyAcquaintanceSource.Unknown,
-            "یادداشت داخلی", PartyCommunicationPreferences.Default);
+            PartyAcquaintanceSource.Unknown, "یادداشت داخلی", PartyCommunicationPreferences.Default);
 
     private static string NewNationalId() => Random.Shared.NextInt64(1_000_000_000L, 9_999_999_999L).ToString();
 
-    private static RegisterNaturalParty NewNatural(string? mobile, string? nationalId, long creditLimitRial = 0, string? lastFour = null) =>
+    private static RegisterNaturalParty NewNatural(string? mobile, string? nationalId) =>
         new(PersianTestData.AliArabicYeh, PersianTestData.RezaeiArabicYeh, PartyBusinessRoles.Customer, nationalId, mobile, null, null, null,
             "تهران", "تهران", "1234567890", "خیابان آزمایشی ۱۲",
-            creditLimitRial, 0m, DefaultPaymentMethod.Cash, lastFour, PartyAcquaintanceSource.Unknown, "یادداشت داخلی",
-            PartyCommunicationPreferences.Default);
+            PartyAcquaintanceSource.Unknown, "یادداشت داخلی", PartyCommunicationPreferences.Default);
 
     private static async Task<long> ScalarAsync(TestScope scope, string sql, Guid id)
     {

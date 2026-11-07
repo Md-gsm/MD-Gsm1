@@ -18,7 +18,7 @@ public sealed class SessionAuthenticationMiddlewareTests
         var resolver = new StubResolver(new ValidatedSessionIdentity(AccountId.From(TrustedAccount), 7));
         var sessions = new StubSessions(true);
         var services = CreateServices(resolver, sessions);
-        var context = CreateContext(services, "/api/v1/persons/" + Guid.NewGuid().ToString("D"));
+        var context = CreateContext(services, "/api/v2/persons/" + Guid.NewGuid().ToString("D"));
         context.Request.Headers.Authorization = "Bearer " + new string('A', 43);
         context.Request.Headers["X-Actor-Id"] = Guid.NewGuid().ToString("D");
         var called = false;
@@ -37,7 +37,7 @@ public sealed class SessionAuthenticationMiddlewareTests
     [Fact]
     public async Task Rejects_token_when_database_has_no_matching_live_session()
     {
-        var context = CreateContext(CreateServices(new StubResolver(null), new StubSessions(false)), "/api/v1/persons/123");
+        var context = CreateContext(CreateServices(new StubResolver(null), new StubSessions(false)), "/api/v2/persons/123");
         context.Request.Headers.Authorization = "Bearer " + new string('A', 43);
         var called = false;
         await new SessionAuthenticationMiddleware(_ => { called = true; return Task.CompletedTask; }).InvokeAsync(context);
@@ -49,7 +49,7 @@ public sealed class SessionAuthenticationMiddlewareTests
     public async Task Rejects_session_when_lease_renewal_fails()
     {
         var resolver = new StubResolver(new ValidatedSessionIdentity(AccountId.From(TrustedAccount), 7));
-        var context = CreateContext(CreateServices(resolver, new StubSessions(false)), "/api/v1/persons/123");
+        var context = CreateContext(CreateServices(resolver, new StubSessions(false)), "/api/v2/persons/123");
         context.Request.Headers.Authorization = "Bearer " + new string('A', 43);
         var called = false;
         await new SessionAuthenticationMiddleware(_ => { called = true; return Task.CompletedTask; }).InvokeAsync(context);
@@ -60,7 +60,7 @@ public sealed class SessionAuthenticationMiddlewareTests
     [Fact]
     public async Task Rejects_missing_bearer_token()
     {
-        var context = CreateContext(CreateServices(new StubResolver(null), new StubSessions(false)), "/api/v1/persons/123");
+        var context = CreateContext(CreateServices(new StubResolver(null), new StubSessions(false)), "/api/v2/persons/123");
         await new SessionAuthenticationMiddleware(_ => Task.CompletedTask).InvokeAsync(context);
         Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
     }
@@ -68,7 +68,7 @@ public sealed class SessionAuthenticationMiddlewareTests
     [Fact]
     public async Task Fails_closed_with_service_unavailable_when_session_services_are_not_registered()
     {
-        var context = CreateContext(new ServiceCollection().BuildServiceProvider(), "/api/v1/persons/123");
+        var context = CreateContext(new ServiceCollection().BuildServiceProvider(), "/api/v2/persons/123");
         context.Request.Headers.Authorization = "Bearer " + new string('A', 43);
         await new SessionAuthenticationMiddleware(_ => Task.CompletedTask).InvokeAsync(context);
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, context.Response.StatusCode);
