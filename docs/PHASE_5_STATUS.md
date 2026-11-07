@@ -1,5 +1,7 @@
 # Stage 5 — Desktop-to-API connection
 
+> **Historical stage record.** This file records the original Stage 5 scope and its validation at that point in project history. It is not the current whole-repository implementation inventory. Current status is maintained in `docs/architecture/overview.md`, `docs/security/security-model.md`, and `docs/persons/G1_PREPARATION_AND_ENTRY_CHECKLIST_FA.md`.
+
 ## Implemented
 - The typed HTTP client is in the shared building block project `src/BuildingBlocks/MDGsm.Client`, independent of WPF.
 - Desktop reads `Api:BaseUrl` and `Api:TimeoutSeconds` from its output `appsettings.json`; invalid values fail fast rather than silently falling back.

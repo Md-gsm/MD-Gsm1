@@ -51,7 +51,7 @@ NFC نه NFKC؛ بدون trim خاموش؛ طول 3..64 Unicode scalar؛ فقط 
 Break-glass فقط کنسول محلی؛ دو کانال مستقل ایمیل و موبایل به‌علاوه recovery code آفلاین یک‌بارمصرف با entropy حداقل 128 بیت و فقط digest در DB. challengeها کوتاه‌عمر و request-bound؛ rate limit، مصرف اتمیک code، revoke تمام نشست‌ها، افزایش credential_version، must_change_password و fail-closed شبکه. backdoor/رمز ثابت/endpoint عمومی ممنوع. فقدان کانال یا code هیچ bypass خودکاری ندارد؛ مسیر فیزیکی فقط پس از طراحی ابزار امضاشده و تأیید دو نفره. replay/race/expiry/DB-failure/secret-free-log tests و threat-model review لازم‌اند.
 
 ## 5. Security review و G1
-پرونده review آماده است، اما review مستقل و امضای مالک انجام نشده. reviewer باید token/digest/revoke، password hash/rehash، lockout/rate limit، bootstrap، session cap/lease، permission enforcement، recovery، audit/retention، TLS/firewall و dependency boundaries را بررسی کند. سبزشدن CI جایگزین review نیست. فرم reviewer باید SHA، یافته‌ها، نتیجه و امضا داشته باشد؛ مالک باید صریحاً G1 را authorize کند. تا آن زمان `g1Authorized=false` و PR #31 Open+Draft+Unmerged.
+پرونده review آماده است، اما review مستقل روی commit جاری و امضای پذیرش نهایی هنوز ثبت نشده‌اند. reviewer باید token/digest/revoke، password hash/rehash، lockout/rate limit، bootstrap، session cap/lease، permission enforcement، recovery، audit/retention، TLS/firewall و dependency boundaries را بررسی کند. سبزشدن CI جایگزین review نیست. فرم reviewer باید SHA، یافته‌ها، نتیجه و امضا داشته باشد؛ مالک باید صریحاً G1 را authorize کند. تا آن زمان `g1Authorized=false` باقی می‌ماند. PR #31 اکنون Closed و Unmerged است؛ بسته‌شدن PR به معنی حذف کدهای پذیرفته‌شده در شاخه‌های دیگر یا تکمیل IdentityAccess نیست.
 
 
 ## به‌روزرسانی 2026-11-06 — اتصال HTTP ورود
@@ -60,4 +60,11 @@ Break-glass فقط کنسول محلی؛ دو کانال مستقل ایمیل �
 - مسیر `POST /api/v1/identity/password/change` اضافه شده است؛ نشست اجباری فقط همین مسیر را می‌تواند فراخوانی کند و پس از تغییر رمز تمام نشست‌ها revoke و credential version افزایش می‌یابد.
 - تست سرتاسری با API host واقعی و PostgreSQL موقت اضافه شده است: login HTTP، دریافت token، محدودیت must-change، تغییر رمز، رد token قبلی، ورود مجدد و عبور تا مجوز Persons.
 - برای جلوگیری از فعال‌شدن ناخواسته، HTTP login فقط با `IdentityAccess:HttpLoginEnabled=true` فعال می‌شود؛ مقدار پیش‌فرض خاموش است.
-- این موارد هنوز تا اجرای موفق CI روی head جدید و بازبینی امنیتی مستقل «تأییدشده» محسوب نمی‌شوند. هیچ migration تولیدی، bootstrap credential، listener/TLS تولیدی یا G1 authorization فعال نشده است.
+- CI فعلی main روی commit `194720455d01a5f88b1996ed9b100b7bc7ec363b` موفق شده است (Persons Module Gates run `42381030785` با ۱۳/۱۳ job، CodeQL run `42381030784` و Project Charter Owner Gate run `42381030735`). این موفقیت جایگزین بازبینی امنیتی مستقل روی commit جاری نیست. هیچ migration تولیدی، bootstrap credential، listener/TLS تولیدی یا G1 authorization فعال نشده است.
+
+
+## وضعیت PR و Runtime — 2026-11-07
+
+- PR #31 در GitHub با وضعیت Closed و Unmerged ثبت شده است؛ آن را Open+Draft معرفی نکنید.
+- مسیرهای HTTP login و password change در main وجود دارند و در تست API/PostgreSQL موقت پوشش داده شده‌اند؛ feature flag ورود HTTP به‌صورت پیش‌فرض خاموش است.
+- production bootstrap، recovery نهایی مدیر، deployment listener/TLS، بازبینی مستقل امنیت/حریم خصوصی و مجوز G1 همچنان باز هستند.

@@ -35,8 +35,33 @@
     "windowsPostgres18Validated": true,
     "applicationMigrationRunnerValidated": true
   },
-  "note": "The protected GET /api/v2/persons/{partyId} detail endpoint is implemented and derives its actor from the PostgreSQL-validated IdentityAccess session boundary; sensitive fields require the live persons.sensitive.read permission. Search and create endpoints, HTTP login/token issuance, production IdentityAccess migration/permission seed, bootstrap credential, and production listener remain unimplemented or disabled. Migration 0002 is included in the application-owned runner but has not been applied to any non-disposable database. G1 remains unauthorized; do not merge or release.",
+  "note": "Main contains a protected GET /api/v1/persons/{partyId} detail endpoint backed by PostgreSQL and the IdentityAccess-validated session boundary; sensitive fields require persons.sensitive.read. Persons create/search endpoints, the complete Contact Point lifecycle, operational Desktop write UI, temporary-data cleanup runtime, and merge execution remain incomplete. IdentityAccess server-side security/session runtime and HTTP login/password-change paths are present and covered by disposable PostgreSQL/API tests; HTTP login is feature-gated and defaults off. Production bootstrap/recovery/listener and independent security acceptance remain open. Persons business migration(s) are included in the application-owned DbMigrator and have been validated only against disposable PostgreSQL 18 Linux/Windows databases. No real/production database has been migrated. G1 remains unauthorized; do not activate, release, or merge as a G1 completion. Previously recorded CI run IDs refer to pre-PR-40 main commit 194720455d01a5f88b1996ed9b100b7bc7ec363b only; fresh validation is required for current main and reconciled PR head.",
   "validationEvidenceReference": "docs/operations/evidence/g0-ci-validation-2026-10-31.json",
   "runtimeHostBuildingBlocksRelocated": true,
-  "personsInternalCodePlacement": "TRANSITIONAL_BUILDINGBLOCKS_PER_ADR_0014"
+  "personsInternalCodePlacement": "TRANSITIONAL_BUILDINGBLOCKS_PER_ADR_0014",
+  "evidenceNote": "Required Status Checks are recorded as configured from the latest repository governance audit; the dedicated Branch Protection details endpoint returned HTTP 403 during the 2026-11-07 documentation synchronization, so a fresh direct readback should be attached by a repository Admin when available.",
+  "historicalValidationBeforePr40": {
+    "commit": "194720455d01a5f88b1996ed9b100b7bc7ec363b",
+    "validatedAtUtc": "2026-11-07",
+    "personsModuleGates": {
+      "runId": 42381030785,
+      "result": "SUCCESS",
+      "jobs": "13/13"
+    },
+    "codeql": {
+      "runId": 42381030784,
+      "result": "SUCCESS"
+    },
+    "windowsPreviewInstaller": {
+      "runId": 42381030763,
+      "result": "SUCCESS"
+    },
+    "projectCharterOwnerGate": {
+      "runId": 42381030735,
+      "result": "SUCCESS"
+    },
+    "databaseScope": "Disposable PostgreSQL 18 Linux/Windows CI only; no production or real-data database migration."
+  },
+  "currentMainCommit": "a5afb4bd37c059b35708c6b0ba0ae52c3d9a38e0",
+  "currentMainCiStatus": "PENDING_FRESH_COMMIT_BOUND_RUNS"
 }
