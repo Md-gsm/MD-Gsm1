@@ -171,6 +171,8 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         NpgsqlConnection connection, NpgsqlTransaction transaction, string normalizedMobile,
         CancellationToken cancellationToken)
     {
+        // Merge execution is intentionally disabled and the current Persons schema has no merge marker.
+        // Keep IsMerged false until an approved merge schema and runtime are implemented together.
         await using var command = new NpgsqlCommand("""
             SELECT p.party_id, p.party_type, p.business_roles,
                    CASE WHEN p.party_type = 1 THEN concat_ws(' ', p.given_name, p.family_name) ELSE p.legal_name END,
@@ -201,7 +203,8 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         await using (var lockCommand = new NpgsqlCommand("""
             SELECT party_id
             FROM persons
-            WHERE party_id = @party AND is_active = true             FOR UPDATE;
+            WHERE party_id = @party AND is_active = true
+            FOR UPDATE;
             """, connection, transaction))
         {
             lockCommand.Parameters.AddWithValue("party", partyId);
@@ -217,7 +220,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
                 row_version = row_version + 1
             WHERE party_id = @party
               AND is_active = true
-                            AND (business_roles | @roles) <> business_roles;
+              AND (business_roles | @roles) <> business_roles;
             """, connection, transaction);
         var roles = request switch
         {
