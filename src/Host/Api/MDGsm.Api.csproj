@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\BuildingBlocks\MDGsm.Application\MDGsm.Application.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\MDGsm.Infrastructure\MDGsm.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Persons\Contracts\MDGsm.Persons.Contracts.csproj" />
+    <ProjectReference Include="..\..\Modules\IdentityAccess\Contracts\MDGsm.IdentityAccess.Contracts.csproj" />
+    <ProjectReference Include="..\..\Modules\RepairOperations\Contracts\MDGsm.RepairOperations.Contracts.csproj" />
+    <ProjectReference Include="..\..\Modules\Finance\Contracts\MDGsm.Finance.Contracts.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,71 @@
+name: Project Charter Owner Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  project-charter-owner-gate:
+    name: project-charter-owner-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout compared revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Require project-owner authorization for charter changes
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          EVENT_ACTOR: ${{ github.actor }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          PUSH_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          target='docs/governance/PROJECT_GOVERNANCE_CHARTER_FA.md'
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            changed="$(git diff --name-only "$BASE_SHA...$HEAD_SHA")"
+            if [[ "$PR_AUTHOR" != "Md-gsm" ]]; then
+              echo "::error::Only project owner Md-gsm may open a pull request that changes the project charter."
+              exit 1
+            fi
+            # A later push to the same PR branch is a new authorization event.
+            # Do not let a collaborator update an owner-authored PR to alter the charter.
+            if [[ "$EVENT_ACTION" == "synchronize" && "$EVENT_ACTOR" != "Md-gsm" ]]; then
+              echo "::error::Only project owner Md-gsm may push charter changes to the PR branch."
+              exit 1
+            fi
+            authorized_actor="$PR_AUTHOR"
+          else
+            if [[ -z "$BEFORE_SHA" || "$BEFORE_SHA" =~ ^0+$ ]]; then
+              changed="$(git diff-tree --no-commit-id --name-only -r "$AFTER_SHA")"
+            else
+              changed="$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA")"
+            fi
+            authorized_actor="$PUSH_ACTOR"
+          fi
+
+          if ! printf '%s\n' "$changed" | grep -Fxq "$target"; then
+            echo "Charter unchanged; owner gate passed."
+            exit 0
+          fi
+
+          if [[ "$authorized_actor" != "Md-gsm" ]]; then
+            echo "::error::Only GitHub project owner Md-gsm may submit a change to $target."
+            exit 1
+          fi
+
+          echo "Charter change was submitted by the authorized project owner."

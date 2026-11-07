@@ -1,0 +1,38 @@
+# .NET build output
+**/bin/
+**/obj/
+.vs/
+TestResults/
+artifacts/
+
+# IDE and local environment
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.idea/
+.vscode/
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+secrets.json
+
+# Logs and temporary data
+*.log
+logs/
+tmp/
+temp/
+
+# Generated packages / test databases
+*.nupkg
+*.snupkg
+*.dump
+*.backup
+*.bak
+
+# Python validation cache
+__pycache__/
+*.py[cod]

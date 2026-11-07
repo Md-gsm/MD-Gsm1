@@ -1,0 +1,59 @@
+{
+  "evidenceVersion": "1.0",
+  "repository": "Md-gsm/MD-Gsm1",
+  "pullRequest": 8,
+  "branch": "hardening/g0-alignment-and-ci-2026-10-31",
+  "validatedCommit": "7bcc423a87b44e19291f4f28d04858e06e74515c",
+  "validationRun": {
+    "id": 41185491539,
+    "url": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41185491539",
+    "workflow": "MD-Gsm Persons Module Gates",
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "success",
+    "totalJobs": 13,
+    "passedJobs": 13,
+    "failedJobs": 0,
+    "jobs": [
+      "foundation-build-test",
+      "persons-spec-lint",
+      "persons-architecture-boundary",
+      "persons-consumer-registry",
+      "persons-api-contract",
+      "persons-temporary-data-retention",
+      "persons-merge-contract",
+      "persons-postgres-migrations",
+      "persons-postgres-windows-migrations",
+      "persons-security-tests",
+      "persons-e2e-disposable",
+      "persons-ci-enforcement-test",
+      "persons-ci-evidence"
+    ]
+  },
+  "windowsPreviewInstaller": {
+    "runId": 41185066512,
+    "url": "https://github.com/Md-gsm/MD-Gsm1/actions/runs/41185066512",
+    "commit": "de9ffc1aab96e8954abff417a32f51cd6bb3e362",
+    "conclusion": "success",
+    "note": "Commits 2dbf11f464c3013174367e6c9c1f19bb2c836487 and 7bcc423a87b44e19291f4f28d04858e06e74515c after this installer run changed documentation only; source/project/script/installer files were unchanged."
+  },
+  "mainBranchProtection": {
+    "protected": true,
+    "enabled": true,
+    "requiredStatusChecksEnforcementLevel": "non_admins",
+    "requiredStatusCheckContexts": [],
+    "requiredStatusCheckChecks": [],
+    "rulesets": []
+  },
+  "negativeArchitectureEvidence": {
+    "pullRequest": 6,
+    "workflowRun": 41177718250,
+    "result": "forbidden MDGsm.Domain -> MDGsm.Infrastructure reference failed the architecture gate; PR was blocked and closed without merge"
+  },
+  "interpretation": {
+    "technicalG0": "complete on validatedCommit",
+    "formalMergeAndG1": "blocked until 13 required status checks are configured and two human reviews are recorded",
+    "g1Authorized": false,
+    "ac31to45": "UNMAPPED; implementation and executable acceptance tests belong to G1"
+  }
+}
