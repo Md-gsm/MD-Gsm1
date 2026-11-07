@@ -1,8 +1,13 @@
-# Required Status Checks — MD-Gsm G0/G1 control
+# Required Status Checks — MD-Gsm1 main governance
 
-Workflow: `.github/workflows/persons-module-gates.yml`
+**Repository:** `Md-gsm/MD-Gsm1`  
+**Default branch:** `main`  
+**Current audited main commit:** `194720455d01a5f88b1996ed9b100b7bc7ec363b`  
+**Last documentation synchronization:** 2026-11-07
 
-The following 13 job names are the required check set that must be configured on the remote default branch:
+## Required checks
+
+The Persons Module Gates workflow contains these 13 jobs:
 
 - `foundation-build-test`
 - `persons-spec-lint`
@@ -18,64 +23,57 @@ The following 13 job names are the required check set that must be configured on
 - `persons-ci-enforcement-test`
 - `persons-ci-evidence`
 
-## Live protection state — re-verified 2026-11-03
+The governance audit also recorded `project-charter-owner-gate` as a required control on main. The Windows Preview Installer workflow runs on pull requests and main, but is not treated here as a required check unless the Project Owner changes that policy.
 
-`gh api repos/Md-gsm/MD-Gsm1/branches/main/protection` returns:
+## Current evidence and readback limitation
 
-- 13 required contexts (the list above), `strict=true`.
-- `required_approving_review_count=1`, `require_last_push_approval=true`, `dismiss_stale_reviews=true`, `require_code_owner_reviews=false`.
-- `required_signatures`, `required_linear_history`, `required_conversation_resolution` and `enforce_admins` are enabled.
-- `windows-preview-installer` now also runs on `pull_request` (no path filter) but is **not** in the required list; adding it is a Project Owner decision.
+The latest repository audit recorded main as protected, strict required checks configured, and the Project Charter Owner Gate included. The audit recorded 14 required controls (the 13 Persons Module Gates jobs plus `project-charter-owner-gate`). The exact SCM configuration remains authoritative; workflow YAML or a green workflow run alone does not prove that a check is required by branch protection.
 
-`requiredStatusChecksConfiguredInScm` is therefore `true`. This section supersedes the historical 2026-10-31 snapshot below; GitHub itself remains the source of truth.
+During the 2026-11-07 synchronization, a fresh request to the dedicated GitHub Branch Protection details endpoint returned HTTP 403 (`Resource not accessible by integration`). Therefore this document preserves the last recorded owner/repository audit rather than claiming a new direct readback in this run. A repository Admin should attach a fresh API export or screenshot when the integration can no longer read the endpoint. Do not silently downgrade or upgrade the recorded SCM state based only on this 403 response.
 
-## Historical snapshot — 2026-10-31 (superseded)
+The current manifest records `requiredStatusChecksConfiguredInScm=true` based on the latest available governance evidence. The evidence should be refreshed by an Admin if the protection configuration changes.
 
-The GitHub branch metadata endpoint for `main` returned:
+## Current main CI evidence
 
-- `protected=true`
-- `protection.enabled=true`
-- `protection.required_status_checks.enforcement_level=non_admins`
-- `protection.required_status_checks.contexts=[]`
-- `protection.required_status_checks.checks=[]`
+For commit `194720455d01a5f88b1996ed9b100b7bc7ec363b`:
 
-The rulesets endpoint returned an empty array. The dedicated Branch Protection details endpoint returned HTTP 403 (`Resource not accessible by integration`). **The current branch metadata therefore does not list any required status checks.** A protected branch is not enough to close this condition.
+| Workflow/control | Run ID | Result |
+|---|---:|---|
+| Persons Module Gates | `42381030785` | SUCCESS — 13/13 jobs |
+| CodeQL | `42381030784` | SUCCESS |
+| Windows Preview Installer | `42381030763` | SUCCESS |
+| Project Charter Owner Gate | `42381030735` | SUCCESS |
 
-Recommended Admin configuration:
-1. Add all 13 check names listed above as required checks.
-2. Require branches to be up to date before merging.
-3. Prevent bypass for administrators and maintainers for these checks, unless a documented emergency exception is explicitly approved by the Project Owner.
-4. Keep required checks attached to the default branch rules, not just workflow YAML.
+The Persons Module Gates run includes disposable PostgreSQL 18 Linux and Windows migration validation. It does not migrate a production or real-data database.
 
-The connected GitHub integration currently exposes no Branch Protection/Rulesets write action. It cannot change these settings even though the repository account has Admin permission. A repository Admin must configure them in GitHub Settings and provide an exported/screenshot/API evidence reference. Until this is verified, `requiredStatusChecksConfiguredInScm=false`.
+## Protection policy recorded by the latest governance audit
 
-## Negative enforcement test
+The last available protection audit recorded:
 
-PR #6 deliberately introduced a forbidden `MDGsm.Domain -> MDGsm.Infrastructure` project reference. The `persons-architecture-boundary` check failed; GitHub reported the PR as blocked and it was closed without merge. This is recorded as evidence that the negative architecture test was exercised. It does not replace the requirement to configure the complete 13-check set on `main`.
+- `main` protected and strict required checks enabled.
+- At least one approving review required; latest-push approval and stale-review dismissal enabled.
+- Code-owner review was not globally required.
+- Force pushes and branch deletion were restricted.
+- The Project Charter Owner Gate was required.
 
-CI unit tests exercise the fail-closed validator; they are not a substitute for remote Branch Protection enforcement.
+Do not infer the current commit-signature requirement from old snapshots. The Project Owner temporarily disabled the signed-commit requirement during troubleshooting; its current setting must be read back directly before it is described as enabled.
 
-## PostgreSQL and application migration runner
+## Negative enforcement evidence
 
-The application-owned `tools/MDGsm.DbMigrator` and PostgreSQL 18.6 Linux/Windows integration were revalidated on the post-relocation PR head in run `41185491539` (13/13 jobs passed). First run applied one migration and second run applied zero migrations in each disposable test database. Earlier detailed migration evidence remains at `docs/operations/evidence/postgresql18-migration-validation-2026-10-31.json`; the complete current-head CI record is `docs/operations/evidence/g0-ci-validation-2026-10-31.json`.
+PR #6 deliberately introduced a forbidden `MDGsm.Domain -> MDGsm.Infrastructure` project reference. The architecture boundary check failed and the PR was blocked/closed without merge. This is historical negative-test evidence; it does not replace periodic verification of live branch protection.
 
-The Linux PostgreSQL service image is pinned to `postgres:18.6-bookworm@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8`.
+## PostgreSQL and migration runner
 
+The application-owned `tools/MDGsm.DbMigrator` is exercised by the Linux and Windows PostgreSQL 18 CI jobs. The current main run `42381030785` passed all 13 jobs. These tests use disposable databases and validate migration behavior/idempotence; they are not permission to run migrations against production data.
 
-## Admin one-command helper
+## Admin readback procedure
 
-A PowerShell helper is available at `scripts/Configure-MainBranchProtection.ps1`.
+A repository Admin should periodically:
 
-1. Install GitHub CLI and authenticate as the repository Admin with the **Administration: write** permission. No token is written to this repository.
-2. From the project root, run a dry run:
-   ```powershell
-   .\scripts\Configure-MainBranchProtection.ps1
-   ```
-3. Review the displayed check names and settings. To apply, run:
-   ```powershell
-   .\scripts\Configure-MainBranchProtection.ps1 -Apply
-   ```
-   The script requires typing the exact repository/branch name, preserves existing unrelated restrictions, configures strict required checks, admin enforcement, at least one approval, latest-push approval, no bypass allowances, no force pushes and no deletion, then reads the result back and verifies it.
-4. After successful configuration, perform a **new** negative PR test. The earlier PR #6 was before these required checks were configured and cannot replace that post-configuration test.
+1. Read `GET /repos/Md-gsm/MD-Gsm1/branches/main/protection` and export the result with timestamp and commit context.
+2. Confirm the 13 job contexts and `project-charter-owner-gate` are required and strict.
+3. Confirm approval, latest-push approval, stale-review dismissal, administrator enforcement, no-bypass policy, force-push and deletion restrictions.
+4. Record the signed-commit requirement separately; do not assume it is enabled.
+5. Attach the evidence reference to the governance/evidence record.
 
-The script intentionally does not run automatically in CI: changing remote branch protection is an explicit repository-Admin operation. GitHub's official REST documentation lists the required fields, strict option and Administration-write permission for this endpoint: https://docs.github.com/en/rest/branches/branch-protection.
+The repository helper `scripts/Configure-MainBranchProtection.ps1` can be used by a repository Admin for a reviewed dry run and explicit configuration. It must not be run automatically by CI or used to overwrite unrelated protection settings without owner approval.
