@@ -386,7 +386,7 @@ def run_registry(root: Path) -> None:
             rel = p.relative_to(root).as_posix()
             if not (rel.startswith("src/") or rel.startswith("database/migrations/")):
                 continue
-            if any(rel.startswith(path + "/") for path in owner_paths):
+            if rel in owner_paths or any(rel.startswith(path + "/") for path in owner_paths):
                 continue
             content = p.read_text(encoding="utf-8", errors="replace")
             if rx.search(content):
@@ -416,7 +416,7 @@ def run_api(root: Path) -> None:
     print("PASS: Persons API has a versioned contract and automated contract tests.")
 
 def run_retention(root: Path) -> None:
-    found = require_flag_consistency(root, "temporaryDataRuntimeImplemented", r"WorkflowContactStaging|TemporaryContactStaging|TemporaryDataRetentionWorker|workflow_contact_staging", "temporary data retention")
+    found = require_flag_consistency(root, "temporaryDataRuntimeImplemented", r"WorkflowContactStaging|TemporaryContactStaging|TemporaryDataRetentionWorker|TemporaryWorkflowRetentionWorker|PostgresTemporaryWorkflowStore|persons_temporary_workflows|workflow_contact_staging", "temporary data retention")
     if not found:
         print("PASS-N/A: no temporary-data runtime or schema is present; gate is active and will fail if implementation appears without tests.")
         return
