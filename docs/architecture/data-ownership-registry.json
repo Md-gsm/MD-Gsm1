@@ -1,5 +1,5 @@
 {
-  "registryVersion": "1.1",
+  "registryVersion": "1.2",
   "sourceDocument": "docs/architecture/data-ownership.md",
   "concepts": [
     {
@@ -46,7 +46,7 @@
     },
     {
       "id": "IDN-01",
-      "canonicalConcept": "هویت مرکزی شخص حقیقی/حقوقی و PersonId پایدار",
+      "canonicalConcept": "هویت مرکزی شخص حقیقی/حقوقی و PartyId پایدار (UUIDv7)",
       "ownerDomain": "اشخاص",
       "consumers": "ماژول‌های مجاز از طریق قرارداد",
       "mustNotCreate": "هویت موازی مشتری/تأمین‌کننده یا شناسه طبیعی به‌عنوان کلید اصلی"
@@ -110,9 +110,9 @@
     {
       "id": "WH-01",
       "canonicalConcept": "تعریف انبار و مکان نگهداری",
-      "ownerDomain": "انبارداری",
-      "consumers": "خرید، فروش، تعمیرات، گزارش‌ها",
-      "mustNotCreate": "تعریف مستقل انبار در هر ماژول"
+      "ownerDomain": "Organization",
+      "consumers": "Inventory، خرید، فروش، تعمیرات و گزارش‌ها",
+      "mustNotCreate": "تعریف مستقل انبار در ماژول‌های عملیاتی؛ مالکیت موجودی و گردش با Inventory است"
     },
     {
       "id": "STK-01",
@@ -232,6 +232,20 @@
       "ownerDomain": "زیرساخت فایل و پیوند به مالک حوزه",
       "consumers": "تعمیرات و اسناد",
       "mustNotCreate": "کپی تصاویر به‌صورت دادهٔ تکراری در هر پرونده"
+    },
+    {
+      "id": "ORG-01",
+      "canonicalConcept": "شعبه، شناسه پایدار، وضعیت و ساختار شعب",
+      "ownerDomain": "Organization",
+      "consumers": "ماژول‌های مجاز از طریق قرارداد",
+      "mustNotCreate": "تعریف موازی شعبه در خرید، فروش یا انبار"
+    },
+    {
+      "id": "ORG-02",
+      "canonicalConcept": "عضویت و محدوده سازمانی کاربر در شعبه/انبار",
+      "ownerDomain": "Organization",
+      "consumers": "IdentityAccess و سرویس‌های مجاز برای اعمال دسترسی",
+      "mustNotCreate": "کپی مستقل عضویت یا محدوده شعبه/انبار در ماژول‌های عملیاتی"
     }
   ]
 }

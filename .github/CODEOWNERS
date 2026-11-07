@@ -5,3 +5,6 @@
 /docs/decisions/       @Md-gsm @mrdeljoe4
 /database/             @Md-gsm @mrdeljoe4
 /scripts/ci/           @Md-gsm @mrdeljoe4
+
+# The project charter is controlled exclusively by the project owner.
+/docs/governance/PROJECT_GOVERNANCE_CHARTER_FA.md @Md-gsm
