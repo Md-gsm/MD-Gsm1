@@ -34,6 +34,10 @@ dotnet test .\MDGsm.sln --no-build
 
 Run the API with `dotnet run --project .\src\Host\Api\MDGsm.Api.csproj`. The `/health/live` endpoint means process liveness only.
 
+## Governance
+
+- `docs/governance/PROJECT_GOVERNANCE_CHARTER_FA.md` — the binding project charter. All contributors and coding agents must follow it; only the project owner may authorize changes.
+
 ## Documents
 
 - `docs/architecture/overview.md` — current shell dependency direction.
