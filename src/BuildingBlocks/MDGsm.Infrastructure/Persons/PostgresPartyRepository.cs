@@ -131,7 +131,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             {
                 var selected = candidates.SingleOrDefault(x =>
                     string.Equals(x.PartyId, selectedPartyId, StringComparison.OrdinalIgnoreCase));
-                if (selected is null || !selected.PartyIsActive || selected.IsMerged || selected.Type != requestedType)
+                if (selected is null || !selected.PartyIsActive || selected.IsMerged || !selected.HasActiveMobile || selected.Type != requestedType)
                     throw new InvalidOperationException("The selected Party is not an active, unmerged candidate of the requested identity type.");
                 await AddBusinessRolesAsync(connection, transaction, Guid.Parse(selected.PartyId), request, actor, cancellationToken);
                 await RecordQuickOperationAsync(connection, transaction, operationId, Guid.Parse(selected.PartyId), actor, cancellationToken);

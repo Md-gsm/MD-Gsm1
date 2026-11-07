@@ -93,6 +93,31 @@ public sealed class PersonsEndToEndTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task Quick_registration_rejects_selection_when_the_matching_mobile_is_inactive()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        const string mobile = "09125550126";
+        var first = await scope.Repository.AddNaturalAsync(
+            NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+
+        await using (var deactivate = new NpgsqlCommand("""
+            UPDATE persons_contact_points
+            SET is_active = false
+            WHERE party_id = @party AND kind = 1 AND value = '+989125550126';
+            """, scope.Connection, scope.Transaction))
+        {
+            deactivate.Parameters.AddWithValue("party", Guid.Parse(first.PartyId));
+            Assert.Equal(1, await deactivate.ExecuteNonQueryAsync());
+        }
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            scope.Repository.QuickRegisterNaturalAsync(
+                NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(),
+                forceNew: false, selectedPartyId: first.PartyId, scope.Transaction, default));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task Concurrent_quick_registration_of_same_mobile_creates_exactly_one_party()
     {
         var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__MDGsmDatabase");
