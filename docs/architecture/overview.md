@@ -25,7 +25,7 @@ The arrows express allowed dependency/call direction, not a claim that every bus
 - `MDGsm.Desktop`: presentation only; no project reference to Domain, Application, Infrastructure, or a database provider. It calls the API through a typed client.
 - Tests may reference the layer they test. Architecture tests guard these rules.
 
-## Current implementation snapshot — 2026-11-07
+## Current implementation snapshot — 2026-11-08
 
 - Persons has a partial PostgreSQL-backed implementation and a protected detail endpoint `GET /api/v2/persons/{partyId}`; sensitive fields require server-side permission enforcement.
 - Persons create/search endpoints, complete Contact Point lifecycle and full operational Desktop forms remain incomplete. Main now contains a partial temporary-workflow ciphertext store/retention worker and a transactional Party-merge coordinator with a Finance participant; operational alert delivery, all consumers and complete AC-31..AC-45 acceptance remain open.
@@ -35,7 +35,7 @@ The arrows express allowed dependency/call direction, not a claim that every bus
 
 ## Current main integration status after PR #50
 
-PR #50 is merged into main at `f011c94d52bc06c7e213abb6e480180e9ea73f40`. The integrated change adds a limited temporary-workflow ciphertext store/retention worker, a transactional Party-merge coordinator with a Finance account participant, and a transaction-bound Finance Party-account provisioner. It preserves Persons Contracts 2.0 and uses separate versioned internal cross-module contracts. These components are partial: they do not complete Persons/Finance workflows or close AC-31..AC-45. The PR-head CI run `42408907287` and associated CodeQL, Charter Gate and Windows Preview Installer runs succeeded; the merge commit itself has not been independently re-run through CI. All database migration tests used disposable PostgreSQL 18 databases only. No production migration or G1 activation is authorized.
+PR #50 was merged into main at `2754e261d05f1e0410de51dbfbd5909ad638eb33`; PR #51 then reconciled evidence at current main `f011c94d52bc06c7e213abb6e480180e9ea73f40`. The integrated change adds a limited temporary-workflow ciphertext store/retention worker, a transactional Party-merge coordinator with a Finance account participant, and a transaction-bound Finance Party-account provisioner. It preserves Persons Contracts 2.0 and uses separate versioned internal cross-module contracts. These components are partial: they do not complete Persons/Finance workflows or close AC-31..AC-45. The PR-head CI run `42408907287` and associated CodeQL, Charter Gate and Windows Preview Installer runs succeeded; the later PR #51 push triggered CI on exact current main SHA `f011c94d52bc06c7e213abb6e480180e9ea73f40` (Persons Gates 13/13, CodeQL and Charter Gate; 15/15 check-runs). Windows Preview Installer did not run on this SHA. All database migration tests used disposable PostgreSQL 18 databases only. No production migration or G1 activation is authorized.
 
 ## API versioning snapshot
 
