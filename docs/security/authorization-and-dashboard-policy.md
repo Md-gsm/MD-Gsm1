@@ -35,3 +35,56 @@
 - درخواست یک widget نامجاز باید رد شود و هیچ داده‌ای برنگرداند.
 - دادهٔ ابزارک باید از ماژول مالک خوانده شود؛ دادهٔ نمایشی برای ظاهر، صریحاً demo باشد و هرگز وارد محاسبات یا ذخیرهٔ عملیاتی نشود.
 - مجوز گزارش و مجوز داده در تمام کانال‌ها (صفحه، جست‌وجو، داشبورد، چاپ، export/API) یکسان اجرا شود.
+
+ 
+## مدل Scope و قرارداد پاسخ API (تکمیل بازبینی)
+
+### ترتیب اجباری Policy Evaluation
+1. اعتبار principal، session، account enabled، lease و credential_version؛ شکست در این مرحله 401.
+2. اعتبارسنجی نام دقیق permission و endpoint metadata؛ permission ناشناخته یا metadata ناقص Deny.
+3. بررسی grant صریح permission؛ principal معتبر بدون grant برابر 403.
+4. دریافت resource context و scope از منبع authoritative ماژول مالک؛ نبود context، خطای DB یا عدم قطعیت برابر Deny.
+5. اعمال قواعد مالکیت، تخصیص، شعبه/انبار، دوره مالی و وضعیت سند.
+6. اجرای query محدودشده به scope؛ ابتدا فیلتر scope در query، نه بارگذاری کل داده و فیلتر حافظه‌ای.
+
+### واژگان Scope
+- `self`: رکورد متعلق به principal جاری؛
+- `assigned`: تخصیص فعال و authoritative به principal؛
+- `branch`: شناسه شعبه صریحاً مجاز؛
+- `warehouse`: شناسه انبار صریحاً مجاز؛
+- `all`: فقط grant صریح برای همان permission و پس از تصویب مالک؛ به معنی wildcard نیست.
+
+Scope به permission وابسته است و از مجوز دیگری به ارث نمی‌رسد. union چندنقشی فقط میان grantهای صریح همان permission انجام می‌شود. وجود `all` برای یک permission، scope سایر permissionها را توسعه نمی‌دهد. اگر یک نقش grant محدود و نقش دیگر grant وسیع‌تر دارد، فقط در صورت ثبت grant وسیع‌تر برای همان permission، دامنه وسیع‌تر مجاز است. نقش به‌تنهایی scope تولید نمی‌کند.
+
+### قرارداد 401 / 403 / 404
+- 401: هویت/نشست مفقود یا نامعتبر، session منقضی/revoked، حساب غیرفعال یا credential version ناسازگار.
+- 403: هویت معتبر اما permission صریح وجود ندارد یا عملیات عمومی مجاز نیست.
+- 404 یکسان: resource وجود ندارد یا خارج از scope است، هرجا افشای وجود resource ممنوع باشد. این دو حالت باید از دید caller status/body/timing قابل تمایز نباشند تا حد امکان عملی.
+- reason code داخلی فقط در audit allow-list ثبت می‌شود؛ متن پاسخ عمومی نباید account، مالک، شعبه یا وضعیت رکورد را افشا کند.
+- خطای DB یا سرویس مالک resource هرگز به Allow یا 404 قابل سوءاستفاده تبدیل نمی‌شود؛ نتیجه Deny با پاسخ fail-closed مناسب (معمولاً 503 عمومی برای outage وابستگی) و بدون جزئیات داخلی است.
+
+### کنترل‌های دامنه‌ای
+- Persons: دسترسی به party بر اساس grant و ownership/scope معتبر؛ شناسه Party ارسالی client اثبات مالکیت نیست.
+- RepairOperations: تکنسین فقط repair/worklog/parts مرتبط با assignment فعال خودش؛ تغییر assignment باید از مسیر مجاز ماژول مالک بررسی شود.
+- Inventory: branch/warehouse scope باید در query موجودی و گردش کالا enforce شود؛ دسترسی به فهرست انبارها به‌تنهایی مجوز دسترسی به موجودی نیست.
+- Finance: permission، fiscal period، document state و separation of duties مستقل‌اند؛ داشتن finance.read به معنی voucher.post یا period.close نیست.
+- Dashboard/search/report/print/export: هر مسیر داده باید policy همان منبع را اجرا کند؛ cache خروجی یا export قدیمی پس از revoke نباید قابل دریافت مجدد باشد.
+
+### Bootstrap محدود
+تا وقتی Bootstrap به Completed نرسیده است، تنها دو فرمان allow-list شده (تغییر credential اولیه و تکمیل پروفایل) مجازند؛ تمام endpointهای business، dashboard، export، identity administration و recoveryهای دیگر Deny می‌شوند. این allow-list محدود، مجوز شبکه‌ای ایجاد نمی‌کند و فقط از کنسول محلی تعریف‌شده در تصمیم مصوب قابل اجراست.
+
+### تست‌های پذیرش تکمیلی (پس از G1)
+- same permission با دو role و دو scope: union دقیق؛ هیچ scope از permission دیگر نشت نکند.
+- branch/warehouse ID دستکاری‌شده: Deny؛ query پیش از materialization محدود باشد.
+- assigned relation حذف/منقضی‌شده در ماژول مالک: درخواست بعدی Deny.
+- resource ناموجود و resource خارج از scope: پاسخ بیرونی یکسان در endpointهای محافظت‌شده.
+- DB ماژول مالک timeout: بدون fallback به داده cache شده یا Allow.
+- account disabled/revoked در همان لحظه درخواست: 401 در درخواست بعدی.
+- export artifact بعد از revoke: download دوباره Deny.
+- Bootstrap ناقص: فقط دو فرمان allow-list؛ تمام endpointهای دیگر Deny.
+- permission metadata حذف‌شده یا ناشناخته: CI fail و runtime fail-closed.
+
+
+## مرجع ماتریس granular برای تصویب مالک — 2026-11-05
+
+نسخه تفصیلی و قابل امضای ماتریس نقش/permission/scope در `docs/security/identityaccess-permission-matrix-approval-fa.md` قرار دارد. جدول‌های خلاصه قدیمی این سند فقط راهنمای سیاست‌اند و در صورت تعارض با ماتریس مصوب نهایی، نسخه مصوب و نسخه‌دار ماتریس مرجع خواهد بود. تا ثبت APPROVE یا APPROVE WITH CHANGES، هیچ grant به seed یا runtime تبدیل نمی‌شود.
