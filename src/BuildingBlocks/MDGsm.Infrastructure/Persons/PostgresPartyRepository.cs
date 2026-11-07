@@ -530,7 +530,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
                 includeSensitive ? economic : null,
                 includeSensitive || responsible is null ? responsible : PartyIdentifiers.MaskPersonName(responsible),
                 contacts, address,
-                includeSensitive ? source : null,
+                includeSensitive ? source : PartyAcquaintanceSource.Unknown,
                 includeSensitive ? note : null,
                 includeSensitive ? preferences : null,
                 created, includeSensitive, workClassification);
