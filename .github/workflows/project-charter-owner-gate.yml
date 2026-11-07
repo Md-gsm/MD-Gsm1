@@ -24,6 +24,8 @@ jobs:
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          EVENT_ACTOR: ${{ github.actor }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
@@ -36,6 +38,16 @@ jobs:
 
           if [[ "$EVENT_NAME" == "pull_request" ]]; then
             changed="$(git diff --name-only "$BASE_SHA...$HEAD_SHA")"
+            if [[ "$PR_AUTHOR" != "Md-gsm" ]]; then
+              echo "::error::Only project owner Md-gsm may open a pull request that changes the project charter."
+              exit 1
+            fi
+            # A later push to the same PR branch is a new authorization event.
+            # Do not let a collaborator update an owner-authored PR to alter the charter.
+            if [[ "$EVENT_ACTION" == "synchronize" && "$EVENT_ACTOR" != "Md-gsm" ]]; then
+              echo "::error::Only project owner Md-gsm may push charter changes to the PR branch."
+              exit 1
+            fi
             authorized_actor="$PR_AUTHOR"
           else
             if [[ -z "$BEFORE_SHA" || "$BEFORE_SHA" =~ ^0+$ ]]; then
