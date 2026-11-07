@@ -40,7 +40,9 @@ public sealed class PersonsEndToEndTests
         Assert.Equal(PartyQuickRegistrationOutcome.ExistingPartyMatched, quick.Outcome);
         Assert.Equal(first.PartyId, quick.PartyId);
         Assert.False(quick.Created);
-        Assert.Equal(first.PartyId, Assert.Single(quick.Candidates).PartyId);
+        var matchedCandidate = Assert.Single(quick.Candidates);
+        Assert.Equal(first.PartyId, matchedCandidate.PartyId);
+        Assert.False(matchedCandidate.IsMerged);
         Assert.Equal(3L, await ScalarAsync(scope,
             "SELECT business_roles::bigint FROM persons WHERE party_id = @id", Guid.Parse(first.PartyId)));
         Assert.Equal(1L, await ScalarAsync(scope,
