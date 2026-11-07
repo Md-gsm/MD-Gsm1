@@ -119,7 +119,7 @@ try {
     $firstExitCode = $LASTEXITCODE
     $firstRun | ForEach-Object { Write-Host $_ }
     if ($firstExitCode -ne 0 -or (($firstRun -join "`n") -notmatch 'newlyApplied=8')) {
-        throw 'The first application migration run did not apply all five ordered migrations.'
+        throw 'The first application migration run did not apply all eight ordered migrations.'
     }
 
     Write-Host 'Re-running the application-owned migration runner to verify idempotence and checksum validation...'
