@@ -1,5 +1,5 @@
 {
-  "registryVersion": "1.2",
+  "registryVersion": "1.3",
   "sourceDocument": "docs/architecture/data-ownership.md",
   "concepts": [
     {
@@ -246,6 +246,34 @@
       "ownerDomain": "Organization",
       "consumers": "IdentityAccess و سرویس‌های مجاز برای اعمال دسترسی",
       "mustNotCreate": "کپی مستقل عضویت یا محدوده شعبه/انبار در ماژول‌های عملیاتی"
+    },
+    {
+      "id": "FIN-AR-01",
+      "canonicalConcept": "سقف اعتبار و مانده/وضعیت بدهی شخص",
+      "ownerDomain": "مالی/حساب‌های دریافتنی",
+      "consumers": "اشخاص و اسناد تجاری فقط از قرارداد",
+      "mustNotCreate": "نگهداری سقف یا مانده authoritative در جدول هویت اشخاص"
+    },
+    {
+      "id": "PRICE-02",
+      "canonicalConcept": "تخفیف پیش‌فرض و قواعد قیمت قابل اعمال",
+      "ownerDomain": "موتور قیمت‌گذاری",
+      "consumers": "فروش و صورتحساب تعمیر فقط از قرارداد",
+      "mustNotCreate": "محاسبه یا نگهداری قواعد تخفیف در Persons"
+    },
+    {
+      "id": "TRE-03",
+      "canonicalConcept": "روش پرداخت پیش‌فرض و فراداده ابزار پرداخت بدون PAN",
+      "ownerDomain": "خزانه‌داری",
+      "consumers": "فروش، خرید و تعمیرات فقط از قرارداد",
+      "mustNotCreate": "ذخیره ابزار پرداخت و چرخه آن در Persons"
+    },
+    {
+      "id": "FIN-AR-02",
+      "canonicalConcept": "شناسهٔ حساب معین/زیرحساب مالی یکتای هر Party",
+      "ownerDomain": "Finance",
+      "consumers": "گردش‌کارهای مالی از قرارداد؛ Persons فقط شناسهٔ Party مرجع را صادر می‌کند",
+      "mustNotCreate": "ساخت حساب هنگام ثبت Party، ساخت حساب موازی در Persons، نگهداری مانده در رکورد حساب معین"
     }
   ]
 }

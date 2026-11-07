@@ -1,4 +1,6 @@
-# AC-31..AC-45 verification plan
+# AC-31..AC-49 verification plan
+
+> نام فایل برای سازگاری با ارجاع‌های قبلی حفظ شده است؛ دامنه این سند AC-31 تا AC-49 را پوشش می‌دهد.
 
 The G0 traceability plan assigns every requirement to its gate and future executable scenario. These entries are plans, not passing tests or implemented behavior.
 
@@ -20,4 +22,4 @@ The G0 traceability plan assigns every requirement to its gate and future execut
 | AC-44 | MRG-44-ATOMIC-CONCURRENT-IDEMPOTENT | Shared transaction, concurrency and idempotency |
 | AC-45 | MRG-45-HISTORICAL-SNAPSHOT-PRESERVATION | Historical snapshots remain unchanged |
 
-Each criterion remains UNMAPPED in the executable acceptance map until a real test file and test method exist. G1 remains unauthorized until those tests are implemented and pass.
+AC-31..AC-45 remain UNMAPPED in the executable acceptance map until a real test file and test method exist. AC-46..AC-49 are separately backed by CI-policy/evidence tests in `scripts/ci/test_persons_gate_policy.py`; those tests do not close the runtime criteria. G1 remains unauthorized until every required runtime criterion is implemented, mapped and passes.
