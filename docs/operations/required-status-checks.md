@@ -2,7 +2,7 @@
 
 **Repository:** `Md-gsm/MD-Gsm1`  
 **Default branch:** `main`  
-**Current main commit at reconciliation start:** `fb46da7a00a977a441c4b1add70a6ba47a575f26`  
+**Current main commit at this evidence refresh:** `5638dbc4767a18d1e930748aad7eff7fb9e9f1a7`  
 **Last documentation synchronization:** 2026-11-07
 
 ## Required checks
@@ -35,7 +35,7 @@ The current manifest records `requiredStatusChecksConfiguredInScm=true` based on
 
 ## Historical CI evidence — pre-PR #40 main
 
-These runs belong to the historical pre-PR-40 main commit `194720455d01a5f88b1996ed9b100b7bc7ec363b`; they are not evidence for current main `fb46da7a00a977a441c4b1add70a6ba47a575f26` or the reconciled PR #45 head:
+These runs belong to the historical pre-PR-40 main commit `194720455d01a5f88b1996ed9b100b7bc7ec363b`; they are not evidence for current main `5638dbc4767a18d1e930748aad7eff7fb9e9f1a7` or the PR #45/#46 heads:
 
 | Workflow/control | Run ID | Result |
 |---|---:|---|
@@ -79,6 +79,6 @@ A repository Admin should periodically:
 The repository helper `scripts/Configure-MainBranchProtection.ps1` can be used by a repository Admin for a reviewed dry run and explicit configuration. It must not be run automatically by CI or used to overwrite unrelated protection settings without owner approval.
 
 
-## Current-main validation status after PR #45
+## Current-main validation status after PR #46
 
-The current main merge commit after PR #45 is `fb46da7a00a977a441c4b1add70a6ba47a575f26`. No CI run IDs are claimed here for that commit. PR #45 is merged; its successful PR-head runs are not evidence for this merge commit. Fresh Persons Module Gates, CodeQL, Windows Preview Installer and Project Charter Owner Gate runs bound to this exact main SHA remain pending.
+The current main merge commit after PR #46 is `5638dbc4767a18d1e930748aad7eff7fb9e9f1a7`. The GitHub workflow-runs query and combined-status query currently return no runs/statuses for this exact merge commit. PR #46 head CI success is not evidence for this merge commit. Fresh Persons Module Gates, CodeQL, Windows Preview Installer and Project Charter Owner Gate runs bound to this exact main SHA remain pending.

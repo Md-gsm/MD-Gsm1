@@ -102,7 +102,7 @@ The following successful runs belong to the pre-PR-40 main commit `194720455d01a
 - Windows Preview Installer: run `42381030763` — successful.
 - Project Charter Owner Gate: run `42381030735` — successful.
 
-PR #45 has since been merged. Current main after PR #45 is `fb46da7a00a977a441c4b1add70a6ba47a575f26`. The listed run IDs are historical pre-PR-40 evidence and do not validate this merge commit. Fresh CI evidence bound to the exact current main SHA remains pending.
+PR #45 and PR #46 have since been merged. Current main after PR #46 is `5638dbc4767a18d1e930748aad7eff7fb9e9f1a7`. The listed run IDs are historical pre-PR-40 evidence and do not validate this merge commit. No workflow runs or combined status checks are currently recorded for this exact merge commit; fresh CI evidence bound to this SHA remains pending.
 
 ### G1 hard stop
 
