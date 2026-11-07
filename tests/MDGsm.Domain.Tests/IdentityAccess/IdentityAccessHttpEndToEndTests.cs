@@ -200,6 +200,35 @@ public sealed class IdentityAccessHttpEndToEndTests
         var authorizedPersonsRead = await client.GetAsync(partyUrl);
         Assert.Equal(HttpStatusCode.NotFound, authorizedPersonsRead.StatusCode);
 
+        // A broad persons.read grant must not bypass the fail-closed technician
+        // row-scope guard, including when the same account has another role.
+        await using (var db = new MdGsmDbContext(options))
+        {
+            var technicianRoleId = Guid.CreateVersion7();
+            db.IdentityRoles.Add(new IdentityRoleRow
+            {
+                RoleId = technicianRoleId,
+                RoleKey = RoleCatalog.Technician,
+                DisplayName = "Technician",
+                Description = "Technician role for HTTP authorization regression test",
+                IsSystemRole = true,
+                IsAssignable = true,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            });
+            db.IdentityAccountRoles.Add(new IdentityAccountRoleRow
+            {
+                AccountId = accountId,
+                RoleId = technicianRoleId,
+                AssignedAtUtc = now,
+                AssignmentReason = "technician-scope-http-e2e-test"
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var technicianWithAdditionalRole = await client.GetAsync(partyUrl);
+        Assert.Equal(HttpStatusCode.Forbidden, technicianWithAdditionalRole.StatusCode);
+
         client.DefaultRequestHeaders.Authorization = null;
         var wrongPassword = await client.PostAsJsonAsync("/api/v1/identity/login",
             new LoginRequest(username, "incorrect-password", Guid.CreateVersion7()));
