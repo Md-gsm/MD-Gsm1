@@ -132,7 +132,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
                 var selected = candidates.SingleOrDefault(x =>
                     string.Equals(x.PartyId, selectedPartyId, StringComparison.OrdinalIgnoreCase));
                 if (selected is null || !selected.PartyIsActive || selected.IsMerged || !selected.HasActiveMobile || selected.Type != requestedType)
-                    throw new InvalidOperationException("The selected Party is not an active, unmerged candidate of the requested identity type.");
+                    throw new InvalidOperationException("The selected Party is not an active candidate of the requested identity type.");
                 await AddBusinessRolesAsync(connection, transaction, Guid.Parse(selected.PartyId), request, actor, cancellationToken);
                 await RecordQuickOperationAsync(connection, transaction, operationId, Guid.Parse(selected.PartyId), actor, cancellationToken);
                 return new PartyQuickRegistrationResult(PartyQuickRegistrationOutcome.ExistingPartyMatched,
@@ -174,12 +174,12 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         await using var command = new NpgsqlCommand("""
             SELECT p.party_id, p.party_type, p.business_roles,
                    CASE WHEN p.party_type = 1 THEN concat_ws(' ', p.given_name, p.family_name) ELSE p.legal_name END,
-                   p.is_active, (p.merged_into_party_id IS NOT NULL), bool_or(c.is_active)
+                   p.is_active, false AS is_merged, bool_or(c.is_active)
             FROM persons p
             JOIN persons_contact_points c ON c.party_id = p.party_id
             WHERE c.kind = 1 AND c.value = @mobile
             GROUP BY p.party_id, p.party_type, p.business_roles, p.given_name, p.family_name,
-                     p.legal_name, p.is_active, p.merged_into_party_id
+                     p.legal_name, p.is_active
             ORDER BY p.is_active DESC, bool_or(c.is_active) DESC, p.party_id;
             """, connection, transaction);
         command.Parameters.AddWithValue("mobile", normalizedMobile);
@@ -201,13 +201,12 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         await using (var lockCommand = new NpgsqlCommand("""
             SELECT party_id
             FROM persons
-            WHERE party_id = @party AND is_active = true AND merged_into_party_id IS NULL
-            FOR UPDATE;
+            WHERE party_id = @party AND is_active = true             FOR UPDATE;
             """, connection, transaction))
         {
             lockCommand.Parameters.AddWithValue("party", partyId);
             if (await lockCommand.ExecuteScalarAsync(cancellationToken) is null)
-                throw new InvalidOperationException("The selected Party is no longer active and unmerged.");
+                throw new InvalidOperationException("The selected Party is no longer active.");
         }
 
         await using var command = new NpgsqlCommand("""
@@ -218,8 +217,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
                 row_version = row_version + 1
             WHERE party_id = @party
               AND is_active = true
-              AND merged_into_party_id IS NULL
-              AND (business_roles | @roles) <> business_roles;
+                            AND (business_roles | @roles) <> business_roles;
             """, connection, transaction);
         var roles = request switch
         {
