@@ -1,4 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net10.0</TargetFramework><AssemblyName>MDGsm.IdentityAccess.Application</AssemblyName><RootNamespace>MDGsm.IdentityAccess.Application</RootNamespace></PropertyGroup>
-  <ItemGroup><ProjectReference Include="..\Domain\MDGsm.IdentityAccess.Domain.csproj" /><ProjectReference Include="..\Contracts\MDGsm.IdentityAccess.Contracts.csproj" /></ItemGroup>
-</Project>
