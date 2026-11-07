@@ -130,7 +130,7 @@ components:
         promotionsSmsEnabled: { type: boolean, default: false }
     CreateNaturalPartyRequest:
       type: object
-      required: [givenName, familyName, roles, primaryMobile]
+      required: [givenName, familyName, roles]
       properties:
         givenName: { type: string, maxLength: 120 }
         familyName: { type: string, maxLength: 160 }
@@ -139,7 +139,7 @@ components:
           uniqueItems: true
           items: { type: string, enum: [Customer, Colleague] }
         nationalId: { type: [string, 'null'], pattern: '^[0-9]{10}$' }
-        primaryMobile: { type: string }
+        primaryMobile: { type: [string, 'null'] }
         alternateMobile: { type: [string, 'null'] }
         landline: { type: [string, 'null'] }
         email: { type: [string, 'null'], format: email }
@@ -150,7 +150,7 @@ components:
         internalNote: { type: [string, 'null'], maxLength: 2000 }
     CreateLegalPartyRequest:
       type: object
-      required: [legalName, roles, primaryMobile]
+      required: [legalName, roles]
       properties:
         legalName: { type: string, maxLength: 300 }
         legalNationalId: { type: [string, 'null'], pattern: '^[0-9]{11}$' }
@@ -160,7 +160,7 @@ components:
           type: array
           uniqueItems: true
           items: { type: string, enum: [Customer, Colleague] }
-        primaryMobile: { type: string }
+        primaryMobile: { type: [string, 'null'] }
         alternateMobile: { type: [string, 'null'] }
         landline: { type: [string, 'null'] }
         email: { type: [string, 'null'], format: email }

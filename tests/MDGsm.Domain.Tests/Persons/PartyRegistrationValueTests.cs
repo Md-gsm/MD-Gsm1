@@ -37,6 +37,14 @@ public sealed class PartyRegistrationValueTests
     }
 
     [Theory]
+    [InlineData("0912\t123 4567")]
+    [InlineData("0912\u00A0123 4567")]
+    public void Iranian_mobile_removes_all_unicode_whitespace(string value)
+    {
+        Assert.Equal("+989121234567", PartyContactPoint.Mobile(value).Value);
+    }
+
+    [Theory]
     [InlineData("123")]
     [InlineData("09ABC123456")]
     [InlineData("")]
