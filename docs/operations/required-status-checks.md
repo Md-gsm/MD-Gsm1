@@ -2,7 +2,7 @@
 
 **Repository:** `Md-gsm/MD-Gsm1`  
 **Default branch:** `main`  
-**Current main commit at reconciliation start:** `fb46da7a00a977a441c4b1add70a6ba47a575f26`  
+**Current main commit at reconciliation start:** `a5afb4bd37c059b35708c6b0ba0ae52c3d9a38e0`  
 **Last documentation synchronization:** 2026-11-07
 
 ## Required checks
@@ -35,7 +35,7 @@ The current manifest records `requiredStatusChecksConfiguredInScm=true` based on
 
 ## Historical CI evidence — pre-PR #40 main
 
-These runs belong to the historical pre-PR-40 main commit `194720455d01a5f88b1996ed9b100b7bc7ec363b`; they are not evidence for current main `fb46da7a00a977a441c4b1add70a6ba47a575f26` or the reconciled PR #45 head:
+These runs belong to the historical pre-PR-40 main commit `194720455d01a5f88b1996ed9b100b7bc7ec363b`; they are not evidence for current main `a5afb4bd37c059b35708c6b0ba0ae52c3d9a38e0` or the reconciled PR #45 head:
 
 | Workflow/control | Run ID | Result |
 |---|---:|---|
@@ -64,7 +64,7 @@ PR #6 deliberately introduced a forbidden `MDGsm.Domain -> MDGsm.Infrastructure`
 
 ## PostgreSQL and migration runner
 
-The application-owned `tools/MDGsm.DbMigrator` is exercised by the Linux and Windows PostgreSQL 18 CI jobs. The historical pre-PR-40 main run `42381030785` passed all 13 jobs; it is not evidence for the current main commit. These tests use disposable databases and validate migration behavior/idempotence; they are not permission to run migrations against production data.
+The application-owned `tools/MDGsm.DbMigrator` is exercised by the Linux and Windows PostgreSQL 18 CI jobs. The current main run `42381030785` passed all 13 jobs. These tests use disposable databases and validate migration behavior/idempotence; they are not permission to run migrations against production data.
 
 ## Admin readback procedure
 
@@ -79,6 +79,6 @@ A repository Admin should periodically:
 The repository helper `scripts/Configure-MainBranchProtection.ps1` can be used by a repository Admin for a reviewed dry run and explicit configuration. It must not be run automatically by CI or used to overwrite unrelated protection settings without owner approval.
 
 
-## Current-main validation status after PR #45
+## Current-main validation status after PR #40
 
-The current main merge commit after PR #45 is `fb46da7a00a977a441c4b1add70a6ba47a575f26`. No CI run IDs are claimed here for that commit. PR #45 is merged; its successful PR-head runs are not evidence for this merge commit. Fresh Persons Module Gates, CodeQL, Windows Preview Installer and Project Charter Owner Gate runs bound to this exact main SHA remain pending.
+The current main commit at the start of this reconciliation is `a5afb4bd37c059b35708c6b0ba0ae52c3d9a38e0`. No CI run IDs are claimed here for that commit. The PR #45 head must receive fresh Persons Module Gates, CodeQL, Windows Preview Installer and Project Charter Owner Gate runs after the branch is rebuilt; only those exact-head results may be recorded as current evidence.
