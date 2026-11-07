@@ -23,9 +23,7 @@
 | 0004 | `0004_persons_reserve_national_identifiers.sql` | Persons national-identifier reservation and uniqueness safeguards |
 | 0005 | `0005_persons_nonblank_identity_names.sql` | Persons nonblank identity-name constraints |
 
-## Draft PR #50 branch-only migration additions (not yet in main)
-
-These migrations are appended after the accepted main sequence 0001–0005. They are applied only by disposable CI databases until PR #50 is reviewed and merged; no real-data database has been migrated.
+## Migration additions on current main (integrated by PR #50)
 
 | Version | File | Scope |
 |---|---|---|
@@ -33,7 +31,7 @@ These migrations are appended after the accepted main sequence 0001–0005. They
 | 0007 | `0007_persons_temporary_workflows.sql` | Temporary workflow metadata and encrypted payload lifecycle |
 | 0008 | `0008_persons_party_merge.sql` | Persons-owned Party merge operation records and merge-state columns |
 
-The duplicate national-identifier migration from the older feature branch was not imported because main already owns version 0004. The unused row-version follow-up was folded out before application; migration 0006 is the single initial Finance schema migration. Linux and Windows migration gates therefore verify the eight-version sequence on the draft branch.
+The duplicate national-identifier migration from the older PR #47 branch was not imported because main already owns version 0004. The unused row-version follow-up was folded out before application; migration 0006 is the single initial Finance schema migration. The eight-version sequence was validated on disposable PostgreSQL 18 Linux and Windows CI databases on PR #50 head `3c113e77169c8b6e1ab882df2ef49d2c39f0222c` (Persons gates run `42408907287`). PR #50 was merged as `2754e261d05f1e0410de51dbfbd5909ad638eb33`. This is not a production/staging migration and does not constitute independent CI execution on the merge commit.
 
 Migration 0003 creates the IdentityAccess schema and singleton `identity.system_settings` row (5 active accounts, 30-second heartbeat, 180-second lease), required by `IdentityAccessUnitOfWork`.
 
