@@ -62,6 +62,6 @@
     },
     "databaseScope": "Disposable PostgreSQL 18 Linux/Windows CI only; no production or real-data database migration."
   },
-  "currentMainCommit": "fb46da7a00a977a441c4b1add70a6ba47a575f26",
+  "currentMainCommit": "1d54dde8cd792b24cd4fe71362969ebaacdfbab9",
   "currentMainCiStatus": "PENDING_FRESH_COMMIT_BOUND_RUNS"
 }
