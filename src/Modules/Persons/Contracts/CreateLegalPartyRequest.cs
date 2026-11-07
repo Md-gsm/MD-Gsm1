@@ -11,7 +11,6 @@ public sealed record CreateLegalPartyRequest(
     string? Landline,
     string? Email,
     PartyAddressContract? Address,
-    PartyFinancialProfileContract Financial,
     PartyCommunicationPreferencesContract Communication,
     string? AcquaintanceSource,
     string? InternalNote,

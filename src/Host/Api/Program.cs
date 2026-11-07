@@ -125,7 +125,7 @@ app.MapPost("/api/v1/identity/password/change", async (
         : Results.Json(new { error = "invalid_credentials" }, statusCode: StatusCodes.Status401Unauthorized);
 });
 
-app.MapGet("/api/v1/persons/{partyId}", async (
+app.MapGet("/api/v2/persons/{partyId}", async (
     string partyId,
     bool? includeSensitive,
     IPartyRepository parties,

@@ -10,7 +10,6 @@ public sealed record PartyResponse(
     string? ResponsiblePersonName,
     IReadOnlyList<PartyContactContract> Contacts,
     PartyAddressContract? PrimaryAddress,
-    PartyFinancialProfileContract Financial,
     PartyCommunicationPreferencesContract Communication,
     string? AcquaintanceSource,
     DateTimeOffset CreatedAtUtc,
@@ -26,16 +25,10 @@ public sealed record PartyAddressContract(
     string PostalCode,
     string AddressLine);
 
-public sealed record PartyFinancialProfileContract(
-    long? CreditLimitRial,
-    decimal? DefaultDiscountPercent,
-    string? DefaultPaymentMethod,
-    string? BankCardLastFour);
-
 public sealed record PartyCommunicationPreferencesContract(
-    bool? RepairStatusSmsEnabled,
-    bool? ReadyForDeliverySmsEnabled,
-    bool? PromotionsSmsEnabled);
+    bool RepairStatusSmsEnabled,
+    bool ReadyForDeliverySmsEnabled,
+    bool PromotionsSmsEnabled);
 
 public sealed record PartyListResponse(
     IReadOnlyList<PartyListItemContract> Items,

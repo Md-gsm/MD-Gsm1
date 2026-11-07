@@ -12,7 +12,7 @@
     {
       "module": "ApiHost",
       "path": "src/Host/Api/Program.cs",
-      "contractVersion": "Persons.Contracts/1.0",
+      "contractVersion": "Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
       "purpose": "Protected GET party-details endpoint; actor identity comes from validated IdentityAccess session context."
     }

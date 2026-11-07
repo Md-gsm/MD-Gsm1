@@ -11,12 +11,15 @@ public sealed class PersonsApiContractTests
         var contract = File.ReadAllText(Path.Combine(root, "docs", "persons", "contracts", "persons.openapi.yaml"));
 
         Assert.Contains("openapi: 3.1.0", contract, StringComparison.Ordinal);
-        Assert.Contains("/api/v1/persons/{partyId}:", contract, StringComparison.Ordinal);
+        Assert.Contains("/api/v2/persons/{partyId}:", contract, StringComparison.Ordinal);
         Assert.Contains("opaqueBearer:", contract, StringComparison.Ordinal);
         Assert.Contains("scheme: bearer", contract, StringComparison.Ordinal);
         Assert.Contains("required: [givenName, familyName, roles]", contract, StringComparison.Ordinal);
         Assert.Contains("required: [legalName, roles]", contract, StringComparison.Ordinal);
         Assert.Contains("primaryMobile: { type: [string, 'null'] }", contract, StringComparison.Ordinal);
+        Assert.DoesNotContain("FinancialProfile:", contract, StringComparison.Ordinal);
+        Assert.DoesNotContain("creditLimitRial", contract, StringComparison.Ordinal);
+        Assert.DoesNotContain("defaultDiscountPercent", contract, StringComparison.Ordinal);
     }
 
     private static string FindRepositoryRoot()
