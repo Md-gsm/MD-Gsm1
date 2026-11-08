@@ -41,6 +41,7 @@ Run the API with `dotnet run --project .\src\Host\Api\MDGsm.Api.csproj`. The `/h
 - `docs/roadmap/PROJECT_ROADMAP_AND_ACCEPTANCE_PLAN_FA.md` — نقشه راه مرجع، معیار خروج و یافته‌های ممیزی.
 
 - `docs/governance/PROJECT_GOVERNANCE_CHARTER_FA.md` — the binding project charter. All contributors and coding agents must follow it; only the project owner may authorize changes.
+- `docs/governance/PARALLEL_WORKGROUP_EXECUTION_PLAYBOOK_FA.md` — mandatory workgroup boundaries, parallel execution rules, handoff format, and technical acceptance gates. Every coding group/agent must read it before starting work.
 - `AGENTS.md` — mandatory startup instructions for coding agents and automated contributors.
 - `.github/PULL_REQUEST_TEMPLATE.md` — required checklist for every proposed change.
 
