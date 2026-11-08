@@ -69,7 +69,7 @@ Prefer .NET user-secrets for local API development, or set `ConnectionStrings__M
 
 ## Central migration reservation registry
 
-The authoritative reservation ledger and current inventory are maintained in `docs/data/MIGRATION_SEQUENCE_REGISTRY_FA.md`. Reserve a globally unique four-digit version through WG-0 before creating SQL. CI tests enforce global filename/LogicalName and numeric-version uniqueness across all migration subfolders and verify that every existing SQL file is listed in the registry. Do not move or rename already-applied migrations; `persons/0002_persons_core.sql` is a recorded historical path exception.
+The authoritative reservation ledger and current inventory are maintained by WG-0 in `docs/data/MIGRATION_SEQUENCE_REGISTRY_FA.md`. A number is reserved only after the WG-0 reservation PR is merged into `main`; a proposal or unmerged branch does not reserve it. Migration PRs follow that reservation. CI tests enforce global filename/LogicalName and numeric-version uniqueness across all migration subfolders and verify a one-to-one match between every SQL file and exactly one parsed registry row, reject stale registry paths, duplicate/missing versions, and enforce contiguous applied versions while allowing explicitly reserved future numbers. Do not move or rename already-applied migrations; `persons/0002_persons_core.sql` is a recorded historical path exception.
 
 ## Migration naming risk
 
