@@ -39,6 +39,7 @@
 /installer/ @Md-gsm @mrdeljoe4
 /docs/operations/ @Md-gsm @mrdeljoe4
 /docs/data/ @Md-gsm @mrdeljoe4
+/docs/data/MIGRATION_SEQUENCE_REGISTRY_FA.md @Md-gsm @mrdeljoe4
 
 # WG-5 and future phase groups: path reservations only; runtime remains blocked until owner approval.
 /src/Modules/Catalog/ @Md-gsm @mrdeljoe4
@@ -61,7 +62,6 @@
 # Current Finance slice: Party-account identity/provisioning and merge participation only.
 /src/Modules/Finance/** @Md-gsm @mrdeljoe4
 /database/migrations/0006_finance_party_accounts.sql @Md-gsm @mrdeljoe4
-/tests/MDGsm.Domain.Tests/Finance/** @Md-gsm @mrdeljoe4
 
 # Shared composition, persistence and build configuration: WG-0 coordination plus affected domain owner.
 /src/Host/Api/Program.cs @Md-gsm @mrdeljoe4
