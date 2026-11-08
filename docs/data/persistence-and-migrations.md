@@ -31,7 +31,7 @@
 | 0007 | `0007_persons_temporary_workflows.sql` | Temporary workflow metadata and encrypted payload lifecycle |
 | 0008 | `0008_persons_party_merge.sql` | Persons-owned Party merge operation records and merge-state columns |
 
-The duplicate national-identifier migration from the older PR #47 branch was not imported because main already owns version 0004. The unused row-version follow-up was folded out before application; migration 0006 is the single initial Finance schema migration. The eight-version sequence was validated on disposable PostgreSQL 18 Linux and Windows CI databases on PR #50 head `3c113e77169c8b6e1ab882df2ef49d2c39f0222c` (Persons gates run `42408907287`). PR #50 was merged as `2754e261d05f1e0410de51dbfbd5909ad638eb33`. This is not a production/staging migration and does not constitute independent CI execution on the merge commit.
+The duplicate national-identifier migration from the older PR #47 branch was not imported because main already owns version 0004. The unused row-version follow-up was folded out before application; migration 0006 is the single initial Finance schema migration. The eight-version sequence was validated on disposable PostgreSQL 18 Linux/Windows CI. Exact main SHA `f011c94d52bc06c7e213abb6e480180e9ea73f40` later passed push CI (Persons 13/13, CodeQL and Charter; 15/15 check-runs). This remains disposable CI only.
 
 Migration 0003 creates the IdentityAccess schema and singleton `identity.system_settings` row (5 active accounts, 30-second heartbeat, 180-second lease), required by `IdentityAccessUnitOfWork`.
 
@@ -67,6 +67,10 @@ This is the IdentityAccess schema grant set, not a complete application-wide API
 
 Prefer .NET user-secrets for local API development, or set `ConnectionStrings__MDGsmDatabase` in the process environment. Never commit actual credentials. Integration tests must use dedicated disposable databases.
 
+## Migration naming risk
+
+Migration 0002 is physically under database/migrations/persons while others are at root. Logical resource identity uses filename, not relative path; filenames must be globally unique across subfolders. Add a collision test; never move/rename an applied migration.
+
 ## Migration lifecycle
 
 1. Approve a domain/schema change before writing SQL.
@@ -76,4 +80,4 @@ Prefer .NET user-secrets for local API development, or set `ConnectionStrings__M
 5. Never apply migrations implicitly at API startup. Production requires a separately approved deployment invocation and deployment-only identity.
 6. Runtime application credentials must not be database owners and must have least-privilege grants.
 
-A successful migration CI run proves schema application against an isolated PostgreSQL service; it does not provision or migrate an external staging/production database.
+A successful migration CI run proves schema application against an isolated PostgreSQL service; it does not provision or migrate staging/production. Only IdentityAccess has a runtime grant template; Persons and Finance grant matrices are absent, so least-privilege coverage is partial.

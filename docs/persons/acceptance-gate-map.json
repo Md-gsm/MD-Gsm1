@@ -155,5 +155,10 @@
       "expectedBehavior": "CI evidence contains commit, contract versions, schema fingerprint, gate/test counts, and no raw PII."
     }
   ],
-  "note": "UNMAPPED means no executable test currently exists. Only IMPLEMENTED entries are backed by a checked-in test method. G1 remains blocked while any required criterion is UNMAPPED."
+  "note": "AC-31..45 remain UNMAPPED. PR #50 has focused tests for portions of temporary retention and Party merge/Finance provisioning, but no criterion-by-criterion mapping is accepted. AC-46..49 are CI-policy/evidence tests only; they do not demonstrate runtime behavior for AC-31..45.",
+  "runtimeCoverageCaveat": {
+    "AC31toAC38": "Partial temporary workflow ciphertext store/retention worker; full criterion mapping and acceptance open.",
+    "AC39toAC45": "Partial transactional Party merge coordinator and Finance participant; consumer completeness, classification, participant protocol, preview/conflict behavior, atomicity and historical preservation not all proven.",
+    "AC46toAC49": "CI policy/evidence controls only; not runtime acceptance."
+  }
 }
