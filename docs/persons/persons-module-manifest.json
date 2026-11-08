@@ -39,7 +39,7 @@
   "validationEvidenceReference": "docs/operations/evidence/g0-ci-validation-2026-10-31.json",
   "runtimeHostBuildingBlocksRelocated": true,
   "personsInternalCodePlacement": "TRANSITIONAL_BUILDINGBLOCKS_PER_ADR_0014",
-  "evidenceNote": "main is protected; branch endpoint exposes 14 required contexts. Detailed protection endpoint is HTTP 403 for this integration; review/signature settings below are from the Project Owner's supplied REST audit. Exact main SHA has 15/15 successful check-runs; CodeQL is successful but non-required; Windows Preview Installer was not run on this SHA.",
+  "evidenceNote": "main is protected; branch endpoint exposes 14 required contexts. Detailed protection endpoint is HTTP 403 for this integration; review/signature settings below are from the Project Owner's supplied REST audit. Exact main merge commit 4933cc9abda03568a23979e3ac25a085981ff84e has 13/15 check-runs successful, 0 failed and 2 in progress (persons-postgres-windows-migrations and codeql-csharp); windows-preview-installer succeeded. PR #54 head 83b551683b0dbd7fa8bc383ec4c21469e0e45149 had 18/18 successful check-runs. PostgreSQL validation uses disposable databases only; no real-data or production migration. G1 remains unauthorized.",
   "historicalValidationBeforePr40": {
     "commit": "194720455d01a5f88b1996ed9b100b7bc7ec363b",
     "validatedAtUtc": "2026-11-07",
@@ -62,8 +62,8 @@
     },
     "databaseScope": "Disposable PostgreSQL 18 Linux/Windows CI only; no production or real-data database migration."
   },
-  "currentMainCommit": "f011c94d52bc06c7e213abb6e480180e9ea73f40",
-  "currentMainCiStatus": "SUCCESS_ON_EXACT_MAIN_SHA_15_OF_15_CHECK_RUNS",
+  "currentMainCommit": "4933cc9abda03568a23979e3ac25a085981ff84e",
+  "currentMainCiStatus": "IN_PROGRESS_ON_EXACT_MAIN_SHA_13_OF_15_CHECK_RUNS",
   "lastIntegratedValidation": {
     "pullRequest": 50,
     "reviewedBy": "mrdeljoe4",
