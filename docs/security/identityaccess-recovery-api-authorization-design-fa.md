@@ -323,3 +323,7 @@ Absolute TTL با heartbeat تمدید نمی‌شود. سقف دو نشست و 
 - پس از اثبات OTP، تغییر رمز + افزایش credential_version + revoke اتمیک همه نشست‌های حساب + اجبار تغییر رمز در ورود بعدی الزامی است.
 - این flow MFA نیست و تا threat-model review، SMTP configuration، endpoint/orchestration، rate-limit اتمیک و تست replay/race/expiry/failure آماده نشوند، Recovery runtime فعال نیست.
 - SMS فقط placeholder آینده و غیرفعال است؛ schema و Store این فاز نباید کانال mobile را بپذیرند. offline recovery code عامل اجباری یا bypass نیست.
+
+
+## الحاقیه WG-2 — تطبیق بخش ۶.۳ با اصلاحیه 2026-11-07 (2026-11-08)
+جدول ۶.۳ و بند ۶.۴ این سند عمر مطلق ۱۲ ساعته و سقف ۲ نشست/حساب را تصمیم مالک نوشته‌اند. طبق «اصلاح نهایی سیاست نشست — 2026-11-07» در ADR-0013 و «تصمیم‌های نهایی مالک — 2026-11-06/07» در `identityaccess-owner-decisions-fa.md`، این دو مقدار superseded‌اند و مصوب فرض نمی‌شوند؛ سقف ۵ حساب فعال و 30s/180s (liveness) باقی است. هم‌چنین الزام سه‌عاملی (ایمیل + موبایل + کد آفلاین) در بخش‌های ۱ و ۵ با الحاقیه‌های «Recovery ایمیل‌تنها» 2026-11-06/07 همین سند جایگزین شده است. سطح شروع Recovery (endpoint شبکه‌ای یا کنسول محلی) در تصمیم نهایی مشخص نشده و در `identityaccess-wg2-gap-register-fa.md` (R-06) به‌عنوان درخواست تصمیم ثبت شده است. این الحاقیه سیاست جدیدی نمی‌سازد و `g1Authorized=false` است.
