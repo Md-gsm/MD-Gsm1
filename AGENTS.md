@@ -3,9 +3,10 @@
 این فایل برای تمام دستیارهای برنامه‌نویسی، عامل‌های خودکار و مشارکت‌کنندگان کدنویس لازم‌الاجراست. پیش از هر بررسی، پیشنهاد، تغییر کد، migration، قرارداد یا مستندات:
 
 1. منشور حاکمیت پروژه را بخوانید: `docs/governance/PROJECT_GOVERNANCE_CHARTER_FA.md`.
-2. رجیستری مالکیت را بخوانید: `docs/architecture/data-ownership.md` و `docs/architecture/data-ownership-registry.json`.
-3. جهت وابستگی و معماری هدف را بخوانید: `docs/architecture/module-dependencies.md` و `docs/architecture/modular-target.md`.
-4. تصمیم‌ها و مستندات ماژول هدف و PRهای مرتبط را بررسی کنید.
+2. برنامه اجرایی گروه‌های کاری را بخوانید: `docs/governance/PARALLEL_WORKGROUP_EXECUTION_PLAYBOOK_FA.md`. پیش از هر کار، گروه، مرز مسئولیت، معیار پذیرش، مالک داده، قرارداد و مسیر موازی مجاز را از این سند استخراج کنید.
+3. رجیستری مالکیت را بخوانید: `docs/architecture/data-ownership.md` و `docs/architecture/data-ownership-registry.json`.
+4. جهت وابستگی و معماری هدف را بخوانید: `docs/architecture/module-dependencies.md` و `docs/architecture/modular-target.md`.
+5. تصمیم‌ها و مستندات ماژول هدف و PRهای مرتبط را بررسی کنید.
 
 ## قواعدی که در هر کار باید رعایت شوند
 
