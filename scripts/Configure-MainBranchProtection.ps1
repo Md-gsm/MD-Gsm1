@@ -63,7 +63,6 @@ $checksResponse = Invoke-GhJson -Arguments @('api', "repos/$Repository/commits/$
 $checkRuns = @($checksResponse.check_runs)
 $missing = @()
 $notGreen = @()
-# The charter gate is a PR/push workflow check. It is required for merges but is not part of the established module-check preflight.
 $PreflightRequiredChecks = @($RequiredChecks)
 foreach ($required in $PreflightRequiredChecks) {
     $matchingChecks = @($checkRuns | Where-Object { $_.name -eq $required })
