@@ -12,4 +12,4 @@ Branch endpoint، protected=true و ۱۴ context الزامی را نشان می
 
 بازبینی مستقل: reviewer واجد صلاحیت و مستقل از نویسنده/مالک تصمیم، بررسی Diff و شواهد روی آخرین SHA، گزارش file/line، severity، impact، reproduction، tests و resolution. approval خالی یا «ok/1» کافی نیست؛ بعد از Push review مجدد لازم است.
 
-اسکریپت Configure-MainBranchProtection.ps1 هنوز ۱۲ check دارد، در حالی که live main چهارده context دارد. تا هم‌ترازی و dry-run/readback، گزینه Apply اجرا نشود.
+اسکریپت Configure-MainBranchProtection.ps1 در شاخه اصلاحی، هر ۱۴ context زنده را در preflight کنترل می‌کند؛ همه باید روی HEAD کامل و success باشند. سیاست PR شامل حداقل یک approval، Code Owner review و تأیید فردی غیر از آخرین pusher است. Apply همچنان opt-in است و پس از آن readback اجباری دارد. این PR فقط کد و تست را اصلاح می‌کند؛ هیچ تنظیم واقعی Branch Protection را تغییر نمی‌دهد. تا بازبینی مستقل و ادغام PR، اجرای Apply ممنوع است.

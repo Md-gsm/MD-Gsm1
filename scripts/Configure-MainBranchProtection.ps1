@@ -19,6 +19,7 @@ $RequiredChecks = @(
     'persons-e2e-disposable',
     'persons-ci-enforcement-test',
     'persons-ci-evidence',
+    'persons-postgres-windows-migrations',
     'project-charter-owner-gate'
 )
 
@@ -62,15 +63,14 @@ $checksResponse = Invoke-GhJson -Arguments @('api', "repos/$Repository/commits/$
 $checkRuns = @($checksResponse.check_runs)
 $missing = @()
 $notGreen = @()
-# The charter gate is a PR/push workflow check. It is required for merges but is not part of the established module-check preflight.
-$PreflightRequiredChecks = @($RequiredChecks | Where-Object { $_ -ne 'project-charter-owner-gate' })
+$PreflightRequiredChecks = @($RequiredChecks)
 foreach ($required in $PreflightRequiredChecks) {
     $matchingChecks = @($checkRuns | Where-Object { $_.name -eq $required })
     if ($matchingChecks.Count -eq 0) {
         $missing += $required
         continue
     }
-    $latest = $matchingChecks | Sort-Object { [DateTime]$_.completed_at } -Descending | Select-Object -First 1
+    $latest = $matchingChecks | Sort-Object { [DateTime]$_.created_at } -Descending | Select-Object -First 1
     if ($latest.status -ne 'completed' -or $latest.conclusion -ne 'success') {
         $notGreen += "$required [$($latest.status)/$($latest.conclusion)]"
     }
@@ -124,9 +124,9 @@ $payload = @{
     enforce_admins = $true
     required_pull_request_reviews = @{
         dismiss_stale_reviews = $true
-        require_code_owner_reviews = $false
-        required_approving_review_count = 0
-        require_last_push_approval = $false
+        require_code_owner_reviews = $true
+        required_approving_review_count = 1
+        require_last_push_approval = $true
     }
     required_conversation_resolution = $true
     required_linear_history = $true
@@ -143,8 +143,8 @@ $tempFile = Join-Path ([IO.Path]::GetTempPath()) ("mdgsm-main-protection-" + [Gu
 try {
     if (-not $Apply) {
         Write-Host 'PREVIEW COMPLETE — no GitHub settings were changed.' -ForegroundColor Green
-        Write-Host 'Planned policy: PR required; all 12 established module CI checks plus the owner-only charter gate required; branch must be up to date; admin enforcement enabled; force-push and branch deletion disabled; conversation resolution required.'
-        Write-Host 'Approval count is intentionally 0 because no independent reviewer account/team was confirmed. This can be raised after reviewer assignment.'
+        Write-Host 'Planned policy: PR required; all 14 live required checks required; branch must be up to date; admin enforcement enabled; force-push and branch deletion disabled; conversation resolution required.'
+        Write-Host 'Review policy: at least one approval, Code Owner review, and approval by someone other than the most recent pusher.'
         Write-Host 'To apply after reviewing this report, run:'
         Write-Host ".\scripts\Configure-MainBranchProtection.ps1 -Apply"
         return
@@ -167,7 +167,9 @@ try {
         -not $verified.required_status_checks.strict -or
         -not $verified.enforce_admins.enabled -or
         -not $prReviewsEnabled -or
-        $verified.required_pull_request_reviews.required_approving_review_count -ne 0 -or
+        -not $verified.required_pull_request_reviews.require_code_owner_reviews -or
+        $verified.required_pull_request_reviews.required_approving_review_count -ne 1 -or
+        -not $verified.required_pull_request_reviews.require_last_push_approval -or
         -not $conversationResolutionEnabled -or
         $verified.lock_branch.enabled -or
         -not $verified.required_linear_history.enabled -or
@@ -183,6 +185,8 @@ try {
     Write-Host "Strict/up-to-date: $($verified.required_status_checks.strict)"
     Write-Host "Admin enforcement: $($verified.enforce_admins.enabled)"
     Write-Host "PR required (approvals): $($verified.required_pull_request_reviews.required_approving_review_count)"
+    Write-Host "Code Owner review required: $($verified.required_pull_request_reviews.require_code_owner_reviews)"
+    Write-Host "Latest-push approval required: $($verified.required_pull_request_reviews.require_last_push_approval)"
     Write-Host "Conversation resolution required: $conversationResolutionEnabled"
     Write-Host "Force pushes allowed: $($verified.allow_force_pushes.enabled)"
     Write-Host "Branch deletion allowed: $($verified.allow_deletions.enabled)"
