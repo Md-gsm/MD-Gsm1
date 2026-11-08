@@ -67,6 +67,10 @@ This is the IdentityAccess schema grant set, not a complete application-wide API
 
 Prefer .NET user-secrets for local API development, or set `ConnectionStrings__MDGsmDatabase` in the process environment. Never commit actual credentials. Integration tests must use dedicated disposable databases.
 
+## Central migration reservation registry
+
+The authoritative reservation ledger and current inventory are maintained in `docs/data/MIGRATION_SEQUENCE_REGISTRY_FA.md`. Reserve a globally unique four-digit version through WG-0 before creating SQL. CI tests enforce global filename/LogicalName and numeric-version uniqueness across all migration subfolders and verify that every existing SQL file is listed in the registry. Do not move or rename already-applied migrations; `persons/0002_persons_core.sql` is a recorded historical path exception.
+
 ## Migration naming risk
 
 Migration 0002 is physically under database/migrations/persons while others are at root. Logical resource identity uses filename, not relative path; filenames must be globally unique across subfolders. Add a collision test; never move/rename an applied migration.
