@@ -109,7 +109,7 @@ PR #45 and PR #46 were merged after this historical run set. SHA `5638dbc4767a18
 
 ### Current main CI evidence (2026-11-08)
 
-Exact main SHA `f011c94d52bc06c7e213abb6e480180e9ea73f40`: 15/15 check-runs successful. Fourteen contexts are required; persons-spec-lint is required, codeql-csharp is successful but non-required. Windows Preview Installer was not run on this SHA. PostgreSQL checks use disposable databases only.
+Exact main merge SHA `4933cc9abda03568a23979e3ac25a085981ff84e`: the latest readback shows 13/15 check-runs successful, 0 failed and 2 in progress (`persons-postgres-windows-migrations` and `codeql-csharp`). Fourteen contexts are required; `persons-spec-lint` is required. Windows Preview Installer succeeded on this SHA. PR #54 head SHA `83b551683b0dbd7fa8bc383ec4c21469e0e45149` passed 18/18 checks before merge. PostgreSQL checks use disposable databases only.
 
 ## G1 hard stop
 
