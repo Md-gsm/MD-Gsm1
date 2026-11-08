@@ -1,10 +1,59 @@
-# Review ownership. Enforcement ("Require review from Code Owners") is a repository setting.
-# @mrdeljoe4 is the independent reviewer account; @Md-gsm is the owner/author.
-*                      @Md-gsm @mrdeljoe4
-/.github/              @Md-gsm @mrdeljoe4
-/docs/decisions/       @Md-gsm @mrdeljoe4
-/database/             @Md-gsm @mrdeljoe4
-/scripts/ci/           @Md-gsm @mrdeljoe4
+# Default reviewers: project owner and the currently designated independent WG-QA reviewer.
+# GitHub Teams for individual WGs are not yet provisioned; WG-001 defines logical ownership.
+* @Md-gsm @mrdeljoe4
+
+# WG-0 — governance, architecture, ADRs and project-wide working agreements
+/AGENTS.md @Md-gsm @mrdeljoe4
+/README.md @Md-gsm @mrdeljoe4
+/.github/PULL_REQUEST_TEMPLATE.md @Md-gsm @mrdeljoe4
+/.github/CODEOWNERS @Md-gsm @mrdeljoe4
+/docs/governance/ @Md-gsm @mrdeljoe4
+/docs/architecture/ @Md-gsm @mrdeljoe4
+/docs/decisions/ @Md-gsm @mrdeljoe4
+/docs/roadmap/ @Md-gsm @mrdeljoe4
+
+# WG-1 — Persons (including ADR-0014 temporary BuildingBlocks location)
+/src/Modules/Persons/ @Md-gsm @mrdeljoe4
+/src/BuildingBlocks/MDGsm.Domain/Persons/ @Md-gsm @mrdeljoe4
+/src/BuildingBlocks/MDGsm.Application/Persons/ @Md-gsm @mrdeljoe4
+/src/BuildingBlocks/MDGsm.Infrastructure/Persons/ @Md-gsm @mrdeljoe4
+/src/Host/Api/Endpoints/Persons/ @Md-gsm @mrdeljoe4
+/docs/persons/ @Md-gsm @mrdeljoe4
+/database/migrations/ @Md-gsm @mrdeljoe4
+
+# WG-2 — IdentityAccess
+/src/Modules/IdentityAccess/ @Md-gsm @mrdeljoe4
+/src/BuildingBlocks/MDGsm.Infrastructure/IdentityAccess/ @Md-gsm @mrdeljoe4
+/src/Host/Api/Security/ @Md-gsm @mrdeljoe4
+/database/operations/ @Md-gsm @mrdeljoe4
+/docs/security/ @Md-gsm @mrdeljoe4
+
+# WG-3 — Desktop and user experience
+/src/Host/Desktop/ @Md-gsm @mrdeljoe4
+/docs/menu/ @Md-gsm @mrdeljoe4
+
+# WG-4 — platform, CI, installer, release and operations
+/.github/workflows/ @Md-gsm @mrdeljoe4
+/scripts/ @Md-gsm @mrdeljoe4
+/tools/ @Md-gsm @mrdeljoe4
+/installer/ @Md-gsm @mrdeljoe4
+/docs/operations/ @Md-gsm @mrdeljoe4
+/docs/data/ @Md-gsm @mrdeljoe4
+
+# WG-5 and future phase groups: path reservations only; runtime remains blocked until owner approval.
+/src/Modules/Catalog/ @Md-gsm @mrdeljoe4
+/src/Modules/Pricing/ @Md-gsm @mrdeljoe4
+/src/Modules/Organization/ @Md-gsm @mrdeljoe4
+/src/Modules/Inventory/ @Md-gsm @mrdeljoe4
+/src/Modules/Accounting/ @Md-gsm @mrdeljoe4
+/src/Modules/Treasury/ @Md-gsm @mrdeljoe4
+/src/Modules/Sales/ @Md-gsm @mrdeljoe4
+/src/Modules/Purchasing/ @Md-gsm @mrdeljoe4
+/src/Modules/RepairOperations/ @Md-gsm @mrdeljoe4
+/src/Modules/ERPIntegration/ @Md-gsm @mrdeljoe4
+
+# WG-QA: tests and review evidence. Domain owners still own production code.
+/tests/ @Md-gsm @mrdeljoe4
 
 # The project charter is controlled exclusively by the project owner.
 /docs/governance/PROJECT_GOVERNANCE_CHARTER_FA.md @Md-gsm
