@@ -168,12 +168,16 @@
 
 **محدودیت‌ها**
 - کاتالوگ، UOM و Pricing فعلاً به‌عنوان فاز مستقل منشور ثبت نشده‌اند؛ جایگاه و دامنه اجرایی آن‌ها باید پیش از شروع runtime به تصویب مالک برسد.
+- تا زمان تصمیم رسمی و ثبت‌شده مالک (اصلاح منشور یا تصمیم معماری/فازی سازگار با منشور)، وابستگی WG-PHASE-10 و WG-PHASE-11 به Catalog/Pricing صریحاً `BLOCKED` است؛ گروه‌های Sales/Purchasing و RepairOperations حق ساخت جایگزین موقت یا موتور قیمت محلی برای دورزدن این مانع را ندارند.
+- WG-0 باید تصمیم مالک را درخواست و نتیجه را در منشور/تصمیم رسمی ثبت کند؛ تا آن زمان فقط تحلیل قرارداد Catalog/Pricing در WG-5 مجاز است.
 - گروه نباید در فرم فروش، خرید، انبار یا تعمیر، کاتالوگ/موتور قیمت موازی بسازد.
 - این آماده‌سازی مجوز شروع Inventory یا Sales/Purchasing نیست.
 
 ### WG-QA — آزمون، امنیت و بازبینی مستقل
 
 **نوع:** نقش کنترل کیفیت و پذیرش؛ مستقل از گروه نویسنده.
+
+**انتصاب اجرایی فعلی:** حساب `@mrdeljoe4` که در `.github/CODEOWNERS` به‌عنوان حساب بازبین مستقل ثبت شده، بازبین مستقل تعیین‌شده برای WG-QA است. این انتصاب نقش بازبینی است و به معنی مالکیت کد/داده یا عضویت در گروه نویسنده نیست. درخواست بازبینی PR باید به این حساب ارسال شود. اگر این حساب در دسترس یا واجد صلاحیت دامنه‌ای نباشد، PR در وضعیت `NEEDS_INDEPENDENT_REVIEW` می‌ماند؛ هیچ حساب یا approval دیگری به‌صورت خودکار جایگزین آن نمی‌شود.
 
 **مسئولیت‌ها**
 - طراحی ماتریس تست بر اساس معیار پذیرش و ریسک.
@@ -187,6 +191,8 @@
 - مالک پروژه یا نویسنده نباید تأیید خودش را به‌عنوان بازبینی مستقل معرفی کند.
 - متن‌هایی مانند «تأیید»، «OK»، «1» یا approval بدون تحلیل، مدرک بازبینی فنی محسوب نمی‌شوند.
 - CI سبز یا CodeQL جایگزین بازبینی معماری/امنیت مستقل نیست.
+- گزارش WG-QA باید در PR و برای آخرین SHA شامل محدوده بررسی، SHA هدف، فایل/خط‌های بررسی‌شده، یافته‌ها با شدت و اثر، تست/شواهد بررسی‌شده، موارد خارج از دسترس و حکم نهایی باشد.
+- یک approval در GitHub فقط ثبت تأیید است و محتوای گزارش را اعتبارسنجی نمی‌کند؛ بنابراین کنترل کیفیت گزارش، استقلال reviewer و انطباق SHA باید به‌صورت انسانی و پیش از عبور PR از گیت پذیرش بررسی شود. CI نباید وجود یک متن دلخواه را معادل بازبینی معتبر تلقی کند.
 
 **محدودیت:** این نقش مجوز ادغام، فعال‌سازی G1 یا تغییر سیاست مالک را صادر نمی‌کند.
 
@@ -195,7 +201,9 @@
 **نوع:** مسیر عرضی برای زمانی که مالک پروژه دامنه و منبع داده مجاز را تصویب کند.
 
 **محدوده مجاز**
-- فقط export داده‌ای که مالک صریحاً اجازه داده است.
+- فقط export داده‌ای خنثی (ترجیحاً CSV UTF-8 بدون macro/script/فرمول اجرایی) که مالک داده صریحاً برای همین کار تأیید کرده باشد.
+- ساختار لازم برای mapping فقط از headerها، data dictionary و توضیحات معنایی‌ای استخراج می‌شود که مالک همراه همان export ارائه و تأیید کرده است؛ دسترسی به schema، کد، migration، اسکریپت، binary، ساختار پوشه یا artifact مهندسی پروژه قدیمی برای کشف ساختار منبع ممنوع است.
+- فایل export باید در محل امن خارج از مخزن Git و با حداقل‌سازی/ناشناس‌سازی PII نگهداری شود؛ ورود نمونه داده به مخزن فقط با مجوز جداگانه و داده کاملاً synthetic مجاز است.
 - profiling، mapping، پاک‌سازی، dry-run ناشناس، reconciliation، cut-over و rollback.
 - ثبت شواهد تعداد رکورد، جمع‌ها، مانده‌ها، IMEI و کنترل‌های کیفیت طبق دامنه داده مصوب.
 
@@ -204,19 +212,43 @@
 - بررسی artifact قدیمی برای reuse یا انتقال ساختار آن مجاز نیست.
 - اجرای انتقال داده واقعی یا cut-over بدون دستور صریح مالک ممنوع است.
 
+## ۴.۱. نگاشت گروه کاری به مسیر فایل و CODEOWNERS
+
+مالکیت دامنه‌ای، مالکیت نهایی است؛ این جدول مرز اجرایی و پیش‌فرض بازبینی را قابل‌اعمال می‌کند. مسیرهای موجود بر اساس درخت واقعی مخزن در مبنای این PR ثبت شده‌اند؛ مسیرهای آینده فقط رزرو مفهومی‌اند و مجوز ایجاد runtime نیستند.
+
+| گروه | مسیرهای تحت مسئولیت/هماهنگی | مرز و هم‌پوشانی |
+|---|---|---|
+| WG-0 | `AGENTS.md`، `README.md`، `.github/PULL_REQUEST_TEMPLATE.md`، `.github/CODEOWNERS`، `docs/governance/**`، `docs/architecture/**`، `docs/decisions/**`، `docs/roadmap/**` | هماهنگی و حاکمیت؛ تغییر قرارداد یا مالکیت نیازمند تأیید مالک دامنه است. |
+| WG-1 | `src/Modules/Persons/**`، `src/BuildingBlocks/MDGsm.Domain/Persons/**`، `src/BuildingBlocks/MDGsm.Application/Persons/**`، `src/BuildingBlocks/MDGsm.Infrastructure/Persons/**`، `src/Host/Api/Endpoints/Persons/**`، `database/migrations/0004_persons_reserve_national_identifiers.sql`، `0005_persons_nonblank_identity_names.sql`، `0007_persons_temporary_workflows.sql`، `0008_persons_party_merge.sql` و `persons/0002_persons_core.sql`، `docs/persons/**`، تست‌های `tests/**/Persons/**` | مسیرهای BuildingBlocks وضعیت انتقال موقت ADR-0014 هستند؛ مالکیت منطقی همچنان Persons است. Migration مشترک نیازمند رزرو WG-0 است. |
+| WG-2 | `src/Modules/IdentityAccess/**`، `src/BuildingBlocks/MDGsm.Infrastructure/IdentityAccess/**`، `src/Host/Api/Security/**`، `database/migrations/0003_identityaccess_core.sql`، `database/operations/**`، `docs/security/identityaccess-*.md`، `tests/**/IdentityAccess/**` | مرزهای مشترک API/Host و persistence با WG-0 و WG-4 هماهنگ می‌شوند؛ مالکیت هویت Party متعلق به Persons می‌ماند. |
+| WG-3 | `src/Host/Desktop/**`، `docs/menu/**`، تست‌های UI و Client | مصرف‌کننده قراردادهاست؛ مجاز به تغییر منطق دامنه، SQL یا مجوز سمت سرور نیست. |
+| WG-4 | `.github/workflows/**`، `scripts/**`، `tools/**`، `installer/**`، `docs/operations/**`، `docs/data/persistence-and-migrations.md` | ابزار و عملیات؛ schema و Migration همچنان متعلق به ماژول دامنه و با رزرو هماهنگ‌شده است. |
+| WG-5 | مسیرهای آتی `src/Modules/Catalog/**`، `src/Modules/Pricing/**` و مستندات کاتالوگ/UOM/قیمت | فعلاً فقط تحلیل/قرارداد؛ هیچ مسیر runtime یا schema جدیدی تا تصمیم مالک ایجاد نمی‌شود. |
+| WG-QA | `tests/**`، چک‌لیست‌ها و گزارش‌های مستقل در `docs/architecture/` و `docs/security/` | نقش بازبین/آزمون‌گر است، نه مالک محصول؛ تغییر تست‌های دامنه با گروه مالک هماهنگ می‌شود. |
+| WG-DATA | فقط مستندات mapping و reconciliation در `docs/data/**`؛ فایل‌های داده در مخزن Git قرار نمی‌گیرند مگر با مجوز و سیاست جداگانه | export داده‌ای خنثی و تأییدشده، نه artifact مهندسی یا اجرایی منبع. |
+| WG-PHASE-06 تا WG-PHASE-12 | مسیرهای آینده `src/Modules/Organization/**`، `Inventory/**`، `Accounting/**`، `Treasury/**`، `Sales/**`، `Purchasing/**`، `RepairOperations/**` و `ERPIntegration/**` | فقط پس از بازشدن فاز و تکمیل DoR؛ مسیر موجود Contracts به‌تنهایی به معنی بازشدن فاز نیست. |
+
+**وضعیت CODEOWNERS فعلی:** در مخزن GitHub Teamهای جداگانه برای گروه‌ها ثبت نشده‌اند؛ بنابراین `.github/CODEOWNERS` مسیرها را به دو حساب شناخته‌شده و موجود، یعنی مالک پروژه `@Md-gsm` و بازبین مستقل `@mrdeljoe4`، route می‌کند. این یک کنترل حساب‌محور فعلی است، نه ادعای وجود تیم‌های GitHub برای WGها. پس از ایجاد Teamهای واقعی و انتصاب رسمی اعضا، الگوهای مسیر باید به Team متناظر منتقل شوند. هیچ حساب یا Team فرضی ساخته یا درج نمی‌شود.
+
+## ۴.۲. رزرو و یکتایی Migration
+
+رجیستری ترتیبی و رزرو مرکزی در `docs/data/MIGRATION_SEQUENCE_REGISTRY_FA.md` مرجع واحد شماره‌گذاری است. پیش از ساخت SQL، گروه درخواست‌کننده باید در همان رجیستری یک شماره را با گروه، مالک دامنه، PR/Issue و محدوده schema رزرو کند؛ WG-0 رزرو را سریالی ثبت می‌کند. شماره فقط پس از ثبت رزرو قابل استفاده است. دو PR موازی حق انتخاب مستقل شماره ندارند.
+
+CI با تست `MigrationResourceTests` یکتایی نام فایل/LogicalName و شماره عددی چهاررقمی را در تمام زیرپوشه‌ها کنترل می‌کند. این کنترل از برخورد نام و Version جلوگیری می‌کند، اما جای رزرو مرکزی را نمی‌گیرد. فایل‌های اعمال‌شده هرگز جابه‌جا یا rename نمی‌شوند؛ مسیر `database/migrations/persons/0002_persons_core.sql` استثنای تاریخیِ ثبت‌شده است و `LogicalName` همچنان از نام فایل ساخته می‌شود. هر migration جدید باید هم‌زمان رجیستری، تست و manifest checksum را به‌روز کند.
+
 ## ۵. گروه‌های دامنه‌ای مراحل بعد
 
 این گروه‌ها در نقشه راه آینده تعریف شده‌اند. تعریف گروه به معنی اجازه شروع فوری پیاده‌سازی نیست؛ هر گروه فقط وقتی وارد runtime می‌شود که پیش‌نیاز مرحله و مجوز کار مشخص باشد.
 
 | شناسه | گروه | فاز مصوب | مالکیت اصلی | پیش‌نیاز کلیدی |
 |---|---|---:|---|---|
-| WG-6 | Organization | ۶ | Branch، ساختار سازمانی، تعریف Warehouse، membership/scope | پذیرش پیش‌نیازهای فاز ۵ یا scope مستقل مصوب |
-| WG-7 | Inventory | ۷ | quantity، stock ledger، receipt/issue/transfer/count/reservation | Organization، Catalog/UOM و قرارداد اثر مالی |
-| WG-8 | Accounting | ۸ | chart of accounts، fiscal period، journal/lines، ledger | Inventory و قرارداد رویداد/اثر مالی |
-| WG-9 | Treasury | ۹ | cash، bank، cheque، receipt/payment، settlement | Accounting و قراردادهای تسویه |
-| WG-10 | Sales/Purchasing | ۱۰ | سفارش، فاکتور خرید/فروش، returns و snapshot سند | Persons، Inventory، Accounting، Treasury و Pricing |
-| WG-11 | RepairOperations | ۱۱ | پذیرش، پرونده تعمیر، IMEI، skill و technician assignment | Persons، Inventory، Treasury، Accounting، Catalog/Pricing و قرارداد تخصیص |
-| WG-12 | ERP Integration | ۱۲ | سناریوهای end-to-end و reconciliation بین ماژول‌ها | قابلیت‌های لازم از فازهای ۶ تا ۱۱ |
+| WG-PHASE-06 | Organization | ۶ | Branch، ساختار سازمانی، تعریف Warehouse، membership/scope | پذیرش پیش‌نیازهای فاز ۵ یا scope مستقل مصوب |
+| WG-PHASE-07 | Inventory | ۷ | quantity، stock ledger، receipt/issue/transfer/count/reservation | Organization، Catalog/UOM و قرارداد اثر مالی |
+| WG-PHASE-08 | Accounting | ۸ | chart of accounts، fiscal period، journal/lines، ledger | Inventory و قرارداد رویداد/اثر مالی |
+| WG-PHASE-09 | Treasury | ۹ | cash، bank، cheque، receipt/payment، settlement | Accounting و قراردادهای تسویه |
+| WG-PHASE-10 | Sales/Purchasing | ۱۰ | سفارش، فاکتور خرید/فروش، returns و snapshot سند | Persons، Inventory، Accounting، Treasury و Pricing |
+| WG-PHASE-11 | RepairOperations | ۱۱ | پذیرش، پرونده تعمیر، IMEI، skill و technician assignment | Persons، Inventory، Treasury، Accounting، Catalog/Pricing و قرارداد تخصیص |
+| WG-PHASE-12 | ERP Integration | ۱۲ | سناریوهای end-to-end و reconciliation بین ماژول‌ها | قابلیت‌های لازم از فازهای ۶ تا ۱۱ |
 
 **ترتیب فازها همان GOV-001 و نقشه راه مرجع است.** این جدول مجوز جابه‌جایی فازها نیست. هر تغییر در ترتیب ۷ تا ۱۱ نیازمند دلیل وابستگی مستند و تأیید صریح مالک پروژه است.
 
@@ -313,7 +345,7 @@ WG-QA در تمام مسیرها به‌صورت مرحله‌ای خروجی‌
 | ۳. اجرا | گروه مالک | تغییر محدود و قابل ردگیری | انطباق با دامنه |
 | ۴. خودآزمایی | گروه مالک | تست‌ها، لاگ، شواهد و محدودیت‌ها | تست‌های مرتبط موفق |
 | ۵. کنترل فنی | WG-0/بازبینی فنی | بررسی معماری، diff، امنیت و هم‌پوشانی | بدون مانع فنی باز |
-| ۶. بازبینی مستقل | WG-QA/Reviewer واجد صلاحیت | گزارش مستدل روی آخرین SHA | یافته بحرانی/بالا باز نماند |
+| ۶. بازبینی مستقل | WG-QA؛ در وضعیت فعلی reviewer تعیین‌شده `@mrdeljoe4` یا reviewer جایگزین که مالک رسماً منصوب کند | گزارش مستدل روی آخرین SHA با محدوده، یافته‌ها، شواهد و حکم | یافته بحرانی/بالا باز نماند؛ approval کوتاه کافی نیست. ACCEPT دستیار فنی هرگز بازبینی مستقل محسوب یا به‌جای آن ثبت نمی‌شود. |
 | ۷. پذیرش مالک | مالک پروژه | تصمیم روشن درباره تحویل/ادغام | مجوز صریح متناسب با اقدام |
 | ۸. ادغام و ثبت | طبق مجوز مالک | merge SHA، شواهد نهایی و به‌روزرسانی وضعیت | readback واقعی از GitHub |
 
