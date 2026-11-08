@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Xunit;
 
 namespace MDGsm.Domain.Tests.Persons;
@@ -16,6 +18,28 @@ public sealed class MigrationResourceTests
 
         Assert.NotEmpty(files);
         Assert.Equal(files.Length, files.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+
+        var versionMatches = files
+            .Select(file => Regex.Match(
+                file!,
+                @"^(?<version>\d{4})_[a-z0-9_]+\.sql$",
+                RegexOptions.IgnoreCase))
+            .ToArray();
+
+        Assert.All(versionMatches, match => Assert.True(match.Success, $"Invalid migration filename: {match.Value}"));
+
+        var versions = versionMatches
+            .Select(match => int.Parse(match.Groups["version"].Value, CultureInfo.InvariantCulture))
+            .ToArray();
+        Assert.Equal(versions.Length, versions.Distinct().Count());
+
+        var registryPath = Path.Combine(root, "docs", "data", "MIGRATION_SEQUENCE_REGISTRY_FA.md");
+        var registry = File.ReadAllText(registryPath);
+        foreach (var file in Directory.GetFiles(Path.Combine(root, "database", "migrations"), "*.sql", SearchOption.AllDirectories))
+        {
+            var relativePath = Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/');
+            Assert.Contains(relativePath, registry);
+        }
     }
 
     private static string FindRepositoryRoot()
