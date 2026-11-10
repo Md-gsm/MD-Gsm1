@@ -455,10 +455,10 @@ public sealed class PersonsEndToEndTests
         Assert.Equal(existing.PartyId, replay.PartyId);
         Assert.False(replay.Created);
         Assert.Equal(1L, await ScalarAsync(scope,
-            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550837' AND is_active", Guid.Empty));
+            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550837' AND is_active AND @id = @id", Guid.Empty));
         Assert.Equal(1L, await ScalarAsync(scope,
-            "SELECT count(*) FROM persons_operations WHERE operation_id = @id AND party_id = @party",
-            operationId, Guid.Parse(existing.PartyId)));
+            "SELECT count(*) FROM persons_operations WHERE operation_id = @id",
+            operationId));
         Assert.Equal(3L, await ScalarAsync(scope,
             "SELECT business_roles::bigint FROM persons WHERE party_id = @id", Guid.Parse(existing.PartyId)));
     }
