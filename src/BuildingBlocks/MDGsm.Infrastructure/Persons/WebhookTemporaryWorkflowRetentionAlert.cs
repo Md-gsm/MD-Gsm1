@@ -12,7 +12,7 @@ public sealed class WebhookTemporaryWorkflowRetentionAlert(
     IHttpClientFactory httpClientFactory,
     IConfiguration configuration,
     ILogger<WebhookTemporaryWorkflowRetentionAlert> logger,
-    TimeProvider timeProvider) : ITemporaryWorkflowRetentionAlert
+    TimeProvider? timeProvider = null) : ITemporaryWorkflowRetentionAlert
 {
     public const string WebhookConfigurationKey = "Operations:Alerts:WebhookUrl";
 
@@ -27,12 +27,13 @@ public sealed class WebhookTemporaryWorkflowRetentionAlert(
             throw new InvalidOperationException("A valid HTTPS operational alert destination is required.");
         }
 
+        var clock = timeProvider ?? TimeProvider.System;
         using var response = await httpClientFactory.CreateClient(nameof(WebhookTemporaryWorkflowRetentionAlert))
             .PostAsJsonAsync(endpoint, new
             {
                 eventType = "persons.temporary_workflow_retention.failed",
                 failureCode,
-                occurredAtUtc = timeProvider.GetUtcNow()
+                occurredAtUtc = clock.GetUtcNow()
             }, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
