@@ -1,5 +1,5 @@
 {
-  "registryVersion": "1.4",
+  "registryVersion": "1.5",
   "module": "Persons",
   "ownerPaths": [
     "src/Modules/Persons",
@@ -15,35 +15,207 @@
       "path": "src/Host/Api/Program.cs",
       "contractVersion": "Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
-      "purpose": "Protected GET party-details endpoint; actor identity comes from validated IdentityAccess session context."
+      "purpose": "Protected GET party-details endpoint; actor identity comes from validated IdentityAccess session context.",
+      "references": [
+        {
+          "referenceId": "src/Host/Api/Program.cs:R01",
+          "line": 136,
+          "classification": "REBUILDABLE_DERIVED",
+          "evidence": "Read-only API lookup against the canonical Party; response is recomputed and not persisted."
+        },
+        {
+          "referenceId": "src/Host/Api/Program.cs:R02",
+          "line": 137,
+          "classification": "REBUILDABLE_DERIVED",
+          "evidence": "Read-only API lookup against the canonical Party; response is recomputed and not persisted."
+        },
+        {
+          "referenceId": "src/Host/Api/Program.cs:R03",
+          "line": 157,
+          "classification": "REBUILDABLE_DERIVED",
+          "evidence": "Read-only API lookup against the canonical Party; response is recomputed and not persisted."
+        }
+      ]
     },
     {
       "module": "Finance",
       "path": "database/migrations/0006_finance_party_accounts.sql",
       "contractVersion": "Finance.Schema/1.0; Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
-      "purpose": "Finance-owned one-to-one Party subledger account identity; no balance or ledger data."
+      "purpose": "Finance-owned one-to-one Party subledger account identity; no balance or ledger data.",
+      "references": [
+        {
+          "referenceId": "database/migrations/0006_finance_party_accounts.sql:R01",
+          "line": 1,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "database/migrations/0006_finance_party_accounts.sql:R02",
+          "line": 6,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "database/migrations/0006_finance_party_accounts.sql:R03",
+          "line": 9,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "database/migrations/0006_finance_party_accounts.sql:R04",
+          "line": 14,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "database/migrations/0006_finance_party_accounts.sql:R05",
+          "line": 15,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        }
+      ]
     },
     {
       "module": "Finance",
       "path": "src/Modules/Finance/Contracts/PartyAccountReference.cs",
       "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
-      "purpose": "Published reference to Finance-owned Party account identity."
+      "purpose": "Published reference to Finance-owned Party account identity.",
+      "references": [
+        {
+          "referenceId": "src/Modules/Finance/Contracts/PartyAccountReference.cs:R01",
+          "line": 4,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        }
+      ]
     },
     {
       "module": "Finance",
       "path": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs",
       "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
-      "purpose": "Finance participant for controlled Party merge; preserves ledger history and blocks dual-account conflicts."
+      "purpose": "Finance participant for controlled Party merge; preserves ledger history and blocks dual-account conflicts.",
+      "references": [
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs:R01",
+          "line": 9,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs:R02",
+          "line": 79,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs:R03",
+          "line": 80,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs:R04",
+          "line": 100,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs:R05",
+          "line": 101,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs:R06",
+          "line": 129,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs:R07",
+          "line": 130,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        }
+      ]
     },
     {
       "module": "Finance",
       "path": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs",
       "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
-      "purpose": "Transaction-bound idempotent provisioning of Finance-owned Party account identity."
+      "purpose": "Transaction-bound idempotent provisioning of Finance-owned Party account identity.",
+      "references": [
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs:R01",
+          "line": 57,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs:R02",
+          "line": 65,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs:R03",
+          "line": 66,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs:R04",
+          "line": 67,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs:R05",
+          "line": 71,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs:R06",
+          "line": 71,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs:R07",
+          "line": 77,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs:R08",
+          "line": 79,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs:R09",
+          "line": 79,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs:R10",
+          "line": 81,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        },
+        {
+          "referenceId": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs:R11",
+          "line": 81,
+          "classification": "TRANSFER_ACTIVE",
+          "evidence": "Active Finance Party-account identity/reference; merge participant transfers the canonical reference."
+        }
+      ]
     }
   ],
   "registryPolicy": {
@@ -76,5 +248,15 @@
       "status": "PLANNED",
       "condition": "Register only when implemented and stores or transports PartyId."
     }
-  ]
+  ],
+  "referenceClassificationPolicy": {
+    "exactlyOneClassificationPerOccurrence": true,
+    "allowedValues": [
+      "TRANSFER_ACTIVE",
+      "HISTORICAL_SNAPSHOT",
+      "BLOCKING_CONFLICT",
+      "REBUILDABLE_DERIVED"
+    ],
+    "lineNumbersAreOneBased": true
+  }
 }
