@@ -8,7 +8,7 @@ namespace MDGsm.Infrastructure.Persons;
 /// ciphertext; this type deliberately has no API that accepts plaintext PII.
 /// Every payload read is guarded by the expiry predicate in the database.
 /// </summary>
-public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource)
+public sealed class PostgresTemporaryWorkflowStore(NpgsqlDataSource dataSource) : ITemporaryWorkflowRetentionStore
 {
     private const int DefaultTtlDays = 7;
     private const int AbsoluteMaxAgeDays = 30;
