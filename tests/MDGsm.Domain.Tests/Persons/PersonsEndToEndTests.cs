@@ -415,6 +415,56 @@ public sealed class PersonsEndToEndTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task AC37_quick_registration_requires_explicit_duplicate_choice_and_replays_selected_operation()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        const string mobile = "09125550837";
+        var existing = await scope.Repository.AddNaturalAsync(
+            NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+        var operationId = Guid.CreateVersion7();
+        var changedIdentity = NewNatural(mobile, NewNationalId()) with
+        {
+            GivenName = "نگار",
+            FamilyName = "احمدی",
+            Roles = PartyBusinessRoles.Colleague
+        };
+
+        var unresolved = await scope.Repository.QuickRegisterNaturalAsync(
+            changedIdentity, Actor, operationId, forceNew: false, selectedPartyId: null,
+            scope.Transaction, default);
+
+        Assert.Equal(PartyQuickRegistrationOutcome.SelectionRequired, unresolved.Outcome);
+        Assert.Null(unresolved.PartyId);
+        Assert.Single(unresolved.Candidates, x => x.PartyId == existing.PartyId);
+        Assert.Equal(1L, await ScalarAsync(scope,
+            "SELECT count(*) FROM persons WHERE party_id = @id", Guid.Parse(existing.PartyId)));
+        Assert.Equal(0L, await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_operations WHERE operation_id = @id", operationId));
+
+        var selected = await scope.Repository.QuickRegisterNaturalAsync(
+            changedIdentity, Actor, operationId, forceNew: false, selectedPartyId: existing.PartyId,
+            scope.Transaction, default);
+        var replay = await scope.Repository.QuickRegisterNaturalAsync(
+            changedIdentity, Actor, operationId, forceNew: false, selectedPartyId: existing.PartyId,
+            scope.Transaction, default);
+
+        Assert.Equal(PartyQuickRegistrationOutcome.ExistingPartyMatched, selected.Outcome);
+        Assert.Equal(existing.PartyId, selected.PartyId);
+        Assert.False(selected.Created);
+        Assert.Equal(PartyQuickRegistrationOutcome.Replayed, replay.Outcome);
+        Assert.Equal(existing.PartyId, replay.PartyId);
+        Assert.False(replay.Created);
+        Assert.Equal(1L, await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_contact_points WHERE kind = 1 AND value = '+989125550837' AND is_active", Guid.Empty));
+        Assert.Equal(1L, await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_operations WHERE operation_id = @id AND party_id = @party",
+            operationId, Guid.Parse(existing.PartyId)));
+        Assert.Equal(3L, await ScalarAsync(scope,
+            "SELECT business_roles::bigint FROM persons WHERE party_id = @id", Guid.Parse(existing.PartyId)));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task AC36_temporary_workflow_data_is_excluded_from_global_party_search_by_name_and_mobile_suffix()
     {
         await using var scope = await TestScope.OpenAsync();
