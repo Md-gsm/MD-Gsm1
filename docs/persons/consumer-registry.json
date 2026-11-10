@@ -252,10 +252,10 @@
   "referenceClassificationPolicy": {
     "exactlyOneClassificationPerOccurrence": true,
     "allowedValues": [
-      "TRANSFER_ACTIVE",
-      "HISTORICAL_SNAPSHOT",
       "BLOCKING_CONFLICT",
-      "REBUILDABLE_DERIVED"
+      "HISTORICAL_SNAPSHOT",
+      "REBUILDABLE_DERIVED",
+      "TRANSFER_ACTIVE"
     ],
     "lineNumbersAreOneBased": true
   }
