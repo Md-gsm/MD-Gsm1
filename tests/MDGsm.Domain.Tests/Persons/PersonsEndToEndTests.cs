@@ -4,6 +4,7 @@ using MDGsm.Domain.Persons;
 using MDGsm.Infrastructure.Persons;
 using Npgsql;
 using Xunit;
+using System.Text.RegularExpressions;
 
 namespace MDGsm.Domain.Tests.Persons;
 
@@ -443,6 +444,23 @@ public sealed class PersonsEndToEndTests
 
         Assert.Empty(nameResults);
         Assert.Empty(mobileResults);
+
+        // The API currently exposes no global search or generic autocomplete route.
+        // Keep this guard beside the live PostgreSQL exclusion test so a future route
+        // cannot be added without extending the AC-36 acceptance contract.
+        var repositoryRoot = new DirectoryInfo(AppContext.BaseDirectory);
+        while (repositoryRoot is not null && !File.Exists(Path.Combine(repositoryRoot.FullName, "MDGsm.sln")))
+            repositoryRoot = repositoryRoot.Parent;
+        Assert.NotNull(repositoryRoot);
+        var apiSourceRoot = Path.Combine(repositoryRoot!.FullName, "src", "Host", "Api");
+        var routeTemplates = Directory.EnumerateFiles(apiSourceRoot, "*.cs", SearchOption.AllDirectories)
+            .SelectMany(file => Regex.Matches(File.ReadAllText(file),
+                    @"\.Map(?:Get|Post|Put|Delete|Patch|Methods|Group)\s*\(\s*""([^""]+)""")
+                .Select(match => match.Groups[1].Value))
+            .ToArray();
+        Assert.DoesNotContain(routeTemplates, route =>
+            route.Contains("search", StringComparison.OrdinalIgnoreCase)
+            || route.Contains("autocomplete", StringComparison.OrdinalIgnoreCase));
     }
 
     private static RegisterLegalParty NewLegal(string legalNationalId) =>
