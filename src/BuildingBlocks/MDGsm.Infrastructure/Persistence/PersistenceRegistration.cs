@@ -20,7 +20,9 @@ public static class PersistenceRegistration
   services.AddScoped<IPartyRepository,PostgresPartyRepository>();
   services.AddScoped<IPartyReferenceValidator,PostgresPartyReferenceValidator>();
   services.AddSingleton<PostgresTemporaryWorkflowStore>();
-  services.AddSingleton<ITemporaryWorkflowRetentionAlert,StructuredLogTemporaryWorkflowRetentionAlert>();
+  services.AddSingleton<ITemporaryWorkflowRetentionStore>(s=>s.GetRequiredService<PostgresTemporaryWorkflowStore>());
+  services.AddHttpClient(nameof(WebhookTemporaryWorkflowRetentionAlert), client => client.Timeout = TimeSpan.FromSeconds(5));
+  services.AddSingleton<ITemporaryWorkflowRetentionAlert,WebhookTemporaryWorkflowRetentionAlert>();
   services.AddHostedService<TemporaryWorkflowRetentionWorker>();
   services.AddScoped<IPartySensitiveDataAuthorizer,IdentityAccessPartySensitiveDataAuthorizer>();
   services.AddScoped<PostgresIdentityAccessStores>();

@@ -35,5 +35,8 @@ public sealed class PersistenceRegistrationTests
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MdGsmDbContext));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MDGsm.Application.Persons.IPartySensitiveDataAuthorizer));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MDGsm.IdentityAccess.Application.ISessionIdentityResolver));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MDGsm.Infrastructure.Persons.ITemporaryWorkflowRetentionStore));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MDGsm.Infrastructure.Persons.ITemporaryWorkflowRetentionAlert));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(Microsoft.Extensions.Hosting.IHostedService));
     }
 }

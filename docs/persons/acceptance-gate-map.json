@@ -45,9 +45,9 @@
     {
       "id": "AC-36",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsEndToEndTests.cs",
+      "automatedTest": "AC36_temporary_workflow_data_is_excluded_from_global_party_search_by_name_and_mobile_suffix",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Temporary data never appears in global people search or generic autocomplete"
     },
     {
@@ -155,9 +155,9 @@
       "expectedBehavior": "CI evidence contains commit, contract versions, schema fingerprint, gate/test counts, and no raw PII."
     }
   ],
-  "note": "AC-31..45 remain UNMAPPED. PR #50 has focused tests for portions of temporary retention and Party merge/Finance provisioning, but no criterion-by-criterion mapping is accepted. AC-46..49 are CI-policy/evidence tests only; they do not demonstrate runtime behavior for AC-31..45.",
+  "note": "AC-31..35 and AC-37..45 remain UNMAPPED. AC-36 is covered by a disposable-PostgreSQL exclusion test for name/mobile-suffix search plus an API route guard confirming no global-search or generic-autocomplete route is exposed. AC-37 has PostgreSQL quick-registration evidence for explicit duplicate selection and idempotent replay, but no temporary-workflow-to-permanent-Party promotion operation or atomic promotion contract exists yet; it therefore remains UNMAPPED. PR #50 has focused tests for portions of temporary retention and Party merge/Finance provisioning, but no criterion-by-criterion mapping is accepted for the remaining criteria. AC-46..49 are CI-policy/evidence tests only; they do not demonstrate runtime behavior for AC-31..45.",
   "runtimeCoverageCaveat": {
-    "AC31toAC38": "Partial temporary workflow ciphertext store/retention worker; full criterion mapping and acceptance open.",
+    "AC31toAC38": "Partial temporary workflow ciphertext store/retention worker; AC-36 search exclusion is covered in current API/repository scope. AC-37 quick-registration selection/replay is tested, but temporary workflow promotion is not implemented; full mapping and acceptance for AC-31..35 and AC-37..38 remain open.",
     "AC39toAC45": "Partial transactional Party merge coordinator and Finance participant; consumer completeness, classification, participant protocol, preview/conflict behavior, atomicity and historical preservation not all proven.",
     "AC46toAC49": "CI policy/evidence controls only; not runtime acceptance."
   }

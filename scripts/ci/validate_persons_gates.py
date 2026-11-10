@@ -370,9 +370,10 @@ def run_architecture(root: Path) -> None:
 
 def run_registry(root: Path) -> None:
     reg = load_json(root / "docs/persons/consumer-registry.json")
-    registered = {str(x.get("path", "")).replace("\\", "/") for x in reg.get("registeredConsumers", [])}
+    consumers = reg.get("registeredConsumers", [])
+    registered = {str(x.get("path", "")).replace("\\", "/") for x in consumers}
     owner_paths = [str(x).replace("\\", "/").rstrip("/") for x in reg.get("ownerPaths", [])]
-    found = set()
+    found: dict[str, list[int]] = {}
     owner_paths.extend(["database/migrations/persons"])
     rx = re.compile(r"\bPartyId\b|\bparty_id\b|REFERENCES\s+parties\b", re.IGNORECASE)
     scanned_extensions = {".cs", ".sql", ".xaml", ".json", ".yml", ".yaml", ".xml", ".props", ".csproj"}
@@ -389,15 +390,59 @@ def run_registry(root: Path) -> None:
             if rel in owner_paths or any(rel.startswith(path + "/") for path in owner_paths):
                 continue
             content = p.read_text(encoding="utf-8", errors="replace")
-            if rx.search(content):
-                found.add(rel)
-    unknown = found - registered
-    stale = registered - found
+            matches = list(rx.finditer(content))
+            if matches:
+                found[rel] = [content.count("\n", 0, match.start()) + 1 for match in matches]
+
+    unknown = set(found) - registered
+    stale = registered - set(found)
     if unknown:
         raise GateFailure(f"Unregistered PartyId consumer(s): {sorted(unknown)}")
     if stale:
         raise GateFailure(f"Registry contains consumer paths not found in source: {sorted(stale)}")
-    print(f"PASS: PartyId consumer registry reconciles. Registered external consumers: {len(registered)}; unknown: 0.")
+
+    allowed = {"TRANSFER_ACTIVE", "HISTORICAL_SNAPSHOT", "BLOCKING_CONFLICT", "REBUILDABLE_DERIVED"}
+    seen_reference_ids: set[str] = set()
+    reference_count = 0
+    for consumer in consumers:
+        path = str(consumer.get("path", "")).replace("\\", "/")
+        references = consumer.get("references")
+        if not isinstance(references, list) or not references:
+            raise GateFailure(f"Consumer has no per-occurrence reference classifications: {path}")
+        declared_lines: list[int] = []
+        for reference in references:
+            if not isinstance(reference, dict):
+                raise GateFailure(f"Invalid reference classification entry in {path}: {reference}")
+            reference_id = str(reference.get("referenceId", "")).strip()
+            classification = reference.get("classification")
+            line = reference.get("line")
+            if not reference_id:
+                raise GateFailure(f"PartyId reference is missing referenceId in {path}.")
+            if reference_id in seen_reference_ids:
+                raise GateFailure(f"Duplicate PartyId referenceId: {reference_id}")
+            seen_reference_ids.add(reference_id)
+            if classification not in allowed:
+                raise GateFailure(f"PartyId reference must have exactly one allowed classification: {reference_id}")
+            if type(line) is not int or line < 1:
+                raise GateFailure(f"PartyId reference has an invalid one-based source line: {reference_id}")
+            declared_lines.append(line)
+            reference_count += 1
+        actual_lines = found.get(path, [])
+        if sorted(declared_lines) != sorted(actual_lines):
+            raise GateFailure(
+                f"PartyId reference classification coverage differs from source occurrences in {path}: "
+                f"declared={sorted(declared_lines)} actual={sorted(actual_lines)}"
+            )
+
+    policy = reg.get("referenceClassificationPolicy", {})
+    if policy.get("exactlyOneClassificationPerOccurrence") is not True:
+        raise GateFailure("Reference classification policy must require exactly one classification per occurrence.")
+    if policy.get("allowedValues") != sorted(allowed):
+        raise GateFailure("Reference classification policy allowedValues must match the four approved classifications.")
+    print(
+        f"PASS: PartyId consumer registry reconciles. Registered external consumers: {len(registered)}; "
+        f"classified source occurrences: {reference_count}; unknown: 0; unclassified: 0."
+    )
 
 def run_api(root: Path) -> None:
     manifest = load_json(root / "docs/persons/persons-module-manifest.json")
