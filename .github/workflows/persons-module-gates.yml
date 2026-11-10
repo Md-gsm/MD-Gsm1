@@ -52,7 +52,16 @@ jobs:
       - name: Test IdentityAccess username policy oracle
         run: python -m unittest scripts/ci/test_identityaccess_policy.py -v
       - name: Report exact source checksums for integrity repair
-        run: sha256sum tests/MDGsm.Domain.Tests/IdentityAccess/IdentityAccessHttpEndToEndTests.cs .github/workflows/persons-module-gates.yml
+        run: |
+          sha256sum \
+            src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorkflowRetentionWorker.cs \
+            src/BuildingBlocks/MDGsm.Infrastructure/Persons/PostgresTemporaryWorkflowStore.cs \
+            src/BuildingBlocks/MDGsm.Infrastructure/Persons/WebhookTemporaryWorkflowRetentionAlert.cs \
+            src/BuildingBlocks/MDGsm.Infrastructure/Persistence/PersistenceRegistration.cs \
+            docs/persons/TEMPORARY_DATA_RETENTION_POLICY_FA.md \
+            tests/MDGsm.Domain.Tests/Persons/TemporaryWorkflowRetentionWorkerTests.cs \
+            tests/MDGsm.Domain.Tests/PersistenceRegistrationTests.cs \
+            .github/workflows/persons-module-gates.yml
       - name: Verify SHA256SUMS.txt matches tracked files
         run: python scripts/ci/verify_source_checksums.py
 
