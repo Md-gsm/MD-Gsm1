@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using MDGsm.Application.Persons;
 using MDGsm.Domain.Persons;
 using MDGsm.Infrastructure.Persons;
@@ -409,6 +410,39 @@ public sealed class PersonsEndToEndTests
             await using var rollback = new NpgsqlCommand("ROLLBACK TO SAVEPOINT before_legal_identifier_reuse", legalScope.Connection, legalScope.Transaction);
             await rollback.ExecuteNonQueryAsync();
         }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AC36_temporary_workflow_data_is_excluded_from_global_party_search_by_name_and_mobile_suffix()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var store = new PostgresTemporaryWorkflowStore(scope.DataSource);
+        var workflowId = Guid.CreateVersion7();
+        var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        const string temporaryName = "شخص موقت جستجوی سراسری ۸۴۲۷";
+        const string temporaryMobile = "+989121234827";
+
+        var key = RandomNumberGenerator.GetBytes(32);
+        var nonce = RandomNumberGenerator.GetBytes(12);
+        var plaintext = System.Text.Encoding.UTF8.GetBytes(temporaryName + "|" + temporaryMobile);
+        var encrypted = new byte[plaintext.Length];
+        var tag = new byte[16];
+        using (var aes = new AesGcm(key, tag.Length))
+            aes.Encrypt(nonce, plaintext, encrypted, tag);
+        var ciphertext = new byte[nonce.Length + tag.Length + encrypted.Length];
+        nonce.CopyTo(ciphertext, 0);
+        tag.CopyTo(ciphertext, nonce.Length);
+        encrypted.CopyTo(ciphertext, nonce.Length + tag.Length);
+
+        await store.CreateAsync(workflowId, "Persons", "contact-capture", Actor,
+            Guid.CreateVersion7(), now, ciphertext, "ci-test-key-v1");
+
+        var nameResults = await scope.Repository.SearchAsync(temporaryName, 10, scope.Transaction, default);
+        var mobileResults = await scope.Repository.SearchAsync("۸۴۲۷", 10, scope.Transaction, default);
+
+        Assert.Empty(nameResults);
+        Assert.Empty(mobileResults);
     }
 
     private static RegisterLegalParty NewLegal(string legalNationalId) =>
