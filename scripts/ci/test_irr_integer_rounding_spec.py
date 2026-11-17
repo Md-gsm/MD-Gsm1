@@ -111,16 +111,19 @@ def allocate(amount: int, rows: list[tuple[str, int]]) -> dict[str, int]:
     return allocated
 
 
-def document_rounding_budget(operations: list[tuple[int, int]]) -> Fraction:
-    # Net document effect: sum signed operation residuals exactly. Fraction is
-    # a non-monetary control metric only, never an amount stored or posted.
-    budget = Fraction(0, 1)
-    for numerator, denominator in operations:
-        _, error = round_away_with_error(numerator, denominator)
-        budget += error
-    if abs(budget) > 1:
-        raise ValueError("document rounding budget exceeds 1 IRR")
-    return budget
+def document_rounding_effect(actual_total: int, exact_numerator: int, exact_denominator: int) -> Fraction:
+    actual_total = require_irr(actual_total)
+    exact_numerator = _require_integer(exact_numerator, "exact reference numerator")
+    exact_denominator = _require_integer(exact_denominator, "exact reference denominator")
+    if exact_denominator <= 0:
+        raise ValueError("exact reference denominator must be positive")
+
+    # Exact non-monetary control comparison. This rational reference is not used
+    # by the integer-only money path and is never stored or posted as an amount.
+    effect = Fraction(actual_total * exact_denominator - exact_numerator, exact_denominator)
+    if abs(effect) > 1:
+        raise ValueError("document rounding effect exceeds 1 IRR")
+    return effect
 
 
 class IntegerRoundingReferenceTests(unittest.TestCase):
@@ -203,14 +206,16 @@ class IntegerRoundingReferenceTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             allocate(1.0, [("A", 1)])  # type: ignore[arg-type]
 
-    def test_rounding_budget_uses_signed_net_document_effect(self):
-        self.assertEqual(Fraction(1, 1), document_rounding_budget([(1, 2), (1, 2)]))
-        self.assertEqual(Fraction(0, 1), document_rounding_budget([(1, 2), (-1, 2)]))
-        self.assertEqual(Fraction(0, 1), document_rounding_budget([(200, 100), (-300, 100)]))
+    def test_document_rounding_effect_accepts_both_one_irr_boundaries(self):
+        self.assertEqual(Fraction(1, 1), document_rounding_effect(101, 100, 1))
+        self.assertEqual(Fraction(-1, 1), document_rounding_effect(99, 100, 1))
+        self.assertEqual(Fraction(0, 1), document_rounding_effect(100, 100, 1))
 
-    def test_rounding_budget_rejects_more_than_one_irr(self):
+    def test_document_rounding_effect_rejects_more_than_one_irr(self):
         with self.assertRaises(ValueError):
-            document_rounding_budget([(1, 2), (1, 2), (1, 2)])
+            document_rounding_effect(102, 100, 2)  # +1 IRR is accepted; 102 - 100.5 = 1.5
+        with self.assertRaises(ValueError):
+            document_rounding_effect(98, 100, 2)  # -1.5 IRR
 
     def test_rounding_error_is_exact_and_not_a_money_value(self):
         rounded, error = round_away_with_error(1250, 100)
