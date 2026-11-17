@@ -285,7 +285,7 @@ cf3f0d41b599b515a08850f56f199faf56bc18fcac136f167cdaf3a98fa94263  tests/MDGsm.Do
 f7b9a8e26d0a09909c91e1caa7139516993024f78ced2f947980e70561575ec1  tests/MDGsm.Domain.Tests/PersonsPreviewInstallerTests.cs
 a11fd2731ff4231e58c4e1c22da4e3e7028a881ef42a58d438aa126c25173eae  tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj
 9310ab2efe7882d93b95485018da867301d9976cde2f97f0200b8389cedf6d36  tools/MDGsm.DbMigrator/Program.cs
-1242f79e9c82ea63a54444fbb1ab488b96f28f61bd85ea8b121e2654c9d3acc7  docs/architecture/change-requests/CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001_v0.1.md
+116910764dbc2ebf70fca9604fada9f8d854d19bef667bd80122624546844eff  docs/architecture/change-requests/CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001_v0.1.md
 d1370355da7531ce6c7d5563ea86d5497eb7f526725dfb3eee75be62079ba7bc  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.1.md
 f1c291cb7dbcdaa693862b4d84dfbad83c7cf27ad82fc4dec46f730bd881bdd1  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
 1bc5a374c362b2d38bb48379612a59af86c27a2997176505868d46b6f4f1e2cb  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.1.md
@@ -296,7 +296,7 @@ bc5ac0956f27c3c7908dc867c74f449d238c8f96c0be95f459cadb27935ba33c  docs/finance/w
 824c6ba26cfb0e38785ef99b431e090bf71a6af5d3b48b3f0b997ed6ccd49c88  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md
 59ab94e0b3aa85c573007bd899fca406052b28b0233f9b7263ee614197543f53  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.2.md
 9e2519642d2f9191cc8edaf3db877ee1d1264590c2925887953d021a81e377e2  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.3.md
-fe16d217766a4eed18d0a6a0823a979d7990c19e7e3e9bd133228f25f894d063  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md
+2f8f04da881810482a436dc5238ec2b358d11f53e0ecc41acb2828cda36970bd  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md
 229e2898760b2525c332ebcd039d91502b533f9351bfbe0fd2111ce6331c6ef5  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-POSTING-RULE-CLOSURE-001_v0.1.md
 e5e0522ba6c18f59f258bc360965c30a44e695d33c9168f2af5d60b6f4f9d847  docs/finance/workpapers/p4h/integration/MDG-WP06-7C-ACCOUNT-DISPOSITION-001_v0.1.md
 0e9aa89d4d03d2ce192bfedba630505f6d7556dcef927fe5d329c321e9998724  docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md
