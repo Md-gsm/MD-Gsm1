@@ -111,6 +111,32 @@
 5. پس از تثبیت 7B/7C، برای هر posting rule مجاز، positive journal assertion دقیق با expected debit/credit و amount basis تکمیل می‌شود.
 6. اجرای واقعی و evidence acceptance جدا از design approval باقی می‌ماند.
 
+## 6.1 آزمون‌های تکمیلی canonical COA — 7C-OPEN-001..012
+
+این 12 آزمون مکمل برای کنترل fail-closed و پذیرش تدریجی canonical COA تعریف شده‌اند. این‌ها به 39 آزمون FE در جدول اصلی اضافه می‌شوند؛ بنابراین 7D در مجموع 51 Test ID مستقل دارد (39 مورد FE + 12 مورد COA). هیچ‌یک اجرا نشده است.
+
+| Test ID | 7C Open | سناریو | اقدام | نتیجه مورد انتظار | Evidence plan |
+|---|---|---|---|---|---|
+| MDG-COA-GATE-001 | 7C-OPEN-001 | حسابی در 76 ردیف بدون crosswalk کامل v1.4 | تلاش برای تأیید canonical release | UNVERIFIED باقی بماند؛ POSTING_BLOCKED؛ هیچ attribute حدس زده نشود | crosswalk diff، source refs، block log |
+| MDG-COA-GATE-002 | 7C-OPEN-002 | AccountId تکراری یا قابل reuse | ثبت/تغییر registry با شناسه تکراری | unique constraint رد کند؛ هیچ حسابی با شناسه مبهم فعال نشود | DB constraint output، duplicate fixture، audit |
+| MDG-COA-GATE-003 | 7C-OPEN-003 | Parent cycle یا رابطه استنباط‌شده از prefix | بارگذاری hierarchy نامعتبر | cycle/prefix-only relation رد شود؛ hierarchy تأیید نشود | graph fixture، cycle detector output، lineage |
+| MDG-COA-GATE-004 | 7C-OPEN-004 | Nature/NormalBalance نامشخص یا متناقض | درخواست Postable شدن حساب | status UNVERIFIED و POSTING_BLOCKED؛ هیچ سمت ثبت از روی نام استنباط نشود | attribute validation report، rejected command |
+| MDG-COA-GATE-005 | 7C-OPEN-005 | حساب INACTIVE/PROHIBITED/NOT VERIFIED/NOT POSTABLE | تلاش ثبت مستقیم و غیرمستقیم | server و DB هر دو رد کنند؛ صفر Journal و صفر Subledger mutation | API response، DB logs، before/after snapshots |
+| MDG-COA-GATE-006 | 7C-OPEN-006 | Subledger owner/dimensions ناقص یا نامعتبر | ثبت حساب نیازمند subledger بدون مرجع معتبر | transaction fail-closed؛ هیچ GL/Subledger mismatch باقی نماند | contract validation، transaction log، reconciliation |
+| MDG-COA-GATE-007 | 7C-OPEN-007 | EffectiveFrom/To نامعتبر یا retroactive overwrite | ایجاد نسخه حساب با تاریخ اثر متعارض | نسخه قبلی immutable؛ تغییر نامعتبر رد و audit شود | temporal fixtures، version diff، audit trail |
+| MDG-COA-GATE-008 | 7C-OPEN-008 | استفاده از 2114 قبل از تکمیل صفات و FE-20 | ارسال posting برای 2114 | POSTING_BLOCKED؛ design-only حفظ شود | account snapshot، FE-20 block reason، zero-journal proof |
+| MDG-COA-GATE-009 | 7C-OPEN-009 | collision در namespace/reserved/history registry برای 4107 یا 5106 | تلاش ثبت یا فعال‌سازی کد متعارض | collision رد؛ هیچ کد جدید فعال نشود | full namespace scan، unique index proof، audit |
+| MDG-COA-GATE-010 | 7C-OPEN-010 | source title/attribute با OWN-7C-004-R1 تعارض دارد | ساخت crosswalk چرخه چک | تصمیم مالک مقدم؛ اختلاف خام حفظ و lineage ثبت؛ نقش‌ها بدون crosswalk کامل قابل posting نیستند | source/policy diff، cheque lifecycle fixture، audit |
+| MDG-COA-GATE-011 | 7C-OPEN-011 | 3101..3105 بدون توافق equity و NormalBalance | تلاش برای posting opening/equity | POSTING_BLOCKED؛ هیچ equity mapping حدسی ساخته نشود | approval-state fixture، rejected journal، audit |
+| MDG-COA-GATE-012 | 7C-OPEN-012 | orphan account، FE یا Test در crosswalk | اجرای traceability validation | orphan گزارش شود؛ بسته تا رفع/ثبت disposition تأیید نشود | bidirectional matrix، orphan scan output، review record |
+
+### وضعیت اجرای آزمون‌های COA
+- Test design: SPECIFIED — FAIL-CLOSED ONLY.
+- Execution: NOT RUN / NOT VERIFIED.
+- Evidence: NOT ACCEPTED.
+- Positive canonical account/journal assertions: BLOCKED until the corresponding 7C row and 7B rule are accepted.
+- هیچ PASS اجرایی از تعریف این Test IDها استنتاج نمی‌شود.
+
 ## 7. وضعیت
 
 - Test design: CONTROLLED R1 GATE-CONTROL SUITE SPECIFIED.
