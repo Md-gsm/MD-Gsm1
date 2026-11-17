@@ -297,9 +297,9 @@ a9255c9a73cabff91d87ee0ba888ada25c4b56221f924816cad2f672fcde2ed0  docs/finance/w
 f64cc10f4c448fe6ea57205d3eab1564b720d70269fe30a6e6003644fb559759  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-RECOVERY-001_v0.1.md
 14ba19a5d3b6240f0519a4800e3bf92c09870594cb3d5787b22f57dd0915f3f2  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md
 2de6c16e724fe0b06faf5978f95020c3fe602433f38655906024a4073aed3d81  docs/architecture/change-requests/CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001_v0.1.md
-952cb46d85c60daeaeff2b9e65226e9e876999cc8df3e986e7354605b20a0c0d  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
-d9e8fce2014fcdbabfa275827ded211f4255ca1e055489085ed13e5ed7b6c722  docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md
-175bddbd48284c0c29c17d0306893a3e6e8c484f3c61fd8712b13e2111fbd232  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.3.md
+afd34e3764474e17bde774280b39335615ac5e1b1850f2b3e277a4e300f9a67e  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
+364b33a49d3846506a940169b1d1d275c14c94809911fee1594d9e702f7d6603  docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md
+a09b83f47a69d26ce976031091f579752b108b7f46de59d4e6ff1271dc37f6f5  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.3.md
 4bfe815dfa644ab31b96373559ebf9a5c6a06aa4c362fff7ec45fa1c3c3ca340  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.5.md
 12eeb495c3996efed5279076ae91cdcff1d04c115bd40792cd1a2e940e0c003a  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.3.md
 ff9ce8d87fb27233be69ce9e3be46474e09e44f68abfbd96bae6f8b621c7b4c1  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.2.md
