@@ -213,9 +213,11 @@ class IntegerRoundingReferenceTests(unittest.TestCase):
 
     def test_document_rounding_effect_rejects_more_than_one_irr(self):
         with self.assertRaises(ValueError):
-            document_rounding_effect(102, 100, 2)  # +1 IRR is accepted; 102 - 100.5 = 1.5
+            document_rounding_effect(102, 201, 2)  # 102 - 100.5 = +1.5
         with self.assertRaises(ValueError):
-            document_rounding_effect(98, 100, 2)  # -1.5 IRR
+            document_rounding_effect(99, 201, 2)  # 99 - 100.5 = -1.5
+        with self.assertRaises(ValueError):
+            document_rounding_effect(100, 1, 0)  # invalid reference denominator
 
     def test_rounding_error_is_exact_and_not_a_money_value(self):
         rounded, error = round_away_with_error(1250, 100)
