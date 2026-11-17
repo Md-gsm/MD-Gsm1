@@ -212,3 +212,12 @@
 - Posting Release: NOT GRANTED.
 
 این سند Test Design Workpaper بازسازی‌شده است، نه منبع تاریخی بازیابی‌شده، نه گزارش اجرای آزمون و نه مجوز ثبت مالی.
+
+
+## اصلاحیه معیار تحویل و تکمیل 7D — 2026-11-18
+
+با تأیید معیار جدید O-01، بازیابی متن آزمون‌های تاریخی شرط لازم پذیرش نسخه جدید 7D نیست. شناسه‌های تاریخی FIN-TST/COA-TST/ATOMIC/INV-CAN/INV-NEG باید به‌عنوان SOURCE-ID با provenance حفظ شوند؛ برای مواردی که متن اصلی در دسترس نیست، نسخه جدید باید Test ID مستقل و جدید با برچسب CONTROLLED RECONSTRUCTION بسازد. هیچ شناسه جدیدی نباید به‌عنوان متن تاریخی معرفی شود.
+
+7D جدید فقط زمانی قابل پذیرش است که برای همه FE-01..FE-38، حساب‌های مجاز/ممنوع و قواعد حساس، آزمون‌های مثبت، منفی، مرزی، idempotency، reversal، atomicity، period lock، tax fail-closed و R1/R2 guard به‌صورت Test Case کامل (precondition, fixture, input, action, expected business state, expected journal یا BLOCKED, assertions, cleanup, evidence) تعریف و به 7B/7C نگاشت شوند. آزمون‌های مالی تا زمانی که Posting Rule و صفات canonical حساب‌ها کامل نیستند باید Expected Journal=NOT SPECIFIED و وضعیت BLOCKED داشته باشند.
+
+وضعیت فعلی این نسخه همچنان PARTIAL DESIGN / NOT RUN / NOT VERIFIED است؛ این اصلاحیه مجوز PASS یا Evidence Acceptance نیست.
