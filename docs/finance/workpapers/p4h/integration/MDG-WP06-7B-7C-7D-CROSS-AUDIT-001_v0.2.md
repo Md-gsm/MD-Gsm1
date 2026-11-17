@@ -192,3 +192,20 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 ### 7D COA Gate Test Addendum — 2026-11-18
 
 7D v0.2 با افزودن 12 آزمون مستقل MDG-COA-GATE-001..012 برای 7C-OPEN-001..012 تکمیل شد. اکنون 51 Test ID مستقل وجود دارد: 39 آزمون FE (MDG-FIN-GATE-001..039) و 12 آزمون COA (MDG-COA-GATE-001..012). همه این آزمون‌ها در سطح design fail-closed هستند؛ execution NOT RUN و Evidence NOT ACCEPTED. Positive journal assertions تا canonical شدن 7C و تکمیل Posting Ruleهای 7B مسدود می‌مانند.
+
+
+### Re-run structural crosswalk validation — current 7B/7C/7D v0.2
+
+| Structural assertion | Observed | Result |
+|---|---:|---|
+| 7B event rows | 39 unique FE rows | PASS — FE-01..FE-38 + FE-10b |
+| 7B distinct MDG-FIN-GATE refs | 39 | PASS |
+| 7D distinct MDG-FIN-GATE test IDs | 39 | PASS |
+| 7B→7D missing FE test IDs | 0 | PASS |
+| 7C open items | 12 | PASS — 7C-OPEN-001..012 |
+| 7C open-item Test ID refs | 12 | PASS |
+| 7D distinct MDG-COA-GATE test IDs | 12 | PASS |
+| 7C→7D missing COA test IDs | 0 | PASS |
+| Total 7D distinct IDs | 51 | PASS — 39 FE + 12 COA |
+
+این کنترل فقط صحت ساختاری شناسه‌ها و ارجاع‌ها را اثبات می‌کند. نه اجرای آزمون‌ها، نه صحت حسابداری posting ruleها و نه پذیرش حرفه‌ای را اثبات نمی‌کند. همه آزمون‌ها NOT RUN / NOT VERIFIED باقی می‌مانند.
