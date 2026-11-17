@@ -7,7 +7,7 @@
 | Version | 0.2 |
 | Classification | CONTROLLED CROSS-AUDIT — RECONCILIATION RECORDED; CLOSURE NOT GRANTED |
 | Baseline | MDG-ARCH-MASTER-001 v2.5 |
-| Audited files | Integrated v0.3; 7B Posting Rule Closure v0.1; 7C Account Disposition v0.1; 7D Test Closure v0.1 |
+| Audited files | Integrated v0.4; 7B v0.2; 7C v0.2; 7D v0.2; CR O-01 v0.1; source workbook ZIP; row-level source/status CSV v0.2 |
 | PR | Md-gsm/MD-Gsm1 #66 |
 | Test execution | NOT RUN / NOT VERIFIED |
 | Evidence | NOT ACCEPTED |
@@ -143,7 +143,7 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 - 7D v0.2: 39 Test ID مستقل MDG-FIN-GATE-001..039؛ تمام 39 ارجاع 7B در 7D متناظر دارند.
 
 ### نتیجه تطبیق ساختاری
-تعداد Test IDهای یکتا در 7B v0.2 برابر 39 و در 7D v0.2 برابر 39 است؛ مجموعه شناسه‌ها از 001 تا 039 پیوسته است. FE coverage شامل FE-01..FE-38 به‌علاوه FE-10b است. این کنترل، صحت طراحی حسابداری یا اجرای آزمون را اثبات نمی‌کند.
+تعداد Test IDهای یکتا در 7B v0.2 برابر 39 و در 7D v0.2 برابر 39 است؛ مجموعه شناسه‌ها از 001 تا 039 پیوسته است. CSV وضعیت منبع 7C نیز 76 ردیف × 39 ستون دارد و hash آن به‌صورت مستقل بازتولید شد. FE coverage شامل FE-01..FE-38 به‌علاوه FE-10b است. این کنترل، صحت طراحی حسابداری یا اجرای آزمون را اثبات نمی‌کند.
 
 ### موارد همچنان باز
 - 7B positive posting rule completeness و canonical debit/credit: OPEN.
@@ -174,4 +174,4 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 
 
 ### 7C Row-Level Source Snapshot Addendum
-فایل `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.2.csv` در Library ثبت شد: 76 ردیف × 30 ستون (24 ستون منبع + 6 ستون وضعیت canonical). SHA-256 فایل CSV برابر `78c3793c075ff4aaebef4b86230411d3dca52233f0cca3c81278b2f4607acbb1` است. در تمام 76 ردیف، AccountId و ParentAccountId به‌صورت NOT ASSIGNED و EffectiveFrom به‌صورت NOT SET ثبت شده و هر ردیف به‌طور صریح نیازمند تطبیق با COA v1.4 است. این فایل source snapshot/status register است، نه COA canonical. بنابراین پوشش سطر‌به‌سطر source status تکمیل شده؛ canonicalization با v1.4 همچنان OPEN است.
+فایل `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.2.csv` در Library ثبت شد: 76 ردیف × 39 ستون (24 ستون منبع + 15 ستون وضعیت canonical). SHA-256 فایل CSV برابر `78c3793c075ff4aaebef4b86230411d3dca52233f0cca3c81278b2f4607acbb1` است. این hash با materialization و محاسبه مستقل SHA-256 تأیید شد؛ 76 ردیف داده و 39 ستون نیز با خواندن CSV تأیید شد. در تمام 76 ردیف، CanonicalAccountId و CanonicalParentAccountId برابر NOT ASSIGNED، EffectiveFrom/To برابر NOT SET و صفات canonical برابر UNVERIFIED است. این فایل source snapshot/status register است، نه COA canonical. بنابراین پوشش سطر‌به‌سطر source status تکمیل شده؛ canonicalization با v1.4 همچنان OPEN است.
