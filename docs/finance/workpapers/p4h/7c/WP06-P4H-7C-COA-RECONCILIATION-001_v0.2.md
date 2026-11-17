@@ -161,3 +161,15 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 - Evidence: NOT ACCEPTED.
 - Gate 3 / Gate 4: OPEN / OPEN.
 - Posting Release: NOT GRANTED.
+
+
+### 3.1 رجیستر سطر‌به‌سطر 76 حساب منبعی
+
+برای جلوگیری از اتکا به خلاصه‌های تجمیعی، فایل مستقل `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.1.csv` در Library ثبت شد. این فایل 76 ردیف حساب و 30 ستون دارد: 24 ستون عیناً از شیت «دفتر حساب‌ها» و 6 ستون کنترل canonical status. فایل منبع خام تغییر نکرده است.
+
+- Library path: `/MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.1.csv`
+- SHA-256 CSV: `7e61eca4bc486bc8173ea59a7c3b48a6fa9e5d231e5507cba208a3a003b80014`
+- Source Excel SHA-256: `a6ca3377fde5863455a3b4bccf9a000d0dbf23f44bd66eeae51c44d0f3697866`
+- برای هر ردیف: CanonicalAccountId=NOT ASSIGNED؛ CanonicalParentAccountId=NOT ASSIGNED؛ CanonicalEffectiveFrom=NOT SET؛ CanonicalRowStatus=UNVERIFIED — row-level reconciliation to COA v1.4 required؛ PostingStatus=NO POSTING UNTIL CANONICAL COA + 7B RULE VERIFIED.
+
+این فایل، رجیستر source snapshot و وضعیت تکمیل است؛ **COA canonical یا جایگزین v1.4 نیست**. مقادیر canonical فقط پس از تطبیق دقیق با v1.4، تصمیمات مالک و Architecture/ADR قابل ثبت‌اند.
