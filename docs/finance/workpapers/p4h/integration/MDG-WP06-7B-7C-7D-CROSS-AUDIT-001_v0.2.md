@@ -209,3 +209,10 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 | Total 7D distinct IDs | 51 | PASS — 39 FE + 12 COA |
 
 این کنترل فقط صحت ساختاری شناسه‌ها و ارجاع‌ها را اثبات می‌کند. نه اجرای آزمون‌ها، نه صحت حسابداری posting ruleها و نه پذیرش حرفه‌ای را اثبات نمی‌کند. همه آزمون‌ها NOT RUN / NOT VERIFIED باقی می‌مانند.
+
+
+### COA baseline lineage validation — 2026-11-18
+- v1.2 DOCX SHA-256 `5721ba8db3b355dad26752be49fa9a5f1603620a411a4e675a42f9e281f586b0`: Table 5 contains 76 account codes; 76/76 identifiers match the source register. Its recorded dispositions are 45 `OPEN / NOT VERIFIED — NO POSTING` and 31 `مشروط/غیرفعال/مسدود`.
+- v1.3 TXT SHA-256 `dd32fca0d4faa2c8e21bcb65f956a326e6d0e9c996551663e39f06152e6edf94`: 78 account identifiers; 76/76 source codes plus 2114 and 5106. This is intermediate evidence only.
+- v1.4 remains the current COA design baseline by owner direction. No v1.2/v1.3 attribute is promoted to canonical without comparison to v1.4 and applicable owner decisions.
+- Source Excel remains verified; this lineage check does not reopen or question its provenance.
