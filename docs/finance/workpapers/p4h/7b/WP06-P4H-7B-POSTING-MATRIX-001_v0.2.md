@@ -1,5 +1,5 @@
 # WP06-P4H-7B-POSTING-MATRIX-001
-## Master Posting Matrix — FE-01..FE-38 — Controlled Replacement
+## Master Posting Matrix — FE-01..FE-38 plus FE-10b — Controlled Replacement
 
 | مشخصه | مقدار |
 |---|---|
@@ -16,7 +16,7 @@
 
 ## 1. قاعده تعیین تکلیف
 
-هر FE-01..FE-38 باید یا Posting Rule کامل داشته باشد یا به‌صورت صریح BLOCKED/DEFERRED بماند. در این نسخه هیچ Debit/Credit، NormalBalance، حساب مقابل، AmountBasis یا tax treatment از روی نام حساب یا prefix حدس زده نشده است. هر رویداد OPEN/CONDITIONAL تا تکمیل تمام فیلدهای قرارداد 7B از نظر ایجاد Journal جدید در وضعیت `POSTING_BLOCKED` است؛ وضعیت عملیاتی/تجاری رویداد می‌تواند جداگانه و بدون اثر مالی حفظ شود.
+هر FE-01..FE-38 و رویداد تفکیکی FE-10b باید یا Posting Rule کامل داشته باشد یا به‌صورت صریح BLOCKED/DEFERRED بماند. در این نسخه هیچ Debit/Credit، NormalBalance، حساب مقابل، AmountBasis یا tax treatment از روی نام حساب یا prefix حدس زده نشده است. هر رویداد OPEN/CONDITIONAL تا تکمیل تمام فیلدهای قرارداد 7B از نظر ایجاد Journal جدید در وضعیت `POSTING_BLOCKED` است؛ وضعیت عملیاتی/تجاری رویداد می‌تواند جداگانه و بدون اثر مالی حفظ شود.
 
 ## 2. قرارداد اجباری هر Posting Rule
 
