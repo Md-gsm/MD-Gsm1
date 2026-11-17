@@ -302,3 +302,4 @@ ca7b894d2ae9657191336013efb7a972bc058fe8cda0da9db512ed0462f647a8  docs/finance/w
 09e7a1dd71b3de5040ea03a68ce27970bcb344728b7de2b4c94c8ba136951693  docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md
 a9255c9a73cabff91d87ee0ba888ada25c4b56221f924816cad2f672fcde2ed0  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001_v0.1.md
 f64cc10f4c448fe6ea57205d3eab1564b720d70269fe30a6e6003644fb559759  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-RECOVERY-001_v0.1.md
+63a5faefb25ba1cb658848376d2a2ef76825c8ee6ca3c7e77d78d70bdff0a14f  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.1.md
