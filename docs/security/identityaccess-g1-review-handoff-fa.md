@@ -119,12 +119,12 @@
 | G1-01 | اجرای ماتریس permission مصوب، seed کنترل‌شده و تست‌های golden/منفی | WG-2/QA | تصمیم مالک ثبت شده؛ seed و runtime هنوز gated و تست‌های کامل لازم‌اند |
 | G1-02 | تصویب retention audit/security و بررسی حقوقی | مالک محصول/حقوقی | زمان‌بندی، legal hold، purge/archive و شواهد integrity |
 | G1-03 | threat-model و review ریسک Recovery ایمیل‌تنها + تکمیل workflow | امنیت/WG-2 | سیاست ایمیل‌تنها مصوب است؛ ارزیابی mailbox risk، SMTP و تست runtime هنوز لازم‌اند |
-| G1-04 | تعیین سازوکار اعتماد کنسول محلی و فرایند break-glass | معماری/امنیت | مرز اعتماد، کنترل دو نفره و runbook |
-| G1-05 | الگوریتم password hash، پارامترها، version/rehash | معماری/امنیت | تصمیم فنی مصوب و تست .NET |
+| G1-04 | تعیین نقطه شروع Recovery و مرز اعتماد آن (شبکه‌ای یا کنسول محلی؛ در صورت انتخاب کنسول، کنترل‌های OS و runbook) | مالک محصول/معماری/امنیت | تصمیم entrypoint، مرز اعتماد و تست‌های مثبت/منفی ثبت شود |
+| G1-05 | pin کردن پارامترهای PBKDF2 IdentityV3، versioning و اجرای rehash در `SuccessRehashNeeded` | معماری/امنیت | policy/پارامترهای مصوب، migration-safe rehash و تست .NET |
 | G1-06 | username Unicode production behavior | تیم پیاده‌سازی | Unicode version pin، Script_Extensions، collision scan و fuzz tests .NET |
 | G1-07 | SMTP deployment configuration | عملیات/مالک | vendor/host، DNS SPF/DKIM/DMARC، secret rotation و failure policy؛ پیش از E2E ایمیل |
 | G1-08 | TLS/topology/firewall و binding | عملیات/معماری | تست invalid certificate rejection و محدودیت listener |
-| G1-09 | runtime و migration IdentityAccess | تیم پیاده‌سازی | فقط پس از مجوز رسمی G1 و قراردادهای review‌شده |
+| G1-09 | تکمیل بخش‌های باقی‌مانده runtime و migrationهای لازم IdentityAccess؛ کد موجود در main به معنی پذیرش یا مجوز production نیست | تیم پیاده‌سازی/WG-0 | قراردادهای review‌شده، رزرو migration، gate و مجوز رسمی G1 |
 | G1-10 | تست‌های runtime و concurrency/failure | تیم پیاده‌سازی/QA | PostgreSQL disposable و نتایج قابل بازتولید |
 | G1-11 | review مستقل امنیت و معماری | تیم مستقل معرفی‌شده توسط مالک | نام/صلاحیت/تعارض منافع، SHA، یافته‌ها، نتیجه و امضا |
 | G1-12 | تصمیم رسمی ورود به G1 | مالک محصول | AUTHORIZE یا KEEP BLOCKED با تاریخ و SHA |
@@ -139,7 +139,7 @@
 - سقف پنج حساب فعال متمایز کل سیستم؛ بدون سقف نشست به‌ازای هر حساب؛ رقابت چند درخواست هم‌زمان
 - heartbeat/lease و stale lease
 - lockout عادی 5 شکست/15 دقیقه و قفل 15 دقیقه؛ عدم account enumeration
-- bootstrap local-only، one-time و fail-closed تا تکمیل setup
+- bootstrap installer-created با تغییر اجباری username/password/profile در اولین ورود؛ provisioning امن credential و fail-closed تا تکمیل setup
 
 ### Authorization
 - unauthenticated=401؛ authenticated بدون permission=403
