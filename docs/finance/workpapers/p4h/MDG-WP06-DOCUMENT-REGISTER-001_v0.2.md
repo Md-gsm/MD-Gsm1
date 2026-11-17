@@ -22,8 +22,8 @@
 |---|---|---|---|---|
 | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 | 0.1 | docs/architecture/change-requests/CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001_v0.1.md | 2de6c16e724fe0b06faf5978f95020c3fe602433f38655906024a4073aed3d81 | OWNER APPROVED; independent review pending |
 | WP06-P4H-7B-POSTING-MATRIX-001 | 0.2 | docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md | 4db46c270000c5565a7cc2408c8225d4d1c52e8310225416d0b7e13f6c58f814 | DRAFT; 39 event rows; field-level disposition complete; positive posting rule detail partial |
-| WP06-P4H-7C-COA-RECONCILIATION-001 | 0.3 | docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.3.md | 175bddbd48284c0c29c17d0306893a3e6e8c484f3c61fd8712b13e2111fbd232 | DRAFT; owner overlay 44 dispositions; canonical row reconciliation open |
-| WP06-P4H-7D-TEST-REGISTRY-001 | 0.2 | docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md | d9e8fce2014fcdbabfa275827ded211f4255ca1e055489085ed13e5ed7b6c722 | DRAFT; 51 fail-closed cases (39 FE + 12 COA); positive journal assertions pending; NOT RUN |
+| WP06-P4H-7C-COA-RECONCILIATION-001 | 0.3 | docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.3.md | a09b83f47a69d26ce976031091f579752b108b7f46de59d4e6ff1271dc37f6f5 | DRAFT; owner overlay 44 dispositions; canonical row reconciliation open |
+| WP06-P4H-7D-TEST-REGISTRY-001 | 0.2 | docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md | 364b33a49d3846506a940169b1d1d275c14c94809911fee1594d9e702f7d6603 | DRAFT; 51 fail-closed cases (39 FE + 12 COA); positive journal assertions pending; NOT RUN |
 | MDG-WP06-7B-7C-7D-INTEGRATED-001 | 0.4 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md | d23e476c51af16e2510a4d854967f686d3ff477fbfb89c9084ddbe0238fc2e48 | DRAFT; integrated crosswalk and governance baseline |
 | MDG-WP06-7B-7C-7D-CROSS-AUDIT-001 | 0.2 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md | 8eaeed9e7a910f66a83f19e6e997ab6b6367d83a04b7339a5799cb6bb087e2cc | STRUCTURAL CHECKS RECORDED; independent review pending |
 | MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md | fd1e3af32354b8503b04c023cf1b28bbb6993b995a849fba77d18f4a05d5add0 | PROGRESS REGISTER; O-01 OPEN |
@@ -88,7 +88,7 @@ All repository document hashes are listed in SHA256SUMS.txt at the exact PR head
 | شناسه | نسخه | SHA-256 |
 |---|---|---|
 | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 | 0.1 | 2de6c16e724fe0b06faf5978f95020c3fe602433f38655906024a4073aed3d81 |
-| WP06-P4H-7B-POSTING-MATRIX-001 | 0.2 | 952cb46d85c60daeaeff2b9e65226e9e876999cc8df3e986e7354605b20a0c0d |
+| WP06-P4H-7B-POSTING-MATRIX-001 | 0.2 | afd34e3764474e17bde774280b39335615ac5e1b1850f2b3e277a4e300f9a67e |
 | WP06-P4H-7C-COA-RECONCILIATION-001 | 0.3 | 175bddbd48284c0c29c17d0306893a3e6e8c484f3c61fd8712b13e2111fbd232 |
 | WP06-P4H-7D-TEST-REGISTRY-001 | 0.2 | d9e8fce2014fcdbabfa275827ded211f4255ca1e055489085ed13e5ed7b6c722 |
 | MDG-WP06-7B-7C-7D-INTEGRATED-001 | 0.5 | 4bfe815dfa644ab31b96373559ebf9a5c6a06aa4c362fff7ec45fa1c3c3ca340 |
