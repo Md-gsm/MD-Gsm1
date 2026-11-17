@@ -12,6 +12,12 @@
 
 > این سند فهرست شواهد و موارد لازم برای تصمیم مستقل است؛ نه گزارش تأیید امنیتی، نه امضای reviewer و نه مجوز اجرای runtime.
 
+## وضعیت جاری بر مبنای main — 2026-11-17
+
+این بسته در ابتدا در 2026-11-05 تهیه شده و سربرگ، PR و SHA ابتدای آن snapshot تاریخی‌اند؛ آن‌ها را وضعیت زنده مخزن تلقی نکنید. در main فعلی، کد IdentityAccess شامل login و تغییر رمز، opaque session، middleware محدود به مسیرهای مشخص، و migration 0003 است. HTTP login با feature flag پیش‌فرض خاموش می‌ماند. Recovery orchestration/endpoint، bootstrap امن، مدیریت حساب/نقش و policy evaluator سراسری هنوز کامل نیستند. شکاف‌های دقیق در identityaccess-wg2-gap-register-fa.md ثبت شده‌اند.
+
+تصمیم‌های جاری مالک: ماتریس granular تصویب شده؛ Recovery ایمیل‌تنها پذیرفته شده و MFA نیست؛ نشست تا بازبودن برنامه با heartbeat=30s و lease=180s و سقف 5 حساب فعال متمایز است؛ عمر مطلق و سقف 2 نشست/account تصویب نشده‌اند. این تصمیم‌ها g1Authorized را تغییر نمی‌دهند؛ مقدار آن false باقی می‌ماند.
+
 ## 1. خلاصه تصمیم برای reviewer
 
 در SHA فوق، اسناد طراحی و مرزبندی IdentityAccess و طرح Recovery/API Authorization آماده بررسی مستنداتی هستند. اما IdentityAccess هنوز runtime احراز هویت/مجوزدهی، endpoint ورود یا بازیابی، middleware، session store، migration اختصاصی یا listener عملیاتی ندارد. بنابراین reviewer در این مرحله می‌تواند صحت معماری، تصمیم‌ها، تناقض‌ها، threat model و آمادگی گیت‌ها را بررسی کند؛ نمی‌تواند اثربخشی runtimeهایی را که هنوز وجود ندارند تأیید کند.
@@ -87,43 +93,38 @@
 
 ### 4.1 Session
 
-تصمیم‌های ثبت‌شده مالک:
-- heartbeat: 30 ثانیه
-- lease: 180 ثانیه
-- absolute lifetime: 12 ساعت از زمان ایجاد؛ heartbeat آن را تمدید نمی‌کند
-- حداکثر 2 نشست هم‌زمان برای هر حساب
-- حداکثر 5 حساب فعال متمایز در کل سیستم
-- تغییر سقف کل فقط با permission اختصاصی super_admin و ثبت audit
-- تغییر رمز و غیرفعال‌سازی حساب: revoke فوری همه نشست‌های همان حساب؛ تغییر رمز همچنین credential_version را افزایش می‌دهد
-- enforce شدن سقف‌ها باید transactional/serialized باشد
+تصمیم نهایی مالک:
+- نشست تا زمانی معتبر است که برنامه باز و heartbeat/lease معتبر باشد.
+- سقف آغازین 5 حساب فعال متمایز در کل سیستم است؛ تغییر سقف فقط با permission اختصاصی و audit.
+- heartbeat=30 ثانیه و lease=180 ثانیه صرفاً liveness هستند؛ heartbeat معتبر lease را تمدید می‌کند.
+- عمر مطلق 12 ساعته و سقف 2 نشست هم‌زمان برای هر حساب تصویب نشده‌اند؛ مقادیر 12h و 2 نشست/account در اسناد قدیمی superseded هستند.
+- تغییر رمز باید credential_version را افزایش دهد و تمام نشست‌های حساب را revoke کند؛ غیرفعال‌سازی حساب نیز باید revoke اتمیک همه نشست‌ها داشته باشد.
+- ظرفیت باید در PostgreSQL و به‌صورت transactionally serialized کنترل شود.
 
-این‌ها تصمیم‌های سیاستی‌اند؛ تا زمان G1 و پیاده‌سازی/تست، رفتار اجرایی محسوب نمی‌شوند.
+این‌ها تصمیم‌های سیاستی‌اند؛ تا تکمیل runtime و تست، رفتار اجرایی اثبات‌شده محسوب نمی‌شوند.
 
 ### 4.2 Recovery و SMS
 
-- بازار هدف فعلی ایران است.
-- ایمیل هدف از mailbox اختصاصی دامنه محصول با SMTP relay/Transactional Email قابل‌تعویض ارسال می‌شود؛ vendor/host/DNS و secretها هنوز برای deployment انتخاب نشده‌اند.
-- SMS صراحتاً به فاز آینده موکول شده است؛ در این فاز هیچ provider، SDK، client، credential، template، configuration، job یا تست وابسته به SMS وجود ندارد.
-- TTL پیامک و محدودیت‌های مرتبط، فقط یادداشت طراحی آینده‌اند و نباید به‌عنوان قابلیت موجود یا آزموده‌شده تلقی شوند.
-- نبود SMS مجوز Recovery ایمیل‌تنها نیست.
-- تا تصویب و آزمون ترکیب مستقل عوامل بازیابی، Recovery اضطراری باید غیرفعال و غیرقابل‌دسترسی باقی بماند.
-- recovery code آفلاین به‌تنهایی جایگزین عامل مستقل دوم تلقی نمی‌شود مگر با threat model و تصویب جداگانه.
+- Recovery ایمیل‌تنها برای فاز فعلی تصویب شده است؛ OTP یک‌بارمصرف 10 دقیقه‌ای و digest-only، حداکثر 5 تلاش، قفل 24 ساعته، resend حداقل هر ساعت، سقف 1 ارسال در rolling hour و 5 ارسال در rolling 24h.
+- ایمیل‌تنها MFA یا دو عامل مستقل نیست؛ ریسک mailbox compromise باید در threat model و بازبینی مستقل ثبت شود.
+- SMS در این فاز placeholder غیرفعال و خارج از دامنه است؛ offline code عامل اجباری یا bypass نیست.
+- هنوز نقطه شروع Recovery (شبکه‌ای یا کنسول محلی مورد اعتماد)، ثبت/اثبات ایمیل super_admin، مرز اعتماد کنسول در صورت انتخاب، SMTP relay و مدیریت secret/key تعیین یا عملیاتی نشده‌اند.
+- Recovery runtime تا تکمیل orchestration، تراکنش اتمیک، rate-limit، ارسال واقعی، تست‌های replay/race/expiry/failure و بازبینی مستقل فعال نمی‌شود.
 
-**ابهام مسدودکننده:** سند طراحی قبلی از ایمیل + موبایل + کد آفلاین نام می‌برد؛ با تعویق SMS، روش اثبات عامل موبایل هنوز راهکار اجرایی مصوب ندارد. این تناقض باید پیش از هر پیاده‌سازی با تصمیم مالک و review امنیتی حل شود. هیچ روش جایگزین حدس زده یا خودکار فعال نشود.
 
 ## 5. موارد مسدودکننده پیش از G1 / Runtime
 
 | ID | مورد | مالک تصمیم/اقدام | شرط بستن |
 |---|---|---|---|
-| G1-01 | تصویب ماتریس granular permission و scope | مالک محصول | نسخه مصوب، امضا/ثبت تصمیم و تست‌های منفی متناظر |
+| G1-01 | اجرای ماتریس permission مصوب، seed کنترل‌شده و تست‌های golden/منفی | WG-2/QA | تصمیم مالک ثبت شده؛ seed و runtime هنوز gated و تست‌های کامل لازم‌اند |
 | G1-02 | تصویب retention audit/security و بررسی حقوقی | مالک محصول/حقوقی | زمان‌بندی، legal hold، purge/archive و شواهد integrity |
-| G1-03 | حل مستقل‌بودن عوامل Recovery بدون SMS | مالک محصول + reviewer امنیت | تصمیم مستند و threat model؛ بدون ایمیل‌تنها |
-| G1-04 | تعیین سازوکار اعتماد کنسول محلی و فرایند break-glass | معماری/امنیت | مرز اعتماد، کنترل دو نفره و runbook |
-| G1-05 | الگوریتم password hash، پارامترها، version/rehash | معماری/امنیت | تصمیم فنی مصوب و تست .NET |
+| G1-03 | threat-model و review ریسک Recovery ایمیل‌تنها + تکمیل workflow | امنیت/WG-2 | سیاست ایمیل‌تنها مصوب است؛ ارزیابی mailbox risk، SMTP و تست runtime هنوز لازم‌اند |
+| G1-04 | تعیین نقطه شروع Recovery و مرز اعتماد آن (شبکه‌ای یا کنسول محلی؛ در صورت انتخاب کنسول، کنترل‌های OS و runbook) | مالک محصول/معماری/امنیت | تصمیم entrypoint، مرز اعتماد و تست‌های مثبت/منفی ثبت شود |
+| G1-05 | pin کردن پارامترهای PBKDF2 IdentityV3، versioning و اجرای rehash در `SuccessRehashNeeded` | معماری/امنیت | policy/پارامترهای مصوب، migration-safe rehash و تست .NET |
 | G1-06 | username Unicode production behavior | تیم پیاده‌سازی | Unicode version pin، Script_Extensions، collision scan و fuzz tests .NET |
 | G1-07 | SMTP deployment configuration | عملیات/مالک | vendor/host، DNS SPF/DKIM/DMARC، secret rotation و failure policy؛ پیش از E2E ایمیل |
 | G1-08 | TLS/topology/firewall و binding | عملیات/معماری | تست invalid certificate rejection و محدودیت listener |
-| G1-09 | runtime و migration IdentityAccess | تیم پیاده‌سازی | فقط پس از مجوز رسمی G1 و قراردادهای review‌شده |
+| G1-09 | تکمیل بخش‌های باقی‌مانده runtime و migrationهای لازم IdentityAccess؛ کد موجود در main به معنی پذیرش یا مجوز production نیست | تیم پیاده‌سازی/WG-0 | قراردادهای review‌شده، رزرو migration، gate و مجوز رسمی G1 |
 | G1-10 | تست‌های runtime و concurrency/failure | تیم پیاده‌سازی/QA | PostgreSQL disposable و نتایج قابل بازتولید |
 | G1-11 | review مستقل امنیت و معماری | تیم مستقل معرفی‌شده توسط مالک | نام/صلاحیت/تعارض منافع، SHA، یافته‌ها، نتیجه و امضا |
 | G1-12 | تصمیم رسمی ورود به G1 | مالک محصول | AUTHORIZE یا KEEP BLOCKED با تاریخ و SHA |
@@ -132,13 +133,13 @@
 
 ### Authentication / Session
 - hash-only persistence؛ نبود raw token در DB، log، trace و artifact
-- token entropy و CSPRNG؛ expiry و absolute TTL
+- token entropy و CSPRNG؛ lease expiry و revoke؛ بدون absolute TTL مصوب
 - revoke فوری در درخواست بعدی؛ disabled account و credential_version قدیمی
 - password change/reset و revoke اتمیک همه نشست‌ها
-- دو نشست برای هر حساب؛ سقف پنج حساب متمایز کل سیستم؛ رقابت چند درخواست هم‌زمان
+- سقف پنج حساب فعال متمایز کل سیستم؛ بدون سقف نشست به‌ازای هر حساب؛ رقابت چند درخواست هم‌زمان
 - heartbeat/lease و stale lease
 - lockout عادی 5 شکست/15 دقیقه و قفل 15 دقیقه؛ عدم account enumeration
-- bootstrap local-only، one-time و fail-closed تا تکمیل setup
+- bootstrap installer-created با تغییر اجباری username/password/profile در اولین ورود؛ provisioning امن credential و fail-closed تا تکمیل setup
 
 ### Authorization
 - unauthenticated=401؛ authenticated بدون permission=403
@@ -201,7 +202,7 @@ G1 فقط وقتی قابل بستن است که:
 - PR #37 باز و Draft باقی می‌ماند.
 - هیچ merge به main انجام نمی‌شود.
 - هیچ login/recovery/auth middleware یا migration عملیاتی فعال نمی‌شود.
-- Recovery ایمیل‌تنها فعال نمی‌شود و SMS خارج از دامنه این فاز می‌ماند.
+- سیاست Recovery ایمیل‌تنها مصوب است، اما runtime تا تکمیل endpoint/orchestration، SMTP، کنترل‌های اتمیک، تست و review مستقل فعال نمی‌شود؛ SMS خارج از دامنه این فاز می‌ماند.
 
 
 ## الحاقیه تصمیم جدید مالک — Recovery ایمیلی و SMS placeholder — 2026-11-05
