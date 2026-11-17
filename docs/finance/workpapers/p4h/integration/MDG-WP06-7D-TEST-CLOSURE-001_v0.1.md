@@ -228,3 +228,8 @@
 نسخه مستقل جایگزین 7D در مسیر `docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md` ثبت شد. این نسخه 39 شناسه مستقل MDG-FIN-GATE-001..039 برای FE-01..FE-38 و FE-10b و آزمون‌های مشترک Atomicity، Idempotency، Reversal، Period Lock، COA eligibility، TaxMode، Subledger و IMEI تعریف می‌کند.
 
 این شناسه‌ها RECONSTRUCTED هستند و جایگزین متن تاریخی شناسه‌های SOURCE-ID نمی‌شوند. Positive accounting journal assertions تا تکمیل 7B/7C BLOCKED هستند. Test execution همچنان NOT RUN / NOT VERIFIED و Evidence NOT ACCEPTED است. 7D v0.2 هنوز DRAFT / NOT ACCEPTED است.
+
+
+## Addendum — 12 COA Gate Tests Added to 7D v0.2
+
+7D v0.2 now includes MDG-COA-GATE-001..012 mapped one-to-one to 7C-OPEN-001..012. Together with MDG-FIN-GATE-001..039, the current replacement test registry has 51 independent test IDs. All 12 COA tests are fail-closed design tests; execution NOT RUN / NOT VERIFIED; Evidence NOT ACCEPTED. Positive account eligibility and posting assertions remain blocked until canonical 7C and 7B rules are accepted.
