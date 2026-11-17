@@ -89,3 +89,50 @@
 - Tests: NOT RUN / NOT VERIFIED.
 - Evidence: NOT ACCEPTED.
 - Posting Release: NOT GRANTED.
+
+ 
+## 4. Owner Action Register برای هر FE
+
+| FE | Owner action / مسئول تکمیل قرارداد | شرط خروج از BLOCKED |
+|---|---|---|
+| FE-01 | Sales + Finance | تحویل/شناخت، سند مبدأ، هر دو سمت و amount/tax basis |
+| FE-02 | RepairOperations + Finance | تکمیل فنی/تحویل، recognition و حساب مقابل |
+| FE-03 | Treasury + Finance | payment method، clearing، receipt identity و allocation |
+| FE-04 | Treasury + Finance | پیش‌دریافت، liability lifecycle و settlement/refund |
+| FE-05 | Treasury + Finance | partial allocation، balance، over-allocation و reversal |
+| FE-06 | Purchasing + Finance + Tax | invoice/receipt order، AP/GRNI و Tax Matrix |
+| FE-07 | Inventory + Finance | receipt/ownership، valuation و inventory subledger |
+| FE-08 | Sales + Inventory + Finance | valuation policy، stock issue و COGS recognition |
+| FE-09 | RepairOperations + Inventory + Finance | قرارداد مالکیت/مصرف قطعه و R1/R2 guard؛ 110807 در R1 غیرفعال |
+| FE-10 | Sales + Finance | credit/refund linkage، tax و reversal |
+| FE-10b | Inventory + Sales | inspection، stock disposition و movement |
+| FE-11 | Purchasing + Inventory + Finance | supplier return، credit note، inventory و AP/GRNI |
+| FE-12 | Treasury + Sales + Finance | تعیین Refund Payable و lifecycle پرداخت |
+| FE-13 | Sales + Pricing + Finance | discount reason, account map و approval |
+| FE-14 | Treasury + Finance | source-title crosswalk، cheque state machine و lifecycle tests |
+| FE-15 | Purchasing + Finance | economic nature، capitalization/expense و allocation |
+| FE-16 | Inventory + Finance | count evidence، independent approval و suspense clearing |
+| FE-17 | Treasury + Finance | cash count، variance approval و clearing |
+| FE-18 | Treasury + Finance | bank/PSP/cash clearing و reconciliation |
+| FE-19 | Inventory/RepairOperations + Finance | cause classification، evidence و recovery/expense policy |
+| FE-20 | Purchasing + RepairOperations + Finance | service evidence، acceptance، liability/cost account و reversal |
+| FE-21 | Purchasing + Sales + Inventory + Finance | two linked docs، ownership، valuation و inventory recognition |
+| FE-22 | Treasury + Finance | bank/PSP statement، fee recognition و no-double-count |
+| FE-23 | RepairOperations + Payroll + Finance | commission eligibility، completion trigger و clawback |
+| FE-24 | Finance + Fixed Assets (R2) | R2 authorization و fixed-asset lifecycle |
+| FE-25 | Finance + Treasury (R2) | installment schedule، interest و settlement rules |
+| FE-26 | Finance + Treasury (R2) | FX source/effective date و revaluation rules |
+| FE-27 | Finance + Tax | Tax Matrix، effective dates، exemptions و negative channel tests |
+| FE-28 | Finance | opening evidence، measurement basis و approval |
+| FE-29 | Finance | close checklist، reconciliation blockers و reopen approval |
+| FE-30 | Finance + IdentityAccess/Security | permission matrix، SoD، audit و immutable journal |
+| FE-31 | Inventory + Organization + Finance (R2) | warehouse transfer contract و atomic movement |
+| FE-32 | RepairOperations + Inventory + Finance (R2) | WIP ownership/valuation و scope guard |
+| FE-33 | Treasury + Finance | directionally distinct unallocated receipt/payment lifecycle |
+| FE-34 | Finance | equity mapping، idempotent year close و approval |
+| FE-35 | Finance + Treasury | expense taxonomy، source evidence و prepayment distinction |
+| FE-36 | Source module owner + Finance | event registry، versioned rule و fail-closed tests |
+| FE-37 | Payroll + RepairOperations + Finance (R2) | payroll ownership، commission separation و R2 tests |
+| FE-38 | Finance + Product Owner | equity agreement، source، NormalBalance و year-close mapping |
+
+این Owner Action Register نقش‌های دامنه‌ای را مشخص می‌کند؛ به معنی شروع runtime فازهای آینده یا تغییر ترتیب فازها نیست. مسئولیت اجرای قراردادها تابع بازشدن فاز، DoR و اختیارهای مصوب است.
