@@ -143,7 +143,7 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 - 7D v0.2: 39 Test ID رویدادی MDG-FIN-GATE-001..039 برای تمام 39 ارجاع 7B، به‌علاوه 12 Test ID مستقل MDG-COA-GATE-001..012 برای 7C-OPEN-001..012؛ مجموعاً 51 آزمون طراحی‌شده.
 
 ### نتیجه تطبیق ساختاری
-تعداد Test IDهای ارجاع‌شده در 7B v0.2 برابر 39 است و هر 39 مورد در 7D وجود دارد؛ 7D اکنون 51 Test ID یکتا دارد: 39 آزمون FE با پیشوند MDG-FIN-GATE و 12 آزمون COA با پیشوند MDG-COA-GATE. 12 آزمون COA به 7C-OPEN-001..012 نگاشت شده‌اند. دو namespace مستقل‌اند و آزمون‌های COA به‌عنوان ارجاع اضافه، برابری مجموعه 7B و کل 7D را ادعا نمی‌کنند. CSV وضعیت منبع 7C نیز 76 ردیف × 39 ستون دارد و hash آن به‌صورت مستقل بازتولید شد. FE coverage شامل FE-01..FE-38 به‌علاوه FE-10b است. این کنترل، صحت طراحی حسابداری یا اجرای آزمون را اثبات نمی‌کند.
+تعداد Test IDهای ارجاع‌شده در 7B v0.2 برابر 39 است و هر 39 مورد در 7D وجود دارد؛ 7D اکنون 55 Test ID یکتا دارد: 39 آزمون FE با پیشوند MDG-FIN-GATE و 16 آزمون COA با پیشوند MDG-COA-GATE. 16 آزمون COA به 7C-OPEN-001..016 نگاشت شده‌اند. دو namespace مستقل‌اند و آزمون‌های COA به‌عنوان ارجاع اضافه، برابری مجموعه 7B و کل 7D را ادعا نمی‌کنند. CSV وضعیت منبع 7C نیز 76 ردیف × 39 ستون دارد و hash آن به‌صورت مستقل بازتولید شد. FE coverage شامل FE-01..FE-38 به‌علاوه FE-10b است. این کنترل، صحت طراحی حسابداری یا اجرای آزمون را اثبات نمی‌کند.
 
 ### موارد همچنان باز
 - 7B positive posting rule completeness و canonical debit/credit: OPEN.
@@ -191,7 +191,7 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
  
 ### 7D COA Gate Test Addendum — 2026-11-18
 
-7D v0.2 با افزودن 12 آزمون مستقل MDG-COA-GATE-001..012 برای 7C-OPEN-001..012 تکمیل شد. اکنون 51 Test ID مستقل وجود دارد: 39 آزمون FE (MDG-FIN-GATE-001..039) و 12 آزمون COA (MDG-COA-GATE-001..012). همه این آزمون‌ها در سطح design fail-closed هستند؛ execution NOT RUN و Evidence NOT ACCEPTED. Positive journal assertions تا canonical شدن 7C و تکمیل Posting Ruleهای 7B مسدود می‌مانند.
+7D v0.2 با افزودن 16 آزمون مستقل MDG-COA-GATE-001..016 برای 7C-OPEN-001..012 تکمیل شد. اکنون 51 Test ID مستقل وجود دارد: 39 آزمون FE (MDG-FIN-GATE-001..039) و 12 آزمون COA (MDG-COA-GATE-001..012). همه این آزمون‌ها در سطح design fail-closed هستند؛ execution NOT RUN و Evidence NOT ACCEPTED. Positive journal assertions تا canonical شدن 7C و تکمیل Posting Ruleهای 7B مسدود می‌مانند.
 
 
 ### Re-run structural crosswalk validation — current 7B/7C/7D v0.2
@@ -202,11 +202,11 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 | 7B distinct MDG-FIN-GATE refs | 39 | PASS |
 | 7D distinct MDG-FIN-GATE test IDs | 39 | PASS |
 | 7B→7D missing FE test IDs | 0 | PASS |
-| 7C open items | 12 | PASS — 7C-OPEN-001..012 |
-| 7C open-item Test ID refs | 12 | PASS |
+| 7C open items | 16 | PASS — 7C-OPEN-001..016 |
+| 7C open-item Test ID refs | 16 | PASS |
 | 7D distinct MDG-COA-GATE test IDs | 12 | PASS |
 | 7C→7D missing COA test IDs | 0 | PASS |
-| Total 7D distinct IDs | 51 | PASS — 39 FE + 12 COA |
+| Total 7D distinct IDs | 55 | PASS — 39 FE + 16 COA |
 
 این کنترل فقط صحت ساختاری شناسه‌ها و ارجاع‌ها را اثبات می‌کند. نه اجرای آزمون‌ها، نه صحت حسابداری posting ruleها و نه پذیرش حرفه‌ای را اثبات نمی‌کند. همه آزمون‌ها NOT RUN / NOT VERIFIED باقی می‌مانند.
 
@@ -216,3 +216,52 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 - v1.3 TXT SHA-256 `dd32fca0d4faa2c8e21bcb65f956a326e6d0e9c996551663e39f06152e6edf94`: 78 account identifiers; 76/76 source codes plus 2114 and 5106. This is intermediate evidence only.
 - v1.4 remains the current COA design baseline by owner direction. No v1.2/v1.3 attribute is promoted to canonical without comparison to v1.4 and applicable owner decisions.
 - Source Excel remains verified; this lineage check does not reopen or question its provenance.
+
+
+## 8. Crosswalk کنترل 39 اقدام اصلاحی COA — CR/SR Register
+
+این جدول تمام 23 درخواست اصلاح (CR-001..023) و 16 اصلاح تکمیلی (SR-001..016) در فایل `MDG-WP06-COA-CR-001_v0.1.xlsx` را به workpaperهای جاری متصل می‌کند. «Disposition recorded» به معنی تکمیل طراحی/ثبت کنترل است، نه اجرای تست یا Posting Release.
+
+| Action ID | دامنه | Workpaper / کنترل جاری | وضعیت |
+|---|---|---|---|
+| CR-001 | OWN-7C-038 / 6105 / 1202 / FE-09 | 7C fixed-assets disposition؛ 7B FE-09؛ FE-09 source ref OPEN | REF CORRECTED; SOURCE OPEN |
+| CR-002 | 110701 / TaxMode | 7C tax disposition؛ 7D TaxMode fail-closed | DESIGN RECORDED; EXECUTION OPEN |
+| CR-003 | 110801–110806 | 7C-OPEN-006؛ 7D MDG-COA-GATE-006 | BLOCKED UNTIL COA/SUBLEDGER CONTRACT |
+| CR-004 | 2102 | 7C inactive disposition؛ 7B FE-20 guard | DESIGN RECORDED — NO POSTING |
+| CR-005 | 2106 / 2107 | 7C inactive/unallocated disposition؛ 7B FE-03/12/33 | DESIGN RECORDED — NO POSTING |
+| CR-006 | 110401–110404 | 7C-OPEN-010؛ 7D MDG-COA-GATE-010 | BLOCKED UNTIL SOURCE CROSSWALK |
+| CR-007 | 2101 / 2102 / 2103 / 2114 / FE-20 | 7C-OPEN-008؛ 7B FE-06/20 | BLOCKED UNTIL FE-20 CONTRACT |
+| CR-008 | 2104 | 7B FE-16/negative inventory settlement; 7C-OPEN-012 | BLOCKED UNTIL SETTLEMENT RULE |
+| CR-009 | 2112 / 2113 | 7B FE-16/17; 7C-OPEN-012 | BLOCKED UNTIL SUSPENSE CROSSWALK |
+| CR-010 | OWN-7C-041/042 | 7C-OPEN-011; OWN-7C-043 constraints retained | NO RE-APPROVAL REQUESTED; EQUITY MAPPING OPEN |
+| CR-011 | 6105 / 1202 / 1201 | 7C fixed-assets R2 disposition; 7B FE-24 | R2 — NO R1 POSTING |
+| CR-012 | 3101–3104 | 7C-OPEN-011; 7B FE-28/34/38 | BLOCKED — NO POSTING |
+| CR-013 | 6204 / 6205 | 7C historical inactive disposition | DESIGN RECORDED — NO POSTING |
+| CR-014 | 110808 / 620201 | 7B FE-16; 7C-OPEN-012 | BLOCKED UNTIL ANTI-DOUBLE-COUNT CROSSWALK |
+| CR-015 | TXT/XLSX identity | Document Registry + SHA256SUMS | REGISTERED; FINAL ACCEPTANCE OPEN |
+| CR-016 | AccountId / ParentAccountId | 7C-OPEN-002/003; 7D MDG-COA-GATE-002/003 | BLOCKED |
+| CR-017 | Nature / NormalBalance / eligibility | 7C-OPEN-004/005; 7D MDG-COA-GATE-004/005 | BLOCKED |
+| CR-018 | Parent/Level hierarchy | 7C-OPEN-003; 7D MDG-COA-GATE-003 | BLOCKED |
+| CR-019 | 4201–4203 / 4107 / 5106 | 7C-OPEN-009/013; 7D MDG-COA-GATE-009/013 | BLOCKED |
+| CR-020 | GL/Subledger boundaries | 7C-OPEN-006/014/015/016 | BLOCKED WHERE MAPPING OPEN |
+| CR-021 | OWN-7C-039 reference corrections | 7C OwnerDecisionRef/source mapping; 7B FE-20 | DESIGN REFERENCE CORRECTED |
+| CR-022 | 1109/2109 TaxMode and TradeIn | 7C tax disposition; 7B FE-27/21; 7D TaxMode gates | DESIGN RECORDED; EXECUTION OPEN |
+| CR-023 | 110803 / 2111 TradeIn GL mapping | 7C-OPEN-014; 7D MDG-COA-GATE-014 | BLOCKED — SCOPE ≠ GL APPROVAL |
+| SR-001 | 1101 / 1102 / 1105 / 110601 | 7C-OPEN-015; 7D MDG-COA-GATE-015 | BLOCKED UNTIL SUBLEDGER CONTRACTS |
+| SR-002 | 110302 | 7C-OPEN-016; 7D MDG-COA-GATE-016 | BLOCKED UNTIL PSP/CLEARING CONTRACT |
+| SR-003 | 110602 | 7C inactive/source-only disposition | DESIGN RECORDED — NO POSTING |
+| SR-004 | 1110 | 7C-OPEN-016; 7D MDG-COA-GATE-016 | BLOCKED UNTIL TRANSFER CONTRACT |
+| SR-005 | 1201 / 1202 / 6105 | 7C fixed-assets R2 disposition; 7B FE-24 | R2 — NO R1 POSTING |
+| SR-006 | 2103 / 2108 | 7B FE-06/23; 7C-OPEN-012 | BLOCKED UNTIL GRNI/COMMISSION CONTRACT |
+| SR-007 | 3105 | 7C-OPEN-011; 7B FE-38 | BLOCKED — NO POSTING |
+| SR-008 | 4101–4106 | 7B FE-01/02; 7C-OPEN-001/012 | BLOCKED UNTIL REVENUE FE CROSSWALK |
+| SR-009 | 5101 | 7B FE-08; 7D positive costing assertion pending | BLOCKED UNTIL COST RULE |
+| SR-010 | 5102 / 5103 | 7B FE-09/20; 7C-OPEN-008/012 | BLOCKED |
+| SR-011 | 5104 / 5105 | 7B FE-23/37; 7C-OPEN-012 | BLOCKED / R2 WHERE APPLICABLE |
+| SR-012 | 6103 | 7C R2 scope disposition | R2 — NO R1 POSTING |
+| SR-013 | 6104 / FE-15 | 7B FE-15 | BLOCKED UNTIL LANDED-COST RULE |
+| SR-014 | 6106 / 6107 | 7B FE-22; 7C-OPEN-016 | BLOCKED UNTIL FEE CROSSWALK |
+| SR-015 | 6108 / 610801 | 7C-OPEN-003/005; 7B FE-17 | BLOCKED UNTIL HIERARCHY/ELIGIBILITY |
+| SR-016 | 6201 / 6202 / 6203 / 620201 / 110809 | 7C-OPEN-003/005/012; 7B FE-16/17/36 | BLOCKED / 110809 PROHIBITED |
+
+تعداد اقدامات تحت کنترل: 23 CR + 16 SR = 39. موارد با وضعیت BLOCKED/OPEN به‌عنوان unresolved با مالک دامنه‌ای، شرط رفع، Test ID و Evidence plan ثبت شده‌اند؛ هیچ‌یک با صرف این crosswalk بسته یا Posting-enabled نمی‌شوند.
