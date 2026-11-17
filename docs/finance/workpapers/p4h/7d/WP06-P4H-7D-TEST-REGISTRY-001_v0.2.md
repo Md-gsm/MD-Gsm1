@@ -8,7 +8,7 @@
 | Parent | WP06-P4H-7D-TEST-REGISTRY-001 v0.1 |
 | Architecture | MDG-ARCH-MASTER-001 v2.5 |
 | O-01 Change Request | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 — OWNER APPROVED |
-| Design | R1 FAIL-CLOSED CONTROL CASES SPECIFIED FOR FE-01..FE-38 |
+| Design | R1 FAIL-CLOSED CONTROL CASES SPECIFIED FOR FE-01..FE-38 PLUS FE-10b |
 | Positive accounting journal cases | BLOCKED UNTIL 7B/7C CANONICAL |
 | Execution | NOT RUN / NOT VERIFIED |
 | Evidence | NOT ACCEPTED |
@@ -34,7 +34,7 @@
 - TaxMode=0 در تمام کانال‌ها صفر TaxLine و صفر TaxJournal تولید کند.
 - خطای مجوز، دوره بسته، حساب نامعتبر، mapping ناقص و event ناشناخته باید fail closed باشند.
 
-## 3. Test Cases برای FE-01..FE-38
+## 3. Test Cases برای FE-01..FE-38 به‌علاوه FE-10b به‌علاوه FE-10b
 
 | Test ID | FE | سناریو / Fixture | اقدام | نتیجه مورد انتظار | ممنوعیت/Assertion منفی | شواهد |
 |---|---|---|---|---|---|---|
