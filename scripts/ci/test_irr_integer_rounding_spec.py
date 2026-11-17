@@ -44,7 +44,8 @@ class IntegerRoundingReferenceTests(unittest.TestCase):
         for n, d, expected in [
             (1249,100,12),(1250,100,13),(1251,100,13),
             (-1249,100,-12),(-1250,100,-13),(-1251,100,-13),
-            (49,100,0),(50,100,1),(-50,100,-1),(250,100,3),(-250,100,-3),(0,7,0)
+            (49,100,0),(50,100,1),(-50,100,-1),(250,100,3),(-250,100,-3),(0,7,0),
+        (MAX64-1,MAX64,1)
         ]:
             with self.subTest(n=n,d=d):
                 self.assertEqual(expected, round_away(n,d))
