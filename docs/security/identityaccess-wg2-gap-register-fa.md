@@ -41,8 +41,8 @@
 | شناسه | شکاف | شاهد | نوع |
 |---|---|---|---|
 | B-01 | هیچ کد bootstrap وجود ندارد؛ نقش runtime اجازه INSERT روی `identity.accounts` یا `account_roles` ندارد. | grants: «No account INSERT is granted»؛ نبود هر handler مرتبط | [تصمیم] [قابل‌انجام پس از تصمیم] |
-| B-02 | تناقض: تصمیم مالک `admin/admin` یک‌بارمصرف و local-only را نگه داشته؛ ADR-0013 بند ۴ هر credential ثابت در source/config/installer/migration/log را ممنوع می‌کند؛ تست `BootstrapInvariantTests.FixedPairIsAbsent` همین جفت را در `src`، `installer`، `database`، `tools`، `scripts` رد می‌کند. روش provisioning امن تعیین نشده است. | ADR-0013؛ `identityaccess-recovery-api-authorization-design-fa.md` بخش ۵.۶؛ تست نام‌برده | [تصمیم] |
-| B-03 | هیچ seed برای نقش‌ها/مجوزها/انتساب وجود ندارد و جدول‌های `roles`/`permissions` خالی‌اند؛ `HasPermissionAsync` از همین جدول‌ها می‌خواند، بنابراین بدون seed هر بررسی مجوز Deny می‌شود. مسیر انتساب super_admin به bootstrap تعریف نشده است. | migration 0003 (سرتیتر)؛ `PostgresIdentityAccessStores.HasPermissionAsync` | [تصمیم] روش و زمان seed |
+| B-02 | ADR-0013 عبارت تاریخی `admin/admin` و local-only را ثبت کرده، اما همان ADR هر credential ثابت در source/config/installer/migration/log را ممنوع می‌کند؛ تست `BootstrapInvariantTests.FixedPairIsAbsent` این جفت را در `src`، `installer`، `database`، `tools` و `scripts` رد می‌کند. تصمیم محصول ایجاد حساب اولیه در نصب و اجبار تغییر username/password/profile در اولین ورود است؛ روش امن تولید و تحویل credential هنوز تعیین نشده و نباید admin/admin را به‌عنوان پیاده‌سازی تأییدشده تلقی کرد. | ADR-0013؛ `identityaccess-recovery-api-authorization-design-fa.md` بخش ۵.۶؛ تست نام‌برده | [تصمیم] |
+| B-03 | migration 0003 هیچ seed برای نقش‌ها/مجوزها/انتساب ندارد؛ محتویات هیچ دیتابیس زنده‌ای در این ممیزی خوانده نشده است. `HasPermissionAsync` از جدول‌های `roles`/`permissions` می‌خواند، بنابراین تا seed کنترل‌شده و تأییدشده، runtime نمی‌تواند grantهای مورد انتظار را resolve کند. مسیر انتساب super_admin به bootstrap تعریف نشده است. | migration 0003 (سرتیتر)؛ `PostgresIdentityAccessStores.HasPermissionAsync` | [تصمیم] روش و زمان seed |
 | B-04 | state machine bootstrap (Uninitialized … Completed) فقط طراحی است؛ ستون `bootstrap_completed_at_utc` وجود دارد ولی خوانده/نوشته نمی‌شود و عملیات عادی تا تکمیل setup fail-closed نیست. | `identityaccess-schema-design-fa.md`؛ `MdGsmDbContext.cs` | [قابل‌انجام پس از B-02] |
 
 ### ۳.۲ بازیابی مدیر (Recovery)
@@ -86,18 +86,18 @@
 | P-05 | handlerهای مدیریت هویت وجود ندارند: ساخت/ویرایش حساب، انتساب نقش، مدیریت مجوز، لغو نشست توسط مدیر. نقش runtime روی جدول‌های نقش/انتساب فقط SELECT دارد. | `PermissionCatalog.cs` (کلیدها)؛ grants | [قابل‌انجام] با طراحی grant؛ [وابسته] WG-4/DBA |
 | P-06 | اتصال حساب ورود به Party از طریق قرارداد Persons در محدوده WG-2 تعریف شده، ولی schema حساب‌ها ستون یا ارجاع Party ندارد. | Playbook بخش WG-2؛ migration 0003 | [وابسته] WG-1: تعیین نسخه قرارداد و نیاز در این فاز |
 
-## ۴. تناقض‌های سندی در سیاست نشست
+## ۴. تطبیق تناقض‌های سندی نشست و Recovery
 
-اصلاحیه 2026-11-07 در ADR-0013 («اصلاح نهایی سیاست نشست») و بیانیه «تصمیم‌های نهایی مالک 2026-11-06/07» در `identityaccess-owner-decisions-fa.md` می‌گویند: عمر مطلق ثابت و سقف ۲ نشست/حساب مصوب نشده‌اند؛ سقف ۵ حساب فعال و 30s/180s فقط liveness‌اند. نقشه راه نیز می‌گوید «12h TTL و دو نشست/account را مصوب فرض نکنید». بندهای زیر هنوز بدون علامت superseded همان مقادیر قدیمی را «مصوب» نشان می‌دهند:
+اصلاحیه 2026-11-07 در ADR-0013 و تصمیم‌های نهایی مالک می‌گویند عمر مطلق ثابت و سقف ۲ نشست/حساب مصوب نشده‌اند؛ سقف ۵ حساب فعال و 30s/180s سیاست جاری است. این PR متن اسناد WG-2 زیر را **در محل اصلی** بازنویسی کرده و عبارت‌های متناقض را صریحاً تاریخی/superseded علامت زده است:
 
 | سند | بخش | وضعیت |
 |---|---|---|
-| `identityaccess-five-open-items-fa.md` | بخش ۶ «سیاست نشست مصوب» | الحاقیه WG-2 افزوده شد |
-| `identityaccess-recovery-api-authorization-design-fa.md` | بخش ۶.۳ Session و بند ۶.۴ | الحاقیه WG-2 افزوده شد |
-| `identityaccess-g1-review-handoff-fa.md` | بخش ۴.۱ Session | الحاقیه WG-2 افزوده شد |
-| `identityaccess-schema-design-fa.md` | «تنظیمات Session» (absolute_session_ttl، max_concurrent_sessions_per_account) | الحاقیه WG-2 افزوده شد |
+| `identityaccess-five-open-items-fa.md` | خلاصه جاری و بخش‌های ۴، ۶ و ۷ | در محل اصلی بازنویسی شد |
+| `identityaccess-recovery-api-authorization-design-fa.md` | مدل Recovery، session، API و بخش‌های تاریخی | در محل اصلی بازنویسی شد |
+| `identityaccess-g1-review-handoff-fa.md` | وضعیت جاری، بخش ۴.۱/۴.۲ و blockerها | snapshot تاریخی مشخص و سیاست جاری اصلاح شد |
+| `identityaccess-schema-design-fa.md` | session schema، bootstrap و Recovery schema | مدل قدیمی با وضعیت Migration 0003 تطبیق داده شد |
 
-متن ADR-0013 در `docs/decisions/` متعلق به WG-0 است و در این تغییر دست‌نخورده می‌ماند. الحاقیه‌های بالا هیچ سیاست جدیدی نمی‌سازند؛ فقط به اصلاحیه موجود ارجاع می‌دهند. هم‌چنین طراحی سه‌عاملی Recovery (ایمیل + موبایل + کد آفلاین) در متن قدیمی recovery-design و `recovery_channel_proofs` با کانال mobile در schema-design، با تصمیم نهایی ایمیل‌تنها و `CHECK(channel='email')` در migration 0003 هماهنگ نیست؛ recovery-design این را در الحاقیه‌های 2026-11-06/07 خودش superseded کرده و الحاقیه WG-2 در schema-design همین را برای جدول `recovery_channel_proofs` ثبت می‌کند.
+متن ADR-0013 در `docs/decisions/` متعلق به WG-0 است و این PR آن را تغییر نمی‌دهد؛ اصلاحیه خود ADR و اسناد تصمیم مالک، مبنای سیاست جاری هستند. در اسناد WG-2، مدل سه‌عاملی ایمیل+موبایل+کد آفلاین و جدول پیشنهادی `recovery_channel_proofs` دیگر به‌عنوان طراحی جاری معرفی نمی‌شوند. Migration 0003 فقط `recovery_challenges` با `CHECK(channel='email')` و جدول `recovery_codes` را دارد؛ جدول دوم به معنی فعال بودن provisioning یا الزام offline code نیست.
 
 ## ۵. درخواست تصمیم و اطلاعات
 
