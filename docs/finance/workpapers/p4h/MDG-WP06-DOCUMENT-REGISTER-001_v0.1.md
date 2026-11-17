@@ -22,9 +22,9 @@
 | WP06-P4H-7B-POSTING-MATRIX-001 | 0.2 | docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md | 039533851f21028503bd85c0b94b04cb2cdd07d85e36bc736ab2fa4792817639 | DRAFT; 39 event rows; posting rule detail partial |
 | WP06-P4H-7C-COA-RECONCILIATION-001 | 0.2 | docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.2.md | 78ceaf0351a422d62fe5fdfb14af2134e7a920dd2c855d4b5ae6315e98a0d466 | DRAFT; source verified; canonical v1.4 row reconciliation open |
 | WP06-P4H-7D-TEST-REGISTRY-001 | 0.2 | docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md | 4626a5d8ae121c061cc6f6c090c342770ad3f3dbe7372666abf29883457e1f72 | DRAFT; 39 gate cases; positive journal assertions pending; NOT RUN |
-| MDG-WP06-7B-7C-7D-INTEGRATED-001 | 0.4 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md | 2f8f04da881810482a436dc5238ec2b358d11f53e0ecc41acb2828cda36970bd | DRAFT; integrated crosswalk and governance baseline |
-| MDG-WP06-7B-7C-7D-CROSS-AUDIT-001 | 0.2 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md | a983d22553209c95f2815587c6ec8b375551caae3efcea53a59f112b0b295765 | STRUCTURAL CHECKS RECORDED; independent review pending |
-| MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md | ae321f2d2a4d553d537eec9e7decfa45d51be72eef4ddaa7bfaaa34938695928 | PROGRESS REGISTER; O-01 OPEN |
+| MDG-WP06-7B-7C-7D-INTEGRATED-001 | 0.4 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md | 29c57d93c4318d3fa8c4e466c9de7855ff50429b5c0e6a1eb6af2f07bd0932cf | DRAFT; integrated crosswalk and governance baseline |
+| MDG-WP06-7B-7C-7D-CROSS-AUDIT-001 | 0.2 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md | 8d56a891268a1365e7b148c5f340578a4b8ac270dfdc2e8a24d245058de9b434 | STRUCTURAL CHECKS RECORDED; independent review pending |
+| MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md | a4d09882f3ba7f44adcd6468d9016101615075a2fc3975115b76aa302cdce794 | PROGRESS REGISTER; O-01 OPEN |
 
 ## 2. اسناد معماری و منبع ثبت‌شده در Library
 
