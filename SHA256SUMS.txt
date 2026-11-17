@@ -294,3 +294,4 @@ f94af4df1f5848555f0e064bd1b59d3024f84f680ead7087b20ae3fda5af8d50  docs/finance/w
 3d13264cbb38c2c0755971e51d2645ef930d34d0d220423e70134a3e065b7f24  docs/finance/workpapers/p4h/integration/MDG-WP06-7C-ACCOUNT-DISPOSITION-001_v0.1.md
 7abb8a60fae4fff43718f443494a0ae6c2931df248d247ca2de6161facf9c9b7  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.3.md
 b3d907de1db89ca56b06ad2579f4badeee3f5fc2efad04d3901fa4be95e23670  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001_v0.1.md
+87510d4aad457155e268130e7594a3fc071981bdd166e37cd96ef60d04f65408  docs/architecture/change-requests/CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001_v0.1.md
