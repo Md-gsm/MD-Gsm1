@@ -96,9 +96,9 @@ SMS در این فاز غیرفعال و خارج از دامنه است. Offlin
 | REC-14 | brute force/flood | rate-limit و audit بدون account enumeration |
 | REC-15 | حساب disabled یا غیرمجاز | رد طبق policy مصوب |
 
-### 1.9 تصمیم‌های باز
+### 1.9 تصمیم‌ها و وابستگی‌های باز
 
-SMTP relay واقعی، digest/pepper و key rotation، تعداد/تحویل امن codeهای آفلاین، تعریف کنسول محلی مورد اعتماد، فرایند دو نفره و incident response باید تعیین و review شوند. SMS provider عمداً به فاز آینده موکول شده است. تا تکمیل شروط امنیتی هیچ مسیر recovery عملیاتی ساخته نشود.
+نقطه شروع Recovery (endpoint شبکه‌ای یا کنسول محلی مورد اعتماد)، ثبت و اثبات ایمیل super_admin، SMTP relay واقعی، digest/key management و rotation، rate-limit و شمارنده‌های اتمیک، threat model mailbox و incident response باید تعیین و review شوند. SMS و offline recovery code در این فاز عامل اجباری یا fallback نیستند. تا تکمیل شروط امنیتی هیچ مسیر Recovery عملیاتی ساخته نشود.
 
 **خروجی مرحله ۱:** threat model و test acceptance مستند شد؛ runtime عمداً ساخته نشد.
 
@@ -126,7 +126,7 @@ Policy evaluator (قرارداد): ورودی principal/session معتبر، per
 - هر درخواست protected وضعیت account/session/lease/revoke/credential_version را از PostgreSQL authoritative بررسی کند؛ cache محلی ممنوع.
 - 5 شکست در 15 دقیقه => lockout 15 دقیقه؛ source rate limit مستقل مکمل؛ پاسخ عمومی بدون account enumeration.
 - تغییر/reset رمز در همان تراکنش credential_version را افزایش و همه نشست‌ها را revoke کند.
-- heartbeat=30s، lease=180s و سقف 5 حساب فعال متمایز، تصمیم نهایی مالک‌اند؛ runtime موجود فقط تا حدی پیاده‌سازی شده و پذیرش کامل نیازمند تست است.
+- heartbeat=30s، lease=180s و سقف 5 حساب فعال متمایز، تصمیم نهایی مالک‌اند؛ عمر مطلق نشست و سقف نشست/account تصویب نشده‌اند. runtime موجود فقط تا حدی پیاده‌سازی شده و پذیرش کامل نیازمند تست است.
 - bootstrap حساب اولیه باید installer-created و first-login forced-change باشد؛ روش امن provisioning و تعارض عبارت تاریخی admin/admin هنوز باز است. تا رفع آن، listener و عملیات عادی بسته.
 - raw token در DB/log/telemetry/artifact صفر؛ revoked token در درخواست بعدی رد؛ disabled account و credential version قدیمی رد؛ lockout و session cap در concurrency درست enforce شوند.
 
@@ -284,23 +284,14 @@ heartbeat معتبر lease را تمدید می‌کند؛ PostgreSQL مرجع a
 ## تعیین دامنه فعلی: عدم پیاده‌سازی پیامک — 2026-11-05
 - بنا بر تصمیم مالک، در این مرحله هیچ SMS provider، SDK، API client، credential، template، configuration، background job یا تست وابسته به سرویس پیامک اضافه نمی‌شود.
 - قابلیت SMS به مرحله/نسخه آینده موکول است و در این مرحله صرفاً به‌عنوان توسعه آتی مستند می‌شود؛ انتخاب vendor نیز اکنون لازم نیست.
-- تصمیم نهایی مالک، Recovery ایمیل‌تنها را برای این فاز پذیرفته است؛ بااین‌حال تا تکمیل workflow، SMTP، تست و review مستقل، Recovery runtime غیرفعال می‌ماند. عامل offline recovery code نیز به‌تنهایی جایگزین عامل مستقل دوم نمی‌شود مگر آنکه مدل تهدید و سیاست مالک جداگانه تصویب شود.
+- تصمیم نهایی مالک، Recovery ایمیل‌تنها را برای این فاز پذیرفته است؛ بااین‌حال تا تکمیل workflow، SMTP، تست و review مستقل، Recovery runtime غیرفعال می‌ماند. offline recovery code در این فاز عامل اجباری یا مسیر fallback نیست.
 - مقادیر TTL پیامک و محدودیت ارسال پیامک که پیش‌تر در سند آمده‌اند، مشخصات هدف آینده‌اند و در این مرحله هیچ رفتار اجرایی یا تست runtime برای SMS ایجاد نمی‌کنند.
 - ایمیل اختصاصی نیز در این مرحله فقط معماری هدف است؛ SMTP relay واقعی و secretها تا انتخاب/پیکربندی عملیاتی وارد برنامه نمی‌شوند.
 
 
-## 6. شفاف‌سازی اجباری پس از تعویق SMS — 2026-11-05
+## سابقه تعویق SMS — 2026-11-05 (تاریخی و superseded)
 
-تصمیم مالک این است که SMS در این فاز پیاده‌سازی نشود و به آینده موکول گردد. بنابراین عبارت‌های قدیمی‌تر این سند درباره «اثبات کانال موبایل» به معنی وجود SMS runtime یا مجوز انتخاب خودکار یک روش جایگزین نیستند. روش اجرایی اثبات عامل دوم مستقل از ایمیل هنوز تعیین و تصویب نشده است.
-
-تا زمانی که مالک و reviewer امنیتی روش مستقل جایگزین را با threat model و معیارهای آزمون تصویب نکرده‌اند:
-- هیچ Recovery ایمیل‌تنها فعال یا قابل دسترس نشود.
-- هیچ عامل جایگزین، مسیر دستی، پشتیبانی‌محور یا bypass به‌صورت ضمنی فرض نشود.
-- کد آفلاین به‌تنهایی عامل مستقل دوم فرض نشود.
-- Recovery runtime و migration آن ساخته/فعال نشود.
-- TTL پیامک و محدودیت‌های ارسال فقط هدف طراحی آینده باقی بمانند.
-
-بسته تحویل reviewer و فهرست blockerهای فعلی در `identityaccess-g1-review-handoff-fa.md` مرجع جاری هستند. این الحاقیه مجوز G1 نیست و `g1Authorized=false` باقی می‌ماند.
+در این تاریخ SMS به فاز آینده موکول شد و متن اولیه به‌اشتباه Recovery ایمیل‌تنها را نیز ممنوع می‌کرد. تصمیم نهایی مالک در 2026-11-06/07 آن ممنوعیت را supersede کرد و Recovery ایمیل‌تنها را برای فاز فعلی پذیرفت. غیرفعال‌بودن Recovery runtime اکنون ناشی از ناتمام‌بودن endpoint/orchestration، SMTP، اثبات ایمیل، rate-limit، تست و بازبینی مستقل است؛ نه نیاز به عامل دوم یا SMS.
 
 
 ## الحاقیه نهایی دامنه Recovery — تصمیم مالک 2026-11-06 (مقدم بر طراحی سه‌عاملی قدیمی)
