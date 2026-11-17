@@ -140,10 +140,10 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 ### ساختار تحویل‌دادنی‌های جایگزین
 - 7B v0.2: 39 ردیف رویدادی شامل FE-01..FE-38 و FE-10b؛ disposition هر رویداد و Test ID مشخص است.
 - 7C v0.2: 76 کد منبعی و 24 ستون، provenance احرازشده و canonicalization register؛ صفات نهایی هنوز با COA v1.4 تطبیق کامل نشده‌اند.
-- 7D v0.2: 39 Test ID رویدادی MDG-FIN-GATE-001..039 برای تمام 39 ارجاع 7B، به‌علاوه 12 Test ID مستقل MDG-COA-GATE-001..012 برای 7C-OPEN-001..012؛ مجموعاً 51 آزمون طراحی‌شده.
+- 7D v0.2: 39 Test ID رویدادی MDG-FIN-GATE-001..039 برای تمام 39 ارجاع 7B، به‌علاوه 16 Test ID مستقل MDG-COA-GATE-001..016 برای 7C-OPEN-001..016 و 12 آزمون مشترک/سراسری MDG-FIN-*؛ مجموعاً 67 Test ID مستقل.
 
 ### نتیجه تطبیق ساختاری
-تعداد Test IDهای ارجاع‌شده در 7B v0.2 برابر 39 است و هر 39 مورد در 7D وجود دارد؛ 7D اکنون 55 Test ID یکتا دارد: 39 آزمون FE با پیشوند MDG-FIN-GATE و 16 آزمون COA با پیشوند MDG-COA-GATE. 16 آزمون COA به 7C-OPEN-001..016 نگاشت شده‌اند. دو namespace مستقل‌اند و آزمون‌های COA به‌عنوان ارجاع اضافه، برابری مجموعه 7B و کل 7D را ادعا نمی‌کنند. CSV وضعیت منبع 7C نیز 76 ردیف × 39 ستون دارد و hash آن به‌صورت مستقل بازتولید شد. FE coverage شامل FE-01..FE-38 به‌علاوه FE-10b است. این کنترل، صحت طراحی حسابداری یا اجرای آزمون را اثبات نمی‌کند.
+تعداد Test IDهای ارجاع‌شده در 7B v0.2 برابر 39 است و هر 39 مورد در 7D وجود دارد؛ 7D اکنون 67 Test ID یکتا دارد: 39 آزمون FE با پیشوند MDG-FIN-GATE، 16 آزمون COA با پیشوند MDG-COA-GATE و 12 آزمون مشترک/سراسری با پیشوندهای MDG-FIN-ATOMIC/COA/IDEM/IMEI/PERIOD/REV/SUBLEDGER/TAX. 16 آزمون COA به 7C-OPEN-001..016 نگاشت شده‌اند. دو namespace مستقل‌اند و آزمون‌های COA به‌عنوان ارجاع اضافه، برابری مجموعه 7B و کل 7D را ادعا نمی‌کنند. CSV وضعیت منبع 7C نیز 76 ردیف × 39 ستون دارد و hash آن به‌صورت مستقل بازتولید شد. FE coverage شامل FE-01..FE-38 به‌علاوه FE-10b است. این کنترل، صحت طراحی حسابداری یا اجرای آزمون را اثبات نمی‌کند.
 
 ### موارد همچنان باز
 - 7B positive posting rule completeness و canonical debit/credit: OPEN.
@@ -191,7 +191,7 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
  
 ### 7D COA Gate Test Addendum — 2026-11-18
 
-7D v0.2 با افزودن 16 آزمون مستقل MDG-COA-GATE-001..016 برای 7C-OPEN-001..012 تکمیل شد. اکنون 51 Test ID مستقل وجود دارد: 39 آزمون FE (MDG-FIN-GATE-001..039) و 12 آزمون COA (MDG-COA-GATE-001..012). همه این آزمون‌ها در سطح design fail-closed هستند؛ execution NOT RUN و Evidence NOT ACCEPTED. Positive journal assertions تا canonical شدن 7C و تکمیل Posting Ruleهای 7B مسدود می‌مانند.
+7D v0.2 با افزودن 16 آزمون مستقل MDG-COA-GATE-001..016 برای 7C-OPEN-001..016 تکمیل شد. همراه با 39 آزمون FE و 12 آزمون مشترک/سراسری، اکنون 67 Test ID مستقل وجود دارد. همه این آزمون‌ها در سطح design fail-closed هستند؛ execution NOT RUN و Evidence NOT ACCEPTED. Positive journal assertions تا canonical شدن 7C و تکمیل Posting Ruleهای 7B مسدود می‌مانند.
 
 
 ### Re-run structural crosswalk validation — current 7B/7C/7D v0.2
@@ -204,9 +204,9 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 | 7B→7D missing FE test IDs | 0 | PASS |
 | 7C open items | 16 | PASS — 7C-OPEN-001..016 |
 | 7C open-item Test ID refs | 16 | PASS |
-| 7D distinct MDG-COA-GATE test IDs | 12 | PASS |
+| 7D distinct MDG-COA-GATE test IDs | 16 | PASS |
 | 7C→7D missing COA test IDs | 0 | PASS |
-| Total 7D distinct IDs | 55 | PASS — 39 FE + 16 COA |
+| Total 7D distinct IDs | 67 | PASS — 39 FE + 16 COA + 12 shared controls |
 
 این کنترل فقط صحت ساختاری شناسه‌ها و ارجاع‌ها را اثبات می‌کند. نه اجرای آزمون‌ها، نه صحت حسابداری posting ruleها و نه پذیرش حرفه‌ای را اثبات نمی‌کند. همه آزمون‌ها NOT RUN / NOT VERIFIED باقی می‌مانند.
 
