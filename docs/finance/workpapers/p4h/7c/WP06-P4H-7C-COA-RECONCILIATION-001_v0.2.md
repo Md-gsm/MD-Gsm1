@@ -162,6 +162,11 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 | 7C-OPEN-011 | 3101..3105 equity | Finance + Product Owner | توافق حقوق مالکانه، source، NormalBalance و FE-28/34/38 پیش از فعال‌سازی | MDG-COA-GATE-011 | signed policy decision، equity crosswalk و negative posting tests | BLOCKED — NO POSTING |
 | 7C-OPEN-012 | FE↔COA↔Test | Finance + Source Module Owners | نگاشت دوطرفه هر حساب/رویداد به Test ID؛ orphan account/event ممنوع | MDG-COA-GATE-012 | bidirectional traceability matrix، orphan scan و cross-audit report | BLOCKED — NO POSTING |
 
+| 7C-OPEN-013 | 4201–4203 Contra Revenue mapping | Finance + Sales/Pricing | برای هر کد عنوان، ReasonCode، FE، سند فروش و گزارش‌دهی مستقل تعیین شود؛ سیاست Contra Revenue به‌تنهایی کد را canonical نمی‌کند | MDG-COA-GATE-013 | account-to-FE crosswalk، reason-code matrix و discount/refund negative tests | BLOCKED — NO POSTING |
+| 7C-OPEN-014 | 110803 / 2111 TradeIn GL mapping | Finance + Inventory/Purchasing | Scope approval در OWN-7C-040 از تأیید حساب GL مستقل است؛ Nature، NormalBalance، GL/Subledger role و Posting permission جداگانه تطبیق شوند | MDG-COA-GATE-014 | TradeIn two-document crosswalk، GL/Subledger boundary test و approval evidence | BLOCKED — NO POSTING |
+| 7C-OPEN-015 | 1101 / 1102 / 1105 / 110601 subledger contracts | Finance + Treasury + Party Owner | Cash shift/count، BankAccount/Statement، Party/Invoice/Allocation و RECOVERABLE_FROM_TECHNICIAN trigger برای هر کد صریح و مستقل شود | MDG-COA-GATE-015 | four account contracts، party/bank/cash reconciliation fixtures و negative tests | BLOCKED — NO POSTING UNTIL CONTRACT ACCEPTED |
+| 7C-OPEN-016 | 110302 / 1110 clearing contracts | Finance + Treasury | PSP control و physical cash-in-transit تفکیک؛ settlement three-way، TransferId، source/destination، exit/receipt timestamps و clearing trigger canonical شود | MDG-COA-GATE-016 | PSP/bank three-way reconciliation، cash-transfer lifecycle و anti-double-count tests | BLOCKED — NO POSTING UNTIL CONTRACT ACCEPTED |
+
 ## 8. معیار پذیرش
 
 1. 76 source rows و 24 columns با checksum احراز شده و در source lineage ثبت باشند.
