@@ -233,3 +233,18 @@
 ## Addendum — 12 COA Gate Tests Added to 7D v0.2
 
 7D v0.2 now includes MDG-COA-GATE-001..012 mapped one-to-one to 7C-OPEN-001..012. Together with MDG-FIN-GATE-001..039, the current replacement test registry has 51 independent test IDs. All 12 COA tests are fail-closed design tests; execution NOT RUN / NOT VERIFIED; Evidence NOT ACCEPTED. Positive account eligibility and posting assertions remain blocked until canonical 7C and 7B rules are accepted.
+
+## Addendum — 2026-11-18 — 67-ID Controlled Test Registry
+
+7D v0.2 اکنون 67 Test ID مستقل دارد:
+- 39 مورد FE: `MDG-FIN-GATE-001..039` برای FE-01..FE-38 و FE-10b؛
+- 16 مورد COA: `MDG-COA-GATE-001..016` برای 7C-OPEN-001..016؛
+- 12 کنترل مشترک/سراسری: Atomicity، COA eligibility، Idempotency، IMEI، Period، Reversal، Subledger و Tax.
+
+کنترل ساختاری نشان داد هر 39 ارجاع 7B در 7D وجود دارد و هر 16 ارجاع 7C-OPEN در 7D آزمون متناظر دارد. 12 کنترل مشترک به‌عنوان آزمون‌های سراسری جداگانه نگهداری می‌شوند.
+
+- Test execution: NOT RUN / NOT VERIFIED.
+- Evidence: NOT ACCEPTED.
+- Positive journal assertions: BLOCKED until 7B posting rules and 7C canonical account attributes are accepted.
+- Gate 4: OPEN.
+- Posting Release: NOT GRANTED.
