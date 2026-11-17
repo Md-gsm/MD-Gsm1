@@ -362,4 +362,4 @@ O-01 هنوز OPEN است. Gate 3/4 OPEN؛ Implementation NOT VERIFIED؛ Test ex
 
 
 ### 7C سطر‌به‌سطر — تکمیل Source Status Register
-فایل `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.1.csv` با 76 ردیف و 30 ستون در Library ثبت شد؛ hash آن `7e61eca4bc486bc8173ea59a7c3b48a6fa9e5d231e5507cba208a3a003b80014` است. این اقدام وضعیت هر ردیف منبع را صریح می‌کند و مانع ادعای «نبود Excel» می‌شود. این اقدام به معنی canonical شدن صفات نیست؛ تطبیق 76 ردیف با COA v1.4 و ثبت مقادیر canonical همچنان مانع فنی 7C است.
+فایل `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.2.csv` با 76 ردیف و 39 ستون (24 ستون منبع + 15 ستون وضعیت canonical) در Library ثبت شد؛ hash آن `78c3793c075ff4aaebef4b86230411d3dca52233f0cca3c81278b2f4607acbb1` است. این اقدام وضعیت هر ردیف منبع را صریح می‌کند و مانع ادعای «نبود Excel» می‌شود. این اقدام به معنی canonical شدن صفات نیست؛ تطبیق 76 ردیف با COA v1.4 و ثبت مقادیر canonical همچنان مانع فنی 7C است.
