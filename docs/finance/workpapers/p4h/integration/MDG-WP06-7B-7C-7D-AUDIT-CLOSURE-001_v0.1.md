@@ -319,3 +319,16 @@ Crosswalk سطح FE در سند یکپارچه برای هر FE ردیف دار�
 
 ---
 End of Audit
+
+
+## اصلاحیه اجرای برنامه بستن پس از تأیید مالک — 2026-11-18
+
+این اصلاحیه بر هر بند متعارض قبلی مقدم است.
+
+1. منبع Excel مادر گروه از ZIP بازیابی شده و hash فایل Excel استخراج‌شده `a6ca3377fde5863455a3b4bccf9a000d0dbf23f44bd66eeae51c44d0f3697866` احراز شده است. بنابراین «نبود فایل Excel» مانع کار نیست و نباید در رجیستر نقص‌ها تکرار شود.
+2. سلسله‌مراتب COA برای ادامه کار: Architecture v2.5 و تصمیمات مالک/ADRهای پذیرفته‌شده؛ سپس COA v1.4 به‌عنوان نسخه جاری ساخته‌شده بر پایه v1.2؛ COA v1.2 به‌عنوان خط مبنای قبلی؛ v1.3 فقط مرحله میانی؛ Excel/TXT v1.0 به‌عنوان شواهد منبع.
+3. مالک در 2026-11-18 معیار جایگزین O-01 را پذیرفته است. بازیابی اصل تاریخی 7B v0.4 و 7C v0.3 دیگر شرط الزامی نیست. تحویل‌دادنی‌های جدید باید Controlled Reconstruction / Controlled Replacement باشند و به‌عنوان اصل تاریخی معرفی نشوند.
+4. این تصمیم هیچ مورد فنی را خودکار نمی‌بندد. Account canonicalization، کامل‌بودن Posting Ruleها، Test Design، crosswalk، اجرای آزمون، Evidence، تأیید متخصص و Independent Review همچنان باید با شواهد بسته شوند.
+5. اصلاح اولویت کار: (الف) استخراج و تطبیق COA v1.4 حساب‌به‌حساب؛ (ب) تکمیل 7C canonical attributes؛ (ج) تکمیل 7B FE-01..38 با هر دو سمت ثبت یا BLOCKED مستدل؛ (د) تکمیل 7D آزمون‌های جدید با شناسه‌های مستقل و crosswalk دقیق؛ (هـ) lint/consistency checks؛ (و) CI و review مستقل روی SHA نهایی.
+
+وضعیت: O-01 CR OWNER-APPROVED; O-01 DELIVERABLES NOT ACCEPTED; Gate 3/4 OPEN; Posting Release NOT GRANTED.
