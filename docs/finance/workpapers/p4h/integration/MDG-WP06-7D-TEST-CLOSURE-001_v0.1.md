@@ -51,10 +51,10 @@
 
 | ID | FE / COA | هدف و پیش‌شرط | رفتار مورد انتظار | وضعیت |
 |---|---|---|---|---|
-| FIN-TST-043 | FE-01/02; 4101/4102 | صدور سند خدمت/فروش بدون رخداد Recognition نهایی؛ حساب‌ها و شروط 7B ناقص | سیستم نباید درآمد را زودتر از Recognition معتبر ثبت کند؛ Journal نهایی تا تکمیل قواعد BLOCKED | RECONSTRUCTED / BLOCKED |
+| FIN-TST-043 | FE-01/02; 4101/4102 | آزمون Recognition دو رویداد درآمدی مطابق integrated baseline v0.3: FE-01 فروش کالا و FE-02 ارائه خدمت؛ شروط نهایی 7B ناقص | هیچ درآمدی پیش از trigger معتبر شناسایی نشود؛ Expected Journal تا تکمیل قواعد و حساب مقابل NOT SPECIFIED بماند | RECONSTRUCTED / BLOCKED |
 | FIN-TST-044 | FE-03/05; 110302/110703/2107 | دریافت وجه و سپس تخصیص جداگانه؛ شناسه منبع یکتا | دریافت و تخصیص دو اثر مجزا؛ تخصیص نباید درآمد دوم بسازد؛ duplicate request نباید posting تکراری بسازد | RECONSTRUCTED |
 | FIN-TST-045 | FE-06/07; 2101/2103/110701/110801 | فاکتور خرید و دریافت کالا در ترتیب‌های مختلف؛ TaxMode معتبر/نامعتبر | تفکیک AP، GRNI، receipt و tax؛ TaxMode=0 هیچ tax line/posting تولید نکند؛ Journalهای نهایی تا تکمیل حساب‌ها BLOCKED | RECONSTRUCTED / PARTIAL |
-| FIN-TST-046 | FE-14; cheque lifecycle | گردش چک در وضعیت‌های دریافت، واگذاری، وصول و برگشت؛ شناسه چک یکتا | هر transition فقط یک‌بار اعمال شود؛ برگشت واقعی طلب را طبق تصمیم 24B بازسازی کند؛ موجودی/مطالبات دوباره‌شماری نشوند | RECONSTRUCTED; 24B reference |
+| FIN-TST-046 | FE-14; cheque lifecycle | گردش چک با نقش‌های 24B: 110401 نزد صندوق، 110402 واگذارشده، 110403 در جریان وصول، 110404 برگشتی؛ شناسه چک یکتا | هر transition فقط یک‌بار اعمال شود؛ برگشت واقعی طلب را طبق تصمیم 24B بازسازی کند؛ source-title crosswalk و Test Case کامل هنوز باز است | RECONSTRUCTED; 24B policy / source crosswalk open |
 | FIN-TST-047 | FE-35; 610x/110702 | تمایز هزینه تحقق‌یافته از پیش‌پرداخت واقعی | طبقه‌بندی صرفاً با ماهیت و مدرک معتبر؛ 110702 فقط پیش‌پرداخت واقعی؛ حساب هزینه دقیق تا taxonomy باز، NOT SPECIFIED | RECONSTRUCTED / BLOCKED |
 | FIN-TST-048 | FE-08/09/16; 110801/110807/110808/2113/2104 | کسری/مازاد شمارش، negative inventory و خروج قطعه تعمیر | 110807 در R1 غیرفعال؛ منفی موجودی بدون settlement مجاز نباید پنهانی نادیده گرفته شود؛ 2104 فقط مسیر settlement معتبر؛ 110808/2113 در نقش تعلیقی | RECONSTRUCTED / PARTIAL |
 | FIN-TST-049 | FE-19/23; 5104/2108/6201 | تفکیک کمیسیون از خسارت تکنسین | commission فقط بعد از تکمیل فنی تأییدشده؛ خسارت و کسر از تکنسین بدون قاعده/مجوز/مدرک ثبت نشود؛ payroll با commission ادغام نشود | RECONSTRUCTED / PARTIAL |
@@ -152,7 +152,7 @@
 | FE-08/09 | FIN-TST-048; INV-CAN family; INV-NEG family | 5101/110801؛ FE-09 blocked | PARTIAL/BLOCKED |
 | FE-10/10b/11/12 | FIN-TST-010 (ID-only); FIN-TST-052 | refund payable unresolved | BLOCKED/PARTIAL |
 | FE-13 | FIN-TST-001..034 (ID-only) | 4201..4203 mapping open | BLOCKED |
-| FE-14 | FIN-TST-046; ATOMIC family | 110401..110404 per 24B | PARTIAL |
+| FE-14 | FIN-TST-046; ATOMIC family | نقش‌های 110401..110404 طبق 24B؛ source-title/attributes crosswalk باز | PARTIAL |
 | FE-15 | FIN-TST-047 (expense nature overlap only) | 6104 not generic landed cost | BLOCKED |
 | FE-16/17/19 | FIN-TST-048/049/053 | 110808/2113/2112/610801/6201 | PARTIAL/BLOCKED |
 | FE-18/22 | FIN-TST-044/052 | 110302, 6106/6107 | PARTIAL |
