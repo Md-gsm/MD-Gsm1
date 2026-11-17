@@ -75,7 +75,8 @@
 | MDG-FIN-GATE-035 | FE-34 | year close، retry و duplicate close request | اجرای close دوباره با همان identity و تغییر source version | idempotent; one close effect; changed source version rejected/reviewed | duplicate closing journal یا انتقال دوباره equity ممنوع | close identity، journal ids، audit |
 | MDG-FIN-GATE-036 | FE-35 | هزینه تحقق‌یافته در برابر پیش‌پرداخت واقعی | ثبت هزینه با invoice/period evidence و پیش‌پرداخت | 110702 فقط برای prepayment واقعی؛ هزینه بر اساس ماهیت و دوره؛ تا taxonomy نهایی blocked | payment date به‌تنهایی expense recognition نسازد | invoice/service period, allocation schedule |
 | MDG-FIN-GATE-037 | FE-36 | unknown event و unknown mapping | ارسال EventType و AccountCode ناشناخته | UNKNOWN_EVENT / UNKNOWN_MAPPING fail closed؛ zero journal | fallback account یا generic suspense ممنوع | request, rejection reason, zero journal proof |
-| MDG-FIN-GATE-038 | FE-37/38 | payroll R2 و equity mapping unresolved | ارسال payroll در R1 و equity close بدون mapping 3101..3105 | payroll SCOPE_BLOCKED؛ equity close BLOCKED تا mapping/evidence | commission FE-23 با payroll ادغام نشود؛ equity account از حدس انتخاب نشود | scope response، equity mapping proof، journal diff |
+| MDG-FIN-GATE-038 | FE-37 | payroll R2 و commission separation | ارسال payroll در R1 | SCOPE_BLOCKED؛ FE-23 commission مستقل باقی بماند | payroll journal یا deduction بدون قرارداد R2 ممنوع | scope response، no journal proof، commission crosswalk |
+| MDG-FIN-GATE-039 | FE-38 | equity mapping unresolved | year close بدون mapping معتبر 3101..3105 | BLOCKED تا mapping/evidence و approval | equity account از حدس انتخاب نشود؛ 3199 فقط temporary opening control | equity mapping proof، close blocker، journal diff |
 
 ## 4. آزمون‌های مشترک اتمیک، هویت، برگشت و کنترل حساب
 
@@ -96,7 +97,7 @@
 
 ## 5. Crosswalk و Provenance
 
-- MDG-FIN-GATE-001..038 هرکدام یک FE را پوشش می‌دهند؛ مورد 038 دو مسیر FE-37/38 را جداگانه با دو assertion مستقل پوشش می‌دهد.
+- MDG-FIN-GATE-001..039 هرکدام یک FE را پوشش می‌دهند؛ مورد 038 دو مسیر FE-37/38 را جداگانه با دو assertion مستقل پوشش می‌دهد.
 - هر Test ID جدید از نوع RECONSTRUCTED است؛ SOURCE-IDهای تاریخی FIN-TST-001..042، COA-TST-001..034، ATOMIC-001..010، INV-CAN-001..038 و INV-NEG-TST-001..012 بدون متن اصلی صرفاً شناسه تاریخی‌اند.
 - هر ردیف باید به PostingRuleVersion و AccountRegistryVersion نهایی bind شود. تا آن زمان ExpectedJournal برای مسیرهای غیرمجاز/ناقص `NONE — POSTING BLOCKED` و برای مسیرهای مثبت مالی `NOT SPECIFIED — BLOCKED PENDING 7B/7C` است.
 - 7B و 7C باید در نسخه‌های بعدی دقیقاً به این Test IDها ارجاع دهند.
