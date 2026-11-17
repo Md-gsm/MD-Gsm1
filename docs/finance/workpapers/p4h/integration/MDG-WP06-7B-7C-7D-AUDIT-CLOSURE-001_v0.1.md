@@ -373,3 +373,8 @@ O-01 هنوز OPEN است. Gate 3/4 OPEN؛ Implementation NOT VERIFIED؛ Test ex
 ### 7B OpenIssue/SourceRef Completion — 2026-11-18
 
 برای هر 39 ردیف رویدادی، OpenIssueID مستقل 7B-OPEN-001..039، SourceRefs، Test ID و Owner Action ثبت شد. SourceEvent فنی/trigger تا زمان تأیید قرارداد ماژول مالک OPEN باقی می‌ماند و هیچ نام فنی حدس زده نشده است. وضعیت: issue ownership and traceability 39/39 recorded؛ domain rules remain BLOCKED where specified.
+
+ 
+### 7D — آزمون‌های fail-closed برای تمام 12 شکاف 7C
+
+12 آزمون مستقل MDG-COA-GATE-001..012 به 7C-OPEN-001..012 اضافه شد. پوشش آزمون طراحی‌شده 7D اکنون 51 مورد است: 39 مورد FE و 12 مورد COA. این آزمون‌ها فقط fail-closed هستند و هنوز اجرا نشده‌اند. اجرای مثبت Journal پس از canonical شدن 7C و تکمیل 7B انجام می‌شود؛ هیچ PASS یا Evidence Acceptance از طراحی آزمون استنتاج نمی‌شود.
