@@ -152,7 +152,7 @@
 | FE-08/09 | FIN-TST-048; INV-CAN family; INV-NEG family | 5101/110801؛ FE-09 blocked | PARTIAL/BLOCKED |
 | FE-10/10b/11/12 | FIN-TST-010 (ID-only); FIN-TST-052 | refund payable unresolved | BLOCKED/PARTIAL |
 | FE-13 | FIN-TST-001..034 (ID-only) | 4201..4203 mapping open | BLOCKED |
-| FE-14 | FIN-TST-046; ATOMIC family | نقش‌های 110401..110404 طبق 24B؛ source-title/attributes crosswalk باز | PARTIAL |
+| FE-14 | FIN-TST-046; ATOMIC family | نقش‌های 110401..110404 طبق OWN-7C-004-R1؛ source-title/attributes crosswalk باز | PARTIAL |
 | FE-15 | FIN-TST-047 (expense nature overlap only) | 6104 not generic landed cost | BLOCKED |
 | FE-16/17/19 | FIN-TST-048/049/053 | 110808/2113/2112/610801/6201 | PARTIAL/BLOCKED |
 | FE-18/22 | FIN-TST-044/052 | 110302, 6106/6107 | PARTIAL |
