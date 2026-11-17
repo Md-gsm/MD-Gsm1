@@ -153,3 +153,21 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 - Evidence: NOT ACCEPTED.
 - Independent review روی SHA نهایی: PENDING.
 - O-01: CR OWNER-APPROVED / DELIVERABLE ACCEPTANCE OPEN.
+
+
+## Automated Structural Consistency Check — 2026-11-18
+
+این کنترل ساختاری روی محتوای شاخه PR انجام شد؛ جایگزین ممیزی مستقل تخصصی یا آزمون runtime نیست.
+
+| Check | Result | Scope / Limitation |
+|---|---|---|
+| 7B event rows | PASS — 39 rows | FE-01..FE-38 plus FE-10b; posting rule completeness not implied |
+| 7B unique Test ID references | PASS — 39 IDs | MDG-FIN-GATE-001..039 |
+| 7D unique Test IDs | PASS — 39 IDs | Continuous sequence 001..039 |
+| 7B↔7D ID set equality | PASS | Every 7B test reference exists in 7D; does not prove assertion correctness |
+| FE coverage | PASS — FE-01..FE-38 plus FE-10b | FE-37 and FE-38 are separate cases |
+| Source workbook | PASS — 76 unique account codes, 24 columns, 9 sheets | Source workbook/hash verified; canonical COA values remain separate |
+| Manifest | REFRESHED | SHA256SUMS updated after the current document revisions; final independent verification pending |
+
+### نتیجه
+ساختار شناسه‌ها و پوشش رویداد/آزمون بین 7B و 7D سازگار است. 7B posting rules، 7C canonical account values و 7D positive expected journals همچنان به تکمیل محتوای canonical و تأییدهای مربوط وابسته‌اند. هیچ آزمون مالی اجرا نشده و هیچ Evidence اجرایی پذیرفته نشده است.
