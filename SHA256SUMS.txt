@@ -295,7 +295,7 @@ ca7b894d2ae9657191336013efb7a972bc058fe8cda0da9db512ed0462f647a8  docs/finance/w
 09e7a1dd71b3de5040ea03a68ce27970bcb344728b7de2b4c94c8ba136951693  docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md
 a9255c9a73cabff91d87ee0ba888ada25c4b56221f924816cad2f672fcde2ed0  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001_v0.1.md
 f64cc10f4c448fe6ea57205d3eab1564b720d70269fe30a6e6003644fb559759  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-RECOVERY-001_v0.1.md
-8329e4567c31cdd119cf0b34414ed7ae90b69375b2748894cd3c38c176a4a6f1  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.1.md
+92cca713e39ddf3ef478b79741503ccb69bd586821712ea093d47da59097ac0c  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.1.md
 4db46c270000c5565a7cc2408c8225d4d1c52e8310225416d0b7e13f6c58f814  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
 78ceaf0351a422d62fe5fdfb14af2134e7a920dd2c855d4b5ae6315e98a0d466  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.2.md
 fbff38a4d7b64ec431dc2f0e7ab7eb40c3d58660a50ef6735052e6125afac61f  docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md
