@@ -44,8 +44,8 @@ def round_away_with_error(
         raise OverflowError("result outside target integer range")
 
     # Exact, non-monetary control metric. It is never persisted or posted as money.
-    absolute_error = Fraction(abs(rounded * denominator - numerator), denominator)
-    return rounded, absolute_error
+    signed_error = Fraction(rounded * denominator - numerator, denominator)
+    return rounded, signed_error
 
 
 def round_away(numerator: int, denominator: int, lo: int = MIN64, hi: int = MAX64) -> int:
@@ -112,13 +112,13 @@ def allocate(amount: int, rows: list[tuple[str, int]]) -> dict[str, int]:
 
 
 def document_rounding_budget(operations: list[tuple[int, int]]) -> Fraction:
-    # Conservative policy: sum absolute per-operation errors; opposite signs
-    # cannot cancel. Fraction is an exact non-monetary control metric only.
+    # Net document effect: sum signed operation residuals exactly. Fraction is
+    # a non-monetary control metric only, never an amount stored or posted.
     budget = Fraction(0, 1)
     for numerator, denominator in operations:
         _, error = round_away_with_error(numerator, denominator)
         budget += error
-    if budget > 1:
+    if abs(budget) > 1:
         raise ValueError("document rounding budget exceeds 1 IRR")
     return budget
 
@@ -203,10 +203,9 @@ class IntegerRoundingReferenceTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             allocate(1.0, [("A", 1)])  # type: ignore[arg-type]
 
-    def test_rounding_budget_accepts_exactly_one_irr(self):
-        # Opposite-signed half-rial operations contribute 0.5 + 0.5 = 1,
-        # not zero: the conservative budget does not permit cancellation.
-        self.assertEqual(Fraction(1, 1), document_rounding_budget([(1, 2), (-1, 2)]))
+    def test_rounding_budget_uses_signed_net_document_effect(self):
+        self.assertEqual(Fraction(1, 1), document_rounding_budget([(1, 2), (1, 2)]))
+        self.assertEqual(Fraction(0, 1), document_rounding_budget([(1, 2), (-1, 2)]))
         self.assertEqual(Fraction(0, 1), document_rounding_budget([(200, 100), (-300, 100)]))
 
     def test_rounding_budget_rejects_more_than_one_irr(self):
@@ -219,7 +218,7 @@ class IntegerRoundingReferenceTests(unittest.TestCase):
         self.assertEqual(Fraction(1, 2), error)
         rounded_negative, negative_error = round_away_with_error(-1250, 100)
         self.assertEqual(-13, rounded_negative)
-        self.assertEqual(Fraction(1, 2), negative_error)
+        self.assertEqual(Fraction(-1, 2), negative_error)
 
 
 if __name__ == "__main__":
