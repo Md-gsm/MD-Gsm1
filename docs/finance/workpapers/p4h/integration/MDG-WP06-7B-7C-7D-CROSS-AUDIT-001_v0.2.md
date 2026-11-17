@@ -23,7 +23,7 @@
 | Finding | شدت | مشاهده | اصلاح/وضعیت |
 |---|---|---|---|
 | XA-001 — FE-01/FE-02 semantic inversion | HIGH | در 7B Closure v0.1، FE-01 به خدمت و FE-02 به فروش کالا نسبت داده شده بود؛ integrated baseline v0.3 برعکس آن را ثبت می‌کند. | 7B اصلاح شد تا FE-01 فروش کالا و FE-02 خدمت مطابق integrated v0.3 باشد. هنوز حساب‌های 4101/4102 صرفاً ارتباط اولیه‌اند و Posting Rule نهایی نیستند. |
-| XA-002 — cheque policy vs source provenance | MEDIUM | 7B/7D نقش‌های 110401..110404 را به 24B نسبت می‌دادند، اما 7C آن‌ها را «احرازنشده» توصیف می‌کرد؛ تمایز تصمیم سیاستی و تطبیق عنوان منبع روشن نبود. | 7C به تفکیک چهار نقش مصوب 24B اصلاح شد؛ تطبیق title/attributes فایل snapshot و source lineage همچنان OPEN است. 7B/7D نیز همین تمایز را صریح می‌کنند. |
+| XA-002 — cheque policy vs source provenance | MEDIUM | 7B/7D به‌درستی نقش‌های 110401..110404 را به چرخه چک ارجاع داده بودند، اما authority reference باید OWN-7C-004-R1 باشد و تفاوت policy mapping با Source Title/Attributes روشن‌تر شود. | 7C نقش‌های چهارگانه را بر اساس OWN-7C-004-R1 ثبت کرد؛ عنوان پیشنهادی 110404 در TXT/snapshot با این تصمیم متعارض است و تطبیق title/attributes و source lineage همچنان OPEN است. |
 | XA-003 — test identity provenance | HIGH | وجود شناسه‌های FIN-TST/COA-TST/ATOMIC/INV-CAN/INV-NEG ممکن بود با بازیابی متن کامل آزمون اشتباه شود. | 7D طبقه‌بندی SOURCE-ID، RECONSTRUCTED و PROPOSED را حفظ می‌کند. نگاشت شماره‌به‌شماره شناسه‌های تاریخی همچنان OPEN است. |
 | XA-004 — account canonicalization | CRITICAL | 76 ردیف snapshot به‌تنهایی COA canonical نیستند؛ 2114 و 5106 نیز صفات کامل مادر ندارند. | هیچ AccountId، Parent، NormalBalance، eligibility یا Subledger حدس زده نشده؛ موارد OPEN باقی مانده‌اند. |
 | XA-005 — posting completeness | CRITICAL | پوشش FE-01..FE-38 به‌معنی Posting Matrix کامل نیست. | 7B موانع هر رویداد را مشخص می‌کند؛ برای رویدادهای فاقد حساب/شرط معتبر، Debit/Credit NOT SPECIFIED و posting مسدود است. |
@@ -43,7 +43,7 @@
 - 110403: چک در جریان وصول؛
 - 110404: چک برگشتی در انتظار تعیین تکلیف.
 
-این policy mapping از تطبیق عنوان و ویژگی‌های snapshot جداست. 7C باید source title، NormalBalance، Parent، Postable/DirectPostingAllowed و lineage هر حساب را با 24B تطبیق دهد. Test Case کامل lifecycle نیز باز است.
+این policy mapping از تطبیق عنوان و ویژگی‌های snapshot جداست. 7C باید source title، NormalBalance، Parent، Postable/DirectPostingAllowed و lineage هر حساب را با OWN-7C-004-R1 تطبیق دهد. Test Case کامل lifecycle نیز باز است.
 
 ### 3.3 دامنه حساب
 - 76 کد snapshot شامل 4107 و 110809 است؛ ممنوعیت 110809 همچنان حاکم است.
