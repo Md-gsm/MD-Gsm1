@@ -9,7 +9,7 @@
 | Architecture | MDG-ARCH-MASTER-001 v2.5 last accepted; v2.6 draft pending independent review |
 | PR | #66 |
 | Branch | docs/finance-7b-7c-7d-integrated-baseline-20261117 |
-| Head SHA at registration | 29e009f31a46f748cdd91fc0d88489ce79963342 |
+| PR head SHA | Live value in PR #66; the register does not hard-code a moving branch head |
 | O-01 | OPEN — replacement criterion approved; deliverable acceptance pending |
 | Gate 3 / Gate 4 | OPEN / OPEN |
 | Posting Release | NOT GRANTED |
