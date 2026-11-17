@@ -113,7 +113,7 @@
 
 ## 6.1 آزمون‌های تکمیلی canonical COA — 7C-OPEN-001..012
 
-این 12 آزمون مکمل برای کنترل fail-closed و پذیرش تدریجی canonical COA تعریف شده‌اند. این‌ها به 39 آزمون FE در جدول اصلی اضافه می‌شوند؛ بنابراین 7D در مجموع 51 Test ID مستقل دارد (39 مورد FE + 12 مورد COA). هیچ‌یک اجرا نشده است.
+این 16 آزمون مکمل برای کنترل fail-closed و پذیرش تدریجی canonical COA تعریف شده‌اند. این‌ها به 39 آزمون FE در جدول اصلی اضافه می‌شوند؛ بنابراین 7D در مجموع 55 Test ID مستقل دارد (39 مورد FE + 16 مورد COA). هیچ‌یک اجرا نشده است.
 
 | Test ID | 7C Open | سناریو | اقدام | نتیجه مورد انتظار | Evidence plan |
 |---|---|---|---|---|---|
@@ -130,6 +130,11 @@
 | MDG-COA-GATE-011 | 7C-OPEN-011 | 3101..3105 بدون توافق equity و NormalBalance | تلاش برای posting opening/equity | POSTING_BLOCKED؛ هیچ equity mapping حدسی ساخته نشود | approval-state fixture، rejected journal، audit |
 | MDG-COA-GATE-012 | 7C-OPEN-012 | orphan account، FE یا Test در crosswalk | اجرای traceability validation | orphan گزارش شود؛ بسته تا رفع/ثبت disposition تأیید نشود | bidirectional matrix، orphan scan output، review record |
 
+| MDG-COA-GATE-013 | 7C-OPEN-013 | 4201–4203 بدون ReasonCode/FE یا با نگاشت تکراری | ثبت تخفیف/کاهنده درآمد با mapping ناقص | POSTING_BLOCKED؛ تخفیف به هزینه عملیاتی یا حساب نامرتبط منتقل نشود؛ 4107/5106 با 42xx خلط نشوند | account-to-FE map، reason-code fixture، rejected journal |
+| MDG-COA-GATE-014 | 7C-OPEN-014 | OWN-7C-040 TradeIn scope approval بدون GL account mapping | تلاش ثبت مستقل 110803/2111 پیش از crosswalk | scope approval به‌تنهایی مجوز GL نیست؛ POSTING_BLOCKED تا Nature/NormalBalance/GL-Subledger role تأیید شود | TradeIn two-document fixture، account mapping diff، zero-journal proof |
+| MDG-COA-GATE-015 | 7C-OPEN-015 | قرارداد صندوق/بانک/Party/تکنسین ناقص یا ناسازگار | ثبت cash/bank/AR/technician receivable با subledger ناقص | POSTING_BLOCKED؛ هیچ Party/Statement/Shift/Recovery status جعلی یا ناقص پذیرفته نشود | subledger contract fixtures، reconciliation outputs، rejected requests |
+| MDG-COA-GATE-016 | 7C-OPEN-016 | PSP settlement با cash-in-transit مخلوط یا بدون TransferId/three-way tie-out | تلاش تسویه 110302/1110 با مرجع ناقص | POSTING_BLOCKED؛ PSP principal و physical cash transfer دوباره‌شماری نشوند | PSP/bank/cash transfer fixtures، tie-out report، zero-duplicate proof |
+
 ### وضعیت اجرای آزمون‌های COA
 - Test design: SPECIFIED — FAIL-CLOSED ONLY.
 - Execution: NOT RUN / NOT VERIFIED.
@@ -139,7 +144,7 @@
 
 ## 7. وضعیت
 
-- Test design: CONTROLLED R1 GATE-CONTROL SUITE SPECIFIED — 39 FE tests + 12 COA tests (51 total).
+- Test design: CONTROLLED R1 GATE-CONTROL SUITE SPECIFIED — 39 FE tests + 16 COA tests (55 total).
 - Positive accounting journal assertions: BLOCKED PENDING FINAL 7B/7C.
 - Test execution: NOT RUN / NOT VERIFIED.
 - Evidence: NOT ACCEPTED.
