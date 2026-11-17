@@ -64,8 +64,8 @@ O-01 تنها زمانی قابل بستن است که تمام موارد زی�
 ## 5. وضعیت اجرایی
 
 - Owner decision: RECORDED.
-- CR document: REGISTERED IN PR #66 FOR CONTROLLED REVIEW.
-- Architecture v2.5: unchanged until this CR passes document review and is incorporated into a controlled next architecture revision.
-- O-01: OPEN — replacement criterion approved in principle by owner; deliverables and acceptance evidence pending.
+- CR document: REGISTERED IN PR #66; owner approval recorded.
+- Architecture v2.5: preserved unchanged as the prior accepted baseline. Architecture v2.6 controlled amendment draft has been created and registered in the Library; it is pending independent review and document acceptance. Until acceptance, v2.5 remains the last accepted architecture baseline.
+- O-01: OPEN — replacement criterion OWNER APPROVED; controlled 7B/7C/7D deliverables and acceptance evidence pending.
 - Gate 3 / Gate 4: OPEN / OPEN.
 - Posting Release: NOT GRANTED.
