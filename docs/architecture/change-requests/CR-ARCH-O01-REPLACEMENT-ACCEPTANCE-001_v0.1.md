@@ -69,3 +69,15 @@ O-01 تنها زمانی قابل بستن است که تمام موارد زی�
 - O-01: OPEN — replacement criterion OWNER APPROVED; controlled 7B/7C/7D deliverables and acceptance evidence pending.
 - Gate 3 / Gate 4: OPEN / OPEN.
 - Posting Release: NOT GRANTED.
+
+
+## 6. ثبت نسخه معماری پیش‌نویس 2.6
+
+پیش‌نویس کنترل‌شده Architecture v2.6 با اعمال همین CR در Library ثبت شد. نسخه 2.5 بدون تغییر نگهداری می‌شود و تا پذیرش مستقل v2.6 آخرین baseline پذیرفته‌شده است.
+
+| Artifact | Library path | SHA-256 |
+|---|---|---|
+| Markdown | /MDGsm_Unified_Architecture_Blueprint_v2.6_Draft.md | 5fb47db1250643e610b5c52988f74d05e32cdb08319856d90586476415bd726b |
+| Word | /MDGsm_Unified_Architecture_Blueprint_v2.6_Draft.docx | 40f3147d94e51eca3fe0f501a1278e8da540694575800e51875bdbfeaa92cf0f |
+
+Status: DRAFT — PENDING INDEPENDENT REVIEW AND DOCUMENT ACCEPTANCE.
