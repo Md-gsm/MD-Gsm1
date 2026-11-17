@@ -105,3 +105,31 @@ O-01 در Architecture v2.5 با این گزارش بسته نمی‌شود. پ�
 - Posting Release: NOT GRANTED.
 
 این گزارش یک گزارش ممیزی کنترل‌شده است، نه تأیید صحت مالی نهایی، نه بستن O-01 و نه مجوز پیاده‌سازی/ثبت.
+
+
+## اصلاحیه پس از تصمیم مالک و احراز منبع — 2026-11-18
+
+این اصلاحیه بر وضعیت‌های قدیمی متعارض در این گزارش مقدم است.
+
+### XA-OPEN-01 — تفکیک منشأ از canonicalization
+فایل مادر Excel گروه از ZIP بازیابی و hash آن احراز شده است: ZIP SHA-256 `c17e3c16d05abb9d2ae57b8cfa0c8860e69b613ececb0db7758668cd1db04449`؛ Excel استخراج‌شده SHA-256 `a6ca3377fde5863455a3b4bccf9a000d0dbf23f44bd66eeae51c44d0f3697866`. فایل 9 شیت و 76 ردیف حساب دارد. بنابراین بخش «عدم دسترسی/عدم احراز بایت‌های فایل» بسته شد. اما canonicalization حساب‌ها، ویژگی‌های هر ردیف، lineage و تطبیق با COA v1.4 همچنان OPEN است. XA-OPEN-01 به دو موضوع تفکیک می‌شود:
+- XA-OPEN-01A — فایل و provenance منبع Excel: CLOSED.
+- XA-OPEN-01B — تطبیق محتوای 76 حساب با COA v1.4 و تصمیمات مالک: OPEN.
+
+### مرجعیت COA
+COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 نسخه جاری اعلام‌شده از سوی مالک است؛ v1.3 مرحله میانی است. Excel/TXT v1.0 منبع شاهد است، نه مرجع نهایی تصمیم. هر ردیف باید با v1.4، OWN decisions و ADRهای پذیرفته‌شده تطبیق داده شود.
+
+### XA-OPEN-14 / O-01
+مالک در 2026-11-18 معیار جایگزین O-01 را تأیید کرده است. CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 در PR #66 ثبت شده است. در نتیجه نیاز به تأیید مالک برای خودِ تغییر معیار بسته شد؛ اما O-01 به‌دلیل تکمیل‌نشدن تحویل‌دادنی‌های 7B/7C/7D و شواهد، هنوز OPEN است. وضعیت XA-OPEN-14: OWNER DECISION CLOSED / DELIVERABLE ACCEPTANCE OPEN.
+
+### وضعیت ممیزی به‌روز
+- منبع Excel و hash: VERIFIED.
+- معیار جایگزین O-01: OWNER APPROVED.
+- 7B Posting Rule completeness: PARTIAL / OPEN.
+- 7C canonical account reconciliation against v1.4: OPEN.
+- 7D test design completeness: PARTIAL / OPEN.
+- Test execution: NOT RUN / NOT VERIFIED.
+- Evidence: NOT ACCEPTED.
+- Independent review on final SHA: PENDING.
+- Gate 3 / Gate 4: OPEN / OPEN.
+- Posting Release: NOT GRANTED.
