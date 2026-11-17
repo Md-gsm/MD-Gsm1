@@ -359,3 +359,7 @@ End of Audit
 - ثبت نسخه‌های نهایی در Document Registry.
 
 O-01 هنوز OPEN است. Gate 3/4 OPEN؛ Implementation NOT VERIFIED؛ Test execution NOT RUN؛ Evidence NOT ACCEPTED؛ Posting Release NOT GRANTED.
+
+
+### 7C سطر‌به‌سطر — تکمیل Source Status Register
+فایل `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.1.csv` با 76 ردیف و 30 ستون در Library ثبت شد؛ hash آن `7e61eca4bc486bc8173ea59a7c3b48a6fa9e5d231e5507cba208a3a003b80014` است. این اقدام وضعیت هر ردیف منبع را صریح می‌کند و مانع ادعای «نبود Excel» می‌شود. این اقدام به معنی canonical شدن صفات نیست؛ تطبیق 76 ردیف با COA v1.4 و ثبت مقادیر canonical همچنان مانع فنی 7C است.
