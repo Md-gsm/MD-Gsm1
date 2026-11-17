@@ -142,3 +142,10 @@ Excel نسخه 1.0 داخل ZIP «فهرست جامع و مرجع کدینگ ح�
 سلسله‌مراتب جاری: Architecture v2.5 و تصمیمات مالک/ADRهای پذیرفته‌شده؛ COA v1.4 به‌عنوان خط مبنای جاری که بر پایه v1.2 ایجاد شده؛ v1.2 به‌عنوان خط مبنای قبلی؛ v1.3 به‌عنوان مرحله میانی؛ Excel/TXT v1.0 به‌عنوان شواهد منبع. این workpaper هنوز Canonical COA نهایی نیست؛ علت آن فقدان فایل نیست، بلکه نیاز به ثبت تطبیق کامل و قابل ردیابی همه صفات هر حساب با v1.4 و تصمیمات حاکم است.
 
 وضعیت 7C: Source bytes VERIFIED؛ 76 source rows VERIFIED؛ account-level canonical disposition PARTIAL؛ AccountId/Parent/NormalBalance/eligibility/Subledger/EffectiveFrom باید بر اساس v1.4 و منابع معتبر نهایی شوند؛ حدس از روی prefix ممنوع.
+
+ 
+## ارجاع نسخه جایگزین 7C v0.2 — 2026-11-18
+
+نسخه مستقل جایگزین 7C در مسیر `docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.2.md` ثبت شد. این نسخه provenance فایل Excel و 76 ردیف/24 ستون، سلسله‌مراتب v1.2→v1.4 و جایگاه میانی v1.3، آمار صفات snapshot، تصمیمات حاکم و رجیستر canonical attributes را یکپارچه می‌کند.
+
+Source Excel و hash آن VERIFIED است. کار باز، تطبیق ردیف‌به‌ردیف با COA v1.4 و تکمیل صفات canonical است؛ این موضوع به معنی نبود یا عدم احراز فایل Excel نیست. 7C v0.2 هنوز DRAFT / NOT ACCEPTED است.
