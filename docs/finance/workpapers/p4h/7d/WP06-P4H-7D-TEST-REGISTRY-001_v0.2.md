@@ -8,7 +8,7 @@
 | Parent | WP06-P4H-7D-TEST-REGISTRY-001 v0.1 |
 | Architecture | MDG-ARCH-MASTER-001 v2.5 |
 | O-01 Change Request | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 — OWNER APPROVED |
-| Design | R1 FAIL-CLOSED CONTROL CASES SPECIFIED FOR 39 FE EVENTS + 12 COA OPEN ITEMS PLUS FE-10b |
+| Design | R1 FAIL-CLOSED CONTROL CASES SPECIFIED FOR 39 FE EVENTS + 16 COA OPEN ITEMS + 12 SHARED CONTROLS |
 | Positive accounting journal cases | BLOCKED UNTIL 7B/7C CANONICAL |
 | Execution | NOT RUN / NOT VERIFIED |
 | Evidence | NOT ACCEPTED |
@@ -16,7 +16,7 @@
 
 ## 1. هدف و اصل طراحی
 
-این نسخه بدون ادعای بازیابی متن تاریخی، مجموعه آزمون‌های کنترل‌شده جدید را تعریف می‌کند. شناسه‌های تاریخی FIN-TST/COA-TST/ATOMIC/INV-CAN/INV-NEG فقط به‌عنوان SOURCE-ID حفظ می‌شوند. شناسه‌های این نسخه مستقل‌اند و با پیشوند `MDG-FIN-GATE` شناخته می‌شوند.
+این نسخه بدون ادعای بازیابی متن تاریخی، مجموعه آزمون‌های کنترل‌شده جدید را تعریف می‌کند. شناسه‌های تاریخی FIN-TST/COA-TST/ATOMIC/INV-CAN/INV-NEG فقط به‌عنوان SOURCE-ID حفظ می‌شوند. شناسه‌های این نسخه مستقل‌اند: `MDG-FIN-GATE` برای رویدادهای FE، `MDG-COA-GATE` برای شکاف‌های canonical COA و `MDG-FIN-*` برای کنترل‌های مشترک/سراسری.
 
 اصل آزمون: تا وقتی 7B برای یک FE قاعده کامل و 7C برای حساب‌های آن ویژگی‌های canonical و مجوزها را تعیین نکرده‌اند، آزمون نباید Journal مالی حدسی بسازد. نتیجه مورد انتظار در این حالت `POSTING_BLOCKED`، صفر Journal جدید، صفر mutation در GL/Subledger و ثبت Audit Event قابل ردیابی است. برای FEهای R2 نتیجه مورد انتظار در R1 برابر `SCOPE_BLOCKED` است.
 
