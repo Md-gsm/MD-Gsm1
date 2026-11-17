@@ -163,7 +163,7 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 - Posting Release: NOT GRANTED.
 
 
-### 3.1 رجیستر سطر‌به‌سطر 76 حساب منبعی — v0.2
+## 10. رجیستر سطر‌به‌سطر 76 حساب منبعی — v0.2
 
 نسخه `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.2.csv` در Library ثبت و نسخه v0.1 آن superseded شد. این فایل 76 ردیف و 39 ستون دارد: 24 ستون عیناً از شیت «دفتر حساب‌ها» و 15 ستون کنترل canonical status.
 
@@ -179,9 +179,9 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 
 ---
 
-## 4. Owner Decision Overlay — Controlled Reconstruction v0.1
+## 11. Owner Decision Overlay — Controlled Reconstruction v0.1
 
-### 4.1. مرز این لایه
+### 11.1. مرز این لایه
 
 این لایه، تصمیمات صریح مالک را از source snapshot جدا می‌کند. مبنای آن OWN-7C-043 و برای چرخه چک OWN-7C-004-R1 است. این لایه جایگزین COA v1.4 نیست و به‌تنهایی صفات canonical را تعیین نمی‌کند.
 
@@ -191,7 +191,7 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 - برای تمام ردیف‌ها، AccountId و ParentAccountId نهایی، Level/Nature/NormalBalance، Postable/DirectPostingAllowed، EffectiveFrom/To و canonical FE eligibility تا تطبیق با baseline جاری COA احراز نشده‌اند.
 - هیچ ردیفی با این overlay به‌تنهایی مجوز Posting نمی‌گیرد.
 
-### 4.2. تصمیمات حساب‌محور و guardهای قطعی
+### 11.2. تصمیمات حساب‌محور و guardهای قطعی
 
 | کد | مرجع تصمیم | Disposition مالک | شرط/محدودیت قطعی |
 |---|---|---|---|
@@ -235,7 +235,7 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 | 2114 | OWN-7C-043 | OWNER-ADDED: بدهی خدمت دریافت‌شده و تأییدشده ولی فاکتورنشده | تعهد پرداخت قابل اثبات لازم؛ از 2101 و 2103 مستقل؛ PO به‌تنهایی بدهی/هزینه نیست |
 | 5106 | OWN-7C-043 | OWNER-ADDED: زیان گردکردن مستقل از 4107 | No-Collision در کل namespace و Posting Matrix؛ ±1 IRR/document؛ 6205 جایگزین نیست |
 
-### 4.3. وضعیت canonical پس از اعمال owner overlay
+### 11.3. وضعیت canonical پس از اعمال owner overlay
 
 این overlay فقط disposition/guardهای صریح مالک را تثبیت می‌کند. موارد زیر همچنان برای هر 78 شناسه نیازمند تطبیق و ثبت مستقل‌اند:
 
@@ -251,7 +251,7 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 
 در نتیجه، این overlay سطح تصمیم مالک را از صفات canonical جدا می‌کند؛ هیچ UNVERIFIED را به مقدار قطعی تبدیل نمی‌کند.
 
-### 4.4. کنترل پذیرش و وضعیت
+### 11.4. کنترل پذیرش و وضعیت
 
 - Source-row coverage: 76/76 rows from verified Excel source.
 - Owner-added coverage: 2114 and 5106 explicitly registered outside source Excel.
