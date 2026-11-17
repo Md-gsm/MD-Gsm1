@@ -147,7 +147,7 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 5. No-Collision در کل namespace و DB registry اثبات شود.
 6. هر حساب به FE و Test متصل باشد؛ حساب بی‌مصرف یا رویداد بی‌حساب تعیین تکلیف شود.
 7. هر وضعیت inactive/prohibited/unverified/design-only در server/database fail closed باشد.
-8. ممیزی مستقل روی SHA نهایی بدون یافته C0/C1 باز انجام شود.
+8. ممیزی مستقل روی SHA نهایی انجام شود؛ هیچ C0/C1 حل‌نشده در تمامیت سند، provenance، lineage، crosswalk یا سازگاری کنترل‌ها باقی نماند. شکاف واقعی صفات/سیاست حساب می‌تواند باز بماند، مشروط بر ثبت صریح BLOCKED/UNVERIFIED، دلیل، owner action، شرط رفع، Test ID، Evidence plan و منع Posting.
 
 ## 9. وضعیت
 
