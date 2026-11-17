@@ -1,5 +1,7 @@
 # بسته پنج موضوع باز IdentityAccess
-تاریخ 2026-11-04 | وضعیت: آماده‌سازی مستند تکمیل؛ تصویب‌ها و review انسانی هنوز بازند.
+آخرین بازنگری: 2026-11-17 | تصمیم‌های مالک درباره ماتریس مجوز، Recovery ایمیل‌تنها و سیاست نشست ثبت شده‌اند؛ پیاده‌سازی، آزمون runtime، بازبینی مستقل و مجوز G1 همچنان بازند.
+
+> **وضعیت جاری:** ماتریس granular در 2026-11-06 تصویب شده است؛ این تصویب به معنی seed یا فعال‌سازی runtime نیست. Recovery ایمیل‌تنها نیز برای فاز فعلی پذیرفته شده و MFA نیست. سیاست نشست جاری: برنامه باز + heartbeat/lease با سقف آغازین 5 حساب فعال متمایز؛ عمر مطلق و سقف نشست به‌ازای هر حساب تصویب نشده‌اند. موارد قدیمی‌تر در این سند که خلاف این خلاصه‌اند، تاریخی و superseded هستند. g1Authorized=false.
 
 ## 1. ماتریس granular مجوز
 قاعده: deny-by-default؛ فقط permission صریح؛ اجتماع مجوزهای چندنقشی؛ scope مستقل سمت API؛ wildcard ممنوع.
@@ -47,8 +49,14 @@ manager مجوز مدیریت حساب/نقش/امنیت ندارد. حذف سن
 ## 3. Username normalization و آزمون
 NFC نه NFKC؛ بدون trim خاموش؛ طول 3..64 Unicode scalar؛ فقط General Category L* و Nd؛ ارقام فارسی/عربی/لاتین حفظ؛ حروف فارسی/عربی ادغام نشوند؛ Latin default case-fold نسخه‌دار؛ collation قطعی؛ mixed-script letters رد و Script_Extensions معتبر الزامی. oracle تست Python در `scripts/ci/test_identityaccess_policy.py` افزوده شده و در spec gate اجرا می‌شود؛ جایگزین تست .NET production نیست. Unicode version pin، collision scan و .NET fuzz tests پیش از runtime لازم‌اند.
 
-## 4. Emergency recovery مدیر کل
-Break-glass فقط کنسول محلی؛ دو کانال مستقل ایمیل و موبایل به‌علاوه recovery code آفلاین یک‌بارمصرف با entropy حداقل 128 بیت و فقط digest در DB. challengeها کوتاه‌عمر و request-bound؛ rate limit، مصرف اتمیک code، revoke تمام نشست‌ها، افزایش credential_version، must_change_password و fail-closed شبکه. backdoor/رمز ثابت/endpoint عمومی ممنوع. فقدان کانال یا code هیچ bypass خودکاری ندارد؛ مسیر فیزیکی فقط پس از طراحی ابزار امضاشده و تأیید دو نفره. replay/race/expiry/DB-failure/secret-free-log tests و threat-model review لازم‌اند.
+## 4. Recovery مدیر کل — سیاست جاری و مرزهای باز
+
+- **تصمیم مصوب مالک:** Recovery ایمیل‌تنها برای فاز فعلی پذیرفته شده است؛ OTP یک‌بارمصرف 10 دقیقه‌ای، digest-only، حداکثر 5 تلاش ناموفق و قفل 24 ساعته. resend حداقل هر 1 ساعت؛ حداکثر 1 ارسال در rolling hour و 5 ارسال در rolling 24h؛ عبور از سقف موجب قفل 24 ساعته می‌شود.
+- این روش MFA یا دو عامل مستقل نیست؛ ریسک mailbox compromise، phishing، forwarding و فرایند بازیابی خود mailbox باید در threat model و بازبینی مستقل بررسی شود.
+- SMS در این فاز غیرفعال و خارج از دامنه است؛ offline recovery code عامل اجباری یا مسیر bypass نیست.
+- **هنوز تعیین‌نشده:** نقطه شروع Recovery (endpoint شبکه‌ای یا کنسول محلی مورد اعتماد)، تعریف مرز اعتماد کنسول در صورت انتخاب، نحوه ثبت/اثبات ایمیل super_admin، SMTP relay واقعی و secret/key management.
+- تا تکمیل orchestration، ارسال ایمیل، rate-limit اتمیک، مصرف یک‌باره، تراکنش تغییر رمز + افزایش credential_version + revoke همه نشست‌ها + must_change_password، تست‌های replay/race/expiry/failure و threat-model review، Recovery runtime عملیاتی نیست.
+- هیچ backdoor، master password، رمز ثابت دائمی یا bypass پشتیبانی‌محور مجاز نیست. تصمیم bootstrap اولیه از Recovery جداست و provisioning امن آن همچنان باز است.
 
 ## 5. Security review و G1
 پرونده review آماده است، اما review مستقل روی commit جاری و امضای پذیرش نهایی هنوز ثبت نشده‌اند. reviewer باید token/digest/revoke، password hash/rehash، lockout/rate limit، bootstrap، session cap/lease، permission enforcement، recovery، audit/retention، TLS/firewall و dependency boundaries را بررسی کند. سبزشدن CI جایگزین review نیست. فرم reviewer باید SHA، یافته‌ها، نتیجه و امضا داشته باشد؛ مالک باید صریحاً G1 را authorize کند. تا آن زمان `g1Authorized=false` باقی می‌ماند. PR #31 اکنون Closed و Unmerged است؛ بسته‌شدن PR به معنی حذف کدهای پذیرفته‌شده در شاخه‌های دیگر یا تکمیل IdentityAccess نیست.
@@ -68,57 +76,49 @@ Break-glass فقط کنسول محلی؛ دو کانال مستقل ایمیل �
 - PR #31 در GitHub با وضعیت Closed و Unmerged ثبت شده است؛ آن را Open+Draft معرفی نکنید.
 - مسیرهای HTTP login و password change در main وجود دارند و در تست API/PostgreSQL موقت پوشش داده شده‌اند؛ feature flag ورود HTTP به‌صورت پیش‌فرض خاموش است.
 - production bootstrap، recovery نهایی مدیر، deployment listener/TLS، بازبینی مستقل امنیت/حریم خصوصی و مجوز G1 همچنان باز هستند.
-## 6. تصمیم‌های مالک محصول درباره Recovery و Session — 2026-11-05
+## 6. تصمیم‌های جاری مالک — Recovery، Session و Authorization
 
-بندهای قبلی که TTL/تلاش/ارسال را باز اعلام می‌کردند، با تصمیم‌های زیر جایگزین می‌شوند:
-- بازار هدف: ایران؛ ایمیل: mailbox اختصاصی روی دامنه محصول و ارسال از طریق SMTP relay/Transactional Email؛ Mail Server مستقل در برنامه ساخته نمی‌شود.
-- SMS عمداً به فاز آینده موکول شده و انتخاب vendor در این مرحله لازم نیست. پیش از فعال‌سازی Recovery باید عامل مستقل جایگزین SMS به تصویب برسد یا SMS در فاز بعدی اضافه و آزمون شود؛ بازیابی ایمیل‌تنها مجاز نیست.
-- Email OTP TTL=10 دقیقه؛ SMS OTP TTL=5 دقیقه.
-- حداکثر 5 تلاش ناموفق برای هر challenge؛ قفل Recovery به مدت 24 ساعت پس از رسیدن به حد.
-- resend cooldown=1 ساعت؛ حداکثر 1 ارسال در rolling 1h و 5 ارسال در rolling 24h؛ عبور از هر سقف، قفل 24 ساعته ارسال/Recovery.
-- محدودیت‌ها در سمت سرور و با عملیات اتمیک enforce شوند؛ per-account/channel و per-source. قفل مبدأ به‌تنهایی نباید ابزار DoS علیه قربانی باشد.
-- resend proof قبلی همان کانال را باطل می‌کند؛ provider timeout/unknown result proof معتبر ایجاد نمی‌کند.
-- قفل 24 ساعته Recovery جایگزین lockout ورود عادی 5 شکست/15 دقیقه و قفل 15 دقیقه نیست.
+### Recovery ایمیل‌تنها
+- کانال مصوب فعلی: ایمیل؛ OTP یک‌بارمصرف 600 ثانیه، فقط digest در DB.
+- حداکثر 5 تلاش ناموفق در هر challenge؛ پس از حد، قفل 24 ساعته.
+- حداقل فاصله resend یک ساعت؛ حداکثر 1 ارسال در rolling hour و 5 ارسال در rolling 24h؛ نقض سقف موجب قفل 24 ساعته می‌شود.
+- محدودیت‌ها باید سمت سرور، اتمیک و متکی به ساعت PostgreSQL باشند؛ قفل source نباید به‌تنهایی ابزار DoS علیه حساب قربانی شود.
+- resend، challenge قبلی همان کانال را باطل می‌کند؛ timeout/نتیجه نامعلوم provider هرگز اثبات موفق محسوب نمی‌شود.
+- SMS و offline code در این فاز عامل اجباری نیستند و provider پیامک خارج از دامنه است.
 
-سیاست نشست مصوب:
-- heartbeat=30s؛ lease=180s؛ absolute session lifetime=12h از ایجاد.
-- حداکثر 2 نشست فعال برای هر حساب؛ حداکثر 5 حساب فعال متمایز در کل سیستم.
-- سقف کل 5 حساب با permission اختصاصی super_admin قابل تغییر و هر تغییر audit می‌شود.
-- تغییر رمز و غیرفعال‌سازی حساب، revoke فوری تمام نشست‌های آن حساب را در همان تراکنش تضمین می‌کند؛ درخواست بعدی با بررسی PostgreSQL رد می‌شود.
+### Session
+- نشست تا وقتی برنامه باز است و heartbeat/lease معتبر تمدید می‌شود؛ عمر مطلق ثابت برای نشست تصویب نشده است.
+- سقف آغازین 5 حساب فعال متمایز در کل سیستم است؛ تغییر آن فقط با permission اختصاصی و audit.
+- heartbeat=30s و lease=180s فقط برای liveness هستند؛ lease با heartbeat معتبر تمدید می‌شود.
+- سقف 2 نشست هم‌زمان برای هر حساب تصویب نشده است؛ هیچ absolute_session_ttl یا max_concurrent_sessions_per_account فعالی نباید از متن‌های تاریخی استخراج شود.
+- تغییر رمز باید همه نشست‌های همان حساب را revoke کند و credential_version را افزایش دهد؛ غیرفعال‌سازی حساب نیز باید revoke اتمیک نشست‌ها داشته باشد.
+- ظرفیت باید در PostgreSQL و در transaction/serialization enforce شود؛ cache محلی مرجع نیست.
+
+### Authorization و وضعیت اجرا
+- ماتریس granular در 2026-11-06 تصویب شده؛ خانه خالی Deny، deny-by-default، بدون wildcard و scope مستقل.
+- تصویب ماتریس مجوز seed، نقش‌دهی، runtime policy یا مجوز G1 نیست.
+- g1Authorized=false؛ runtime/Recovery/seed و migration عملیاتی تا gateهای مربوط مجاز نیستند.
 
 ## 7. وضعیت تصویب ماتریس و Reviewer
-تصویب این پارامترها به معنی تصویب ماتریس granular مجوزها یا retention نیست؛ آن موارد همچنان نیازمند تصمیم جداگانه مالک‌اند. تیم مستقلی که مالک پس از بررسی نهایی معرفی/مأمور می‌کند، می‌تواند Reviewer سازمانی G1 باشد؛ اما نام تیم، اعضای واجد صلاحیت، تعارض منافع، reviewer مسئول، SHA تحت بررسی، نتیجه و امضای واقعی باید در پرونده G1 ثبت شود. تا آن زمان review مستقل انجام‌شده محسوب نمی‌شود.
+
+ماتریس granular در 2026-11-06 تصویب شده است؛ بنابراین هر عبارت قدیمی همین سند که آن را «proposal» یا «منتظر تصویب مالک» معرفی می‌کند، superseded است. این تصمیم به معنی seed یا فعال‌سازی runtime نیست.
+
+بازبینی مستقل امنیتی/معماری روی SHA نهایی، ثبت یافته‌ها و امضای reviewer، بررسی حقوقی retention، تعیین مالک canonical Branch/Warehouse/assignment و تصمیم رسمی مالک برای AUTHORIZE G1 همچنان بازند. CI موفق جایگزین هیچ‌یک از این موارد نیست؛ تا ثبت شواهد، g1Authorized=false باقی می‌ماند.
 
 
-## تعیین دامنه فعلی: عدم پیاده‌سازی پیامک — 2026-11-05
-- بنا بر تصمیم مالک، در این مرحله هیچ SMS provider، SDK، API client، credential، template، configuration، background job یا تست وابسته به سرویس پیامک اضافه نمی‌شود.
-- قابلیت SMS به مرحله/نسخه آینده موکول است و در این مرحله صرفاً به‌عنوان توسعه آتی مستند می‌شود؛ انتخاب vendor نیز اکنون لازم نیست.
-- نبود SMS به معنی مجاز شدن بازیابی با ایمیل تنها نیست. تا زمان تصویب و پیاده‌سازی یک ترکیب عامل بازیابی امن و آزموده‌شده، Recovery اضطراری در محیط عملیاتی غیرفعال/غیرقابل دسترس می‌ماند. عامل offline recovery code نیز به‌تنهایی جایگزین عامل مستقل دوم نمی‌شود مگر آنکه مدل تهدید و سیاست مالک جداگانه تصویب شود.
-- مقادیر TTL پیامک و محدودیت ارسال پیامک که پیش‌تر در سند آمده‌اند، مشخصات هدف آینده‌اند و در این مرحله هیچ رفتار اجرایی یا تست runtime برای SMS ایجاد نمی‌کنند.
-- ایمیل اختصاصی نیز در این مرحله فقط معماری هدف است؛ SMTP relay واقعی و secretها تا انتخاب/پیکربندی عملیاتی وارد برنامه نمی‌شوند.
+## سابقه دامنه پیامک — 2026-11-05 (تاریخی)
+
+SMS در این فاز پیاده‌سازی نمی‌شود و provider/SDK/credential/job/test پیامکی اضافه نمی‌شود. عبارت قدیمی این بخش که «Recovery ایمیل‌تنها مجاز نیست» با تصمیم نهایی مالک در 2026-11-06/07 superseded شده است؛ Recovery ایمیل‌تنها برای فاز فعلی پذیرفته شده، اما تا تکمیل کنترل‌های عملیاتی و بازبینی مستقل فعال نمی‌شود.
 
 
-## اصلاح وضعیت جاری G1 و Recovery — 2026-11-05
+## وضعیت G1 و Recovery — بازنگری 2026-11-17
 
-بسته تحویل جاری reviewer در `identityaccess-g1-review-handoff-fa.md` قرار دارد و مرجع وضعیت PR جاری، PR #37 است؛ ارجاع قدیمی PR #30 در متن‌های پیشین وضعیت جاری را نشان نمی‌دهد.
-
-- ماتریس granular permission هنوز پیشنهاد است و تصویب مالک ندارد.
-- retention امنیتی هنوز پیشنهاد است و تصویب مالک/بررسی حقوقی ندارد.
-- SMS عمداً به فاز آینده موکول شده است؛ انتخاب provider یا تست SMS در این فاز لازم نیست.
-- با تعویق SMS، روش اجرایی عامل مستقل جایگزین برای Recovery هنوز تصویب نشده است. بنابراین Recovery ایمیل‌تنها مجاز نیست و Recovery اضطراری غیرفعال باقی می‌ماند.
-- وجود طرح/جدول تست Recovery به معنی وجود runtime یا اجرای تست runtime نیست.
-- CI موفق فقط به SHA و jobهای همان اجرا مربوط است و جایگزین review مستقل G1 نیست.
-- reviewer مستقل، SHA مورد تأیید، یافته‌ها، امضا و تصمیم رسمی مالک هنوز ثبت نشده‌اند؛ `g1Authorized=false`.
+تصمیم‌های مالک درباره ماتریس، Recovery ایمیل‌تنها و نشست نهایی‌اند؛ اجرای آن‌ها هنوز اثبات نشده است. runtime موجود در main شامل login و تغییر رمز با feature flag خاموش برای HTTP login است؛ Recovery orchestration/endpoint و bootstrap provisioning کامل وجود ندارد. جزئیات شکاف‌ها در identityaccess-wg2-gap-register-fa.md ثبت شده است. تا review مستقل، تست‌های لازم و AUTHORIZE رسمی، g1Authorized=false باقی می‌ماند.
 
 
-## تصمیم اصلاحی مالک درباره ایمیل و placeholder پیامک — 2026-11-05
+## تصمیم اصلاحی مالک درباره ایمیل و placeholder پیامک — 2026-11-05 (تاریخی)
 
-تصمیم جدید مالک برای فاز فعلی بر عبارت‌های متناقض قبلی این سند مقدم است:
-- Recovery با ایمیل تنها برای فاز فعلی کافی و مورد تأیید مالک محصول است؛ OTP ایمیل 10 دقیقه‌ای، یک‌بارمصرف و digest-only است. پس از اثبات، تغییر رمز، افزایش credential_version، revoke اتمیک تمام نشست‌ها و اجبار تغییر رمز در ورود بعدی انجام می‌شود.
-- این روش نباید MFA یا دو عامل مستقل نامیده شود؛ وابستگی به امنیت mailbox باید در threat model و review مستقل صریحاً ارزیابی شود. این موضوع مانع ادامه طراحی/آماده‌سازی ماتریس نیست.
-- SMS حذف نشده است؛ placeholder/adapter/configuration آن برای آینده خالی و غیرفعال می‌ماند. نبود provider SMS مانع Recovery ایمیلی فاز فعلی نیست.
-- رمز ثابت دائمی، master password و backdoor ممنوع‌اند. bootstrap یک‌باره admin/admin صرفاً local-only است و با Recovery اشتباه گرفته نمی‌شود.
-- ماتریس granular آماده تصویب مالک در `identityaccess-permission-matrix-approval-fa.md` قرار دارد؛ تا ثبت تصمیم مالک، ماتریس هنوز proposal است و نباید seed/runtime شود.
+این ثبت تاریخی، پذیرش Recovery ایمیل‌تنها و خارج‌بودن SMS از دامنه را ثبت می‌کند. تصمیم نهایی و دقیق‌تر در بخش «تصمیم‌های نهایی مالک — 2026-11-06/07» و خلاصه جاری ابتدای سند است. هر عبارت قدیمی درباره نیاز اجباری به موبایل/offline code یا ممنوعیت ایمیل‌تنها، superseded است.
 
 
 ## اصلاح نهایی وضعیت تصمیم‌ها — 2026-11-06
@@ -129,7 +129,3 @@ Break-glass فقط کنسول محلی؛ دو کانال مستقل ایمیل �
 4. مالک canonical Branch/Warehouse و assignment با شواهد schema/code احراز نشده؛ scope fail-closed باقی می‌ماند.
 5. reviewer واقعی، SHA مورد بررسی، یافته‌ها، نتیجه و امضای قابل راستی‌آزمایی ثبت نشده؛ `g1Authorized=false`.
 PR #37 بسته طراحی مستنداتی است. PR #41 شاخه یکپارچه‌سازی جداگانه‌ای است که کد و migration IdentityAccess را پیشنهاد می‌کند؛ هیچ‌یک merge یا مجوز عملیاتی نیستند.
-
-
-## الحاقیه WG-2 — تطبیق سیاست نشست با اصلاحیه 2026-11-07 (2026-11-08)
-بخش ۶ همین سند («سیاست نشست مصوب») عمر مطلق ۱۲ ساعته و سقف ۲ نشست برای هر حساب را «مصوب» نوشته است. این دو مقدار طبق «اصلاح نهایی سیاست نشست — 2026-11-07» در ADR-0013 و «تصمیم‌های نهایی مالک — 2026-11-06/07» در `identityaccess-owner-decisions-fa.md` superseded هستند و مصوب فرض نمی‌شوند. مقادیر جاری: سقف ۵ حساب فعال متمایز (قابل تغییر با permission و audit) و heartbeat/lease برابر 30s/180s فقط برای تشخیص liveness؛ revoke فوری همه نشست‌ها در تغییر رمز و غیرفعال‌سازی حساب تغییری نکرده است. این الحاقیه سیاست جدیدی نمی‌سازد؛ فهرست شکاف‌ها در `identityaccess-wg2-gap-register-fa.md` است. `g1Authorized=false`.
