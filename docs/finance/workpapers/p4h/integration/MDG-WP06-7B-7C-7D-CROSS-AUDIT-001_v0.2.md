@@ -187,3 +187,8 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 ### 7B OpenIssue/SourceRef Completion — 2026-11-18
 
 برای هر 39 ردیف رویدادی، OpenIssueID مستقل 7B-OPEN-001..039، SourceRefs، Test ID و Owner Action ثبت شد. SourceEvent فنی/trigger تا زمان تأیید قرارداد ماژول مالک OPEN باقی می‌ماند و هیچ نام فنی حدس زده نشده است. وضعیت: issue ownership and traceability 39/39 recorded؛ domain rules remain BLOCKED where specified.
+
+ 
+### 7D COA Gate Test Addendum — 2026-11-18
+
+7D v0.2 با افزودن 12 آزمون مستقل MDG-COA-GATE-001..012 برای 7C-OPEN-001..012 تکمیل شد. اکنون 51 Test ID مستقل وجود دارد: 39 آزمون FE (MDG-FIN-GATE-001..039) و 12 آزمون COA (MDG-COA-GATE-001..012). همه این آزمون‌ها در سطح design fail-closed هستند؛ execution NOT RUN و Evidence NOT ACCEPTED. Positive journal assertions تا canonical شدن 7C و تکمیل Posting Ruleهای 7B مسدود می‌مانند.
