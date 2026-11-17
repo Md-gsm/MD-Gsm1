@@ -5,7 +5,7 @@
 |---|---|
 | CR ID | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 |
 | Version | 0.1 |
-| Status | OWNER DECISION RECORDED — IMPLEMENTATION IN CONTROLLED DOCUMENT REVISION PENDING |
+| Status | OWNER DECISION RECORDED — INCORPORATED IN ARCHITECTURE v2.6 DRAFT — INDEPENDENT REVIEW PENDING |
 | Authority | Product Owner decision recorded in conversation on 2026-11-18 |
 | Affected baseline | MDG-ARCH-MASTER-001 v2.5 |
 | Affected item | O-01 |
