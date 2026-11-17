@@ -163,13 +163,16 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 - Posting Release: NOT GRANTED.
 
 
-### 3.1 رجیستر سطر‌به‌سطر 76 حساب منبعی
+### 3.1 رجیستر سطر‌به‌سطر 76 حساب منبعی — v0.2
 
-برای جلوگیری از اتکا به خلاصه‌های تجمیعی، فایل مستقل `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.1.csv` در Library ثبت شد. این فایل 76 ردیف حساب و 30 ستون دارد: 24 ستون عیناً از شیت «دفتر حساب‌ها» و 6 ستون کنترل canonical status. فایل منبع خام تغییر نکرده است.
+نسخه `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.2.csv` در Library ثبت و نسخه v0.1 آن superseded شد. این فایل 76 ردیف و 39 ستون دارد: 24 ستون عیناً از شیت «دفتر حساب‌ها» و 15 ستون کنترل canonical status.
 
-- Library path: `/MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.1.csv`
-- SHA-256 CSV: `7e61eca4bc486bc8173ea59a7c3b48a6fa9e5d231e5507cba208a3a003b80014`
+- Library path: `/MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.2.csv`
+- SHA-256 CSV: `78c3793c075ff4aaebef4b86230411d3dca52233f0cca3c81278b2f4607acbb1`
 - Source Excel SHA-256: `a6ca3377fde5863455a3b4bccf9a000d0dbf23f44bd66eeae51c44d0f3697866`
-- برای هر ردیف: CanonicalAccountId=NOT ASSIGNED؛ CanonicalParentAccountId=NOT ASSIGNED؛ CanonicalEffectiveFrom=NOT SET؛ CanonicalRowStatus=UNVERIFIED — row-level reconciliation to COA v1.4 required؛ PostingStatus=NO POSTING UNTIL CANONICAL COA + 7B RULE VERIFIED.
+- برای هر 76 ردیف، وضعیت CanonicalAccountId، CanonicalParentAccountId، CanonicalLevel، CanonicalNature، CanonicalNormalBalance، CanonicalPostable، CanonicalDirectPostingAllowed، CanonicalSubledgerRequired، CanonicalStatus، CanonicalTaxModeConstraint، CanonicalEffectiveFrom و CanonicalEffectiveTo صریحاً NOT ASSIGNED / UNVERIFIED / NOT SET ثبت شده است.
+- PostingStatus برای همه ردیف‌ها: `NO POSTING UNTIL CANONICAL COA + 7B RULE VERIFIED`.
+- Owner decision overlay در همین سند و ارجاعات OWN ثبت می‌شود؛ وضعیت UNVERIFIED در CSV به معنی نادیده‌گرفتن تصمیمات مالک نیست، بلکه به معنی تکمیل‌نشدن تطبیق row-level با COA v1.4 است.
 
-این فایل، رجیستر source snapshot و وضعیت تکمیل است؛ **COA canonical یا جایگزین v1.4 نیست**. مقادیر canonical فقط پس از تطبیق دقیق با v1.4، تصمیمات مالک و Architecture/ADR قابل ثبت‌اند.
+این فایل رجیستر کامل source snapshot و وضعیت canonicalization است؛ **COA canonical یا جایگزین v1.4 نیست**. مقادیر canonical فقط پس از تطبیق دقیق با v1.4، تصمیمات مالک و Architecture/ADR قابل ثبت‌اند.
+
