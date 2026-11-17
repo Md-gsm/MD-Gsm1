@@ -415,7 +415,7 @@ Financial Event → Recognition Rule → Posting Rule → COA → Subledger → 
 | FE-11 | برگشت خرید | باید به خرید و دریافت واقعی مرتبط باشد | CONDITIONAL |
 | FE-12 | بازپرداخت وجه | حساب مقابل هنوز تعیین نشده؛ 2107 Refund Payable نیست | BLOCKED |
 | FE-13 | تخفیف | Contra Revenue؛ نگاشت حساب‌های 420x باز است | OPEN |
-| FE-14 | چرخه چک | رعایت تصمیمات 24B؛ نگاشت 110401 تا 110404 نیازمند احراز است | OPEN |
+| FE-14 | چرخه چک | نقش‌های 110401 تا 110404 طبق OWN-7C-004-R1؛ تطبیق Source Title/Attributes و Posting/Test Crosswalk باز است | OPEN |
 | FE-15 | هزینه‌های تکمیلی خرید | 6104 حساب عمومی Landed Cost نیست | OPEN |
 | FE-16 | مغایرت شمارش موجودی | تفکیک کسری و اضافه؛ 2113 برای اضافه شمارش | CONDITIONAL |
 | FE-17 | مغایرت نقدی | 2112 حساب تعلیقی؛ 610801 فقط برای کسری تأییدشده | CONDITIONAL |
@@ -452,7 +452,7 @@ Financial Event → Recognition Rule → Posting Rule → COA → Subledger → 
 2107 حساب Refund Payable نیست. حساب بازپرداخت باید مستقل تعیین شود. دریافت، تخصیص و بازپرداخت سه رفتار متفاوت‌اند.
 
 ### FE-14
-چرخه چک باید وضعیت‌های مستقل و قابل ردیابی صدور، دریافت، واگذاری، وصول، برگشت و تسویه داشته باشد. نگاشت 110401 تا 110404 بدون احراز منبع قطعی نیست.
+چرخه چک باید وضعیت‌های مستقل و قابل ردیابی صدور، دریافت، واگذاری، وصول، برگشت و تسویه داشته باشد. سیاست نقش‌ها طبق OWN-7C-004-R1 مشخص است؛ Source Title/Attributes snapshot با آن تعارض دارد و باید در 7C تطبیق/اصلاح شود.
 
 ### FE-20
 2114 فقط برای خدمت دریافت‌شده و تأییدشده با تعهد قابل اثبات است. 2101 بدهی فاکتورشده، 2103 کالای دریافت‌شده ولی فاکتورنشده و 2102 غیرفعال است. 5103 تا تکمیل قواعد مسدود است.
@@ -742,7 +742,7 @@ Crosswalk باید سه اتصال مستقل داشته باشد:
 | INT-7D-OPEN-016 | Atomicity | عدم ثبت ناقص |
 | INT-7D-OPEN-017 | Period Lock | جلوگیری از ثبت در دوره بسته |
 | INT-7D-OPEN-018 | Trade-In | دو سند و کنترل مالکیت |
-| INT-7D-OPEN-019 | Evidence Registry | شواهد قابل بازبینی |\n| INT-7D-OPEN-020 | Legacy Crosswalk برای P4C/P4E/P4G | نگاشت بر اساس متن واقعی؛ در نبود متن، LEGACY UNMAPPED |\n| INT-7D-OPEN-021 | Part 4D Legacy Test IDs | بازیابی منبع؛ شماره‌سازی حدسی ممنوع |\n| INT-7D-OPEN-022 | FIN-TST-043..053 provenance/detail | تعیین Source/RECONSTRUCTED/PROPOSED و Test Case کامل برای هر شناسه |\n| INT-7D-OPEN-023 | FE-14 cheque lifecycle test detail | Test Case کامل منطبق با تصمیم 24B، بدون تغییر تصمیم مالک |\n| INT-7D-OPEN-024 | 110807/110808/2113 control tests | آزمون عدم Posting جدید 110807 در R1 و کنترل suspense/clearing برای 110808 و 2113 |\n| INT-7D-OPEN-025 | R1/R2 scope guards | اثبات عدم اجرای ناخواسته مسیرهای R2 در R1 |
+| INT-7D-OPEN-019 | Evidence Registry | شواهد قابل بازبینی |\n| INT-7D-OPEN-020 | Legacy Crosswalk برای P4C/P4E/P4G | نگاشت بر اساس متن واقعی؛ در نبود متن، LEGACY UNMAPPED |\n| INT-7D-OPEN-021 | Part 4D Legacy Test IDs | بازیابی منبع؛ شماره‌سازی حدسی ممنوع |\n| INT-7D-OPEN-022 | FIN-TST-043..053 provenance/detail | تعیین Source/RECONSTRUCTED/PROPOSED و Test Case کامل برای هر شناسه |\n| INT-7D-OPEN-023 | FE-14 cheque lifecycle test detail | Test Case کامل منطبق با OWN-7C-004-R1، بدون تغییر تصمیم مالک |\n| INT-7D-OPEN-024 | 110807/110808/2113 control tests | آزمون عدم Posting جدید 110807 در R1 و کنترل suspense/clearing برای 110808 و 2113 |\n| INT-7D-OPEN-025 | R1/R2 scope guards | اثبات عدم اجرای ناخواسته مسیرهای R2 در R1 |
 
 ---
 
