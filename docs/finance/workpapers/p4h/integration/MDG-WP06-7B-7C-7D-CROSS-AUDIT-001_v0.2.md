@@ -133,3 +133,23 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 - Independent review on final SHA: PENDING.
 - Gate 3 / Gate 4: OPEN / OPEN.
 - Posting Release: NOT GRANTED.
+
+ 
+## Cross-Audit Addendum — 7B/7C/7D v0.2 — 2026-11-18
+
+### ساختار تحویل‌دادنی‌های جایگزین
+- 7B v0.2: 39 ردیف رویدادی شامل FE-01..FE-38 و FE-10b؛ disposition هر رویداد و Test ID مشخص است.
+- 7C v0.2: 76 کد منبعی و 24 ستون، provenance احرازشده و canonicalization register؛ صفات نهایی هنوز با COA v1.4 تطبیق کامل نشده‌اند.
+- 7D v0.2: 39 Test ID مستقل MDG-FIN-GATE-001..039؛ تمام 39 ارجاع 7B در 7D متناظر دارند.
+
+### نتیجه تطبیق ساختاری
+تعداد Test IDهای یکتا در 7B v0.2 برابر 39 و در 7D v0.2 برابر 39 است؛ مجموعه شناسه‌ها از 001 تا 039 پیوسته است. FE coverage شامل FE-01..FE-38 به‌علاوه FE-10b است. این کنترل، صحت طراحی حسابداری یا اجرای آزمون را اثبات نمی‌کند.
+
+### موارد همچنان باز
+- 7B positive posting rule completeness و canonical debit/credit: OPEN.
+- 7C row-level reconciliation با v1.4 و canonical attributes: OPEN.
+- 7D positive journal assertions وابسته به 7B/7C: BLOCKED.
+- Test execution: NOT RUN / NOT VERIFIED.
+- Evidence: NOT ACCEPTED.
+- Independent review روی SHA نهایی: PENDING.
+- O-01: CR OWNER-APPROVED / DELIVERABLE ACCEPTANCE OPEN.
