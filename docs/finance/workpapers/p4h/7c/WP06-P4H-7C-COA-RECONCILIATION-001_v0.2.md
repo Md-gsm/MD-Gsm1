@@ -123,20 +123,20 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 
 ## 7. موارد باز برای تکمیل 7C
 
-| ID | موضوع | معیار بستن | وضعیت |
-|---|---|---|---|
-| 7C-OPEN-001 | COA v1.4 row-level crosswalk | تمام 76 کد و فیلدهای v1.4 با Excel/decisions تطبیق داده شوند | OPEN |
-| 7C-OPEN-002 | AccountId registry | شناسه پایدار یکتا و immutable با uniqueness constraint | OPEN |
-| 7C-OPEN-003 | Parent/Level hierarchy | درخت بدون cycle، با منبع صریح و بدون prefix inference | OPEN |
-| 7C-OPEN-004 | Nature/NormalBalance | مقدار canonical و lineage برای هر حساب | OPEN |
-| 7C-OPEN-005 | Postable/DirectPostingAllowed/Status | eligibility هر حساب و enforce سمت سرور/DB | OPEN |
-| 7C-OPEN-006 | Subledger/Dimensions | قرارداد مالک داده و ابعاد برای هر حساب | OPEN |
-| 7C-OPEN-007 | Effective dating | تاریخ اثر و تاریخ پایان/جایگزینی | OPEN |
-| 7C-OPEN-008 | 2114 attributes | Parent, Nature, NormalBalance, eligibility, subledger, FE-20 | OPEN |
-| 7C-OPEN-009 | 5106/4107 collision | namespace/registry/database uniqueness و eligibility | OPEN |
-| 7C-OPEN-010 | 110401..110404 source crosswalk | policy vs source title/attributes و test lifecycle | OPEN |
-| 7C-OPEN-011 | 3101..3105 equity | agreement، source، NormalBalance و FE-28/34/38 | OPEN |
-| 7C-OPEN-012 | FE↔COA↔Test | نگاشت دوطرفه هر حساب به رویداد و Test ID | OPEN |
+| ID | موضوع | Owner action / نقش مسئول | شرط رفع BLOCKED | Test ID | Evidence plan | وضعیت |
+|---|---|---|---|---|---|---|
+| 7C-OPEN-001 | COA v1.4 row-level crosswalk | Finance / COA Custodian | تطبیق 76 کد و تمام صفات با v1.4 و تصمیمات حاکم؛ ثبت lineage و اختلاف‌ها | MDG-COA-GATE-001 | crosswalk کامل، source refs، diff report و hash | BLOCKED — NO POSTING |
+| 7C-OPEN-002 | AccountId registry | Finance + Data Architecture | تخصیص شناسه پایدار یکتا، immutable و constraint؛ بدون reuse | MDG-COA-GATE-002 | registry export، uniqueness test و migration review | BLOCKED — NO POSTING |
+| 7C-OPEN-003 | Parent/Level hierarchy | Finance + Data Architecture | تکمیل درخت با روابط مستند، بدون cycle و بدون prefix inference | MDG-COA-GATE-003 | hierarchy graph، cycle test و source lineage | BLOCKED — NO POSTING |
+| 7C-OPEN-004 | Nature/NormalBalance | Finance / Accounting Policy | تعیین مقدار canonical و lineage برای هر حساب؛ unresolved باقی‌مانده ممنوع برای posting | MDG-COA-GATE-004 | attribute matrix، policy approval و debit/credit validation | BLOCKED — NO POSTING |
+| 7C-OPEN-005 | Postable/DirectPostingAllowed/Status | Finance + Security/Platform | eligibility هر حساب و enforce سمت سرور/DB؛ fail-closed برای unknown/inactive | MDG-COA-GATE-005 | eligibility matrix، negative tests و DB constraint evidence | BLOCKED — NO POSTING |
+| 7C-OPEN-006 | Subledger/Dimensions | Finance + مالکان زیرمعین | مالکیت داده، dimensions، reconciliation و atomic update برای هر حساب مشخص شود | MDG-COA-GATE-006 | subledger contract، FK/constraint review و reconciliation tests | BLOCKED — NO POSTING |
+| 7C-OPEN-007 | Effective dating | Finance + Data Architecture | EffectiveFrom/To، تغییر نسخه و جلوگیری از retroactive mutation تعریف شود | MDG-COA-GATE-007 | version history، temporal validation و audit log | BLOCKED — NO POSTING |
+| 7C-OPEN-008 | 2114 attributes | Finance + Purchasing/RepairOperations | Parent، Nature، NormalBalance، eligibility، subledger و FE-20 نهایی شود؛ تا آن زمان design-only | MDG-COA-GATE-008 | approved account contract، FE-20 crosswalk و negative posting test | BLOCKED — NO POSTING |
+| 7C-OPEN-009 | 5106/4107 collision | Finance + Data Architecture | namespace کامل، reserved/history codes، DB registry و eligibility کنترل شود | MDG-COA-GATE-009 | namespace scan، unique constraint proof و collision tests | BLOCKED — NO POSTING |
+| 7C-OPEN-010 | 110401..110404 source crosswalk | Finance + Treasury | OWN-7C-004-R1 با source titles/attributes و hierarchy تطبیق؛ تفاوت‌ها lineage شوند | MDG-COA-GATE-010 | source-to-policy mapping، cheque lifecycle cases و audit trail | BLOCKED — NO POSTING |
+| 7C-OPEN-011 | 3101..3105 equity | Finance + Product Owner | توافق حقوق مالکانه، source، NormalBalance و FE-28/34/38 پیش از فعال‌سازی | MDG-COA-GATE-011 | signed policy decision، equity crosswalk و negative posting tests | BLOCKED — NO POSTING |
+| 7C-OPEN-012 | FE↔COA↔Test | Finance + Source Module Owners | نگاشت دوطرفه هر حساب/رویداد به Test ID؛ orphan account/event ممنوع | MDG-COA-GATE-012 | bidirectional traceability matrix، orphan scan و cross-audit report | BLOCKED — NO POSTING |
 
 ## 8. معیار پذیرش
 
