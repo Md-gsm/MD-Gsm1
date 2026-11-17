@@ -79,3 +79,9 @@ Until then:
 ## 6. Integrity
 
 All repository document hashes are listed in SHA256SUMS.txt at the exact PR head. Library artifacts carry the hashes listed above. Any change to a registered artifact requires a new version or controlled revision and a corresponding hash update; historical versions must remain traceable.
+
+
+## 7. COA baseline lineage evidence
+- v1.2 DOCX: SHA-256 `5721ba8db3b355dad26752be49fa9a5f1603620a411a4e675a42f9e281f586b0`; 76/76 account identifiers matched to source register; prior-baseline dispositions 45 OPEN/NOT VERIFIED and 31 conditional/inactive/blocked.
+- v1.3 TXT: SHA-256 `dd32fca0d4faa2c8e21bcb65f956a326e6d0e9c996551663e39f06152e6edf94`; 78 IDs = 76 source codes + 2114 + 5106; intermediate only.
+- v1.4 remains current baseline by owner direction. v1.2/v1.3 remain lineage evidence; no unverified attribute is silently promoted to canonical.
