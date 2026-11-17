@@ -292,10 +292,8 @@ a2e404772a0c570095fc334285ca93370f461dd088bfbc69a54e6fed2893d277  docs/finance/w
 9e2519642d2f9191cc8edaf3db877ee1d1264590c2925887953d021a81e377e2  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.3.md
 3ab3f41c400e2a56cd389dfd89d7c6ec6701c27e07ee5efe19575c1ccf5d4e48  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-POSTING-RULE-CLOSURE-001_v0.1.md
 ca7b894d2ae9657191336013efb7a972bc058fe8cda0da9db512ed0462f647a8  docs/finance/workpapers/p4h/integration/MDG-WP06-7C-ACCOUNT-DISPOSITION-001_v0.1.md
-09e7a1dd71b3de5040ea03a68ce27970bcb344728b7de2b4c94c8ba136951693  docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md
 a9255c9a73cabff91d87ee0ba888ada25c4b56221f924816cad2f672fcde2ed0  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001_v0.1.md
 f64cc10f4c448fe6ea57205d3eab1564b720d70269fe30a6e6003644fb559759  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-RECOVERY-001_v0.1.md
-14ba19a5d3b6240f0519a4800e3bf92c09870594cb3d5787b22f57dd0915f3f2  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md
 2de6c16e724fe0b06faf5978f95020c3fe602433f38655906024a4073aed3d81  docs/architecture/change-requests/CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001_v0.1.md
 afd34e3764474e17bde774280b39335615ac5e1b1850f2b3e277a4e300f9a67e  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
 364b33a49d3846506a940169b1d1d275c14c94809911fee1594d9e702f7d6603  docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md
@@ -308,3 +306,5 @@ a6c4e507ad4cb222101a3f8f629273d9b8effbbd09ad89f3fcb5225d0df65820  docs/finance/w
 1f81f8a5264853d2ed2a5a2ab4e2ace69b88d935e34c2b7d1dfa2827a02cd67c  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md
 39b4ecbb5875be3cf57fdf19a9d7c05ff95a606af03870ff0551273a45efc83b  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.1.md
 344f042ee0de7d9f725ed729fa701248fdd3dc4aaf6219084a3b238b251096bf  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md
+d23e476c51af16e2510a4d854967f686d3ff477fbfb89c9084ddbe0238fc2e48  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md
+267e9842469d3c784ae9a4aa8d5e03480de581667fc27b6bbe53a82cd18befa5  docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md
