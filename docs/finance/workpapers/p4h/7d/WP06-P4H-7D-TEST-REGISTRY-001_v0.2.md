@@ -111,9 +111,9 @@
 5. پس از تثبیت 7B/7C، برای هر posting rule مجاز، positive journal assertion دقیق با expected debit/credit و amount basis تکمیل می‌شود.
 6. اجرای واقعی و evidence acceptance جدا از design approval باقی می‌ماند.
 
-## 6.1 آزمون‌های تکمیلی canonical COA — 7C-OPEN-001..012
+## 6.1 آزمون‌های تکمیلی canonical COA — 7C-OPEN-001..016
 
-این 16 آزمون مکمل برای کنترل fail-closed و پذیرش تدریجی canonical COA تعریف شده‌اند. این‌ها به 39 آزمون FE در جدول اصلی اضافه می‌شوند؛ بنابراین 7D در مجموع 55 Test ID مستقل دارد (39 مورد FE + 16 مورد COA). هیچ‌یک اجرا نشده است.
+این 16 آزمون مکمل برای کنترل fail-closed و پذیرش تدریجی canonical COA تعریف شده‌اند. این‌ها به 39 آزمون FE در جدول اصلی اضافه می‌شوند؛ در کنار 12 آزمون مشترک بخش 4، 7D در مجموع 67 Test ID مستقل دارد: 39 مورد FE، 16 مورد COA و 12 مورد مشترک/سراسری. SOURCE-IDهای تاریخی در این عدد شمرده نمی‌شوند. هیچ‌یک اجرا نشده است.
 
 | Test ID | 7C Open | سناریو | اقدام | نتیجه مورد انتظار | Evidence plan |
 |---|---|---|---|---|---|
@@ -144,7 +144,7 @@
 
 ## 7. وضعیت
 
-- Test design: CONTROLLED R1 GATE-CONTROL SUITE SPECIFIED — 39 FE tests + 16 COA tests (55 total).
+- Test design: CONTROLLED R1 GATE-CONTROL SUITE SPECIFIED — 39 FE tests + 16 COA tests + 12 shared control tests (67 total).
 - Positive accounting journal assertions: BLOCKED PENDING FINAL 7B/7C.
 - Test execution: NOT RUN / NOT VERIFIED.
 - Evidence: NOT ACCEPTED.
