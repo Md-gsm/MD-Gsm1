@@ -305,6 +305,6 @@ d9e8fce2014fcdbabfa275827ded211f4255ca1e055489085ed13e5ed7b6c722  docs/finance/w
 ff9ce8d87fb27233be69ce9e3be46474e09e44f68abfbd96bae6f8b621c7b4c1  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.2.md
 9d2d6d0ba697e593f45d074d20904d9da6438d637536661df259a13eb5944c0c  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.2.md
 7bf9f6834bed177cebdf9419a05295bed2b21273c6e229aa5a77afacf7f843ba  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.2.md
-515274a65a2c6b8e426f16430c41e55bdce463d0062008da769f78c533e93ca5  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md
 1f81f8a5264853d2ed2a5a2ab4e2ace69b88d935e34c2b7d1dfa2827a02cd67c  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md
 39b4ecbb5875be3cf57fdf19a9d7c05ff95a606af03870ff0551273a45efc83b  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.1.md
+344f042ee0de7d9f725ed729fa701248fdd3dc4aaf6219084a3b238b251096bf  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md
