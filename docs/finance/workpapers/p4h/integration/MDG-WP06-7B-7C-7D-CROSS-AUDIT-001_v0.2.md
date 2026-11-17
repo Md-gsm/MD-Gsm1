@@ -182,3 +182,8 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 7B v0.2 اکنون برای 39 ردیف رویدادی (FE-01..FE-38 + FE-10b) رجیستر field-level disposition دارد. فیلدهای SourceEvent/Trigger/Recognition/SourceDocument، Debit/Credit، Amount/Cost/Tax، Subledger/Dimensions/Inventory/Party، PostingIdentity/Idempotency، Reversal/Period/Atomicity/Retry، Authorization/Audit، Test ID و Evidence/SourceRefs در هر ردیف تعیین وضعیت شده‌اند. مقادیر نامعلوم صریحاً NOT SPECIFIED / BLOCKED هستند؛ هیچ Posting از این وضعیت مجاز نیست. Owner Action و Test ID برای هر رویداد مشخص است.
 
 نتیجه: 7B field-level status coverage = 39/39 COMPLETE؛ positive posting rules و canonical debit/credit values = OPEN/BLOCKED تا تکمیل source contract و 7C.
+
+ 
+### 7B OpenIssue/SourceRef Completion — 2026-11-18
+
+برای هر 39 ردیف رویدادی، OpenIssueID مستقل 7B-OPEN-001..039، SourceRefs، Test ID و Owner Action ثبت شد. SourceEvent فنی/trigger تا زمان تأیید قرارداد ماژول مالک OPEN باقی می‌ماند و هیچ نام فنی حدس زده نشده است. وضعیت: issue ownership and traceability 39/39 recorded؛ domain rules remain BLOCKED where specified.
