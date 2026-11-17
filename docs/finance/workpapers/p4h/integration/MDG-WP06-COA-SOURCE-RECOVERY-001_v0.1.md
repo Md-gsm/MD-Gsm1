@@ -220,3 +220,22 @@
 - Posting Release: NOT GRANTED.
 
 این گزارش نتیجه Source Recovery و reconciliation طراحی است؛ سند اصلی تاریخی را بازیابی‌شده اعلام نمی‌کند، COA canonical نمی‌سازد و مجوز پیاده‌سازی یا ثبت مالی صادر نمی‌کند.
+
+---
+
+## اصلاحیه الزام‌آور provenance — 2026-11-17
+
+این بخش، بندهای 2.2، 3.3، SR-01، بندهای مربوط به نبود Excel و نتیجه‌گیری‌های متکی بر آن‌ها را supersede می‌کند.
+
+فایل ZIP «فهرست جامع و مرجع کدینگ حساب‌ها.zip» موجود و بررسی شده است. ZIP شامل Excel v1.0 و TXT v1.0 است؛ Hash آرشیو، Excel و TXT به‌ترتیب:
+- ZIP: `c17e3c16d05abb9d2ae57b8cfa0c8860e69b613ececb0db7758668cd1db04449`
+- Excel: `a6ca3377fde5863455a3b4bccf9a000d0dbf23f44bd66eeae51c44d0f3697866` — MATCH با Source Register.
+- TXT: `777328fdc9f42b1884ba8cf5884308f840893534ba86e51212328d4a7e174d79` — MATCH با SRC-01.
+
+Excel شامل 9 شیت است؛ شیت «دفتر حساب‌ها» دارای 76 حساب یکتا و 24 ستون است. بنابراین «Original group XLSX bytes/hash: NOT RECOVERED / NOT VERIFIED» و شرط دریافت مجدد Excel از این گزارش حذف و پس گرفته می‌شود. نبود Excel مانع یا نقص 7C نیست.
+
+مرجعیت نسخه‌ها برای تطبیق: Architecture v2.5 و تصمیمات مالک/ADRهای پذیرفته‌شده؛ سپس COA v1.4 به‌عنوان خط مبنای فعلی؛ v1.2 خط مبنای مستقل قبلی و مبنای ساخت v1.4؛ v1.3 مرحله میانی؛ Excel/TXT v1.0 منابع ورودی و شواهد هستند، نه مرجع نهایی تصمیم یا Posting.
+
+سه رابطه ParentAccountCode با کد عددی صریح در فایل: 110302→1103، 610801→6108، 620201→6202. یادداشت‌های 110401..110403 و 4201..4203 کد والد عددی قطعی تعیین نمی‌کنند.
+
+SR-01 «بایت‌های اصلی Excel مادر گروه» از رجیستر موانع حذف می‌شود. موارد باز AccountId، ParentAccountId، EffectiveFrom، صفات canonical، FE mapping، آزمون و شواهد همچنان بازند؛ این موارد به نبود فایل ارتباط ندارند. برای شرح کامل provenance به `MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001_v0.1.md` مراجعه شود.
