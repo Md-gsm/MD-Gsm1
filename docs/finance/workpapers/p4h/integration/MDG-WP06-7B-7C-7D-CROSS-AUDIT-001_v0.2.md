@@ -171,3 +171,7 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 
 ### نتیجه
 ساختار شناسه‌ها و پوشش رویداد/آزمون بین 7B و 7D سازگار است. 7B posting rules، 7C canonical account values و 7D positive expected journals همچنان به تکمیل محتوای canonical و تأییدهای مربوط وابسته‌اند. هیچ آزمون مالی اجرا نشده و هیچ Evidence اجرایی پذیرفته نشده است.
+
+
+### 7C Row-Level Source Snapshot Addendum
+فایل `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.1.csv` در Library ثبت شد: 76 ردیف × 30 ستون (24 ستون منبع + 6 ستون وضعیت canonical). SHA-256 فایل CSV برابر `7e61eca4bc486bc8173ea59a7c3b48a6fa9e5d231e5507cba208a3a003b80014` است. در تمام 76 ردیف، AccountId و ParentAccountId به‌صورت NOT ASSIGNED و EffectiveFrom به‌صورت NOT SET ثبت شده و هر ردیف به‌طور صریح نیازمند تطبیق با COA v1.4 است. این فایل source snapshot/status register است، نه COA canonical. بنابراین پوشش سطر‌به‌سطر source status تکمیل شده؛ canonicalization با v1.4 همچنان OPEN است.
