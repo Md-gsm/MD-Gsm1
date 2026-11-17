@@ -113,27 +113,25 @@ singleton settings_id SMALLINT PK CHECK=1؛ max_active_users INTEGER CHECK>=1 (�
 
 ## Bootstrap state constraints
 
-وضعیت Bootstrap باید state machine مستقل داشته باشد: Uninitialized -> Provisioning -> PasswordChangeRequired -> ProfileCompletionRequired -> Completed؛ حالت FailedClosed در خطا. فقط عملیات تغییر رمز اولیه و تکمیل پروفایل در حالت‌های میانی مجازند. هیچ business permission یا API route نباید از وضعیت bootstrap استنتاج Allow بگیرد. مقدار ثابت `admin/admin` در ADR-0013 نیازمند تصمیم تکمیلی مالک برای روش provisioning امن است؛ schema نباید default password یا credential ثابت تعریف کند.
-## تصمیم‌های مصوب مالک درباره Recovery و نشست — 2026-11-05 (بدون Migration)
+وضعیت Bootstrap باید state machine مستقل داشته باشد: Uninitialized -> Provisioning -> PasswordChangeRequired -> ProfileCompletionRequired -> Completed؛ حالت FailedClosed در خطا. فقط عملیات تغییر رمز اولیه و تکمیل پروفایل در حالت‌های میانی مجازند. هیچ business permission یا API route نباید از وضعیت bootstrap استنتاج Allow بگیرد. ثبت bootstrap account در تصمیم محصول وجود دارد، اما روش provisioning امن و تعارض عبارت قدیمی admin/admin با منع credential ثابت در source/config/installer هنوز حل نشده است. schema نباید default password یا credential ثابت تعریف کند؛ این مورد در Q-01 رجیستر WG-2 باز است.
+## تصمیم‌های مالک درباره Recovery و نشست — بازنگری 2026-11-17 (بدون Migration)
 
 ### تنظیمات Recovery
-- بازار هدف: ایران.
-- ایمیل: mailbox اختصاصی روی دامنه محصول؛ ارسال با SMTP relay/Transactional Email. ایجاد Mail Server مستقل داخل برنامه انتخاب نشده است. نام میزبان SMTP و جزئیات DNS در زمان استقرار تعیین می‌شوند.
-- ارائه‌دهنده SMS هنوز انتخاب نشده و باید پیش از فعال‌سازی Recovery از نظر OTP template، تحویل، SLA، خط خدماتی، API، وضعیت delivery و مدیریت خطا ارزیابی شود.
-- email_otp_ttl_seconds = 600؛ sms_otp_ttl_seconds = 300.
-- recovery_max_failed_attempts = 5؛ پس از رسیدن به حد، قفل Recovery برابر 86400 ثانیه.
-- resend_cooldown_seconds = 3600؛ max_sends_per_rolling_hour = 1؛ max_sends_per_rolling_24h = 5؛ عبور از هر حد، قفل ارسال/Recovery برابر 86400 ثانیه.
-- شمارنده‌ها و قفل با زمان PostgreSQL و transaction/atomic update اجرا شوند. شمارش حداقل per account و channel و نیز per source؛ محدودیت source نباید امکان قفل‌کردن قربانی از راه دور را به‌تنهایی ایجاد کند.
-- resend proof قبلی را باطل می‌کند. provider timeout/unknown result هرگز به‌معنی ارسال/تأیید موفق نیست.
-- این اعداد برای Recovery هستند و lockout ورود عادی را تغییر نمی‌دهند.
+- کانال مصوب فاز فعلی: ایمیل‌تنها؛ OTP یک‌بارمصرف با TTL=600 ثانیه و فقط digest در DB.
+- حداکثر 5 تلاش ناموفق برای هر challenge؛ قفل Recovery برابر 86400 ثانیه.
+- resend cooldown=3600 ثانیه؛ حداکثر 1 ارسال در rolling hour و 5 ارسال در rolling 24h؛ عبور از سقف، قفل 24 ساعته.
+- شمارنده‌ها باید اتمیک و متکی به ساعت PostgreSQL باشند؛ محدودیت per-account و per-source با کنترل ضد DoS.
+- SMS و offline recovery code در این فاز عامل اجباری نیستند؛ هیچ SMS provider/SDK/credential/job اضافه نمی‌شود.
+- ثبت و اثبات ایمیل، نقطه شروع flow، SMTP relay و secret/key management هنوز تعیین/عملیاتی نشده‌اند.
+- این تصمیم‌ها به معنی وجود Recovery runtime یا مجوز migration نیستند.
 
 ### تنظیمات Session
-- heartbeat_interval_seconds = 30؛ session_lease_seconds = 180؛ absolute_session_ttl_seconds = 43200.
-- max_concurrent_sessions_per_account = 2.
-- max_active_distinct_accounts = 5؛ قابل تغییر توسط super_admin با permission اختصاصی و audit.
-- password change و account disable باید revoke تمام نشست‌های حساب را اتمیک انجام دهند. برای password change، credential_version نیز افزایش یابد.
-- absolute TTL از created_at_utc محاسبه می‌شود و heartbeat آن را تمدید نمی‌کند. نشست فعال باید revoked نشده، lease معتبر، absolute expiry معتبر، account enabled و credential version جاری داشته باشد.
-- کنترل دو نشست در هر حساب و سقف کل پنج حساب باید transactionally serialized باشند.
+- heartbeat_interval_seconds = 30؛ session_lease_seconds = 180.
+- max_active_distinct_accounts = 5؛ قابل تغییر فقط با permission اختصاصی و audit.
+- فیلد absolute_session_ttl_seconds وجود ندارد و نباید اضافه شود؛ عمر مطلق نشست تصویب نشده است.
+- فیلد max_concurrent_sessions_per_account وجود ندارد و نباید اضافه شود؛ سقف نشست به‌ازای هر حساب تصویب نشده است.
+- password change و account disable باید revoke همه نشست‌های حساب را اتمیک انجام دهند؛ password change همچنین credential_version را افزایش می‌دهد.
+- lease با heartbeat معتبر تمدید می‌شود؛ PostgreSQL authoritative است و ظرفیت باید transactionally serialized باشد.
 
 این بخش مدل منطقی است؛ هیچ migration، DbSet یا runtime ایجاد/فعال نمی‌کند.
 
@@ -141,10 +139,6 @@ singleton settings_id SMALLINT PK CHECK=1؛ max_active_users INTEGER CHECK>=1 (�
 ## تعیین دامنه فعلی: عدم پیاده‌سازی پیامک — 2026-11-05
 - بنا بر تصمیم مالک، در این مرحله هیچ SMS provider، SDK، API client، credential، template، configuration، background job یا تست وابسته به سرویس پیامک اضافه نمی‌شود.
 - قابلیت SMS به مرحله/نسخه آینده موکول است و در این مرحله صرفاً به‌عنوان توسعه آتی مستند می‌شود؛ انتخاب vendor نیز اکنون لازم نیست.
-- نبود SMS به معنی مجاز شدن بازیابی با ایمیل تنها نیست. تا زمان تصویب و پیاده‌سازی یک ترکیب عامل بازیابی امن و آزموده‌شده، Recovery اضطراری در محیط عملیاتی غیرفعال/غیرقابل دسترس می‌ماند. عامل offline recovery code نیز به‌تنهایی جایگزین عامل مستقل دوم نمی‌شود مگر آنکه مدل تهدید و سیاست مالک جداگانه تصویب شود.
+- تصمیم نهایی مالک، Recovery ایمیل‌تنها را برای این فاز پذیرفته است؛ بااین‌حال تا تکمیل workflow، SMTP، تست و review مستقل، Recovery runtime غیرفعال می‌ماند. عامل offline recovery code نیز به‌تنهایی جایگزین عامل مستقل دوم نمی‌شود مگر آنکه مدل تهدید و سیاست مالک جداگانه تصویب شود.
 - مقادیر TTL پیامک و محدودیت ارسال پیامک که پیش‌تر در سند آمده‌اند، مشخصات هدف آینده‌اند و در این مرحله هیچ رفتار اجرایی یا تست runtime برای SMS ایجاد نمی‌کنند.
 - ایمیل اختصاصی نیز در این مرحله فقط معماری هدف است؛ SMTP relay واقعی و secretها تا انتخاب/پیکربندی عملیاتی وارد برنامه نمی‌شوند.
-
-
-## الحاقیه WG-2 — تطبیق «تنظیمات Session» و کانال‌های Recovery (2026-11-08)
-بخش «تنظیمات Session» همین سند مقادیر `absolute_session_ttl_seconds = 43200` و `max_concurrent_sessions_per_account = 2` را مصوب نوشته است. طبق «اصلاح نهایی سیاست نشست — 2026-11-07» در ADR-0013 و «تصمیم‌های نهایی مالک — 2026-11-06/07» در `identityaccess-owner-decisions-fa.md`، این دو مقدار superseded‌اند و مصوب فرض نمی‌شوند؛ schema جاری (migration 0003) هم آن‌ها را ندارد. جدول `recovery_channel_proofs` با کانال mobile نیز مدل طراحی قدیمی است؛ تصمیم نهایی Recovery ایمیل‌تنها است و `identity.recovery_challenges` در migration 0003 با `CHECK(channel='email')` محدود شده است. شکاف‌های schema مربوط به شمارنده‌ها، ارسال و idempotency در `identityaccess-wg2-gap-register-fa.md` (R-02، R-05) ثبت شده‌اند و هر تغییر schema نیازمند رزرو شماره در `docs/data/MIGRATION_SEQUENCE_REGISTRY_FA.md` است. این الحاقیه سیاست یا migration جدیدی نمی‌سازد؛ `g1Authorized=false`.
