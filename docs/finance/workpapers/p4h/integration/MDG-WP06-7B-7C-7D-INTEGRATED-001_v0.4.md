@@ -1048,8 +1048,8 @@ ZIP منبع با SHA-256 برابر `c17e3c16d05abb9d2ae57b8cfa0c8860e69b613ece
 ### 18.4 وضعیت واقعی
 - O-01 criterion: OWNER APPROVED.
 - 7B: PARTIAL / OPEN؛ برای هر FE باید Posting Rule کامل یا BLOCKED مستدل ثبت شود.
-- 7C: SOURCE VERIFIED؛ canonical attributes and v1.4 row-level reconciliation OPEN.
-- 7D: PARTIAL DESIGN؛ test cases and crosswalk تکمیل نشده‌اند.
+- 7C: SOURCE VERIFIED؛ row-level source/status register v0.2 شامل 76 ردیف × 39 ستون ثبت و hash آن مستقل تأیید شده؛ canonical attributes and v1.4 row-level reconciliation OPEN.
+- 7D: R1 FAIL-CLOSED DESIGN SPECIFIED؛ 39 آزمون برای FE-01..FE-38 + FE-10b و تطبیق ساختاری شناسه‌ها با 7B ثبت شده است؛ positive journal assertions و crosswalk نهایی FE↔COA↔Test تا تثبیت 7B/7C BLOCKED هستند.
 - Implementation: NOT VERIFIED.
 - Test execution: NOT RUN / NOT VERIFIED.
 - Evidence: NOT ACCEPTED.
