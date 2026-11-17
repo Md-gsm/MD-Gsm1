@@ -293,7 +293,7 @@ d1370355da7531ce6c7d5563ea86d5497eb7f526725dfb3eee75be62079ba7bc  docs/finance/w
 a2e404772a0c570095fc334285ca93370f461dd088bfbc69a54e6fed2893d277  docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.1.md
 4626a5d8ae121c061cc6f6c090c342770ad3f3dbe7372666abf29883457e1f72  docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md
 2e55cb210d6938ba7bab5aa7ff35f18cb0ebf8531963016950dee1f51b69ab63  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md
-da2a1b34e85ed9c2b2bc4def65f12683bdab23ea012935c6c59089c21c95d810  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md
+97f4dd773d134c96b016c6020f01f4e84c586dfab2be3290743e76acd7643130  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md
 59ab94e0b3aa85c573007bd899fca406052b28b0233f9b7263ee614197543f53  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.2.md
 9e2519642d2f9191cc8edaf3db877ee1d1264590c2925887953d021a81e377e2  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.3.md
 2f8f04da881810482a436dc5238ec2b358d11f53e0ecc41acb2828cda36970bd  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md
