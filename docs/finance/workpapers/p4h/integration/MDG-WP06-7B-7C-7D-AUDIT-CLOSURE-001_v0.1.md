@@ -8,8 +8,8 @@
 | Project | MD-Gsm1 |
 | Repository | Md-gsm/MD-Gsm1 |
 | Pull Request | #66 |
-| Audited baseline | MDG-WP06-7B-7C-7D-INTEGRATED-001 v0.2 و منابع قابل احراز تا 2026-11-17 |
-| New integrated baseline | MDG-WP06-7B-7C-7D-INTEGRATED-001 v0.3 |
+| Audited baseline | Integrated v0.4؛ 7B/7C/7D v0.2؛ CR O-01 v0.1؛ source workbook ZIP و row-level source/status CSV v0.2 |
+| New integrated baseline | MDG-WP06-7B-7C-7D-INTEGRATED-001 v0.4 |
 | Classification | CONTROLLED AUDIT — CLOSURE PREPARATION |
 | Design result | PARTIALLY RECONCILED — BLOCKING GAPS REMAIN |
 | Implementation | NOT VERIFIED |
@@ -25,9 +25,9 @@
 ممیزی انجام شد؛ اما بسته 7B/7C/7D هنوز برای اعلام «تکمیل نهایی طراحی» یا بستن O-01 آماده نیست. نسخه v0.2 از نظر تفکیک تصمیم مالک، قواعد پایه، وضعیت‌های مستقل و منع Posting حدسی مسیر درستی داشت، ولی چهار مانع اصلی داشت:
 
 1. شناسه‌های OPEN نسخه یکپارچه با شناسه‌های تاریخی 7D v0.3 برخورد معنایی داشتند.
-2. 7C هنوز ماتریس canonical کامل 76 کد را ندارد؛ فایل موجود یک workbook تطبیق و snapshot پیشنهادی گروه است، نه COA مادر تأییدشده.
+2. 7C فایل Excel منبع را احراز کرده و رجیستر وضعیت سطر‌به‌سطر 76 حساب × 39 ستون را در v0.2 ثبت کرده است؛ اما صفات canonical و تطبیق کامل هر حساب با COA v1.4 هنوز تکمیل نشده است.
 3. 7B در سطح FE-01..FE-38 خلاصه رویداد و اشاره به حساب‌هاست؛ برای بیشتر FEها قواعد Debit/Credit، recognition، amount basis، subledger و reversal کامل نیست.
-4. 7D رجیستر آزمون و شناسه‌ها را گردآوری می‌کند، اما برای چند گروه، Test Case کامل و crosswalk حساب‌به‌آزمون موجود نیست؛ همچنین دو عبارت تاریخی با تصمیمات متأخر تعارض دارند.
+4. 7D v0.2 برای 39 رویداد (FE-01..FE-38 به‌علاوه FE-10b) آزمون‌های fail-closed و شناسه‌های مستقل ثبت کرده و تطبیق ساختاری شناسه‌های 7B↔7D برقرار است؛ positive journal assertions و crosswalk نهایی FE↔COA↔Test تا تثبیت قواعد و صفات canonical مسدودند.
 
 نسخه یکپارچه v0.3 این ممیزی را به سند منتقل می‌کند، namespace شناسه‌های جدید را اصلاح می‌کند و شکاف‌های بازیابی Legacy را اضافه می‌کند. این تغییرات موارد را «قابل پیگیری و آماده تکمیل» می‌کند؛ هیچ موردی صرفاً با درج در رجیستر بسته تلقی نمی‌شود.
 
@@ -353,7 +353,7 @@ End of Audit
 
 ### شرایط باقی‌مانده برای بستن O-01
 - 7B: تکمیل posting ruleهای مجاز یا تثبیت BLOCKED/DEFERRED با همه فیلدهای الزامی و معیار رفع.
-- 7C: تطبیق کامل تمام صفات canonical با COA v1.4 و ثبت lineage/eligibility/effective dating.
+- 7C: رجیستر source status سطر‌به‌سطر تکمیل شده؛ تطبیق کامل تمام صفات canonical با COA v1.4 و ثبت lineage/eligibility/effective dating هنوز لازم است.
 - 7D: تکمیل positive journal assertions پس از تثبیت 7B/7C و تطبیق دوطرفه FE↔COA↔Test.
 - ممیزی مستقل روی SHA دقیق، اجرای تست‌های قابل اجرا، پذیرش Evidence و تأییدهای حرفه‌ای.
 - ثبت نسخه‌های نهایی در Document Registry.
@@ -362,4 +362,4 @@ O-01 هنوز OPEN است. Gate 3/4 OPEN؛ Implementation NOT VERIFIED؛ Test ex
 
 
 ### 7C سطر‌به‌سطر — تکمیل Source Status Register
-فایل `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.2.csv` با 76 ردیف و 39 ستون (24 ستون منبع + 15 ستون وضعیت canonical) در Library ثبت شد؛ hash آن `78c3793c075ff4aaebef4b86230411d3dca52233f0cca3c81278b2f4607acbb1` است. این اقدام وضعیت هر ردیف منبع را صریح می‌کند و مانع ادعای «نبود Excel» می‌شود. این اقدام به معنی canonical شدن صفات نیست؛ تطبیق 76 ردیف با COA v1.4 و ثبت مقادیر canonical همچنان مانع فنی 7C است.
+فایل `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.2.csv` با 76 ردیف و 39 ستون (24 ستون منبع + 15 ستون وضعیت canonical) در Library ثبت شد؛ hash آن `78c3793c075ff4aaebef4b86230411d3dca52233f0cca3c81278b2f4607acbb1` است و با materialization و SHA-256 مستقل تأیید شد. این اقدام وضعیت هر ردیف منبع را صریح می‌کند و مانع ادعای «نبود Excel» می‌شود. این اقدام به معنی canonical شدن صفات نیست؛ تطبیق 76 ردیف با COA v1.4 و ثبت مقادیر canonical همچنان مانع فنی 7C است.
