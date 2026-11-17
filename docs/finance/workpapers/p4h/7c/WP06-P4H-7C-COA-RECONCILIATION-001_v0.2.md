@@ -64,6 +64,30 @@
 | SubledgerRequired | 35 YES/CONTROLLED SUBLEDGER؛ 35 NOT SPECIFIED؛ 6 TO BE CONFIRMED | قرارداد هر حساب باید مشخص شود |
 | NormalBalance | 28 proposed debit؛ 14 proposed credit؛ 13 undetermined؛ 6 مرتبط با OWN-7C-041/042؛ 3 control/status-dependent؛ 2 two-sided/conditional/other | مقادیر پیشنهادی بدون lineage، canonical نیستند |
 
+## 3.2 تطبیق lineage خط مبناهای COA — v1.2 / v1.3 / v1.4
+
+این کنترل، وجود و جایگاه نسخه‌های قبلی را از «منبع Excel» جدا می‌کند:
+
+| نسخه | نقش | شاهد احرازشده | وضعیت استفاده در این 7C |
+|---|---|---|---|
+| COA v1.2 | خط مبنای مستقل قبلی | فایل `MDG-COA-MASTER-001_v1.2_Final_Controlled_Design_Baseline.docx`؛ SHA-256: `5721ba8db3b355dad26752be49fa9a5f1603620a411a4e675a42f9e281f586b0` | جدول 5، صفحات 5 تا 8، شامل 76 کد؛ هر 76 کد با source register تطبیق شناسه‌ای شد |
+| COA v1.3 | مرحله میانی بازسازی کنترل‌شده | فایل `MDG-COA-MASTER-001- Chart of Accounts & General Ledger Control Baseline 1.3.txt`؛ SHA-256: `dd32fca0d4faa2c8e21bcb65f956a326e6d0e9c996551663e39f06152e6edf94` | 78 شناسه شامل 76 کد منبعی + 2114 و 5106؛ فقط شاهد میانی، نه baseline جاری |
+| COA v1.4 | خط مبنای جاری طبق تصمیم مالک | مرجع جاری اعلام‌شده توسط مالک؛ بر پایه v1.2 | مرجع نهایی مقایسه و canonicalization؛ هیچ مقدار v1.2/v1.3 بدون تطبیق با v1.4 به canonical ارتقا داده نمی‌شود |
+
+**نتیجه تطبیق شناسه‌ای v1.2:** 76/76 کد یکتا با 76 کد source register منطبق است؛ کد اضافه یا مفقود در این تطبیق مشاهده نشد. در جدول 5 نسخه v1.2، تعداد 45 کد با وضعیت `OPEN / NOT VERIFIED — NO POSTING` و 31 کد با وضعیت `مشروط/غیرفعال/مسدود` ثبت شده‌اند. این آمار فقط وضعیت همان نسخه v1.2 را بازتاب می‌دهد.
+
+**نتیجه تطبیق شناسه‌ای v1.3:** 76/76 کد source در جدول‌های v1.3 حضور دارند؛ 2114 و 5106 دو کد افزوده خارج از 76 ردیف منبع‌اند. 110809 در source register به‌عنوان کد ممنوع حفظ شده و نباید ایجاد/استفاده شود. تعریف‌ها و dispositionهای v1.3 صرفاً مرحله میانی‌اند و در تعارض با OWN-7C-043 یا v1.4 مقدم نیستند.
+
+**قاعده حاکم:** ترتیب تصمیم‌گیری Architecture v2.5 → تصمیمات صریح مالک → COA v1.4 جاری → v1.2 baseline قبلی و v1.3 intermediate → Excel/TXT v1.0 source evidence است. Excel مادر و hash آن قبلاً احراز شده‌اند؛ این مرحله صرفاً lineage نسخه‌های COA را ثبت می‌کند و ادعای نبود فایل Excel نیست.
+
+### مواردی که از v1.2/v1.3 به‌تنهایی canonical نمی‌شوند
+- AccountId و ParentAccountId پایدار؛
+- EffectiveFrom/EffectiveTo؛
+- Nature و NormalBalance نهایی در جایی که v1.4/مالک آن را تعیین نکرده؛
+- Postable و DirectPostingAllowed نهایی؛
+- وضعیت فعال‌سازی اجرایی و Posting Release؛
+- mapping نهایی FE↔COA↔Test.
+
 ## 4. روابط والد مجاز
 
 فقط این سه رابطه ParentAccountCode از فایل منبع به‌صورت صریح قابل احرازند:
@@ -125,7 +149,7 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 
 | ID | موضوع | Owner action / نقش مسئول | شرط رفع BLOCKED | Test ID | Evidence plan | وضعیت |
 |---|---|---|---|---|---|---|
-| 7C-OPEN-001 | COA v1.4 row-level crosswalk | Finance / COA Custodian | تطبیق 76 کد و تمام صفات با v1.4 و تصمیمات حاکم؛ ثبت lineage و اختلاف‌ها | MDG-COA-GATE-001 | crosswalk کامل، source refs، diff report و hash | BLOCKED — NO POSTING |
+| 7C-OPEN-001 | COA v1.4 row-level crosswalk | Finance / COA Custodian | تطبیق 76 کد و تمام صفات با v1.4، baseline قبلی v1.2، intermediate v1.3 و تصمیمات حاکم؛ ثبت lineage و اختلاف‌ها | MDG-COA-GATE-001 | crosswalk کامل، source refs، diff report و hash | BLOCKED — NO POSTING |
 | 7C-OPEN-002 | AccountId registry | Finance + Data Architecture | تخصیص شناسه پایدار یکتا، immutable و constraint؛ بدون reuse | MDG-COA-GATE-002 | registry export، uniqueness test و migration review | BLOCKED — NO POSTING |
 | 7C-OPEN-003 | Parent/Level hierarchy | Finance + Data Architecture | تکمیل درخت با روابط مستند، بدون cycle و بدون prefix inference | MDG-COA-GATE-003 | hierarchy graph، cycle test و source lineage | BLOCKED — NO POSTING |
 | 7C-OPEN-004 | Nature/NormalBalance | Finance / Accounting Policy | تعیین مقدار canonical و lineage برای هر حساب؛ unresolved باقی‌مانده ممنوع برای posting | MDG-COA-GATE-004 | attribute matrix، policy approval و debit/credit validation | BLOCKED — NO POSTING |
