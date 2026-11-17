@@ -21,12 +21,12 @@
 | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 | 0.1 | docs/architecture/change-requests/CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001_v0.1.md | 2de6c16e724fe0b06faf5978f95020c3fe602433f38655906024a4073aed3d81 | OWNER APPROVED; independent review pending |
 | WP06-P4H-7B-POSTING-MATRIX-001 | 0.2 | docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md | 4db46c270000c5565a7cc2408c8225d4d1c52e8310225416d0b7e13f6c58f814 | DRAFT; 39 event rows; field-level disposition complete; positive posting rule detail partial |
 | WP06-P4H-7C-COA-RECONCILIATION-001 | 0.2 | docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.2.md | 78ceaf0351a422d62fe5fdfb14af2134e7a920dd2c855d4b5ae6315e98a0d466 | DRAFT; source verified; canonical v1.4 row reconciliation open |
-| WP06-P4H-7D-TEST-REGISTRY-001 | 0.2 | docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md | d9e8fce2014fcdbabfa275827ded211f4255ca1e055489085ed13e5ed7b6c722 | DRAFT; 51 fail-closed cases (39 FE + 12 COA); positive journal assertions pending; NOT RUN |
+| WP06-P4H-7D-TEST-REGISTRY-001 | 0.2 | docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md | d9e8fce2014fcdbabfa275827ded211f4255ca1e055489085ed13e5ed7b6c722 | DRAFT; 67 Test IDs (39 FE + 16 COA + 12 shared controls); positive journal assertions pending; NOT RUN |
 | MDG-WP06-7B-7C-7D-INTEGRATED-001 | 0.4 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md | d23e476c51af16e2510a4d854967f686d3ff477fbfb89c9084ddbe0238fc2e48 | DRAFT; integrated crosswalk and governance baseline |
 | MDG-WP06-7B-7C-7D-CROSS-AUDIT-001 | 0.2 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md | 8eaeed9e7a910f66a83f19e6e997ab6b6367d83a04b7339a5799cb6bb087e2cc | STRUCTURAL CHECKS RECORDED; independent review pending |
 | MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md | fd1e3af32354b8503b04c023cf1b28bbb6993b995a849fba77d18f4a05d5add0 | PROGRESS REGISTER; O-01 OPEN |
 
-| MDG-WP06-7D-TEST-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md | 267e9842469d3c784ae9a4aa8d5e03480de581667fc27b6bbe53a82cd18befa5 | SUPPORTING WORKPAPER; 51 test IDs tracked; NOT RUN |
+| MDG-WP06-7D-TEST-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md | 267e9842469d3c784ae9a4aa8d5e03480de581667fc27b6bbe53a82cd18befa5 | SUPPORTING WORKPAPER; 67 test IDs tracked; NOT RUN |
 
 ## 2. اسناد معماری و منبع ثبت‌شده در Library
 
