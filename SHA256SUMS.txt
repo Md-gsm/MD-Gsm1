@@ -285,7 +285,7 @@ cf3f0d41b599b515a08850f56f199faf56bc18fcac136f167cdaf3a98fa94263  tests/MDGsm.Do
 f7b9a8e26d0a09909c91e1caa7139516993024f78ced2f947980e70561575ec1  tests/MDGsm.Domain.Tests/PersonsPreviewInstallerTests.cs
 a11fd2731ff4231e58c4e1c22da4e3e7028a881ef42a58d438aa126c25173eae  tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj
 9310ab2efe7882d93b95485018da867301d9976cde2f97f0200b8389cedf6d36  tools/MDGsm.DbMigrator/Program.cs
-116910764dbc2ebf70fca9604fada9f8d854d19bef667bd80122624546844eff  docs/architecture/change-requests/CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001_v0.1.md
+41339dea6e7005d8251aab0f48c72c283321af735df7181f46e1b0c79fe316c5  docs/architecture/change-requests/CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001_v0.1.md
 d1370355da7531ce6c7d5563ea86d5497eb7f526725dfb3eee75be62079ba7bc  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.1.md
 039533851f21028503bd85c0b94b04cb2cdd07d85e36bc736ab2fa4792817639  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
 1bc5a374c362b2d38bb48379612a59af86c27a2997176505868d46b6f4f1e2cb  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.1.md
