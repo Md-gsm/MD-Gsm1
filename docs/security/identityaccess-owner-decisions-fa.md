@@ -1,14 +1,14 @@
 # تصمیم‌های مالک محصول برای IdentityAccess
 تاریخ آغاز: 2026-11-04 | آخرین تجمیع تصمیم‌ها: 2026-11-07
 
-> **خلاصه معتبر جاری:** ورود فقط username/password؛ lockout پنج شکست در 15 دقیقه و قفل 15 دقیقه؛ Recovery ایمیل‌تنها با OTP ده‌دقیقه‌ای (MFA نیست) و SMS/offline code خارج از دامنه اجباری این فاز؛ Session تا بازبودن برنامه با heartbeat=30s و lease=180s و سقف 5 حساب فعال متمایز؛ هیچ absolute TTL و هیچ سقف 2 نشست/account تصویب نشده است. ماتریس permission تصویب شده ولی seed/runtime نیست. هر متن قدیمی‌تر خلاف این خلاصه، سابقه تاریخی و superseded است. g1Authorized=false تا مجوز رسمی G1.
+> **خلاصه معتبر جاری:** ورود فقط username/password؛ lockout پنج شکست در 15 دقیقه و قفل 15 دقیقه؛ Recovery ایمیل‌تنها با OTP ده‌دقیقه‌ای (MFA نیست) و SMS/offline code خارج از دامنه اجباری این فاز؛ Session تا بازبودن برنامه با heartbeat=30s و lease=180s و سقف 5 حساب فعال متمایز؛ هیچ absolute TTL و هیچ سقف 2 نشست/account تصویب نشده است. ماتریس permission تصویب شده ولی seed/runtime نیست. روش امن provisioning حساب مدیر اولیه هنوز باز است؛ تصمیم محصول ایجاد حساب در نصب و اجبار تغییر username/password/profile در اولین ورود است، اما credential اولیه نباید ثابت/قابل‌حدس یا در source/installer ذخیره شود. هر متن قدیمی‌تر خلاف این خلاصه، سابقه تاریخی و superseded است. g1Authorized=false تا مجوز رسمی G1.
 
 - ورود فقط username/password؛ email/mobile فقط تماس/بازیابی.
 - قرارداد پیشنهادی username: NFC، بدون trim خاموش، 3..64 scalar، Unicode L*/Nd، حفظ ارقام هر script، Latin case-fold نسخه‌دار، رد mixed scripts؛ oracle Python جایگزین تست .NET نیست.
 - کاربر رمز خودش را با رمز فعلی تغییر می‌دهد؛ reset دیگران فقط مدیر؛ reset اجبار تغییر در ورود بعدی دارد. هر دو همه نشست‌های حساب را revoke می‌کنند.
 - password hasher پشتیبانی‌شده و versioned؛ plaintext/reversible/custom crypto ممنوع.
-- bootstrap admin/admin فقط یک‌باره و local-only؛ تا تغییر رمز و تکمیل پروفایل، network listener و عملیات عادی fail-closed؛ credential خام در source/installer/config/migration/log/telemetry ممنوع.
-- نشست تا بازبودن برنامه؛ سقف قابل تنظیم (پیشنهاد آغازین 5 حساب متمایز)، heartbeat/lease پیشنهادی 30s/180s؛ PostgreSQL authoritative و بدون cache محلی.
+- نصب باید حساب مدیر اولیه ایجاد کند و اولین ورود تغییر username/password/profile را اجباری کند. عبارت admin/admin در ADR-0013 به‌عنوان روش اولیه ثبت شده، اما پروتکل امن تولید/تحویل credential هنوز حل نشده است؛ credential ثابت یا خام در source/installer/config/migration/log/telemetry ممنوع و تا حل provisioning، network listener و عملیات عادی fail-closed است.
+- نشست تا بازبودن برنامه؛ سقف آغازین 5 حساب فعال متمایز قابل تنظیم با permission اختصاصی و audit؛ heartbeat/lease مصوب 30s/180s؛ PostgreSQL authoritative و بدون cache محلی.
 - 5 شکست در 15 دقیقه => قفل 15 دقیقه؛ source rate limit مکمل؛ پاسخ login عمومی و بدون account enumeration.
 - ده نقش: super_admin, manager, receptionist, technician, warehouse, salesperson, purchaser, cashier, accountant, viewer؛ چندنقشی؛ نقش‌ها user خودکار نمی‌سازند.
 - ماتریس granular permission و Recovery ایمیل‌تنها در 2026-11-06/07 تصویب شده‌اند؛ retention و review مستقل هنوز بازند. تصویب policy به معنی seed یا runtime نیست.
@@ -48,7 +48,7 @@
 ## تعیین دامنه فعلی: عدم پیاده‌سازی پیامک — 2026-11-05
 - بنا بر تصمیم مالک، در این مرحله هیچ SMS provider، SDK، API client، credential، template، configuration، background job یا تست وابسته به سرویس پیامک اضافه نمی‌شود.
 - قابلیت SMS به مرحله/نسخه آینده موکول است و در این مرحله صرفاً به‌عنوان توسعه آتی مستند می‌شود؛ انتخاب vendor نیز اکنون لازم نیست.
-- این بند تاریخی با تصمیم نهایی مالک درباره Recovery ایمیل‌تنها superseded است؛ تا تکمیل workflow و کنترل‌های عملیاتی، Recovery runtime همچنان غیرفعال می‌ماند. عامل offline recovery code نیز به‌تنهایی جایگزین عامل مستقل دوم نمی‌شود مگر آنکه مدل تهدید و سیاست مالک جداگانه تصویب شود.
+- این بند تاریخی با تصمیم نهایی مالک درباره Recovery ایمیل‌تنها superseded است؛ تا تکمیل workflow و کنترل‌های عملیاتی، Recovery runtime همچنان غیرفعال می‌ماند. offline recovery code در این فاز عامل اجباری یا مسیر fallback نیست.
 - مقادیر TTL پیامک و محدودیت ارسال پیامک که پیش‌تر در سند آمده‌اند، مشخصات هدف آینده‌اند و در این مرحله هیچ رفتار اجرایی یا تست runtime برای SMS ایجاد نمی‌کنند.
 - ایمیل اختصاصی نیز در این مرحله فقط معماری هدف است؛ SMTP relay واقعی و secretها تا انتخاب/پیکربندی عملیاتی وارد برنامه نمی‌شوند.
 
