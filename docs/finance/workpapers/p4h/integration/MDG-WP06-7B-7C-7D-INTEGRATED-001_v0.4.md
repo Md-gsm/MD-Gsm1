@@ -53,7 +53,7 @@ Financial Event → Recognition Rule → Posting Rule → COA → Subledger → 
 
 این سند فقط مرجع طراحی و کنترل اسناد 7B، 7C و 7D در حوزه مالی است. این سند به‌تنهایی مجوز پیاده‌سازی موتور مالی، ایجاد migration، اجرای ثبت واقعی یا فعال‌سازی ماژول Accounting نیست.
 
-این Pull Request فقط همین سند یکپارچه را اضافه می‌کند. فایل‌های مستقل 7B، 7C و 7D، workbook منبع و سند معماری 2.5 در این تغییر بازنویسی یا جایگزین نمی‌شوند.
+این Pull Request بسته مستندات کنترل‌شده 7B/7C/7D را در مسیرهای مستقل و یک سند یکپارچه برای crosswalk و audit ثبت می‌کند. نسخه‌های مستقل در مسیرهای p4h/7b، p4h/7c و p4h/7d نگهداری می‌شوند. فایل Excel منبع و Architecture v2.5 بازنویسی یا جایگزین نمی‌شوند؛ Architecture v2.6 صرفاً به‌صورت پیش‌نویس کنترل‌شده جداگانه در Library ثبت شده است.
 
 ## 1.3 وضعیت بازسازی منابع تاریخی و معیار جایگزین O-01
 
@@ -879,9 +879,14 @@ Crosswalk باید سه اتصال مستقل داشته باشد:
 
 ## 14.1 مسیر این سند
 
-docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.3.md
+docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md
 
-این سند در مسیر مستندات مالی قرار می‌گیرد. این مسیر، مالکیت داده یا مجوز شروع فاز Accounting را تغییر نمی‌دهد.
+اسناد مستقل جایگزین در این مسیرها ثبت شده‌اند:
+- docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
+- docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.2.md
+- docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md
+
+این اسناد و مسیر یکپارچه، مالکیت داده یا مجوز شروع فاز Accounting را تغییر نمی‌دهند.
 
 ## 14.2 محدودیت گروه و فاز
 
