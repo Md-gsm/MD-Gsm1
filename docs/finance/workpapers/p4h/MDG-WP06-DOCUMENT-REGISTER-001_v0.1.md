@@ -24,9 +24,9 @@
 | WP06-P4H-7D-TEST-REGISTRY-001 | 0.2 | docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md | 596ed924816876d9a64ed08b39c96735ba8c17b2e31202f354d0136508a470a2 | DRAFT; 67 Test IDs (39 FE + 16 COA + 12 shared controls); positive journal assertions pending; NOT RUN |
 | MDG-WP06-7B-7C-7D-INTEGRATED-001 | 0.4 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md | a0466daca95ee3422e58b70e9ff3f1c0a85511e07f7f97f654c9e0995de523d0 | DRAFT; integrated crosswalk and governance baseline |
 | MDG-WP06-7B-7C-7D-CROSS-AUDIT-001 | 0.2 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md | bd6fc6e3a8e88e3e0b404f667bbf6ea3fb97b2d152845867d11f999350faff52 | STRUCTURAL CHECKS RECORDED; independent review pending |
-| MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md | 9692d14bc9d15e1ee90af2f5209d16be6adbae14b8ced6f3ed545b123f3a09f5 | PROGRESS REGISTER; O-01 OPEN |
+| MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md | 0aac1aa24a47522e795237a7cbbd8418acbfcafa68012c85ca123b24a1c8ff8c | PROGRESS REGISTER; O-01 OPEN |
 
-| MDG-WP06-7D-TEST-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md | 267e9842469d3c784ae9a4aa8d5e03480de581667fc27b6bbe53a82cd18befa5 | SUPPORTING WORKPAPER; 67 test IDs tracked; NOT RUN |
+| MDG-WP06-7D-TEST-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md | fe670fad99204e025ff59c68c2feddcd9bb401a70a83f77dabe44fb217792e7b | SUPPORTING WORKPAPER; 67 test IDs tracked; NOT RUN |
 
 ## 2. اسناد معماری و منبع ثبت‌شده در Library
 
