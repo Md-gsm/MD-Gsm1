@@ -368,3 +368,8 @@ O-01 هنوز OPEN است. Gate 3/4 OPEN؛ Implementation NOT VERIFIED؛ Test ex
 ### 7B — تکمیل رجیستر field-level disposition
 
 7B v0.2 برای تمام 39 ردیف رویدادی، فیلدهای Posting Matrix را به‌صورت گروه‌بندی‌شده تعیین وضعیت کرده است. مقادیر غیرقابل‌احراز صریحاً NOT SPECIFIED / BLOCKED ثبت شده‌اند؛ Owner Action، شرط رفع، منع Posting، Test ID و Evidence plan برای هر FE وجود دارد. این کار پوشش field-level disposition را تکمیل می‌کند، اما positive posting rules و مقادیر debit/credit canonical را تکمیل نمی‌کند. Posting Release همچنان صادر نشده است.
+
+ 
+### 7B OpenIssue/SourceRef Completion — 2026-11-18
+
+برای هر 39 ردیف رویدادی، OpenIssueID مستقل 7B-OPEN-001..039، SourceRefs، Test ID و Owner Action ثبت شد. SourceEvent فنی/trigger تا زمان تأیید قرارداد ماژول مالک OPEN باقی می‌ماند و هیچ نام فنی حدس زده نشده است. وضعیت: issue ownership and traceability 39/39 recorded؛ domain rules remain BLOCKED where specified.
