@@ -77,7 +77,8 @@ O-01 تنها زمانی قابل بستن است که تمام موارد زی�
 
 | Artifact | Library path | SHA-256 |
 |---|---|---|
-| Markdown | /MDGsm_Unified_Architecture_Blueprint_v2.6_Draft.md | 771ba853fe402832f379199dc72aad14b232375d2e62e417ac71084018f7d60a |
-| Word | /MDGsm_Unified_Architecture_Blueprint_v2.6_Draft.docx | 2c26d4863d314d2de438f9a72239698b4c8df814bbf59057c68a5978b1b7ee82 |
+| Markdown | /MDGsm_Unified_Architecture_Blueprint_v2.6_Draft.md | 01463112db7e7b4c3f6aed171aa16f63eead93235b00acacb01bbd882b7d386d |
+| Word | /MDGsm_Unified_Architecture_Blueprint_v2.6_Draft.docx | 084a10ecccb3a163b9b3d66481b969ee14b3923614cf6f3b20b1563bfa03ad0a |
+| 7C row-level source/status register | /MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.2.csv | 78c3793c075ff4aaebef4b86230411d3dca52233f0cca3c81278b2f4607acbb1 |
 
 Status: DRAFT — PENDING INDEPENDENT REVIEW AND DOCUMENT ACCEPTANCE.
