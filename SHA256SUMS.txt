@@ -74,11 +74,8 @@ e5c3172b78d4212bf63c4084bfb7b4989a310b0e69c86b749902170f4fcce199  docs/decisions
 b11ef81476b944809b77ff19cf03442beba5fcbe57a7d2b6f080c1ced74d1534  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md
 7e034b241b0bb197dbc864a8a1f866f874ec3a2b484b23e69cf026e46ee812b3  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md
 59ab94e0b3aa85c573007bd899fca406052b28b0233f9b7263ee614197543f53  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.2.md
-c4cae6bea8d9b54e0329eea47b15eaa212fe30a2f29bf73ecaad3ba4c5853193  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.3.md
 2dbdc278cd73b09b72155a2a1712cf18587ca5b95b29015339a4912d01bc8105  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-POSTING-RULE-CLOSURE-001_v0.1.md
-c0f4e9bb1a676d35ad24a26f1f6424f2e7123fe7ec0e3e1a5fc232913f138336  docs/finance/workpapers/p4h/integration/MDG-WP06-7C-ACCOUNT-DISPOSITION-001_v0.1.md
 66effeee887ab29de39e15240432a86d4e1524c43fb24fa4336511215a29ba7d  docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md
-d8fffd1f2d377bc103852482be68ba76a02bcc0a814ce3ccdb8239b8e5ee947e  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-RECOVERY-001_v0.1.md
 9428f3ef410a6bf9da5b32b6ffcf00b6b7b9255debe585ebd303ed8171d5961a  docs/governance/PARALLEL_WORKGROUP_EXECUTION_PLAYBOOK_FA.md
 dadc564019a8be546e081a6be8e961b6f80dc7cd05c40b79c61f2f0ad970a08c  docs/governance/PROJECT_GOVERNANCE_CHARTER_FA.md
 804ea006c1f9988ae5358a3a5185a934eef371753ed09cae54fc7c7ac45cb67b  docs/menu/menu-catalog-fa.csv
@@ -293,4 +290,7 @@ cf3f0d41b599b515a08850f56f199faf56bc18fcac136f167cdaf3a98fa94263  tests/MDGsm.Do
 f7b9a8e26d0a09909c91e1caa7139516993024f78ced2f947980e70561575ec1  tests/MDGsm.Domain.Tests/PersonsPreviewInstallerTests.cs
 a11fd2731ff4231e58c4e1c22da4e3e7028a881ef42a58d438aa126c25173eae  tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj
 9310ab2efe7882d93b95485018da867301d9976cde2f97f0200b8389cedf6d36  tools/MDGsm.DbMigrator/Program.cs
+f94af4df1f5848555f0e064bd1b59d3024f84f680ead7087b20ae3fda5af8d50  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-RECOVERY-001_v0.1.md
+3d13264cbb38c2c0755971e51d2645ef930d34d0d220423e70134a3e065b7f24  docs/finance/workpapers/p4h/integration/MDG-WP06-7C-ACCOUNT-DISPOSITION-001_v0.1.md
+7abb8a60fae4fff43718f443494a0ae6c2931df248d247ca2de6161facf9c9b7  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.3.md
 b3d907de1db89ca56b06ad2579f4badeee3f5fc2efad04d3901fa4be95e23670  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001_v0.1.md
