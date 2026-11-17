@@ -27,7 +27,7 @@
 1. شناسه‌های OPEN نسخه یکپارچه با شناسه‌های تاریخی 7D v0.3 برخورد معنایی داشتند.
 2. 7C فایل Excel منبع را احراز کرده و رجیستر وضعیت سطر‌به‌سطر 76 حساب × 39 ستون را در v0.2 ثبت کرده است؛ اما صفات canonical و تطبیق کامل هر حساب با COA v1.4 هنوز تکمیل نشده است.
 3. 7B در سطح FE-01..FE-38 خلاصه رویداد و اشاره به حساب‌هاست؛ برای بیشتر FEها قواعد Debit/Credit، recognition، amount basis، subledger و reversal کامل نیست.
-4. 7D v0.2 برای 39 رویداد FE (FE-01..FE-38 به‌علاوه FE-10b) و 12 مورد باز canonical COA آزمون fail-closed مستقل ثبت کرده است؛ 39 شناسه MDG-FIN-GATE با 7B تطبیق ساختاری دارند و 12 شناسه MDG-COA-GATE به 7C-OPEN-001..012 نگاشت شده‌اند. positive journal assertions و crosswalk نهایی FE↔COA↔Test تا تثبیت قواعد و صفات canonical مسدودند.
+4. 7D v0.2 برای 39 رویداد FE (FE-01..FE-38 به‌علاوه FE-10b)، 16 مورد باز canonical COA و 12 کنترل مشترک/سراسری آزمون مستقل ثبت کرده است؛ 39 شناسه MDG-FIN-GATE با 7B تطبیق ساختاری دارند و 16 شناسه MDG-COA-GATE به 7C-OPEN-001..016 نگاشت شده‌اند؛ مجموع 67 Test ID مستقل. positive journal assertions و crosswalk نهایی FE↔COA↔Test تا تثبیت قواعد و صفات canonical مسدودند.
 
 نسخه یکپارچه v0.3 این ممیزی را به سند منتقل می‌کند، namespace شناسه‌های جدید را اصلاح می‌کند و شکاف‌های بازیابی Legacy را اضافه می‌کند. این تغییرات موارد را «قابل پیگیری و آماده تکمیل» می‌کند؛ هیچ موردی صرفاً با درج در رجیستر بسته تلقی نمی‌شود.
 
@@ -349,7 +349,7 @@ End of Audit
 2. فایل Excel منبع و hash آن احراز شده؛ دریافت مجدد آن مانع نیست.
 3. 7B دارای disposition برای 39 ردیف رویدادی است؛ posting ruleهای کامل همچنان ناقص‌اند.
 4. 7C دارای source register و canonicalization matrix است؛ تطبیق کامل ردیف‌به‌ردیف با v1.4 هنوز باز است.
-5. 7D دارای 39 test case مستقل و cross-reference کامل 7B↔7D است؛ positive journal assertions وابسته به تکمیل 7B/7C هستند.
+5. 7D دارای 39 FE test case مستقل، 16 COA fail-closed case و 12 shared control test است؛ 39 ارجاع 7B↔7D و 16 ارجاع 7C-OPEN↔7D تطبیق ساختاری دارند؛ positive journal assertions وابسته به تکمیل 7B/7C هستند.
 
 ### شرایط باقی‌مانده برای بستن O-01
 - 7B: تکمیل posting ruleهای مجاز یا تثبیت BLOCKED/DEFERRED با همه فیلدهای الزامی و معیار رفع.
@@ -377,7 +377,7 @@ O-01 هنوز OPEN است. Gate 3/4 OPEN؛ Implementation NOT VERIFIED؛ Test ex
  
 ### 7D — آزمون‌های fail-closed برای تمام 12 شکاف 7C
 
-12 آزمون مستقل MDG-COA-GATE-001..012 به 7C-OPEN-001..012 اضافه شد. پوشش آزمون طراحی‌شده 7D اکنون 51 مورد است: 39 مورد FE و 12 مورد COA. این آزمون‌ها فقط fail-closed هستند و هنوز اجرا نشده‌اند. اجرای مثبت Journal پس از canonical شدن 7C و تکمیل 7B انجام می‌شود؛ هیچ PASS یا Evidence Acceptance از طراحی آزمون استنتاج نمی‌شود.
+16 آزمون مستقل MDG-COA-GATE-001..016 به 7C-OPEN-001..016 اضافه شد. پوشش 7D اکنون 67 Test ID مستقل است: 39 مورد FE، 16 مورد COA و 12 کنترل مشترک/سراسری. این آزمون‌ها فقط fail-closed هستند و هنوز اجرا نشده‌اند. اجرای مثبت Journal پس از canonical شدن 7C و تکمیل 7B انجام می‌شود؛ هیچ PASS یا Evidence Acceptance از طراحی آزمون استنتاج نمی‌شود.
 
 
 ### COA baseline lineage — evidence added
