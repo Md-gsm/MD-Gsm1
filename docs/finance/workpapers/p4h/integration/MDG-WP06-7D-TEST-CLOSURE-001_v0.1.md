@@ -221,3 +221,10 @@
 7D جدید فقط زمانی قابل پذیرش است که برای همه FE-01..FE-38، حساب‌های مجاز/ممنوع و قواعد حساس، آزمون‌های مثبت، منفی، مرزی، idempotency، reversal، atomicity، period lock، tax fail-closed و R1/R2 guard به‌صورت Test Case کامل (precondition, fixture, input, action, expected business state, expected journal یا BLOCKED, assertions, cleanup, evidence) تعریف و به 7B/7C نگاشت شوند. آزمون‌های مالی تا زمانی که Posting Rule و صفات canonical حساب‌ها کامل نیستند باید Expected Journal=NOT SPECIFIED و وضعیت BLOCKED داشته باشند.
 
 وضعیت فعلی این نسخه همچنان PARTIAL DESIGN / NOT RUN / NOT VERIFIED است؛ این اصلاحیه مجوز PASS یا Evidence Acceptance نیست.
+
+ 
+## ارجاع نسخه جایگزین 7D v0.2 — 2026-11-18
+
+نسخه مستقل جایگزین 7D در مسیر `docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md` ثبت شد. این نسخه 39 شناسه مستقل MDG-FIN-GATE-001..039 برای FE-01..FE-38 و FE-10b و آزمون‌های مشترک Atomicity، Idempotency، Reversal، Period Lock، COA eligibility، TaxMode، Subledger و IMEI تعریف می‌کند.
+
+این شناسه‌ها RECONSTRUCTED هستند و جایگزین متن تاریخی شناسه‌های SOURCE-ID نمی‌شوند. Positive accounting journal assertions تا تکمیل 7B/7C BLOCKED هستند. Test execution همچنان NOT RUN / NOT VERIFIED و Evidence NOT ACCEPTED است. 7D v0.2 هنوز DRAFT / NOT ACCEPTED است.
