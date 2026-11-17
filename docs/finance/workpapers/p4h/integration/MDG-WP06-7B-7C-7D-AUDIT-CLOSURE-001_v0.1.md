@@ -332,3 +332,30 @@ End of Audit
 5. اصلاح اولویت کار: (الف) استخراج و تطبیق COA v1.4 حساب‌به‌حساب؛ (ب) تکمیل 7C canonical attributes؛ (ج) تکمیل 7B FE-01..38 با هر دو سمت ثبت یا BLOCKED مستدل؛ (د) تکمیل 7D آزمون‌های جدید با شناسه‌های مستقل و crosswalk دقیق؛ (هـ) lint/consistency checks؛ (و) CI و review مستقل روی SHA نهایی.
 
 وضعیت: O-01 CR OWNER-APPROVED; O-01 DELIVERABLES NOT ACCEPTED; Gate 3/4 OPEN; Posting Release NOT GRANTED.
+
+ 
+## وضعیت پیشرفت واقعی O-01 پس از انتشار 7B/7C/7D v0.2 — 2026-11-18
+
+تحویل‌دادنی‌های کنترل‌شده مستقل در PR #66 ثبت شده‌اند:
+- 7B: `WP06-P4H-7B-POSTING-MATRIX-001 v0.2`
+- 7C: `WP06-P4H-7C-COA-RECONCILIATION-001 v0.2`
+- 7D: `WP06-P4H-7D-TEST-REGISTRY-001 v0.2`
+- Integrated: `MDG-WP06-7B-7C-7D-INTEGRATED-001 v0.4`
+- CR: `CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1`
+- Architecture amendment: `MDG-ARCH-MASTER-001 v2.6 Draft` در Library.
+
+### پیشرفت قابل اثبات
+1. معیار جایگزین O-01 با تأیید مالک ثبت شده است.
+2. فایل Excel منبع و hash آن احراز شده؛ دریافت مجدد آن مانع نیست.
+3. 7B دارای disposition برای 39 ردیف رویدادی است؛ posting ruleهای کامل همچنان ناقص‌اند.
+4. 7C دارای source register و canonicalization matrix است؛ تطبیق کامل ردیف‌به‌ردیف با v1.4 هنوز باز است.
+5. 7D دارای 39 test case مستقل و cross-reference کامل 7B↔7D است؛ positive journal assertions وابسته به تکمیل 7B/7C هستند.
+
+### شرایط باقی‌مانده برای بستن O-01
+- 7B: تکمیل posting ruleهای مجاز یا تثبیت BLOCKED/DEFERRED با همه فیلدهای الزامی و معیار رفع.
+- 7C: تطبیق کامل تمام صفات canonical با COA v1.4 و ثبت lineage/eligibility/effective dating.
+- 7D: تکمیل positive journal assertions پس از تثبیت 7B/7C و تطبیق دوطرفه FE↔COA↔Test.
+- ممیزی مستقل روی SHA دقیق، اجرای تست‌های قابل اجرا، پذیرش Evidence و تأییدهای حرفه‌ای.
+- ثبت نسخه‌های نهایی در Document Registry.
+
+O-01 هنوز OPEN است. Gate 3/4 OPEN؛ Implementation NOT VERIFIED؛ Test execution NOT RUN؛ Evidence NOT ACCEPTED؛ Posting Release NOT GRANTED.
