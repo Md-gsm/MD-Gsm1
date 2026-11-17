@@ -91,7 +91,7 @@
 - Posting Release: NOT GRANTED.
 
  
-## 4. Owner Action Register برای هر FE
+## 6. Owner Action Register برای هر FE
 
 | FE | Owner action / مسئول تکمیل قرارداد | شرط خروج از BLOCKED |
 |---|---|---|
@@ -138,7 +138,7 @@
 این Owner Action Register نقش‌های دامنه‌ای را مشخص می‌کند؛ به معنی شروع runtime فازهای آینده یا تغییر ترتیب فازها نیست. مسئولیت اجرای قراردادها تابع بازشدن فاز، DoR و اختیارهای مصوب است.
 
 
-## 6. Field-Level Disposition Register — all FE fields explicit
+## 7. Field-Level Disposition Register — all FE fields explicit
 
 این جدول برای هر رویداد، فیلدهای Posting Matrix را به‌صورت گروه‌بندی‌شده ثبت می‌کند. هرجا مقدار canonical یا قرارداد مبدأ هنوز تثبیت نشده، مقدار صریحاً NOT SPECIFIED / BLOCKED است؛ هیچ خانه اجباری خالی یا با حدس پر نشده است. این جدول به معنی مجازبودن Posting نیست.
 
@@ -184,7 +184,7 @@
 | FE-37 | حقوق و دستمزد (R2) | Payroll + RepairOperations + Finance | R2 scope blocked; commission FE-23 remains separate | NOT SPECIFIED / BLOCKED — exact module contract/trigger/source document pending | NOT SPECIFIED / BLOCKED — no journal; debit/credit pair not authorized | NOT SPECIFIED / BLOCKED; TaxMode=0 ⇒ zero tax lines; event-specific amount/cost basis pending | NOT SPECIFIED / BLOCKED; no GL/Subledger/Inventory/Party mutation until canonical map | REQUIRED; PostingIdentity/IdempotencyKey format OPEN | Global invariants apply: immutable final docs, reversal only, open period, atomic transaction, idempotent retry; event-specific details OPEN | Server-side authorization required; event-specific permission and audit event catalog OPEN | MDG-FIN-GATE-038 | Request + source doc + block reason + zero-journal/zero-mutation proof; source refs in 7C/Architecture/OWN/ADR | BLOCKED / DEFERRED; Payroll + RepairOperations + Finance action: R2 scope blocked; commission FE-23 remains separate |
 | FE-38 | حقوق مالکانه | Finance + Product Owner | 3101..3105 mapping unresolved | NOT SPECIFIED / BLOCKED — exact module contract/trigger/source document pending | NOT SPECIFIED / BLOCKED — no journal; debit/credit pair not authorized | NOT SPECIFIED / BLOCKED; TaxMode=0 ⇒ zero tax lines; event-specific amount/cost basis pending | NOT SPECIFIED / BLOCKED; no GL/Subledger/Inventory/Party mutation until canonical map | REQUIRED; PostingIdentity/IdempotencyKey format OPEN | Global invariants apply: immutable final docs, reversal only, open period, atomic transaction, idempotent retry; event-specific details OPEN | Server-side authorization required; event-specific permission and audit event catalog OPEN | MDG-FIN-GATE-039 | Request + source doc + block reason + zero-journal/zero-mutation proof; source refs in 7C/Architecture/OWN/ADR | BLOCKED / DEFERRED; Finance + Product Owner action: 3101..3105 mapping unresolved |
 
-### 6.1 تفسیر وضعیت
+### 7.1 تفسیر وضعیت
 - تمام رویدادهای OPEN/CONDITIONAL تا تکمیل قرارداد مبدأ و 7C canonical، از ایجاد Journal جدید منع می‌شوند.
 - فیلدهای مشترک از قواعد هنجاری Architecture v2.5 و ADR-0017 پیروی می‌کنند؛ جزئیات رویدادمحور باید در نسخه بعدی همین سند مقداردهی شوند.
 - برای FE-08، valuation method طبق WAC در ProductVariant×Warehouse و Specific Identification برای serial item حفظ می‌شود؛ valuation service و source movement هنوز باید قرارداد شوند.
@@ -197,7 +197,7 @@
 این رجیستر field completeness را از نظر تعیین وضعیت هر فیلد تکمیل می‌کند؛ تا زمانی که مقادیر NOT SPECIFIED رفع نشوند، این FEها BLOCKED می‌مانند.
 
 
-### 6.2 OpenIssue ID و SourceRef دوطرفه برای تمام FEها
+### 7.2 OpenIssue ID و SourceRef دوطرفه برای تمام FEها
 
 هر ردیف مسدود یک شناسه Issue مستقل دارد. SourceRef به ردیف رویداد در Integrated v0.4، disposition حساب در 7C v0.2 و تصمیم/ADR قابل اعمال اشاره می‌کند؛ نام فنی SourceEvent/trigger تا زمان تأیید قرارداد ماژول مالک صریحاً OPEN است.
 
