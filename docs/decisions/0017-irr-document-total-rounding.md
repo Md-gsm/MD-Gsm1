@@ -102,6 +102,7 @@
 | `Int64.MaxValue / 1` | `Int64.MaxValue` | مرز بالا |
 | `Int64.MinValue / 2` | `-4611686018427387904` | تقسیم دقیق در مرز پایین |
 | `Int64.MaxValue / 2` | `4611686018427387904` | نیم مثبت با نتیجه صحیح |
+| `(Int64.MaxValue - 1) / Int64.MaxValue` | `1` | باقیمانده نزدیک مخرج؛ بدون `2*r` overflow |
 | `(Int64.MaxValue × 100) / 200` | `4611686018427387904` | صورت میانی بزرگ‌تر از Int64، خروجی در دامنه |
 | `(Int64.MaxValue + 1) / 1` | `OVERFLOW` برای خروجی Int64 | رد پیش از narrowing |
 | `(Int64.MinValue - 1) / 1` | `OVERFLOW` برای خروجی Int64 | رد پیش از narrowing |
