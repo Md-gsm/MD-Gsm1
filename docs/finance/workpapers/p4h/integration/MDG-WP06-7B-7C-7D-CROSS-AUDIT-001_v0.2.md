@@ -175,3 +175,10 @@ COA v1.2 خط مبنای پیشین و مبنای ایجاد v1.4 است؛ v1.4 
 
 ### 7C Row-Level Source Snapshot Addendum
 فایل `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.2.csv` در Library ثبت شد: 76 ردیف × 39 ستون (24 ستون منبع + 15 ستون وضعیت canonical). SHA-256 فایل CSV برابر `78c3793c075ff4aaebef4b86230411d3dca52233f0cca3c81278b2f4607acbb1` است. این hash با materialization و محاسبه مستقل SHA-256 تأیید شد؛ 76 ردیف داده و 39 ستون نیز با خواندن CSV تأیید شد. در تمام 76 ردیف، CanonicalAccountId و CanonicalParentAccountId برابر NOT ASSIGNED، EffectiveFrom/To برابر NOT SET و صفات canonical برابر UNVERIFIED است. این فایل source snapshot/status register است، نه COA canonical. بنابراین پوشش سطر‌به‌سطر source status تکمیل شده؛ canonicalization با v1.4 همچنان OPEN است.
+
+ 
+### 7B Field-Level Disposition Addendum — 2026-11-18
+
+7B v0.2 اکنون برای 39 ردیف رویدادی (FE-01..FE-38 + FE-10b) رجیستر field-level disposition دارد. فیلدهای SourceEvent/Trigger/Recognition/SourceDocument، Debit/Credit، Amount/Cost/Tax، Subledger/Dimensions/Inventory/Party، PostingIdentity/Idempotency، Reversal/Period/Atomicity/Retry، Authorization/Audit، Test ID و Evidence/SourceRefs در هر ردیف تعیین وضعیت شده‌اند. مقادیر نامعلوم صریحاً NOT SPECIFIED / BLOCKED هستند؛ هیچ Posting از این وضعیت مجاز نیست. Owner Action و Test ID برای هر رویداد مشخص است.
+
+نتیجه: 7B field-level status coverage = 39/39 COMPLETE؛ positive posting rules و canonical debit/credit values = OPEN/BLOCKED تا تکمیل source contract و 7C.
