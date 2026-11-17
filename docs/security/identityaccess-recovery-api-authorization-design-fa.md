@@ -2,9 +2,12 @@
 
 - تاریخ: 2026-11-05
 - وضعیت: طراحی و معیار پذیرش؛ غیرعملیاتی و بدون مجوز G1
+- بازنگری وضعیت تصمیم‌ها: 2026-11-17
 - مبنا: ADR-0006، ADR-0012، ADR-0013 و پنج موضوع باز IdentityAccess
 
 ## 0. مرز امنیتی
+
+> **تصمیم جاری مالک:** Recovery ایمیل‌تنها با OTP ده‌دقیقه‌ای پذیرفته شده و MFA نیست؛ SMS و offline recovery code عامل اجباری این فاز نیستند. نقطه شروع Recovery (شبکه‌ای یا کنسول محلی مورد اعتماد) و ثبت/اثبات ایمیل super_admin هنوز تعیین نشده است. هر مدل قدیمی سه‌عاملی در این سند تاریخی و superseded است. Session جاری نیز بدون absolute TTL و بدون سقف per-account است؛ فقط heartbeat=30s، lease=180s و سقف 5 حساب فعال متمایز.
 
 این سند به‌تنهایی مجوز ایجاد login/recovery endpoint، middleware فعال، migration IdentityAccess، network listener یا تغییر `g1Authorized=false` نیست. PostgreSQL مرجع authoritative است. Desktop غیرقابل‌اعتماد است. هر خطای DB، provider، پیکربندی یا policy در مسیر حساس باید fail-closed باشد. raw password، bearer token، recovery code، OTP و PII غیرضروری نباید در DB/log/trace/telemetry/CI artifact ثبت شوند. هیچ backdoor، master password یا مسیر bypass مجاز نیست.
 
@@ -12,24 +15,23 @@
 
 ### 1.1 هدف و مرز
 
-Recovery فقط برای حساب Super Admin و فقط از کنسول محلی میزبان مورد اعتماد آغاز می‌شود. Local-only به‌تنهایی اثبات هویت نیست. تکمیل recovery مستلزم هر سه عامل مستقل و متصل به یک account و challenge است:
-1. اثبات کانال ایمیل ثبت‌شده؛
-2. اثبات کانال موبایل ثبت‌شده؛
-3. recovery code آفلاین یک‌بارمصرف با entropy حداقل 128 بیت.
+مالک محصول Recovery ایمیل‌تنها را برای فاز فعلی پذیرفته است. اثبات ایمیل با OTP یک‌بارمصرف 10 دقیقه‌ای انجام می‌شود؛ این روش MFA یا دو عامل مستقل نیست و ریسک وابستگی به امنیت mailbox باید در threat model و بازبینی مستقل ارزیابی شود.
 
-هیچ عامل جایگزین دیگری نیست. فقدان هر عامل، recovery خودکار را متوقف می‌کند؛ هیچ fallback دستی/پشتیبانی‌محور تا طراحی ابزار امضاشده و تأیید دو نفره وجود ندارد.
+**هنوز تصمیم/طراحی نشده:** نقطه شروع flow (endpoint شبکه‌ای یا کنسول محلی مورد اعتماد)، مرز اعتماد کنسول در صورت انتخاب، و فرایند ثبت و اثبات ایمیل حساب super_admin. این ابهام‌ها مانع ساخت یا فعال‌سازی Recovery runtime هستند تا تصمیم و کنترل‌های لازم ثبت شوند.
+
+SMS در این فاز غیرفعال و خارج از دامنه است. Offline recovery code عامل اجباری یا bypass نیست. هیچ fallback دستی، backdoor یا master password مجاز نیست.
 
 ### 1.2 دارایی‌ها و اهداف امنیتی
 
 | دارایی | الزام |
 |---|---|
-| حساب Super Admin | فقط با سه اثبات مستقل بازیابی شود |
-| recovery code | CSPRNG، حداقل 128 بیت entropy، نمایش یک‌باره، فقط digest در DB |
-| challenge | کوتاه‌عمر، account-bound، request-bound و غیرقابل replay |
-| OTP/nonce کانال | فقط digest، مقایسه امن، عدم افشا در پاسخ و log |
-| نشست‌ها | revoke کامل و فوری پس از recovery |
+| حساب Super Admin | فقط از طریق flow مصوب ایمیل‌تنها؛ نقطه شروع هنوز تعیین نشده |
+| OTP ایمیل | CSPRNG، یک‌بارمصرف، TTL=10 دقیقه، فقط digest در DB |
+| challenge | کوتاه‌عمر، account-bound، یک‌بارمصرف و غیرقابل replay |
+| نشست‌ها | revoke کامل و فوری پس از Recovery |
 | credential | افزایش credential_version و must_change_password=true |
 | audit | metadata allow-list؛ بدون secret و PII غیرضروری |
+| SMS/offline code | خارج از دامنه/غیراجباری در این فاز |
 
 ### 1.3 تهدیدها و مرز اعتماد
 
@@ -43,14 +45,12 @@ Recovery فقط برای حساب Super Admin و فقط از کنسول محلی
 
 ### 1.4 State machine
 
-حالت‌ها: `Created`, `EmailVerified`, `MobileVerified`, `ProofsComplete`, `Completed`, `Expired`, `Locked`, `Cancelled`, `FailedClosed`.
+حالت‌ها: Created، EmailVerified، Completed، Expired، Locked، Cancelled، FailedClosed.
 
-- دو تأیید کانال باید به همان account/challenge bind باشند؛ ترتیب آن‌ها آزاد است.
-- فقط پس از هر دو تأیید، `ProofsComplete` مجاز است.
-- فقط `ProofsComplete -> Completed` با مصرف اتمیک recovery code مجاز است.
-- حالت نهایی قابل برگشت نیست؛ تکرار proof نباید state را جلو ببرد.
-- یک code نمی‌تواند در دو challenge موفق شود.
-- هر خطای DB/provider یا وضعیت نامعلوم، موفقیت تلقی نمی‌شود.
+- فقط تأیید OTP ایمیل معتبر و bind‌شده به همان account/challenge اجازه انتقال به EmailVerified می‌دهد.
+- تکمیل فقط با مصرف اتمیک challenge و ثبت تغییر credential در تراکنش نهایی مجاز است.
+- challenge منقضی، مصرف‌شده، لغوشده یا متعلق به حساب دیگر رد می‌شود.
+- هر خطای DB/provider یا نتیجه commit نامعلوم موفقیت محسوب نمی‌شود؛ وضعیت از PostgreSQL authoritative reconcile می‌شود.
 
 ### 1.5 داده و TTL
 
@@ -80,25 +80,21 @@ Recovery فقط برای حساب Super Admin و فقط از کنسول محلی
 
 | ID | سناریو | انتظار |
 |---|---|---|
-| REC-01 | شروع از route شبکه‌ای | وجود نداشته باشد/رد شود |
-| REC-02 | کنسول محلی بدون سه اثبات | رد، بدون mutation |
-| REC-03/04 | فقط ایمیل یا فقط موبایل | تکمیل ممنوع |
-| REC-05 | دو کانال بدون code | تکمیل ممنوع |
-| REC-06 | entropy کمتر از 128 بیت | provisioning رد |
-| REC-07 | raw code/OTP/token در DB/log/artifact | صفر occurrence |
-| REC-08 | challenge منقضی | رد |
-| REC-09 | challenge متعلق به account دیگر | رد |
-| REC-10 | replay proof | بدون پیشروی state |
-| REC-11 | دو درخواست هم‌زمان با یک code | دقیقاً یک winner |
-| REC-12 | دو challenge با یک code | حداکثر یک موفقیت |
-| REC-13 | خطا پیش از commit | rollback کامل |
-| REC-14 | نتیجه commit نامعلوم | عدم اعلام موفقیت کاذب؛ reconcile از DB |
-| REC-15 | recovery موفق | revoke همه sessionها، credential_version++، must_change_password |
-| REC-16 | DB/provider unavailable | fail-closed |
-| REC-17 | brute force/flood | rate-limit و audit بدون account enumeration |
-| REC-18 | log/trace/crash | بدون secret و PII غیرضروری |
-| REC-19 | code استفاده‌شده یا revoke‌شده | رد |
-| REC-20 | account نامعتبر/disabled یا non-bootstrap | رد طبق policy مصوب |
+| REC-01 | شروع از route شبکه‌ای پیش از تصویب entrypoint | رد/غیرفعال؛ بدون mutation |
+| REC-02 | شروع از کنسول محلی بدون مرز اعتماد مصوب | رد/غیرفعال؛ بدون mutation |
+| REC-03 | OTP ایمیل نامعتبر یا منقضی | رد |
+| REC-04 | OTP متعلق به account/challenge دیگر | رد |
+| REC-05 | replay یا مصرف هم‌زمان یک OTP | دقیقاً یک winner |
+| REC-06 | بیش از 5 تلاش ناموفق | قفل 24 ساعته |
+| REC-07 | resend در cooldown یا عبور از سقف rolling | رد و اعمال قفل مصوب |
+| REC-08 | resend موفق | challenge قبلی revoke شود |
+| REC-09 | raw OTP/token/PII غیرضروری در DB/log/artifact | صفر occurrence |
+| REC-10 | خطا پیش از commit | rollback کامل |
+| REC-11 | نتیجه commit نامعلوم | عدم اعلام موفقیت کاذب؛ reconcile از DB |
+| REC-12 | Recovery موفق | revoke همه sessionها، credential_version++، must_change_password |
+| REC-13 | DB/provider unavailable | fail-closed |
+| REC-14 | brute force/flood | rate-limit و audit بدون account enumeration |
+| REC-15 | حساب disabled یا غیرمجاز | رد طبق policy مصوب |
 
 ### 1.9 تصمیم‌های باز
 
@@ -108,7 +104,7 @@ SMTP relay واقعی، digest/pepper و key rotation، تعداد/تحویل ا
 
 ## 2. API Authorization — قرارداد
 
-ماتریس فعلی در `identityaccess-five-open-items-fa.md` پیشنهاد است و تصویب نشده؛ بنابراین permissionها نباید seed یا فعال شوند.
+ماتریس granular در 2026-11-06 توسط مالک تصویب شده است؛ خانه خالی Deny و deny-by-default. بااین‌حال seed و runtime policy تا gateهای پیاده‌سازی و G1 مجاز نیستند.
 
 - permission granular، صریح، بدون wildcard و deny-by-default.
 - اجتماع چندنقشی فقط union مجوزهای صریح.
@@ -130,13 +126,15 @@ Policy evaluator (قرارداد): ورودی principal/session معتبر، per
 - هر درخواست protected وضعیت account/session/lease/revoke/credential_version را از PostgreSQL authoritative بررسی کند؛ cache محلی ممنوع.
 - 5 شکست در 15 دقیقه => lockout 15 دقیقه؛ source rate limit مستقل مکمل؛ پاسخ عمومی بدون account enumeration.
 - تغییر/reset رمز در همان تراکنش credential_version را افزایش و همه نشست‌ها را revoke کند.
-- heartbeat=30s، lease=180s و سقف 5 حساب فعال، مقادیر پیشنهادی‌اند؛ تا تصویب نهایی runtime نشوند.
-- bootstrap admin/admin فقط یک‌باره و local-only؛ تا تغییر رمز و تکمیل پروفایل، listener و عملیات عادی بسته.
+- heartbeat=30s، lease=180s و سقف 5 حساب فعال متمایز، تصمیم نهایی مالک‌اند؛ runtime موجود فقط تا حدی پیاده‌سازی شده و پذیرش کامل نیازمند تست است.
+- bootstrap حساب اولیه باید installer-created و first-login forced-change باشد؛ روش امن provisioning و تعارض عبارت تاریخی admin/admin هنوز باز است. تا رفع آن، listener و عملیات عادی بسته.
 - raw token در DB/log/telemetry/artifact صفر؛ revoked token در درخواست بعدی رد؛ disabled account و credential version قدیمی رد؛ lockout و session cap در concurrency درست enforce شوند.
 
-## 4. اتصال API و E2E
+## 4. اتصال API و E2E — وضعیت واقعی main و معیار آینده
 
-تا مجوز رسمی G1، فقط قرارداد و test plan؛ middleware یا endpoint فعال ایجاد نمی‌شود. پس از G1:
+در main فعلی، routeهای login و password change وجود دارند؛ HTTP login با feature flag پیش‌فرض خاموش است. middleware فعلی فقط مسیرهای Persons و password change را با نشست PostgreSQL احراز هویت می‌کند. Recovery endpoint/orchestration، logout و heartbeat مستقل، و authorization metadata/evaluator سراسری هنوز تکمیل نشده‌اند؛ جزئیات در رجیستر WG-2 ثبت شده است.
+
+پس از مجوز رسمی G1:
 1. authentication به‌صورت پیش‌فرض برای تمام routeهای application؛ فقط health/liveness صریحاً anonymous.
 2. هر endpoint دارای permission metadata دقیق و policy evaluator سمت سرور.
 3. CI route فاقد authorization metadata را رد کند.
@@ -150,8 +148,8 @@ Policy evaluator (قرارداد): ورودی principal/session معتبر، per
 ## Definition of Done و G1
 
 - threat model و REC-01..20 توسط reviewer بررسی شود.
-- provider/TTL/rate-limit/provisioning تصویب شوند.
-- permission matrix و scopeها صریحاً توسط مالک تصویب شوند.
+- سیاست ایمیل‌تنها/TTL/تلاش/resend تصویب شده است؛ نقطه شروع Recovery، SMTP، rate-limit runtime و provisioning امن هنوز باید تعیین/تکمیل شوند.
+- permission matrix توسط مالک تصویب شده است؛ seed، scope runtime و golden tests هنوز باید تکمیل شوند.
 - session/lockout قراردادها با ADRها تطبیق داده شوند.
 - reviewer مستقل روی SHA مشخص نتیجه/یافته/امضا ثبت کند.
 - مالک تصمیم رسمی G1 را ثبت کند.
@@ -165,15 +163,15 @@ Policy evaluator (قرارداد): ورودی principal/session معتبر، per
 
 ### 5.1 مدل Challenge و اثبات کانال‌ها
 
-مدل منطقی و قیود پیشنهادی در `identityaccess-schema-design-fa.md` تعریف می‌شود. هر Challenge به یک account فعال و یک درخواست محلی مشخص bind است. شناسه Challenge تصادفی است و به‌تنهایی capability یا مدرک اثبات نیست. هر proof دارای `challenge_id`، `account_id`، `channel`، digest، زمان ایجاد/انقضا، زمان تأیید و شمارنده تلاش مستقل است. قید یکتا برای هر (challenge, channel) و هر nonce اعمال می‌شود؛ تأیید یک کانال نمی‌تواند برای Challenge دیگر مصرف شود.
+مدل منطقی Challenge در schema-design تعریف می‌شود. هر Challenge به یک account فعال و یک درخواست Recovery مشخص bind است. شناسه Challenge تصادفی است و به‌تنهایی capability یا مدرک اثبات نیست. در فاز فعلی فقط کانال ایمیل مصوب است؛ proof شامل challenge_id، account_id، channel=email، digest، زمان ایجاد/انقضا، زمان مصرف و شمارنده تلاش است. قید یکتا برای digest و مصرف یک‌باره اعمال می‌شود.
 
-State transitionها باید با compare-and-swap یا row lock و شرط state قبلی انجام شوند. transition تکراری idempotent است و state نهایی را تغییر نمی‌دهد. Challenge فعال هم‌زمان برای یک حساب طبق سیاست تک‌Challenge فعال پیشنهاد می‌شود؛ صدور Challenge جدید باید Challengeهای قبلی را اتمیک Cancel کند. این سیاست تا تصویب مالک، تصمیم اجرایی محسوب نمی‌شود.
+State transitionها باید با compare-and-swap یا row lock و شرط state قبلی انجام شوند. transition تکراری نباید mutation دوم ایجاد کند. Challenge جدید باید challenge قبلی همان حساب را به‌صورت اتمیک باطل کند. پیاده‌سازی و migration جدید تا رزرو رسمی WG-0 و مجوز لازم ممنوع است.
 
-### 5.2 استقلال عوامل و ارزیابی کانال
+### 5.2 ارزیابی کانال ایمیل
 
-سه عامل در سه دسته‌اند: کنترل ایمیل ثبت‌شده، کنترل شماره موبایل ثبت‌شده، و possession کد آفلاین. پیش از پیاده‌سازی، threat review باید استقلال عملی دو کانال دیجیتال را ارزیابی کند؛ ایمیل و موبایل روی یک دستگاه یا با یک روش بازیابی مشترک، استقلال قوی ایجاد نمی‌کنند. اگر وابستگی مشترک شناخته شود، آن دو کانال نباید به‌عنوان دو عامل مستقل شمرده شوند و Recovery باید متوقف بماند تا روش جایگزین مورد تصویب قرار گیرد.
+Recovery ایمیل‌تنها تصمیم مصوب مالک برای فاز فعلی است؛ این روش MFA یا دو عامل مستقل نیست. threat review باید mailbox compromise، phishing، forwarding، بازیابی حساب ایمیل و تصاحب کانال تماس را ارزیابی و کنترل‌های کاهش ریسک را ثبت کند.
 
-provider باید قابلیت جلوگیری از افشای وجود حساب، TLS معتبر، عدم ثبت OTP در لاگ، محدودیت ارسال، گزارش delivery غیرحساس و مدیریت امن credential داشته باشد. SMS در برابر SIM-swap مصون فرض نمی‌شود. هیچ provider یا کانالی در این سند انتخاب نشده است.
+provider ایمیل باید TLS معتبر، عدم ثبت OTP در لاگ، محدودیت ارسال، گزارش delivery غیرحساس و مدیریت امن credential داشته باشد. هیچ provider یا secret عملیاتی در این سند انتخاب نشده است. SMS و offline recovery code عامل اجباری یا fallback این فاز نیستند.
 
 ### 5.3 تراکنش، concurrency و idempotency
 
@@ -210,15 +208,15 @@ Scopeهای قابل مدل‌سازی (بدون اعطای خودکار):
 
 ### 5.6 Bootstrap و تعارض credential اولیه
 
-ADR-0013 عبارت `admin/admin` را برای setup اولیه ثبت کرده و هم‌زمان credential ثابت در source/config/installer/migration/log/telemetry را ممنوع کرده است. این دو عبارت بدون پروتکل provisioning امن، تعارض اجرایی دارند. این سند آن را خودسرانه حل یا رمز ثابت را تأیید نمی‌کند.
+ADR-0013 عبارت تاریخی admin/admin را برای setup اولیه ثبت کرده و هم‌زمان credential ثابت در source/config/installer/migration/log/telemetry را ممنوع کرده است. این دو عبارت بدون پروتکل provisioning امن تعارض اجرایی دارند. تصمیم محصول می‌گوید نصب باید حساب مدیر اولیه ایجاد کند و اولین ورود تغییر username/password/profile را اجباری کند؛ اما روش امن تولید و تحویل credential اولیه هنوز مشخص نشده است.
 
-پیش از runtime باید مالک تصمیم بگیرد credential اولیه چگونه به‌صورت یکتا و خارج از source توزیع/تحویل می‌شود (برای مثال secret یک‌بارمصرف تولیدشده در setup محلی با نمایش فقط یک‌باره و الزام تغییر فوری). تا ثبت تصمیم و threat review، هیچ مقدار ثابت، default password قابل حدس یا credential مشترک نباید در محصول ساخته شود. حالت Bootstrap فقط اجازه تغییر credential و تکمیل پروفایل را دارد؛ تمام routeها و عملیات دیگر، از جمله endpointهای مدیریتی و گزارش‌ها، باید Deny شوند. شبکه تا ثبت commit نهایی bootstrap غیرفعال می‌ماند.
+پیش از runtime باید روش provisioning یکتا و خارج از source تعریف شود (مانند secret موقت تولیدشده در setup محلی، نمایش یک‌باره و الزام تغییر فوری) و توسط مالک/امنیت تأیید شود. تا آن زمان هیچ مقدار ثابت، default password قابل حدس یا credential مشترک نباید در محصول ساخته شود. شبکه و عملیات عادی تا تکمیل bootstrap باید fail-closed بمانند.
 
 ### 5.7 Session، Lockout و concurrency
 
-زمان‌ها فقط از ساعت PostgreSQL محاسبه می‌شوند. افزایش شمارنده شکست و تعیین locked_until باید اتمیک باشد؛ درخواست‌های هم‌زمان نباید پنجره یا تعداد تلاش را دور بزنند. rate limit مبدأ مکمل lockout حساب است و نباید جایگزین آن شود. برای جلوگیری از DoS ناشی از قفل‌کردن حساب قربانی، محدودیت مبدأ، پاسخ عمومی، و سیاست reset شمارنده باید مستقل و تست شوند.
+زمان‌ها فقط از ساعت PostgreSQL محاسبه می‌شوند. افزایش شمارنده شکست و تعیین locked_until باید اتمیک باشد؛ درخواست‌های هم‌زمان نباید پنجره یا تعداد تلاش را دور بزنند. rate limit مبدأ مکمل lockout حساب است و نباید جایگزین آن شود. مقدار فعلی source rate-limit در کد 20 شکست ناموفق در 5 دقیقه است؛ این مقدار هنوز تصمیم مالک نیست و باید تعیین تکلیف شود.
 
-Session cap به‌صورت transactionally serialized روی ردیف تنظیمات singleton یا advisory lock ثابت enforce می‌شود؛ درخواست‌های هم‌زمان برای آخرین slot فقط یک winner دارند. session فعال یعنی revoked_at IS NULL و lease_expires_at > DB now و credential_version_at_issue = account.credential_version و account enabled. heartbeat پس از revoke یا credential version mismatch هرگز lease را تمدید نمی‌کند. TTL مطلق نشست، رفتار قطع طولانی شبکه و سیاست چندکلاینت باید قبل از runtime تصویب شود.
+ظرفیت session به‌صورت transactionally serialized روی ردیف تنظیمات singleton enforce می‌شود. نشست فعال یعنی revoked_at IS NULL، lease_expires_at > DB now، credential_version_at_issue برابر credential_version حساب و account enabled. heartbeat پس از revoke یا credential version mismatch هرگز lease را تمدید نمی‌کند. سیاست جاری: heartbeat=30s، lease=180s و حداکثر 5 حساب فعال متمایز؛ absolute TTL و سقف 2 نشست/account تصویب نشده‌اند.
 
 ### 5.8 TLS، میزبان محلی و خطاهای Provider
 
@@ -241,21 +239,18 @@ Session cap به‌صورت transactionally serialized روی ردیف تنظی�
 | IA-REV-09 TLS | اعتبارسنجی certificate و bind محلی صریح شد | ثبت جزئیات topology در ADR |
 
 **وضعیت:** این Revision نقص‌های مستندسازی را می‌بندد، نه گیت‌های تصمیم/پیاده‌سازی را. G1 همچنان بسته و `g1Authorized=false` است.
-## 6. تصمیم‌های مالک محصول — Recovery و Session (2026-11-05)
-
-این بخش تصمیم‌های مالک را جایگزین عبارت‌های قبلی «نامشخص/پیشنهادی» می‌کند؛ مرز غیرعملیاتی و g1Authorized=false بدون تغییر باقی می‌ماند.
+## 6. تصمیم‌های مالک محصول — Recovery و Session (بازنگری 2026-11-17)
 
 ### 6.1 بازار و Provider
 - بازار هدف فعلی ایران است.
-- Email از mailbox اختصاصی روی دامنه محصول ارسال می‌شود؛ برنامه Mail Server مستقل اجرا نمی‌کند. ارسال از SMTP relay یا Transactional Email provider قابل تعویض استفاده می‌کند. نام vendor/SMTP host و DNS واقعی در مرحله استقرار تعیین می‌شود.
-- SMS در این مرحله خارج از دامنه است و provider آن بعداً انتخاب و آزمون می‌شود؛ نبود SMS مانع مستندسازی و اجرای تست‌های غیرمرتبط نیست، اما Recovery چندعاملی تا تصویب عامل جایگزین و تکمیل review امنیتی غیرفعال می‌ماند.
+- Email از mailbox اختصاصی روی دامنه محصول ارسال می‌شود؛ برنامه Mail Server مستقل اجرا نمی‌کند. ارسال از SMTP relay یا Transactional Email provider قابل تعویض استفاده می‌کند. vendor/SMTP host و DNS واقعی در زمان استقرار تعیین می‌شود.
+- SMS در این فاز خارج از دامنه است؛ انتخاب vendor blocker فعلی نیست. نبود SMS مانع Recovery ایمیل‌تنها نیست.
 - هیچ API key، SMTP password یا OTP template secret در Git، appsettings، installer، migration یا log قرار نگیرد.
 
 ### 6.2 OTP و محدودیت‌ها
 | پارامتر | مقدار مصوب |
 |---|---:|
 | Email OTP TTL | 600 ثانیه (10 دقیقه) |
-| SMS OTP TTL | 300 ثانیه (5 دقیقه) |
 | حداکثر تلاش ناموفق در challenge | 5 |
 | قفل پس از رسیدن به حد تلاش | 86400 ثانیه (24 ساعت) |
 | فاصله حداقل ارسال مجدد | 3600 ثانیه (1 ساعت) |
@@ -263,33 +258,33 @@ Session cap به‌صورت transactionally serialized روی ردیف تنظی�
 | سقف ارسال در rolling 24h | 5 |
 | قفل پس از عبور از سقف ارسال | 86400 ثانیه (24 ساعت) |
 
-- محدودیت‌ها per account + channel و per source enforce شوند؛ شمارنده‌ها اتمیک و متکی به ساعت DB باشند. قفل منبع به‌تنهایی نباید ابزار آسان DoS علیه حساب قربانی باشد.
-- resend، proof قبلی همان کانال را revoke می‌کند؛ هر OTP به همان account/challenge bind است. ارسال ناموفق/نامشخص provider proof معتبر تولید نمی‌کند.
+- محدودیت‌ها per account و per source enforce شوند؛ شمارنده‌ها اتمیک و متکی به ساعت DB باشند. قفل منبع به‌تنهایی نباید ابزار آسان DoS علیه حساب قربانی باشد.
+- resend، challenge قبلی را revoke می‌کند؛ هر OTP به همان account/challenge bind است. ارسال ناموفق/نامشخص provider proof معتبر تولید نمی‌کند.
 - این lockout صرفاً برای Recovery است؛ lockout ورود عادی 5 شکست در 15 دقیقه/قفل 15 دقیقه‌ای را تغییر نمی‌دهد.
 
 ### 6.3 Session
-| پارامتر | مقدار مصوب |
+| پارامتر | مقدار جاری |
 |---|---:|
 | Heartbeat | 30 ثانیه |
 | Lease | 180 ثانیه |
-| عمر مطلق نشست از زمان ایجاد | 12 ساعت |
-| نشست/دستگاه هم‌زمان هر حساب | 2 |
-| حساب فعال متمایز کل سیستم | 5، قابل تغییر توسط super_admin |
-| تغییر رمز | revoke فوری همه نشست‌های حساب |
+| حساب فعال متمایز کل سیستم | 5، قابل تغییر با permission اختصاصی و audit |
+| عمر مطلق نشست | تصویب نشده؛ TTL مطلق وجود ندارد |
+| سقف نشست هم‌زمان هر حساب | تصویب نشده؛ سقف per-account وجود ندارد |
+| تغییر رمز | افزایش credential_version و revoke فوری همه نشست‌های حساب |
 | غیرفعال‌سازی حساب | revoke فوری همه نشست‌های حساب |
 
-Absolute TTL با heartbeat تمدید نمی‌شود. سقف دو نشست و سقف حساب فعال باید با transaction/advisory lock enforce شود. تغییر سقف کل فقط با permission اختصاصی، audit و اعتبارسنجی بازه مجاز انجام شود. تعویض نشست در زمان پر بودن سقف per-account باید صریح، قابل مشاهده و audit شود؛ اخراج خودکار/خاموش ممنوع. «دستگاه» با client_instance_id تصادفی تعریف می‌شود، نه fingerprint سخت‌افزاری.
+heartbeat معتبر lease را تمدید می‌کند؛ PostgreSQL مرجع authoritative است. کنترل ظرفیت باید در تراکنش/serialization سمت DB انجام شود. هیچ قاعده 12h absolute TTL یا 2 sessions/account از متن‌های قدیمی نباید پیاده‌سازی شود.
 
 ### 6.4 تعارض‌های قبلی و مرز تصمیم
-- مقادیر 30s/180s و 5 حساب که پیش‌تر پیشنهادی بودند، اکنون همراه 12h و سقف 2 نشست/account تصمیم مالک‌اند.
-- تصمیم فعلی فقط Recovery OTP و Session را پوشش می‌دهد؛ ماتریس permission، retention و جزئیات bootstrap provisioning جداگانه باقی می‌مانند.
-- Runtime، migration، endpoint، middleware و provider credential تا تکمیل G1 و مجوز رسمی ایجاد/فعال نشوند.
+- بندهای تاریخی absolute TTL=12h و سقف 2 نشست/account superseded هستند؛ سیاست جاری در اصلاحیه ADR-0013 مورخ 2026-11-07 و تصمیم‌های نهایی مالک 2026-11-06/07 ثبت شده است.
+- Recovery ایمیل‌تنها پذیرفته شده و MFA نیست؛ هر الزام قدیمی به سه عامل ایمیل+موبایل+offline code superseded است.
+- تصمیم سیاستی مجوز runtime، migration، endpoint، middleware، SMTP credential یا G1 ایجاد نمی‌کند.
 
 
 ## تعیین دامنه فعلی: عدم پیاده‌سازی پیامک — 2026-11-05
 - بنا بر تصمیم مالک، در این مرحله هیچ SMS provider، SDK، API client، credential، template، configuration، background job یا تست وابسته به سرویس پیامک اضافه نمی‌شود.
 - قابلیت SMS به مرحله/نسخه آینده موکول است و در این مرحله صرفاً به‌عنوان توسعه آتی مستند می‌شود؛ انتخاب vendor نیز اکنون لازم نیست.
-- نبود SMS به معنی مجاز شدن بازیابی با ایمیل تنها نیست. تا زمان تصویب و پیاده‌سازی یک ترکیب عامل بازیابی امن و آزموده‌شده، Recovery اضطراری در محیط عملیاتی غیرفعال/غیرقابل دسترس می‌ماند. عامل offline recovery code نیز به‌تنهایی جایگزین عامل مستقل دوم نمی‌شود مگر آنکه مدل تهدید و سیاست مالک جداگانه تصویب شود.
+- تصمیم نهایی مالک، Recovery ایمیل‌تنها را برای این فاز پذیرفته است؛ بااین‌حال تا تکمیل workflow، SMTP، تست و review مستقل، Recovery runtime غیرفعال می‌ماند. عامل offline recovery code نیز به‌تنهایی جایگزین عامل مستقل دوم نمی‌شود مگر آنکه مدل تهدید و سیاست مالک جداگانه تصویب شود.
 - مقادیر TTL پیامک و محدودیت ارسال پیامک که پیش‌تر در سند آمده‌اند، مشخصات هدف آینده‌اند و در این مرحله هیچ رفتار اجرایی یا تست runtime برای SMS ایجاد نمی‌کنند.
 - ایمیل اختصاصی نیز در این مرحله فقط معماری هدف است؛ SMTP relay واقعی و secretها تا انتخاب/پیکربندی عملیاتی وارد برنامه نمی‌شوند.
 
@@ -323,7 +318,3 @@ Absolute TTL با heartbeat تمدید نمی‌شود. سقف دو نشست و 
 - پس از اثبات OTP، تغییر رمز + افزایش credential_version + revoke اتمیک همه نشست‌های حساب + اجبار تغییر رمز در ورود بعدی الزامی است.
 - این flow MFA نیست و تا threat-model review، SMTP configuration، endpoint/orchestration، rate-limit اتمیک و تست replay/race/expiry/failure آماده نشوند، Recovery runtime فعال نیست.
 - SMS فقط placeholder آینده و غیرفعال است؛ schema و Store این فاز نباید کانال mobile را بپذیرند. offline recovery code عامل اجباری یا bypass نیست.
-
-
-## الحاقیه WG-2 — تطبیق بخش ۶.۳ با اصلاحیه 2026-11-07 (2026-11-08)
-جدول ۶.۳ و بند ۶.۴ این سند عمر مطلق ۱۲ ساعته و سقف ۲ نشست/حساب را تصمیم مالک نوشته‌اند. طبق «اصلاح نهایی سیاست نشست — 2026-11-07» در ADR-0013 و «تصمیم‌های نهایی مالک — 2026-11-06/07» در `identityaccess-owner-decisions-fa.md`، این دو مقدار superseded‌اند و مصوب فرض نمی‌شوند؛ سقف ۵ حساب فعال و 30s/180s (liveness) باقی است. هم‌چنین الزام سه‌عاملی (ایمیل + موبایل + کد آفلاین) در بخش‌های ۱ و ۵ با الحاقیه‌های «Recovery ایمیل‌تنها» 2026-11-06/07 همین سند جایگزین شده است. سطح شروع Recovery (endpoint شبکه‌ای یا کنسول محلی) در تصمیم نهایی مشخص نشده و در `identityaccess-wg2-gap-register-fa.md` (R-06) به‌عنوان درخواست تصمیم ثبت شده است. این الحاقیه سیاست جدیدی نمی‌سازد و `g1Authorized=false` است.
