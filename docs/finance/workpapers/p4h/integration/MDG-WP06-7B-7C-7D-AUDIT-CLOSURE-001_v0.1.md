@@ -363,3 +363,8 @@ O-01 هنوز OPEN است. Gate 3/4 OPEN؛ Implementation NOT VERIFIED؛ Test ex
 
 ### 7C سطر‌به‌سطر — تکمیل Source Status Register
 فایل `MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.2.csv` با 76 ردیف و 39 ستون (24 ستون منبع + 15 ستون وضعیت canonical) در Library ثبت شد؛ hash آن `78c3793c075ff4aaebef4b86230411d3dca52233f0cca3c81278b2f4607acbb1` است و با materialization و SHA-256 مستقل تأیید شد. این اقدام وضعیت هر ردیف منبع را صریح می‌کند و مانع ادعای «نبود Excel» می‌شود. این اقدام به معنی canonical شدن صفات نیست؛ تطبیق 76 ردیف با COA v1.4 و ثبت مقادیر canonical همچنان مانع فنی 7C است.
+
+ 
+### 7B — تکمیل رجیستر field-level disposition
+
+7B v0.2 برای تمام 39 ردیف رویدادی، فیلدهای Posting Matrix را به‌صورت گروه‌بندی‌شده تعیین وضعیت کرده است. مقادیر غیرقابل‌احراز صریحاً NOT SPECIFIED / BLOCKED ثبت شده‌اند؛ Owner Action، شرط رفع، منع Posting، Test ID و Evidence plan برای هر FE وجود دارد. این کار پوشش field-level disposition را تکمیل می‌کند، اما positive posting rules و مقادیر debit/credit canonical را تکمیل نمی‌کند. Posting Release همچنان صادر نشده است.
