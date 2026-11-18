@@ -26,7 +26,7 @@
 | 2. Canonical attributes | AccountId، Parent/Level، Nature، NormalBalance، eligibility، Subledger و Effective Dates بررسی؛ رجیستر شکاف‌ها تکمیل شد | 16 Open Item و 16 COA Gate Test متناظر؛ هیچ مقدار canonical از prefix یا نسخه میانی استنتاج نشد | PARTIAL — NOT ACCEPTED |
 | 3. Positive 7B rules | 39 رویداد FE-01..FE-38 + FE-10b بررسی شد | 39/39 disposition و Test ID دارند؛ 0 positive Posting Rule کامل و قابل‌پذیرش | BLOCKED — no positive journal authorization |
 | 4. 7D assertions | 39 FE + 16 COA + 12 shared controls تطبیق شد | 67 Test ID یکتا؛ positive journal assertions مسدود | DESIGN SPECIFIED — not behaviorally verified |
-| 5. Test execution | validator ساختاری 7B/7C/7D و workflow مستقل CI اضافه شد | اعتبارسنجی ساختاری مستندات اجرا می‌شود؛ نخستین برش Domain/Application دارای 20 test method و 61 test case است؛ اجرای کامل CI روی کد SHA dd3179fba2275350ec028f51428719d83c8f5470 تعداد 192 تست Domain را PASS کرده است؛ آزمون end-to-end Posting/GL/Subledger/Tax هنوز به علت نبود persistence و transactional writer قابل اجرا نیست | STRUCTURAL CI PASS; DOMAIN TESTS PASS; POSTING RUNTIME TESTS NOT RUN |
+| 5. Test execution | validator ساختاری 7B/7C/7D و workflow مستقل CI اضافه شد | اعتبارسنجی ساختاری مستندات اجرا می‌شود؛ نخستین برش Domain/Application دارای 46 test method و 87 Accounting-focused test case است؛ اجرای کامل CI روی کد SHA 7eff7fde8a10452dfdbf4b34da40929ee10aecc6 تعداد 192 تست Domain را PASS کرده است؛ آزمون end-to-end Posting/GL/Subledger/Tax هنوز به علت نبود persistence و transactional writer قابل اجرا نیست | STRUCTURAL CI PASS; DOMAIN TESTS PASS; POSTING RUNTIME TESTS NOT RUN |
 
 ## 3. COA authority and reconciliation basis
 
@@ -93,7 +93,7 @@
 - Canonical account attributes: NOT ACCEPTED.
 - Positive 7B rules: NOT COMPLETE; 0 accepted positive rules.
 - 7D: 67 IDs specified; positive journal assertions blocked.
-- Accounting Domain unit tests: PASS — 192/192 tests in MDGsm.Domain.Tests on the recorded CI run.
+- Accounting Domain unit tests: PASS — 218/218 tests in MDGsm.Domain.Tests on the recorded CI run.
 - End-to-end Finance Posting/GL/Subledger/Tax tests: NOT RUN; transactional persistence and Posting API are not implemented.
 - Structural CI: PASS on the tested source SHA; any subsequent document-only commit requires a fresh exact-SHA structural run.
 - Evidence: NOT ACCEPTED.
@@ -126,8 +126,19 @@
 - Domain: IrrAmount و Largest Remainder، CanonicalAccountAttributes و FieldEvidence، PostingRuleDefinition و AcceptanceEvidence، FiscalPeriod، Journal/JournalLine، Audit references و Reversal.
 - Application: catalog ports و PostingPreflightService فقط‌خواندنی و fail-closed؛ هیچ Journal یا Subledger را persist/post نمی‌کند.
 - کنترل‌های مهم: همه صفات canonical حساب باید برای فیلدهای کلیدی VERIFIED و برای موارد واقعاً نامرتبط N/A مستند باشند؛ همه فیلدهای الزامی Posting Rule باید شواهد کامل داشته باشند؛ موارد کلیدی SourceEvent/Trigger/Recognition/Accounts/Amount/Idempotency/Reversal/Period/Audit/Test باید VERIFIED باشند.
-- آزمون‌های دامنه: 192/192 تست پروژه MDGsm.Domain.Tests در CI روی SHA مربوط به این برش PASS شدند.
+- آزمون‌های دامنه: 218/218 تست پروژه MDGsm.Domain.Tests در CI روی SHA مربوط به این برش PASS شدند.
 - هیچ حساب canonical واقعی یا Posting Rule مثبت مالی seed نشده است؛ این کار تا تکمیل منبع/تصمیم و تطبیق 7B/7C ممنوع است.
 - مرحله بعدی persistence و transactional Posting است؛ اجرای SQL و Migration 0009 تا ادغام PR رزرو #70 در main ممنوع می‌ماند.
 
 این وضعیت فقط PASS آزمون‌های دامنه و اجرای ساختاری را اثبات می‌کند؛ O-01، Gate 3، Gate 4 و Posting Release همچنان OPEN / NOT GRANTED هستند.
+
+
+### Addendum 2 — 7D Domain-level test implementation evidence — 2026-11-18
+
+- FE-01..FE-38 به‌علاوه FE-10b: هر 39 شناسه در FinancialEventCases به 39 مورد تست Domain متصل شده‌اند؛ نتیجه هر مورد در نبود Posting Rule پذیرفته‌شده باید POSTING_BLOCKED باشد.
+- COA Gate 001..016: هر 16 مورد در AccountCanonicalGateTests با TestId متناظر پیاده‌سازی شده‌اند؛ شامل canonical evidence، وضعیت/تاریخ اثر، eligibility، subledger evidence، Trade-In recognition، منع 110809، duplicate code/ID و parent relation.
+- 7 مورد از 12 کنترل مشترک دارای تست Domain-level متناظر هستند: COA-001، COA-002، REV-001، PERIOD-001، IDEM-001، IDEM-002 و TAX-001.
+- 8 آزمون تکمیلی AccountRegistryValidator نیز duplicate IDs/codes، کد ممنوع 110809، parent missing/cycle، parent mismatch و ترتیب Level را پوشش می‌دهند.
+- CI: run 44272283562، commit 7eff7fde8a10452dfdbf4b34da40929ee10aecc6؛ Foundation Build & Test: 218/218 PASS، صفر Failed و صفر Skipped.
+- پنج کنترل مشترک نیازمند runtime/DB هنوز اجرا نشده‌اند: ATOMIC-001..003، SUBLEDGER-001 و IMEI-001.
+- این شواهد فقط Domain/preflight و validation را ثابت می‌کند؛ هیچ journal یا subledger در PostgreSQL ثبت نشده و هیچ positive Posting Rule پذیرفته‌شده‌ای seed نشده است.
