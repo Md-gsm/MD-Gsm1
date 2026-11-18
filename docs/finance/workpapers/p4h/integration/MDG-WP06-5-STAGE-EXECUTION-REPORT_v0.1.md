@@ -26,7 +26,7 @@
 | 2. Canonical attributes | AccountId، Parent/Level، Nature، NormalBalance، eligibility، Subledger و Effective Dates بررسی؛ رجیستر شکاف‌ها تکمیل شد | 16 Open Item و 16 COA Gate Test متناظر؛ هیچ مقدار canonical از prefix یا نسخه میانی استنتاج نشد | PARTIAL — NOT ACCEPTED |
 | 3. Positive 7B rules | 39 رویداد FE-01..FE-38 + FE-10b بررسی شد | 39/39 disposition و Test ID دارند؛ 0 positive Posting Rule کامل و قابل‌پذیرش | BLOCKED — no positive journal authorization |
 | 4. 7D assertions | 39 FE + 16 COA + 12 shared controls تطبیق شد | 67 Test ID یکتا؛ positive journal assertions مسدود | DESIGN SPECIFIED — not behaviorally verified |
-| 5. Test execution | validator ساختاری 7B/7C/7D و workflow مستقل CI اضافه شد | اعتبارسنجی ساختاری مستندات اجرا می‌شود؛ نخستین برش Domain/Application دارای 20 test method و 61 test case است؛ اجرای کامل CI روی SHA فعلی 192 تست Domain را PASS کرده است؛ آزمون end-to-end Posting/GL/Subledger/Tax هنوز به علت نبود persistence و transactional writer قابل اجرا نیست | STRUCTURAL CI PASS; DOMAIN TESTS PASS; POSTING RUNTIME TESTS NOT RUN |
+| 5. Test execution | validator ساختاری 7B/7C/7D و workflow مستقل CI اضافه شد | اعتبارسنجی ساختاری مستندات اجرا می‌شود؛ نخستین برش Domain/Application دارای 20 test method و 61 test case است؛ اجرای کامل CI روی کد SHA dd3179fba2275350ec028f51428719d83c8f5470 تعداد 192 تست Domain را PASS کرده است؛ آزمون end-to-end Posting/GL/Subledger/Tax هنوز به علت نبود persistence و transactional writer قابل اجرا نیست | STRUCTURAL CI PASS; DOMAIN TESTS PASS; POSTING RUNTIME TESTS NOT RUN |
 
 ## 3. COA authority and reconciliation basis
 
@@ -85,7 +85,7 @@
 
 - **A — 7C canonical attributes:** دسترسی به v1.4 تأیید شده است؛ مانع باقی‌مانده، تکمیل صفات canonical هر حساب از منابع معتبر و ثبت صریح unresolvedهاست. دریافت/بازسازی Workbook نه‌شیتی شرط این کار نیست.
 - **B — مثبت‌سازی 7B:** برای هر FE، SourceEvent، Trigger، RecognitionTime، دو سمت ثبت، Amount/Cost Basis، TaxMode، Subledger، Dimensions، PostingIdentity، Idempotency، Reversal، Period، Authorization و Audit باید کامل و مستند شود.
-- **C — اجرای رفتاری 7D:** Accounting runtime/schema، disposable PostgreSQL، fixture نسخه‌دار، journal/subledger snapshots و evidence capture لازم است.
+- **C — اجرای رفتاری 7D:** transactional Posting runtime، schema/migrations مالی، disposable PostgreSQL، fixture نسخه‌دار، journal/subledger snapshots و evidence capture لازم است.
 
 ## 8. وضعیت پذیرش
 
