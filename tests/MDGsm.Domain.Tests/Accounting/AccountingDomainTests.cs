@@ -5,6 +5,7 @@ using Xunit;
 
 namespace MDGsm.Domain.Tests.Accounting;
 
+[Trait("TestType", "UnitSubset")]
 public sealed class AccountingDomainTests
 {
     private static readonly DateOnly EffectiveDate = new(2026, 11, 18);
@@ -54,6 +55,7 @@ public sealed class AccountingDomainTests
     }
 
     [Fact]
+    [Trait("TestId", "MDG-FIN-COA-001")]
     public void Unverified_or_prohibited_accounts_fail_closed()
     {
         var unverified = new AccountDefinition(
@@ -67,6 +69,7 @@ public sealed class AccountingDomainTests
     }
 
     [Fact]
+    [Trait("TestId", "MDG-FIN-COA-001")]
     public void Direct_posting_permission_is_separate_from_automated_posting_eligibility()
     {
         var account = EligibleAccount("1101", Guid.CreateVersion7(), "FE-03", directPostingAllowed: false);
@@ -75,6 +78,7 @@ public sealed class AccountingDomainTests
     }
 
     [Fact]
+    [Trait("TestId", "MDG-FIN-COA-001")]
     public void Recognition_evidence_and_event_allowlist_are_enforced()
     {
         var account = EligibleAccount("1101", Guid.CreateVersion7(), "FE-03") with { RecognitionEvidenceRequired = true };
@@ -117,6 +121,7 @@ public sealed class AccountingDomainTests
     }
 
     [Fact]
+    [Trait("TestId", "MDG-FIN-REV-001")]
     public void Reversal_is_a_new_journal_and_does_not_mutate_the_finalized_original()
     {
         var originalDraft = CreateBalancedDraft();
@@ -134,6 +139,7 @@ public sealed class AccountingDomainTests
     }
 
     [Fact]
+    [Trait("TestId", "MDG-FIN-PERIOD-001")]
     public void Fiscal_period_close_requires_all_reconciliations_and_reopen_requires_independent_approval()
     {
         var period = OpenPeriod();
@@ -152,6 +158,8 @@ public sealed class AccountingDomainTests
     }
 
     [Fact]
+    [Trait("TestId", "MDG-FIN-IDEM-001")]
+    [Trait("TestId", "MDG-FIN-IDEM-002")]
     public void Posting_identity_is_stable_and_distinguishes_source_version_and_allocation()
     {
         var first = Identity("SALE");
@@ -263,6 +271,7 @@ public sealed class AccountingDomainTests
     }
 
     [Fact]
+    [Trait("TestId", "MDG-FIN-TAX-001")]
     public async Task Posting_preflight_blocks_tax_lines_when_tax_mode_is_zero()
     {
         var rule = AcceptedRule("FE-06", "2101") with { CreatesTaxLine = true };
@@ -330,22 +339,18 @@ public sealed class AccountingDomainTests
     {
         var rule = new PostingRuleDefinition(eventId, 1, PostingRuleStatus.Accepted, "1101", creditAccountCode,
             "SOURCE_AMOUNT", "SOURCE_DOCUMENT_FINALIZED", "test-source", "test-decision",
-            new DateOnly(2026, 1, 1), null, true, true, false);
+            new DateOnly(2026, 1, 1), null, true, true, false)
+        {
+            EventName = "Test financial event",
+            DesignStatus = "ACCEPTED",
+            TaxModeDefinition = "TaxMode=0 blocks Tax Lines; positive TaxMode requires approved Tax Matrix",
+            IdempotencyKeyDefinition = "SourceModule|SourceDocumentId|SourceEventId|PostingPurpose|SourceVersion|AllocationId",
+            AtomicityBoundaryDefinition = "Journal, GL, Subledger, source state and audit writes in one database transaction",
+            OpenIssueIds = Array.Empty<string>()
+        };
         var evidence = PostingRuleDefinition.RequiredAcceptanceFields.Select(field =>
         {
-            var value = field switch
-            {
-                "FinancialEventId" => rule.FinancialEventId,
-                "DebitAccountCode" => rule.DebitAccountCode,
-                "CreditAccountCode" => rule.CreditAccountCode,
-                "AmountBasis" => rule.AmountBasis,
-                "RecognitionTime" => rule.RecognitionGate,
-                "IdempotencyKey" => "REQUIRED",
-                "AtomicityBoundary" => "REQUIRED",
-                "SourceReferences" => rule.SourceReference,
-                "DecisionReferences" => rule.DecisionReference,
-                _ => $"TEST:{field}"
-            };
+            var value = rule.GetExpectedEvidenceValueForTesting(field) ?? $"TEST:{field}";
             return new FieldEvidence(field, EvidenceDisposition.Verified, value, "test-source", null);
         }).ToArray();
         return rule with { AcceptanceEvidence = evidence };
@@ -363,6 +368,18 @@ public sealed class AccountingDomainTests
 
         Assert.True(accepted.IsExecutableOn(EffectiveDate));
         Assert.False(incomplete.IsExecutableOn(EffectiveDate));
+    }
+
+    [Fact]
+    public void Posting_rule_with_open_issues_or_nonaccepted_design_status_is_not_executable()
+    {
+        var accepted = AcceptedRule("FE-03");
+        var withOpenIssue = accepted with { OpenIssueIds = ["7B-OPEN-001"] };
+        var draftDesign = accepted with { DesignStatus = "DRAFT" };
+
+        Assert.True(accepted.IsExecutableOn(EffectiveDate));
+        Assert.False(withOpenIssue.IsExecutableOn(EffectiveDate));
+        Assert.False(draftDesign.IsExecutableOn(EffectiveDate));
     }
 
     [Fact]
