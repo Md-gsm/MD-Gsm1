@@ -12,9 +12,9 @@ ADD = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION
 P7D = ROOT / "docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md"
 CLOSE7B = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-7B-POSTING-RULE-CLOSURE-001_v0.2.md"
 REGISTER = ROOT / "docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.7.md"
-SALES_PROPOSAL = ROOT / "docs/modules/sales/SALES-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.1.md"
-REPAIR_PROPOSAL = ROOT / "docs/modules/repairoperations/REPAIROPERATIONS-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.1.md"
-SOURCE_CROSSWALK = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-FE01-FE02-SOURCE-CROSSWALK-PROPOSAL-001_v0.1.md"
+SALES_PROPOSAL = ROOT / "docs/modules/sales/SALES-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.2.md"
+REPAIR_PROPOSAL = ROOT / "docs/modules/repairoperations/REPAIROPERATIONS-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.2.md"
+SOURCE_CROSSWALK = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-FE01-FE02-SOURCE-CROSSWALK-PROPOSAL-001_v0.2.md"
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
