@@ -248,8 +248,9 @@ BEFORE TRUNCATE ON ap_proof.coa_snapshots
 FOR EACH STATEMENT EXECUTE FUNCTION ap_proof.guard_accepted_snapshot_truncate();
 
 GRANT USAGE ON SCHEMA ap_proof TO mdgsm_ap_proof_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ap_proof.journals TO mdgsm_ap_proof_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ap_proof.journal_lines TO mdgsm_ap_proof_runtime;
+GRANT SELECT, INSERT ON ap_proof.journals TO mdgsm_ap_proof_runtime;
+GRANT UPDATE (status) ON ap_proof.journals TO mdgsm_ap_proof_runtime;
+GRANT SELECT, INSERT ON ap_proof.journal_lines TO mdgsm_ap_proof_runtime;
 GRANT SELECT, INSERT ON ap_proof.audit_events TO mdgsm_ap_proof_runtime;
 GRANT SELECT, INSERT ON ap_proof.period_transition_events TO mdgsm_ap_proof_runtime;
 GRANT SELECT ON ap_proof.coa_snapshots TO mdgsm_ap_proof_runtime;
