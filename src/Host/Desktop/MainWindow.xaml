@@ -1,0 +1,807 @@
+<Window x:Class="MDGsm.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل | MD-Gsm v0.2.10 — پیش‌نمایش"
+        Height="900" Width="1440" MinHeight="600" MinWidth="900" WindowState="Maximized"
+        WindowStartupLocation="CenterScreen" Loaded="MainWindow_Loaded" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        FlowDirection="RightToLeft" Background="#F1F5F9" FontFamily="Segoe UI" FontSize="13.2"
+        PreviewKeyDown="MainWindow_PreviewKeyDown">
+  <Window.Resources>
+    <SolidColorBrush x:Key="Slate950" Color="#020617"/>
+    <SolidColorBrush x:Key="Slate900" Color="#0F172A"/>
+    <SolidColorBrush x:Key="Slate800" Color="#1E293B"/>
+    <SolidColorBrush x:Key="Slate700" Color="#334155"/>
+    <SolidColorBrush x:Key="Slate600" Color="#475569"/>
+    <SolidColorBrush x:Key="Slate500" Color="#64748B"/>
+    <SolidColorBrush x:Key="Slate400" Color="#94A3B8"/>
+    <SolidColorBrush x:Key="Line" Color="#E2E8F0"/>
+    <SolidColorBrush x:Key="Surface" Color="#FFFFFF"/>
+
+    <Style x:Key="TopMenuButtonStyle" TargetType="Button">
+      <Setter Property="Foreground" Value="#E2E8F0"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="8,6"/>
+      <Setter Property="Margin" Value="0,1"/>
+      <Setter Property="FontSize" Value="12.5"/>
+      <Setter Property="FontWeight" Value="Medium"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Chrome" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="8" Padding="{TemplateBinding Padding}">
+              <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" RecognizesAccessKey="True"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Chrome" Property="Background" Value="#243B5B"/>
+                <Setter TargetName="Chrome" Property="BorderBrush" Value="#38577F"/>
+                <Setter Property="Foreground" Value="#FFFFFF"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Chrome" Property="Background" Value="#1D4ED8"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="QuickActionButtonStyle" TargetType="Button">
+      <Setter Property="Foreground" Value="#F8FAFC"/>
+      <Setter Property="Background" Value="#334155"/>
+      <Setter Property="BorderBrush" Value="#475569"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="Margin" Value="0,0,7,0"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Chrome" Property="Background" Value="#475569"/>
+                <Setter TargetName="Chrome" Property="BorderBrush" Value="#64748B"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Chrome" Property="Background" Value="#1D4ED8"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="CascadeMenuButtonStyle" TargetType="Button">
+      <Setter Property="Background" Value="#FFFFFF"/>
+      <Setter Property="Foreground" Value="#1E293B"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="8,5"/>
+      <Setter Property="Margin" Value="0,0,0,1"/>
+      <Setter Property="Height" Value="32"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="Normal"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Chrome" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="2"
+                    Padding="{TemplateBinding Padding}">
+              <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Chrome" Property="Background" Value="#FEF3C7"/>
+                <Setter TargetName="Chrome" Property="BorderBrush" Value="#F2C94C"/>
+                <Setter Property="Foreground" Value="#111827"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Chrome" Property="Background" Value="#FDE68A"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="#94A3B8"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="ReceptionTabButtonStyle" TargetType="Button">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="#475569"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="14,10"/>
+      <Setter Property="Margin" Value="2"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="FontWeight" Value="Medium"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+              <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Chrome" Property="Background" Value="#E2E8F0"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Chrome" Property="Background" Value="#DBEAFE"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="MetricCardStyle" TargetType="Border">
+      <Setter Property="Background" Value="#FFFFFF"/>
+      <Setter Property="BorderBrush" Value="#E2E8F0"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="15"/>
+      <Setter Property="Padding" Value="17"/>
+      <Setter Property="Margin" Value="0,0,12,0"/>
+    </Style>
+
+    <Style x:Key="CardBorderStyle" TargetType="Border">
+      <Setter Property="Background" Value="#FFFFFF"/>
+      <Setter Property="BorderBrush" Value="#E2E8F0"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="13"/>
+    </Style>
+
+    <Style x:Key="AlignedDataGridTextStyle" TargetType="TextBlock">
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="TextAlignment" Value="Right"/>
+      <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <Style TargetType="DataGridColumnHeader">
+      <Setter Property="Background" Value="#F1F5F9"/>
+      <Setter Property="Foreground" Value="#475569"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="Padding" Value="10,0"/>
+      <Setter Property="BorderBrush" Value="#E2E8F0"/>
+      <Setter Property="BorderThickness" Value="0,0,0,1"/>
+      <Setter Property="HorizontalContentAlignment" Value="Right"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style TargetType="DataGridCell">
+      <Setter Property="Padding" Value="10,7"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Foreground" Value="#334155"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style TargetType="DataGridRow">
+      <Setter Property="MinHeight" Value="44"/>
+      <Setter Property="Background" Value="#FFFFFF"/>
+      <!-- Delivery priority is rendered by a dedicated first (right-edge in RTL) DataGrid column. -->
+      <Setter Property="BorderBrush" Value="#E2E8F0"/>
+      <Setter Property="BorderThickness" Value="0,0,0,1"/>
+      <Setter Property="ToolTip" Value="{Binding MarkerLabel}"/>
+      <Style.Triggers>
+        <Trigger Property="IsMouseOver" Value="True">
+          <Setter Property="Background" Value="#F8FAFC"/>
+        </Trigger>
+        <DataTrigger Binding="{Binding CustomerType}" Value="همکار">
+          <Setter Property="Background" Value="#FAF7FF"/>
+          <Setter Property="BorderBrush" Value="#EDE9FE"/>
+        </DataTrigger>
+        <Trigger Property="IsSelected" Value="True">
+          <Setter Property="Background" Value="#DBEAFE"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+  </Window.Resources>
+
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="35"/>
+    </Grid.RowDefinitions>
+
+    <!-- Header matches the HTML reference order: top navigation, brand/actions, then dropdown. -->
+    <Grid x:Name="HeaderRoot" Grid.Row="0" MouseLeave="HeaderRoot_MouseLeave">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="42"/>
+        <RowDefinition Height="70"/>
+      </Grid.RowDefinitions>
+
+    <!-- The top-level menus are hover-only. They never become workspace tabs. -->
+    <Border x:Name="NavigationHost" Grid.Row="0" MouseLeave="NavigationHost_MouseLeave" Background="#0F172A" BorderBrush="#263449"
+            BorderThickness="0,0,0,1">
+      <StackPanel>
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" FlowDirection="RightToLeft">
+          <ItemsControl x:Name="MainMenuItemsControl" ItemsSource="{Binding MainMenus}" Margin="10,0">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button Style="{StaticResource TopMenuButtonStyle}" MouseEnter="NavMenuButton_MouseEnter"
+                        AutomationProperties.Name="{Binding Title}">
+                  <StackPanel Orientation="Horizontal" FlowDirection="RightToLeft">
+                    <TextBlock Text="{Binding IconGlyph}" Foreground="{Binding AccentBrush}" FontSize="15.4"
+                               VerticalAlignment="Center" Margin="0,0,0,0"/>
+                    <TextBlock Text="{Binding Title}" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="⌄" FontSize="12.1" Foreground="#94A3B8" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+
+      </StackPanel>
+    </Border>
+
+    <!-- Product identity is anchored on the physical right; quick actions are anchored on the physical left. -->
+    <Border Grid.Row="1" Background="#020617" BorderBrush="#1E293B" BorderThickness="0,0,0,1" Padding="12,4">
+      <Grid x:Name="BrandActionsLayout" FlowDirection="LeftToRight">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Full product identity and live Persian date/time, on the physical right side of the bar. -->
+        <StackPanel x:Name="ProductBrandBlock" Grid.Column="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" VerticalAlignment="Center" FlowDirection="LeftToRight" Margin="14,0,4,0">
+          <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center"
+                      FlowDirection="LeftToRight" Margin="0,0,12,0">
+            <Border Width="48" Height="42" CornerRadius="11" Background="#FBBF24" Margin="0,0,0,1"
+                    BorderBrush="#FDE68A" BorderThickness="1" ToolTip="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل">
+              <Grid>
+                <TextBlock Text="MD" Foreground="#0F172A" FontSize="22.5" FontWeight="Black"
+                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                <Border Width="8" Height="8" CornerRadius="4" Background="#0F172A"
+                        HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="4,0,0,4"/>
+              </Grid>
+            </Border>
+            <TextBlock Text="MD-Gsm" Foreground="#F59E0B" FontSize="13.2" FontWeight="Bold"
+                       HorizontalAlignment="Center" TextAlignment="Center"/>
+          </StackPanel>
+          <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" FlowDirection="RightToLeft">
+            <TextBlock Text="نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل"
+                       Foreground="#FBBF24" FontSize="15.4" FontWeight="Black" TextAlignment="Right"/>
+            <StackPanel Orientation="Horizontal" FlowDirection="RightToLeft" HorizontalAlignment="Right" Margin="0,3,0,0">
+              <TextBlock Text="نسخه پیش‌نمایش ۰٫۲٫۱۰" Foreground="#94A3B8" FontSize="13.2"/>
+              <TextBlock Text="  •  " Foreground="#475569" FontSize="13.2"/>
+              <TextBlock x:Name="LiveDateTimeText" Text="محیط نمایشی" Foreground="#CBD5E1" FontSize="13.2"/>
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+
+        <!-- Main quick actions are on the physical left side of the brand bar. -->
+        <StackPanel x:Name="QuickActionsBlock" Grid.Column="0" Orientation="Horizontal"
+                    HorizontalAlignment="Left" VerticalAlignment="Center" FlowDirection="RightToLeft" Margin="4,0,14,0">
+          <Button Content="＋ پذیرش جدید" Click="QuickActionButton_Click" Tag="QCK-01"
+                  Background="#2563EB" BorderBrush="#2563EB" Style="{StaticResource QuickActionButtonStyle}"/>
+          <Button Content="♧ پذیرش همکار" Click="QuickActionButton_Click" Tag="QCK-02"
+                  Background="#7C3AED" BorderBrush="#7C3AED" Style="{StaticResource QuickActionButtonStyle}"/>
+          <Button Content="▦ ماشین‌حساب" Click="QuickActionButton_Click" Tag="QCK-03"
+                  Background="#334155" BorderBrush="#475569" Style="{StaticResource QuickActionButtonStyle}"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    </Grid>
+
+    <!-- Cascading hover menu is a Popup anchored below the hovered top-level menu; it overlays the page and never creates a tab. -->
+    <Popup x:Name="RootMenuPopup" Placement="Custom" AllowsTransparency="True" StaysOpen="True" PopupAnimation="Fade" />
+
+    <!-- Dashboard rebuilt from the supplied visual reference; all row/chart values are synthetic display fixtures. -->
+    <Grid Grid.Row="1" Background="#F1F5F9">
+      <ScrollViewer x:Name="DashboardView" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                    SizeChanged="DashboardView_SizeChanged">
+        <StackPanel x:Name="DashboardContentPanel" HorizontalAlignment="Stretch" Margin="0">
+          <!-- KPI cards: same four-card row and color language as the reference. -->
+          <UniformGrid Columns="4" Margin="0,0,0,16">
+            <Border Style="{StaticResource MetricCardStyle}">
+              <DockPanel LastChildFill="False">
+                <Border DockPanel.Dock="Left" Width="48" Height="48" CornerRadius="13" Background="#EFF6FF" Margin="0,0,0,0">
+                  <TextBlock Text="▣" Foreground="#2563EB" FontSize="26.4" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center" Margin="0,0,13,0">
+                  <TextBlock Text="کل پذیرش‌های ثبت‌شده" Foreground="#64748B" FontSize="14.3"/>
+                  <TextBlock Text="۱۲" Foreground="#0F172A" FontSize="29.7" FontWeight="Black" Margin="0,3,0,1"/>
+                  <TextBlock Text="۶ دستگاه امروز" Foreground="#2563EB" FontSize="13.2" FontWeight="SemiBold"/>
+                </StackPanel>
+              </DockPanel>
+            </Border>
+            <Border Style="{StaticResource MetricCardStyle}">
+              <DockPanel LastChildFill="False">
+                <Border DockPanel.Dock="Left" Width="48" Height="48" CornerRadius="13" Background="#FFF7ED">
+                  <TextBlock Text="ϟ" Foreground="#EA580C" FontSize="30.8" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center" Margin="0,0,13,0">
+                  <TextBlock Text="تحویل فوری و امروز" Foreground="#64748B" FontSize="14.3"/>
+                  <TextBlock Text="۵" Foreground="#EA580C" FontSize="29.7" FontWeight="Black" Margin="0,3,0,1"/>
+                  <TextBlock Text="نیازمند بررسی سریع" Foreground="#E11D48" FontSize="13.2" FontWeight="SemiBold"/>
+                </StackPanel>
+              </DockPanel>
+            </Border>
+            <Border Style="{StaticResource MetricCardStyle}">
+              <DockPanel LastChildFill="False">
+                <Border DockPanel.Dock="Left" Width="48" Height="48" CornerRadius="13" Background="#ECFDF5">
+                  <TextBlock Text="✓" Foreground="#059669" FontSize="26.4" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center" Margin="0,0,13,0">
+                  <TextBlock Text="آماده تحویل به مشتری" Foreground="#64748B" FontSize="14.3"/>
+                  <TextBlock Text="۴" Foreground="#059669" FontSize="29.7" FontWeight="Black" Margin="0,3,0,1"/>
+                  <TextBlock Text="پیامک ارسال‌شده: ۴" Foreground="#059669" FontSize="13.2" FontWeight="SemiBold"/>
+                </StackPanel>
+              </DockPanel>
+            </Border>
+            <Border Style="{StaticResource MetricCardStyle}" Margin="0">
+              <DockPanel LastChildFill="False">
+                <Border DockPanel.Dock="Left" Width="48" Height="48" CornerRadius="13" Background="#F0FDFA">
+                  <TextBlock Text="＄" Foreground="#0D9488" FontSize="24.2" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center" Margin="0,0,13,0">
+                  <TextBlock Text="کارمزد دریافتی امروز" Foreground="#64748B" FontSize="14.3"/>
+                  <TextBlock Text="۴,۲۵۰,۰۰۰ تومان" Foreground="#0F172A" FontSize="22" FontWeight="Black" Margin="0,3,0,1"/>
+                  <TextBlock Text="+۱۵٪ نسبت به روز قبل · مقدار نمونه" Foreground="#0D9488" FontSize="13.2" FontWeight="SemiBold"/>
+                </StackPanel>
+              </DockPanel>
+            </Border>
+          </UniformGrid>
+
+          <!-- Reception worklist -->
+          <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16" ClipToBounds="True">
+            <StackPanel>
+              <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="10">
+                <WrapPanel FlowDirection="RightToLeft" HorizontalAlignment="Stretch">
+                  <Button x:Name="TabDeliveryToday" Tag="deliveryToday" Click="ReceptionTabButton_Click" Style="{StaticResource ReceptionTabButtonStyle}"
+                          Background="#EFF6FF" Foreground="#1D4ED8" FontWeight="SemiBold">
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="✓" Foreground="#059669" Margin="0,0,6,0"/><TextBlock Text="تحویل امروز"/><Border Background="#D1FAE5" CornerRadius="9" Padding="6,1" Margin="7,0,0,0"><TextBlock x:Name="TabDeliveryTodayCount" Text="۴" Foreground="#047857" FontSize="13.2"/></Border></StackPanel>
+                  </Button>
+                  <Button x:Name="TabIntakeToday" Tag="intakeToday" Click="ReceptionTabButton_Click" Style="{StaticResource ReceptionTabButtonStyle}">
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="＋" Foreground="#2563EB" Margin="0,0,6,0"/><TextBlock Text="ورودی امروز"/><Border Background="#DBEAFE" CornerRadius="9" Padding="6,1" Margin="7,0,0,0"><TextBlock x:Name="TabIntakeTodayCount" Text="۶" Foreground="#1D4ED8" FontSize="13.2"/></Border></StackPanel>
+                  </Button>
+                  <Button x:Name="TabTech" Tag="tech" Click="ReceptionTabButton_Click" Style="{StaticResource ReceptionTabButtonStyle}">
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="⚙" Foreground="#D97706" Margin="0,0,6,0"/><TextBlock Text="مراحل تعمیر نزد تکنسین‌ها"/><Border Background="#E2E8F0" CornerRadius="9" Padding="6,1" Margin="7,0,0,0"><TextBlock x:Name="TabTechCount" Text="۶" Foreground="#334155" FontSize="13.2"/></Border></StackPanel>
+                  </Button>
+                  <Button x:Name="TabPartner" Tag="partner" Click="ReceptionTabButton_Click" Style="{StaticResource ReceptionTabButtonStyle}">
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="♧" Foreground="#9333EA" Margin="0,0,6,0"/><TextBlock Text="گوشی‌های ورودی همکاران"/><Border Background="#E2E8F0" CornerRadius="9" Padding="6,1" Margin="7,0,0,0"><TextBlock x:Name="TabPartnerCount" Text="۳" Foreground="#334155" FontSize="13.2"/></Border></StackPanel>
+                  </Button>
+                  <Button x:Name="TabAll" Tag="all" Click="ReceptionTabButton_Click" Style="{StaticResource ReceptionTabButtonStyle}">
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="▤" Foreground="#475569" Margin="0,0,6,0"/><TextBlock Text="کلیه گوشی‌های ورودی (لیست کامل)"/><Border Background="#E2E8F0" CornerRadius="9" Padding="6,1" Margin="7,0,0,0"><TextBlock x:Name="TabAllCount" Text="۱۲" Foreground="#334155" FontSize="13.2"/></Border></StackPanel>
+                  </Button>
+                </WrapPanel>
+              </Border>
+
+              <Grid Margin="10,8,10,8">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <Border Grid.Column="0" BorderBrush="#CBD5E1" BorderThickness="1" Background="#FFFFFF" CornerRadius="8" Padding="10,0" Height="32" Margin="0,0,8,0">
+                  <DockPanel>
+                    <TextBlock Text="⌕" FontSize="20.9" Foreground="#94A3B8" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox x:Name="ReceptionSearchBox" TextChanged="ReceptionSearchBox_TextChanged" BorderThickness="0" Background="Transparent"
+                             Foreground="#334155" FontSize="14.3" VerticalContentAlignment="Center"
+                             ToolTip="جست‌وجو در رکوردهای نمایشی" />
+                  </DockPanel>
+                </Border>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" FlowDirection="RightToLeft">
+                  <ComboBox x:Name="ReceptionStatusFilter" Width="135" Height="32" SelectedIndex="0" SelectionChanged="ReceptionStatusFilter_SelectionChanged"
+                            FontSize="14.3" VerticalContentAlignment="Center" Margin="0,0,8,0">
+                    <ComboBoxItem Content="همه وضعیت‌ها" Tag="all"/>
+                    <ComboBoxItem Content="در حال بررسی" Tag="در حال بررسی"/>
+                    <ComboBoxItem Content="منتظر قطعه" Tag="منتظر قطعه"/>
+                    <ComboBoxItem Content="آماده تحویل" Tag="آماده تحویل"/>
+                    <ComboBoxItem Content="تحویل داده شده" Tag="تحویل داده شده"/>
+                  </ComboBox>
+                  <Button Content="✦  اولویت‌بندی هوشمند تحویل" Click="SortByPriorityButton_Click" Background="#F1F5F9" Foreground="#334155"
+                          BorderBrush="#E2E8F0" BorderThickness="1" Padding="9,6" FontSize="13.2" FontWeight="SemiBold" Cursor="Hand"/>
+                </StackPanel>
+              </Grid>
+
+              <DataGrid x:Name="ReceptionGrid" ItemsSource="{Binding ReceptionRows}" AutoGenerateColumns="False"
+                        IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserResizeRows="False"
+                        HeadersVisibility="Column" GridLinesVisibility="None" RowHeaderWidth="0" Height="350" MinHeight="44"
+                        Margin="10,0,10,0" HorizontalAlignment="Stretch"
+                        Background="#FFFFFF" BorderThickness="0" FontSize="14.3" FlowDirection="RightToLeft"
+                        RowHeight="49" CanUserResizeColumns="False" CanUserReorderColumns="False" EnableRowVirtualization="False"
+                        SelectionMode="Single" SelectionUnit="FullRow" AlternatingRowBackground="#F8FAFC"
+                        HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled">
+                <DataGrid.Columns>
+                  <!-- Explicit per-row strip at the physical right edge (first column in RTL). -->
+                  <DataGridTemplateColumn Header="" Width="3.3" MinWidth="3.3" MaxWidth="3.3" IsReadOnly="True" CanUserSort="False" CanUserResize="False">
+                    <DataGridTemplateColumn.HeaderStyle>
+                      <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#FFFFFF"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Padding" Value="0"/>
+                      </Style>
+                    </DataGridTemplateColumn.HeaderStyle>
+                    <DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="DataGridCell">
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                      </Style>
+                    </DataGridTemplateColumn.CellStyle>
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <Border Background="{Binding MarkerBrush}" ToolTip="{Binding MarkerLabel}"
+                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True"/>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTemplateColumn Header="کد پذیرش" Width="86">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding Code}" FontSize="13" FontWeight="SemiBold"
+                                   HorizontalAlignment="Stretch" VerticalAlignment="Center" TextAlignment="Right">
+                          <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                              <Setter Property="Foreground" Value="#334155"/>
+                              <Style.Triggers>
+                                <DataTrigger Binding="{Binding CustomerType}" Value="همکار">
+                                  <Setter Property="Foreground" Value="#8B5CF6"/>
+                                </DataTrigger>
+                              </Style.Triggers>
+                            </Style>
+                          </TextBlock.Style>
+                        </TextBlock>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTemplateColumn Header="مشتری" Width="1.3*">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="0,1">
+                          <TextBlock Text="{Binding Customer}" Foreground="#1E293B" FontSize="13.2" FontWeight="SemiBold" TextAlignment="Right" TextTrimming="CharacterEllipsis"/>
+                          <TextBlock Text="{Binding CustomerPhone}" Foreground="#94A3B8" FontSize="12.1" TextAlignment="Right"/>
+                        </StackPanel>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTextColumn Header="مدل دستگاه" Binding="{Binding Device}" Width="1.15*" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
+                  <DataGridTextColumn Header="ایراد / مشکل اعلامی" Binding="{Binding Problem}" Width="1.8*" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
+                  <DataGridTextColumn Header="تکنسین مسئول" Binding="{Binding Technician}" Width="1.05*" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
+                  <DataGridTextColumn Header="نوع مشتری" Binding="{Binding CustomerType}" Width="67" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
+                  <DataGridTextColumn Header="موعد تحویل" Binding="{Binding DueDate}" Width="91" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
+                  <DataGridTextColumn Header="هزینه تخمینی" Binding="{Binding Estimate}" Width="91" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
+                  <DataGridTemplateColumn Header="وضعیت" Width="92">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <Border x:Name="StatusPill" Background="#DBEAFE" CornerRadius="10" Padding="7,3" HorizontalAlignment="Right">
+                          <TextBlock x:Name="StatusPillText" Text="{Binding Status}" Foreground="#1D4ED8" FontSize="13.2" FontWeight="SemiBold"/>
+                        </Border>
+                        <DataTemplate.Triggers>
+                          <DataTrigger Binding="{Binding Status}" Value="در حال بررسی">
+                            <Setter TargetName="StatusPill" Property="Background" Value="#DBEAFE"/>
+                            <Setter TargetName="StatusPillText" Property="Foreground" Value="#1D4ED8"/>
+                          </DataTrigger>
+                          <DataTrigger Binding="{Binding Status}" Value="منتظر قطعه">
+                            <Setter TargetName="StatusPill" Property="Background" Value="#FFEDD5"/>
+                            <Setter TargetName="StatusPillText" Property="Foreground" Value="#C2410C"/>
+                          </DataTrigger>
+                          <DataTrigger Binding="{Binding Status}" Value="آماده تحویل">
+                            <Setter TargetName="StatusPill" Property="Background" Value="#D1FAE5"/>
+                            <Setter TargetName="StatusPillText" Property="Foreground" Value="#047857"/>
+                          </DataTrigger>
+                          <DataTrigger Binding="{Binding Status}" Value="تحویل داده شده">
+                            <Setter TargetName="StatusPill" Property="Background" Value="#E2E8F0"/>
+                            <Setter TargetName="StatusPillText" Property="Foreground" Value="#475569"/>
+                          </DataTrigger>
+                        </DataTemplate.Triggers>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTemplateColumn Header="عملیات" Width="64">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" FlowDirection="LeftToRight">
+                          <Button Content="▣" Tag="QCK-PRINT" Click="QuickActionButton_Click" ToolTip="چاپ نمایشی"
+                                  Padding="3,1" Margin="1,0" Background="Transparent" BorderBrush="Transparent" Foreground="#475569" FontSize="14.3"/>
+                          <Button Content="↗" Tag="QCK-EDIT" Click="QuickActionButton_Click" ToolTip="ویرایش نمایشی"
+                                  Padding="3,1" Margin="1,0" Background="Transparent" BorderBrush="Transparent" Foreground="#2563EB" FontSize="14.3"/>
+                        </StackPanel>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                </DataGrid.Columns>
+              </DataGrid>
+            </StackPanel>
+          </Border>
+
+          <!-- Analytics and workshop readiness -->
+          <Grid Margin="0,0,0,16">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="1*"/></Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Padding="17">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock Text="ورودی و تعمیرات ۴ هفته اخیر" Foreground="#1E293B" FontSize="15.4" FontWeight="Bold"/>
+                  <TextBlock Text="نمودار نمایشی" Foreground="#94A3B8" FontSize="13.2" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                </DockPanel>
+                <WrapPanel Margin="0,0,0,6">
+                  <StackPanel Orientation="Horizontal" Margin="0,0,12,5"><Rectangle Width="18" Height="3" Fill="#2563EB" VerticalAlignment="Center" Margin="0,0,5,0"/><TextBlock Text="ورودی جاری" Foreground="#64748B" FontSize="12.1"/></StackPanel>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,12,5"><Rectangle Width="18" Height="3" Fill="#0EA5E9" VerticalAlignment="Center" Margin="0,0,5,0"/><TextBlock Text="تعمیر جاری" Foreground="#64748B" FontSize="12.1"/></StackPanel>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,12,5"><Rectangle Width="18" Height="3" Fill="#F43F5E" VerticalAlignment="Center" Margin="0,0,5,0"/><TextBlock Text="ورودی هفته قبل" Foreground="#64748B" FontSize="12.1"/></StackPanel>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,12,5"><Rectangle Width="18" Height="3" Fill="#FB7185" VerticalAlignment="Center" Margin="0,0,5,0"/><TextBlock Text="تعمیر هفته قبل" Foreground="#64748B" FontSize="12.1"/></StackPanel>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,12,5"><Rectangle Width="18" Height="3" Fill="#10B981" VerticalAlignment="Center" Margin="0,0,5,0"/><TextBlock Text="ورودی ۲ هفته قبل" Foreground="#64748B" FontSize="12.1"/></StackPanel>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,12,5"><Rectangle Width="18" Height="3" Fill="#F59E0B" VerticalAlignment="Center" Margin="0,0,5,0"/><TextBlock Text="ورودی ۳ هفته قبل" Foreground="#64748B" FontSize="12.1"/></StackPanel>
+                </WrapPanel>
+                <Border Background="#FFFFFF" Height="178" CornerRadius="8" ClipToBounds="True">
+                  <Grid>
+                    <Viewbox Stretch="Fill" IsHitTestVisible="False">
+                      <Canvas Width="850" Height="190">
+                        <Line X1="42" Y1="22" X2="840" Y2="22" Stroke="#E2E8F0" StrokeThickness="1"/>
+                        <Line X1="42" Y1="50" X2="840" Y2="50" Stroke="#E2E8F0" StrokeThickness="1"/>
+                        <Line X1="42" Y1="78" X2="840" Y2="78" Stroke="#E2E8F0" StrokeThickness="1"/>
+                        <Line X1="42" Y1="106" X2="840" Y2="106" Stroke="#E2E8F0" StrokeThickness="1"/>
+                        <Line X1="42" Y1="134" X2="840" Y2="134" Stroke="#E2E8F0" StrokeThickness="1"/>
+                        <Line X1="42" Y1="162" X2="840" Y2="162" Stroke="#CBD5E1" StrokeThickness="1"/>
+                        <TextBlock Canvas.Left="8" Canvas.Top="14" Text="۲۵" FontSize="13.2" Foreground="#94A3B8"/>
+                        <TextBlock Canvas.Left="8" Canvas.Top="42" Text="۲۰" FontSize="13.2" Foreground="#94A3B8"/>
+                        <TextBlock Canvas.Left="8" Canvas.Top="70" Text="۱۵" FontSize="13.2" Foreground="#94A3B8"/>
+                        <TextBlock Canvas.Left="8" Canvas.Top="98" Text="۱۰" FontSize="13.2" Foreground="#94A3B8"/>
+                        <TextBlock Canvas.Left="14" Canvas.Top="126" Text="۵" FontSize="13.2" Foreground="#94A3B8"/>
+                        <TextBlock Canvas.Left="14" Canvas.Top="154" Text="۰" FontSize="13.2" Foreground="#94A3B8"/>
+                        <Polygon Points="55,83 185,61 315,72 445,39 575,57 705,22 825,94 825,162 55,162"
+                                 Fill="#2563EB" Opacity="0.07"/>
+                        <Polyline Points="55,83 185,61 315,72 445,39 575,57 705,22 825,94"
+                                  Stroke="#2563EB" StrokeThickness="3" StrokeLineJoin="Round"/>
+                        <Polyline Points="55,101 185,79 315,91 445,58 575,73 705,50 825,111"
+                                  Stroke="#2563EB" StrokeThickness="2" StrokeDashArray="5,3" StrokeLineJoin="Round"/>
+                        <Polyline Points="55,116 185,100 315,108 445,84 575,88 705,76 825,126"
+                                  Stroke="#F43F5E" StrokeThickness="2.5" StrokeLineJoin="Round"/>
+                        <Polyline Points="55,126 185,111 315,119 445,97 575,105 705,91 825,135"
+                                  Stroke="#FB7185" StrokeThickness="2" StrokeDashArray="4,3" StrokeLineJoin="Round"/>
+                        <Polyline Points="55,119 185,102 315,112 445,107 575,86 705,99 825,132"
+                                  Stroke="#10B981" StrokeThickness="2" StrokeLineJoin="Round"/>
+                        <Polyline Points="55,136 185,125 315,130 445,117 575,122 705,108 825,147"
+                                  Stroke="#F59E0B" StrokeThickness="2" StrokeLineJoin="Round"/>
+                        <Ellipse Canvas.Left="50" Canvas.Top="78" Width="10" Height="10" Fill="#2563EB" Stroke="White" StrokeThickness="2"/>
+                        <Ellipse Canvas.Left="180" Canvas.Top="56" Width="10" Height="10" Fill="#2563EB" Stroke="White" StrokeThickness="2"/>
+                        <Ellipse Canvas.Left="310" Canvas.Top="67" Width="10" Height="10" Fill="#2563EB" Stroke="White" StrokeThickness="2"/>
+                        <Ellipse Canvas.Left="440" Canvas.Top="34" Width="10" Height="10" Fill="#2563EB" Stroke="White" StrokeThickness="2"/>
+                        <Ellipse Canvas.Left="570" Canvas.Top="52" Width="10" Height="10" Fill="#2563EB" Stroke="White" StrokeThickness="2"/>
+                        <Ellipse Canvas.Left="700" Canvas.Top="17" Width="10" Height="10" Fill="#2563EB" Stroke="White" StrokeThickness="2"/>
+                        <Ellipse Canvas.Left="820" Canvas.Top="89" Width="10" Height="10" Fill="#2563EB" Stroke="White" StrokeThickness="2"/>
+                      </Canvas>
+                    </Viewbox>
+                    <UniformGrid Columns="7" VerticalAlignment="Bottom" Margin="42,0,10,2" FlowDirection="LeftToRight">
+                      <TextBlock Text="شنبه" Foreground="#94A3B8" FontSize="12.1" HorizontalAlignment="Center"/>
+                      <TextBlock Text="یکشنبه" Foreground="#94A3B8" FontSize="12.1" HorizontalAlignment="Center"/>
+                      <TextBlock Text="دوشنبه" Foreground="#94A3B8" FontSize="12.1" HorizontalAlignment="Center"/>
+                      <TextBlock Text="سه‌شنبه" Foreground="#94A3B8" FontSize="12.1" HorizontalAlignment="Center"/>
+                      <TextBlock Text="چهارشنبه" Foreground="#94A3B8" FontSize="12.1" HorizontalAlignment="Center"/>
+                      <TextBlock Text="پنجشنبه" Foreground="#94A3B8" FontSize="12.1" HorizontalAlignment="Center"/>
+                      <TextBlock Text="جمعه" Foreground="#94A3B8" FontSize="12.1" HorizontalAlignment="Center"/>
+                    </UniformGrid>
+                  </Grid>
+                </Border>
+              </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Padding="17">
+              <StackPanel>
+                <TextBlock Text="وضعیت و بار کاری تکنسین‌ها" Foreground="#1E293B" FontSize="15.4" FontWeight="Bold" Margin="0,0,0,13"/>
+                <StackPanel Margin="0,0,0,12">
+                  <DockPanel Margin="0,0,0,6"><TextBlock Text="مهندس رضایی (سخت‌افزار)" Foreground="#475569" FontSize="13.2" FontWeight="SemiBold"/><TextBlock Text="۴ فعال" Foreground="#2563EB" FontSize="13.2" DockPanel.Dock="Left"/></DockPanel>
+                  <ProgressBar Value="75" Height="7" Foreground="#2563EB" Background="#E2E8F0" BorderThickness="0"/>
+                  <DockPanel Margin="0,5,0,0"><TextBlock Text="۳۸ ورودی" Foreground="#64748B" FontSize="12.1"/><TextBlock Text="۲۹ تحویل" Foreground="#64748B" FontSize="12.1" DockPanel.Dock="Left"/></DockPanel>
+                </StackPanel>
+                <StackPanel Margin="0,0,0,12">
+                  <DockPanel Margin="0,0,0,6"><TextBlock Text="مهندس حسینی (نرم‌افزار)" Foreground="#475569" FontSize="13.2" FontWeight="SemiBold"/><TextBlock Text="۲ فعال" Foreground="#059669" FontSize="13.2" DockPanel.Dock="Left"/></DockPanel>
+                  <ProgressBar Value="42" Height="7" Foreground="#10B981" Background="#E2E8F0" BorderThickness="0"/>
+                  <DockPanel Margin="0,5,0,0"><TextBlock Text="۲۱ ورودی" Foreground="#64748B" FontSize="12.1"/><TextBlock Text="۱۷ تحویل" Foreground="#64748B" FontSize="12.1" DockPanel.Dock="Left"/></DockPanel>
+                </StackPanel>
+                <StackPanel>
+                  <DockPanel Margin="0,0,0,6"><TextBlock Text="مهندس کاظمی (تعویض گلس)" Foreground="#475569" FontSize="13.2" FontWeight="SemiBold"/><TextBlock Text="۳ فعال" Foreground="#D97706" FontSize="13.2" DockPanel.Dock="Left"/></DockPanel>
+                  <ProgressBar Value="63" Height="7" Foreground="#F59E0B" Background="#E2E8F0" BorderThickness="0"/>
+                  <DockPanel Margin="0,5,0,0"><TextBlock Text="۲۷ ورودی" Foreground="#64748B" FontSize="12.1"/><TextBlock Text="۲۲ تحویل" Foreground="#64748B" FontSize="12.1" DockPanel.Dock="Left"/></DockPanel>
+                </StackPanel>
+                <Button Content="＋ ارجاع دستگاه جدید به تکنسین" Click="QuickActionButton_Click" Tag="QCK-04"
+                        HorizontalAlignment="Stretch" Padding="10,8" Margin="0,14,0,0"
+                        Background="#2563EB" Foreground="#FFFFFF" BorderBrush="#2563EB" FontSize="13.2" FontWeight="SemiBold"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+
+          <!-- Reference dashboard's two ranking panels for parts usage and repair types. -->
+          <Border Style="{StaticResource CardBorderStyle}" Padding="14" Margin="0,0,0,14">
+            <StackPanel>
+              <DockPanel Margin="0,0,0,14">
+                <StackPanel DockPanel.Dock="Right">
+                  <TextBlock Text="گزارشات آماری مصرف قطعات و انواعی از تعمیرات (نمودار ستونی عمودی)" Foreground="#1E293B" FontSize="16.5" FontWeight="Bold"/>
+                  <TextBlock Text="نمودارهای نمایشی · گزارش ماه جاری و سالانه" Foreground="#64748B" FontSize="13.2" Margin="0,4,0,0"/>
+                </StackPanel>
+                <ComboBox DockPanel.Dock="Left" Width="190" Height="29" FontSize="13.2" SelectedIndex="0"
+                          Background="#F8FAFC" Foreground="#334155" BorderBrush="#CBD5E1"
+                          ToolTip="فیلتر نمایشی گزارش؛ داده‌ها ساختگی هستند">
+                  <ComboBoxItem Content="گزارش ماه جاری (آبان ۱۴۰۵)"/>
+                  <ComboBoxItem Content="گزارش سالانه (۱۴۰۵)"/>
+                </ComboBox>
+              </DockPanel>
+              <UniformGrid Columns="2">
+                <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,10,0">
+                  <StackPanel>
+                    <DockPanel Margin="0,0,0,10">
+                      <TextBlock Text="آمار مصرف قطعات (۱۰ مورد پرمصرف)" Foreground="#334155" FontSize="15.4" FontWeight="Bold" VerticalAlignment="Center"/>
+                      <Button DockPanel.Dock="Left" Content="اکسل" Click="QuickActionButton_Click" Tag="QCK-EXPORT-PARTS" Padding="8,4" FontSize="12.1" Background="#EFF6FF" Foreground="#1D4ED8" BorderBrush="#BFDBFE"/>
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding PartStatistics}" HorizontalAlignment="Stretch">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><UniformGrid Columns="10"/></ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel HorizontalAlignment="Stretch" Height="190" Margin="1,0" VerticalAlignment="Stretch">
+                            <TextBlock Text="{Binding Count}" Height="18" Foreground="#2563EB" FontSize="13.2" FontWeight="Bold" HorizontalAlignment="Center" TextAlignment="Center"/>
+                            <Grid Height="140" VerticalAlignment="Bottom">
+                              <Border Width="24" Background="#E2E8F0" CornerRadius="4" HorizontalAlignment="Center" Opacity="0.55"/>
+                              <Border Width="24" Height="{Binding BarHeight}" Background="{Binding BarBrush}" CornerRadius="4,4,0,0" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                            </Grid>
+                            <TextBlock Text="{Binding Label}" Height="30" Foreground="#64748B" FontSize="11" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+                <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,0">
+                  <StackPanel>
+                    <DockPanel Margin="0,0,0,10">
+                      <TextBlock Text="آمار انواع تعمیرات (۱۰ مورد پرتکرار)" Foreground="#334155" FontSize="15.4" FontWeight="Bold" VerticalAlignment="Center"/>
+                      <Button DockPanel.Dock="Left" Content="اکسل" Click="QuickActionButton_Click" Tag="QCK-EXPORT-REPAIRS" Padding="8,4" FontSize="12.1" Background="#F5F3FF" Foreground="#6D28D9" BorderBrush="#DDD6FE"/>
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding RepairStatistics}" HorizontalAlignment="Stretch">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><UniformGrid Columns="10"/></ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel HorizontalAlignment="Stretch" Height="190" Margin="1,0" VerticalAlignment="Stretch">
+                            <TextBlock Text="{Binding Count}" Height="18" Foreground="#7C3AED" FontSize="13.2" FontWeight="Bold" HorizontalAlignment="Center" TextAlignment="Center"/>
+                            <Grid Height="140" VerticalAlignment="Bottom">
+                              <Border Width="24" Background="#E2E8F0" CornerRadius="4" HorizontalAlignment="Center" Opacity="0.55"/>
+                              <Border Width="24" Height="{Binding BarHeight}" Background="{Binding BarBrush}" CornerRadius="4,4,0,0" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                            </Grid>
+                            <TextBlock Text="{Binding Label}" Height="30" Foreground="#64748B" FontSize="11" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+              </UniformGrid>
+              <Border BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Padding="0,10,0,0" Margin="0,12,0,0">
+                <DockPanel>
+                  <TextBlock Text="مجموع کل قطعات و تعمیرات ثبت‌شده در این دوره: ۲۹۱ مورد (نمونه)" Foreground="#64748B" FontSize="13.2"/>
+                  <TextBlock Text="بر پایه داده‌های ساختگی" Foreground="#94A3B8" FontSize="13.2" DockPanel.Dock="Left"/>
+                </DockPanel>
+              </Border>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- The Persons preview remains a separate destination, reached only by selecting its submenu item. -->
+      <Grid x:Name="PersonsPreviewView" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Margin="26,22,26,26">
+            <DockPanel Margin="0,0,0,18" LastChildFill="False">
+              <StackPanel DockPanel.Dock="Right">
+                <TextBlock Text="اشخاص" Foreground="#0F172A" FontSize="27.5" FontWeight="Bold"/>
+                <TextBlock Text="مرجع یکپارچه هویت اشخاص حقیقی و حقوقی؛ نقش‌ها از هویت جدا هستند." Foreground="#64748B" FontSize="15.4" Margin="0,6,0,0"/>
+              </StackPanel>
+              <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Background="#FFF7ED" BorderBrush="#FDBA74" BorderThickness="1" CornerRadius="9" Padding="11,7" Margin="0,0,10,0">
+                  <TextBlock Text="پیش‌نمایش — بدون ذخیره" Foreground="#9A3412" FontSize="14.3" FontWeight="SemiBold"/>
+                </Border>
+                <Button Content="بازگشت به داشبورد" Click="BackToDashboardButton_Click" Style="{StaticResource QuickActionButtonStyle}"/>
+              </StackPanel>
+            </DockPanel>
+
+            <Border Background="#FFF9E8" BorderBrush="#F5D98C" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,16">
+              <TextBlock Text="حالت نمایشی: فقط از داده ساختگی استفاده کنید. جست‌وجو و فرم زیر فقط در حافظه همین اجرا کار می‌کنند. هیچ API، جدول، Migration یا پایگاه داده‌ای تغییر نمی‌کند؛ با بستن برنامه، داده‌های افزوده‌شده حذف می‌شوند."
+                         Foreground="#7A5208" FontSize="14.3" TextWrapping="Wrap"/>
+            </Border>
+
+            <UniformGrid Columns="3" Margin="0,0,0,16">
+              <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="11" Padding="15" Margin="0,0,10,0">
+                <StackPanel><TextBlock Text="هویت پایدار" Foreground="#64748B" FontSize="14.3"/><TextBlock Text="شناسه داخلی" Foreground="#1D4ED8" FontSize="22" FontWeight="Bold" Margin="0,5,0,3"/><TextBlock Text="شناسه داخلی؛ مستقل از نام و تلفن" Foreground="#7B8798" FontSize="13.2"/></StackPanel>
+              </Border>
+              <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="11" Padding="15" Margin="0,0,10,0">
+                <StackPanel><TextBlock Text="نقش‌های مستقل" Foreground="#64748B" FontSize="14.3"/><TextBlock Text="مشتری / تأمین‌کننده" Foreground="#0F766E" FontSize="18.7" FontWeight="Bold" Margin="0,5,0,3"/><TextBlock Text="یک هویت می‌تواند چند نقش داشته باشد" Foreground="#7B8798" FontSize="13.2"/></StackPanel>
+              </Border>
+              <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="11" Padding="15">
+                <StackPanel><TextBlock Text="وضعیت نمونه‌ها" Foreground="#64748B" FontSize="14.3"/><TextBlock x:Name="PersonsPreviewCountText" Text="۴ رکورد نمایشی" Foreground="#7C3AED" FontSize="22" FontWeight="Bold" Margin="0,5,0,3"/><TextBlock Text="بدون اتصال به داده واقعی" Foreground="#7B8798" FontSize="13.2"/></StackPanel>
+              </Border>
+            </UniformGrid>
+
+            <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,15">
+              <StackPanel>
+                <TextBlock Text="جست‌وجو و فهرست اشخاص" Foreground="#1C2E49" FontWeight="Bold" FontSize="16.5"/>
+                <DockPanel Margin="0,12,0,12" LastChildFill="True">
+                  <Button DockPanel.Dock="Right" Content="＋ شخص جدید (نمایشی)" Click="NewPersonButton_Click"
+                          Background="#2563EB" Foreground="#FFFFFF" BorderBrush="#2563EB" BorderThickness="1"
+                          Padding="14,9" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,10,0"/>
+                  <TextBox x:Name="PersonsSearchBox" Height="38" Padding="11,7" FontSize="15.4" VerticalContentAlignment="Center"
+                           BorderBrush="#CBD5E1" BorderThickness="1" Background="#F8FAFC" ToolTip="جست‌وجو در کد، نام، نوع و نقش" TextChanged="PersonsSearchBox_TextChanged"/>
+                </DockPanel>
+                <DataGrid x:Name="PersonsPreviewGrid" ItemsSource="{Binding PreviewPersons}" AutoGenerateColumns="False"
+                          IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserResizeRows="False"
+                          HeadersVisibility="Column" GridLinesVisibility="Horizontal" RowHeaderWidth="0" Height="220"
+                          Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0"
+                          AlternatingRowBackground="#F8FAFC" FontSize="15.4" FlowDirection="RightToLeft"
+                          RowHeight="44" EnableRowVirtualization="False" CanUserReorderColumns="False"
+                          HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled"
+                          SelectionMode="Single" SelectionUnit="FullRow">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="کد نمایشی" Binding="{Binding Code}" Width="110" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
+                    <DataGridTextColumn Header="نام نمایشی" Binding="{Binding DisplayName}" Width="2*" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
+                    <DataGridTextColumn Header="نوع" Binding="{Binding PersonType}" Width="100" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
+                    <DataGridTextColumn Header="نقش‌ها" Binding="{Binding Roles}" Width="2*" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
+                    <DataGridTextColumn Header="تماس" Binding="{Binding ContactLabel}" Width="140" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
+                    <DataGridTextColumn Header="وضعیت" Binding="{Binding StatusLabel}" Width="120" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
+                  </DataGrid.Columns>
+                </DataGrid>
+                <TextBlock x:Name="PersonsSearchResultText" Text="۴ مورد نمایشی" Foreground="#64748B" FontSize="13.2" Margin="0,8,0,0"/>
+              </StackPanel>
+            </Border>
+
+            <Border x:Name="NewPersonFormPanel" Visibility="Collapsed" Background="#FFFFFF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="12" Padding="18">
+              <StackPanel>
+                <TextBlock Text="افزودن به پیش‌نمایش" Foreground="#1C2E49" FontWeight="Bold" FontSize="16.5"/>
+                <TextBlock Text="این فرم فقط برای ارزیابی ظاهر و گردش کار است و رکورد را پایدار ذخیره نمی‌کند." Foreground="#64748B" FontSize="14.3" Margin="0,4,0,13"/>
+                <Grid>
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="1.2*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1.1*"/></Grid.ColumnDefinitions>
+                  <StackPanel Grid.Column="0"><TextBlock Text="نام نمایشی *" FontSize="14.3" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NewPersonNameBox" Height="36" Padding="9,6"/></StackPanel>
+                  <StackPanel Grid.Column="2"><TextBlock Text="نوع شخص" FontSize="14.3" Foreground="#475569" Margin="0,0,0,5"/><ComboBox x:Name="NewPersonTypeBox" Height="36" SelectedIndex="0"><ComboBoxItem Content="حقیقی"/><ComboBoxItem Content="حقوقی"/></ComboBox></StackPanel>
+                  <StackPanel Grid.Column="4"><TextBlock Text="نقش نمایشی" FontSize="14.3" Foreground="#475569" Margin="0,0,0,5"/><ComboBox x:Name="NewPersonRoleBox" Height="36" SelectedIndex="0"><ComboBoxItem Content="بدون نقش"/><ComboBoxItem Content="مشتری"/><ComboBoxItem Content="تأمین‌کننده"/><ComboBoxItem Content="مشتری، تأمین‌کننده"/></ComboBox></StackPanel>
+                </Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,14,0,0">
+                  <Button Content="افزودن به پیش‌نمایش" Click="SavePreviewPersonButton_Click" Background="#0F766E" Foreground="#FFFFFF" BorderBrush="#0F766E" Padding="14,8" Margin="0,0,8,0"/>
+                  <Button Content="انصراف" Click="CancelNewPersonButton_Click" Background="#FFFFFF" Foreground="#334155" BorderBrush="#CBD5E1" Padding="14,8"/>
+                </StackPanel>
+                <TextBlock x:Name="PreviewFormMessageText" Foreground="#B45309" FontSize="14.3" Margin="0,9,0,0" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </Grid>
+
+    <!-- Compact footer follows the HTML reference; live status remains demo-only. -->
+    <Border Grid.Row="2" Background="#0F172A" BorderBrush="#1E293B" BorderThickness="0,1,0,0" Padding="18,0">
+      <DockPanel VerticalAlignment="Center" FlowDirection="RightToLeft">
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+          <TextBlock Text="سال مالی: ۱۴۰۵" Foreground="#CBD5E1" FontSize="13.2" VerticalAlignment="Center" Margin="0,0,15,0"/>
+          <TextBlock Text="نسخه پیش‌نمایش ۰٫۲٫۶" Foreground="#94A3B8" FontSize="13.2" VerticalAlignment="Center" Margin="0,0,15,0"/>
+          <TextBlock Text="شرکت: داده نمونه" Foreground="#CBD5E1" FontSize="13.2" VerticalAlignment="Center"/>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center" FlowDirection="RightToLeft">
+          <Ellipse Width="7" Height="7" Fill="#10B981" Margin="0,0,7,0" VerticalAlignment="Center"/>
+          <TextBlock Text="مدیر سیستم · محیط نمایشی" Foreground="#CBD5E1" FontSize="13.2" VerticalAlignment="Center" Margin="0,0,7,0"/>
+          <TextBlock x:Name="StatusText" Text="آماده" Foreground="#93C5FD" FontSize="13.2" VerticalAlignment="Center" Margin="14,0,0,0"/>
+          <TextBlock x:Name="DetailsText" Text="" Visibility="Collapsed" Foreground="#94A3B8" FontSize="13.2" VerticalAlignment="Center" Margin="12,0,0,0"/>
+        </StackPanel>
+      </DockPanel>
+    </Border>
+  </Grid>
+</Window>
