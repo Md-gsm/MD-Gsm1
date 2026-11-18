@@ -52,7 +52,7 @@ public sealed record PostingRuleDefinition(
 
     public bool HasCompleteAcceptanceEvidence =>
         FieldEvidenceValidator.IsComplete(AcceptanceEvidence, RequiredAcceptanceFields, RequiredVerifiedAcceptanceFields) &&
-        RequiredAcceptanceFields.All(field => FieldEvidenceValidator.Matches(AcceptanceEvidence, field, ExpectedEvidenceValue(field)));
+        RequiredAcceptanceFields.All(fieldName => FieldEvidenceValidator.Matches(AcceptanceEvidence, fieldName, ExpectedEvidenceValue(fieldName)));
 
     public bool IsExecutableOn(DateOnly date) =>
         Status == PostingRuleStatus.Accepted && Version > 0 &&
