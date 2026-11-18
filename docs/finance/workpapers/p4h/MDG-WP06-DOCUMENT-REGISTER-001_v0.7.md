@@ -12,7 +12,7 @@
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
 | PR | #66 — OPEN / DRAFT |
 | Branch | docs/finance-7b-7c-7d-integrated-baseline-20261117 |
-| Current source head at register preparation | e7b354f8ae6868f8e58ffb6f7284450944ae3081 |
+| Current source head at register preparation | tracked by PR #66 head metadata; exact-head CI pending |
 | Exact-head CI for this register/validator commit | PENDING — must run after all changes including this register and integrity manifest |
 
 ## 1. Authority hierarchy
