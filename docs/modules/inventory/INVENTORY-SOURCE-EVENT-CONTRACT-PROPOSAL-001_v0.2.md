@@ -66,6 +66,6 @@ The accepted owner decision scope is explicitly INV-EVT-001 through INV-EVT-018;
 ## 12. Technical acceptance and status
 All 18 owner decisions are business-approved. Technical acceptance remains open for Inventory and the relevant owners: Organization, Catalog, Purchasing, Sales, RepairOperations, Accounting, Security, Platform/DB and QA. The three design outputs are separately registered: ERD/Data Dictionary v0.1, State/Movement v0.1 and Test Specification v0.1. Numeric precision, Sales TTL default, serial namespace, landed-cost/True-up allocation, count cut-off strategy and exact in-transit COA mapping must be resolved before implementation.
 
-Inventory runtime/persistence/SQL/migrations: NOT IMPLEMENTED / NOT VERIFIED. Tests: NOT RUN. FE-01/FE-02 remain BLOCKED under their independent gates; FE-09 remains controlling. Accepted positive Posting Rules: 0. Migration 0009 remains reserved by PR #70. Posting Release and operational release: NOT GRANTED.
+Inventory runtime/persistence/SQL/migrations: NOT IMPLEMENTED / NOT VERIFIED. Tests: NOT RUN. FE-01/FE-02 remain BLOCKED under their independent gates; FE-09 remains controlling. Accepted positive Posting Rules: 0. Migration 0009 remains reserved by PR #70. Posting Release: NOT GRANTED. Operational release: NOT GRANTED.
 
 **End of proposal.**
