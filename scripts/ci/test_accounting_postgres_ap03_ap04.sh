@@ -96,7 +96,13 @@ expect_failure "AP04 accepted COA snapshot truncate blocked" \
 psql -d "$db" -v ON_ERROR_STOP=1 <<'SQL'
 DO $$
 BEGIN
-    IF NOT has_table_privilege('mdgsm_ap_proof_runtime', 'ap_proof.audit_events', 'INSERT')
+    IF NOT has_table_privilege('mdgsm_ap_proof_runtime', 'ap_proof.journals', 'INSERT')
+       OR NOT has_column_privilege('mdgsm_ap_proof_runtime', 'ap_proof.journals', 'status', 'UPDATE')
+       OR has_column_privilege('mdgsm_ap_proof_runtime', 'ap_proof.journals', 'source_reference', 'UPDATE')
+       OR has_table_privilege('mdgsm_ap_proof_runtime', 'ap_proof.journals', 'DELETE')
+       OR NOT has_table_privilege('mdgsm_ap_proof_runtime', 'ap_proof.journal_lines', 'INSERT')
+       OR has_table_privilege('mdgsm_ap_proof_runtime', 'ap_proof.journal_lines', 'UPDATE')
+       OR has_table_privilege('mdgsm_ap_proof_runtime', 'ap_proof.journal_lines', 'DELETE')
        OR has_table_privilege('mdgsm_ap_proof_runtime', 'ap_proof.audit_events', 'UPDATE')
        OR has_table_privilege('mdgsm_ap_proof_runtime', 'ap_proof.audit_events', 'DELETE')
        OR has_table_privilege('mdgsm_ap_proof_runtime', 'ap_proof.period_transition_events', 'UPDATE')
@@ -111,7 +117,11 @@ expect_failure "AP04 runtime role cannot update append-only audit" \
 "SET ROLE mdgsm_ap_proof_runtime; UPDATE ap_proof.audit_events SET event_type = 'runtime-tamper' WHERE event_id = 'audit-1';"
 expect_failure "AP04 runtime role cannot update accepted COA snapshot" \
 "SET ROLE mdgsm_ap_proof_runtime; UPDATE ap_proof.coa_snapshots SET status = 'retired' WHERE snapshot_id = '00000000-0000-7000-8000-000000000031';"
-expect_failure "AP04 runtime role cannot update finalized journal despite table UPDATE grant" \
-"SET ROLE mdgsm_ap_proof_runtime; UPDATE ap_proof.journals SET source_reference = 'runtime-tamper' WHERE journal_id = '00000000-0000-7000-8000-000000000001';"
+expect_failure "AP04 runtime role cannot mutate finalized journal status despite column UPDATE grant" \
+"SET ROLE mdgsm_ap_proof_runtime; UPDATE ap_proof.journals SET status = 'draft' WHERE journal_id = '00000000-0000-7000-8000-000000000001';"
+expect_failure "AP07 runtime role cannot update journal line" \
+"SET ROLE mdgsm_ap_proof_runtime; UPDATE ap_proof.journal_lines SET debit_irr = 101 WHERE line_id = '00000000-0000-7000-8000-000000000011';"
+expect_failure "AP07 runtime role cannot delete journal line" \
+"SET ROLE mdgsm_ap_proof_runtime; DELETE FROM ap_proof.journal_lines WHERE line_id = '00000000-0000-7000-8000-000000000011';"
 
 echo "PASS: isolated PostgreSQL AP-03 deferred-balance and AP-04 immutability/least-privilege proof completed."
