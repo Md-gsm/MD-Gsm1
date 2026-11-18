@@ -241,6 +241,20 @@ public sealed class AccountingDomainTests
     }
 
     [Fact]
+    public async Task Posting_preflight_honors_cancellation_before_catalog_reads()
+    {
+        var service = new PostingPreflightService(
+            new RuleCatalog(null),
+            new AccountCatalog([]),
+            new PeriodCatalog(OpenPeriod()));
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            service.EvaluateAsync(new("FE-03", EffectiveDate, true, null), cancellation.Token).AsTask());
+    }
+
+    [Fact]
     public async Task Posting_preflight_blocks_tax_lines_when_tax_mode_is_zero()
     {
         var rule = AcceptedRule("FE-06") with { CreatesTaxLine = true };
