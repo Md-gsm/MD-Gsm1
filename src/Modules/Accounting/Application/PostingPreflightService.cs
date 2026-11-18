@@ -64,6 +64,7 @@ public sealed class PostingPreflightService(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(request.FinancialEventId))
             return PostingPreflightResult.Blocked([PostingBlockReason.InvalidFinancialEvent]);
 
