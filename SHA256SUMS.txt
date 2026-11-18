@@ -331,3 +331,8 @@ f7b9a8e26d0a09909c91e1caa7139516993024f78ced2f947980e70561575ec1  tests/MDGsm.Do
 a11fd2731ff4231e58c4e1c22da4e3e7028a881ef42a58d438aa126c25173eae  tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj
 9310ab2efe7882d93b95485018da867301d9976cde2f97f0200b8389cedf6d36  tools/MDGsm.DbMigrator/Program.cs
 92845c24c24126ce719265c637f6ad3eb5b80481e0d62ceee94ccc63c06e03fb  tests/MDGsm.Domain.Tests/Accounting/AccountCanonicalGateTests.cs
+c213f1234f964cbd06087ac4027ad14544e9d0b74e153b7765dfc930bb419c32  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.4.md
+da4219ae0df6ac311a9b570fff6f32fb039bdfd4bd5c9ba8a85ba7d21e533237  docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.2.md
+86e5674632ca294b171b681cc673a990683af647f46ca5de90623f4d90d5bfd7  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.6.md
+07c5a3b7ff7ca209b5002cb3d5f4e7e3bf8cba1d6c4b5ada9f70edb429f6de33  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001_v0.2.md
+efd3d054bc8e3ea9f84477c9949f97c470a9e1a7186ab0811c93746244abe21b  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.5.md
