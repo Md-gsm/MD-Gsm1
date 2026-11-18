@@ -236,3 +236,14 @@ The internal review found seven blocking design parameters/decisions (Decimal/UO
 The review does not constitute approval by Organization, Catalog, Purchasing, Sales, RepairOperations, Accounting, Security, Platform/DB or QA. Those owners must explicitly accept their assigned items against exact document versions and SHA. The three design specifications remain proposals and are not ready for physical schema or implementation until the blocking actions are closed.
 
 No architecture master change, runtime, SQL, migration, API, publisher, grant, Posting Rule or release authorization is included. Migration 0009 remains reserved by PR #70. OWN-INV-018 v1.0 remains the business-policy authority.
+
+
+## 18. Inventory technical resolution proposal
+
+| Artifact | Version | Status |
+|---|---:|---|
+| INVENTORY-TECHNICAL-RESOLUTION-PROPOSAL-001 | 0.1 | TECHNICAL DISPOSITION PROPOSED — CROSS-MODULE OWNER ACCEPTANCE REQUIRED |
+
+The proposal records explicit technical dispositions for INV-REV-01..07: PostgreSQL numeric/UOM precision; configurable Sales reservation TTL; serial/IMEI normalization and active uniqueness; evidence-based landed-cost allocation and True-up; immutable stocktake cut-off with ordered delta replay; Inventory in-transit custody with GL posting blocked until canonical COA evidence and a separately approved Posting Rule; and provisional valuation for permitted non-serialized shortage. It also records the related ERD/state invariants and test additions INV-T-066..077.
+
+These are design proposals, not owner acceptance. The seven internal design questions now have proposed dispositions, but cross-module acceptance remains OPEN. In particular, the exact in-transit GL account and Posting Rule are intentionally not selected; absence of canonical evidence is fail-closed. The proposal does not authorize physical schema, SQL, migration, runtime, publisher, grants, Posting Release or operational release. Migration 0009 remains reserved by PR #70.
