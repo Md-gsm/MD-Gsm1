@@ -220,4 +220,4 @@ Before implementation, resolve Decimal precision/scale and UOM fractional rules,
 - Inventory tests: NOT RUN.
 - FE-01 and FE-02: BLOCKED under separate source/Accounting gates; FE-09 remains controlling.
 - Accepted positive Posting Rules: 0.
-- Posting Release and operational release: NOT GRANTED.
+- Posting Release remains NOT GRANTED; operational release remains NOT GRANTED.
