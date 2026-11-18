@@ -1,13 +1,13 @@
 # MDG-WP06-DOCUMENT-REGISTER-001
-## Controlled Document Register — Version 0.9
+## Controlled Document Register — Version 1.0
 
 | Field | Value |
 |---|---|
 | Document ID | MDG-WP06-DOCUMENT-REGISTER-001 |
-| Version | 0.9 |
+| Version | 1.0 |
 | Classification | CONTROLLED REGISTER / IMPLEMENTATION STATUS |
 | Status | DRAFT — CURRENT REGISTER FOR PR #66 |
-| Supersedes | v0.8; v0.8 and earlier versions retained as historical snapshots |
+| Supersedes | v0.9; v0.9 and earlier versions retained as historical snapshots |
 | Architecture baseline | MDG-ARCH-MASTER-001 v2.5 |
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
 | PR | #66 — OPEN / DRAFT |
@@ -119,8 +119,8 @@ Finance Workpaper Structural Validation:
 
 ## 9. Version history
 
-- v0.5 through v0.8 are retained as historical snapshots.
-- v0.9 updates FE-01/FE-02 proposals to v0.2, aligns them with OWN-FE-01-02-001, and records the R1 repair-intake boundary and common event/outbox requirements.
+- v0.5 through v0.9 are retained as historical snapshots.
+- v1.0 registers the Inventory stock ownership/source-event proposal v0.1 and its owner-review boundary; no runtime contract or posting authorization is implied.
 
 
 ## 10. FE-01 / FE-02 source contract proposals — owner review pending
@@ -169,7 +169,7 @@ The decision fixes the approved business policy and technical boundaries, includ
 
 - Sales source contract: revise proposal and obtain Sales/Pricing/Tax owner acceptance — PENDING.
 - RepairOperations source contract: revise proposal and obtain owner acceptance — PENDING.
-- Inventory committed movement/fulfillment contract: NOT STARTED.
+- Inventory committed movement/fulfillment contract: PROPOSAL v0.1 — INVENTORY OWNER REVIEW REQUIRED.
 - RecognitionTime and exact Posting Matrix: PENDING.
 - Runtime implementation/tests and independent review: NOT RUN / NOT VERIFIED.
 - Accepted positive Posting Rules: 0; Posting Release: NOT GRANTED.
@@ -185,4 +185,17 @@ The decision fixes the approved business policy and technical boundaries, includ
 
 The v0.2 revisions implement the approved policy boundaries in documentation: Inventory exclusively owns committed movement/fulfillment and valuation; Sales owns commercial documents and references Inventory evidence; revenue recognition is separate from payment/settlement; return entitlement/revenue reversal is separate from Inventory inspection/restock; standard physical repair requires technical completion plus confirmed handover; R1 repair intake is disabled and no synthetic RepairCase is permitted; any R1 FE-02 posting requires a real, approved external source; actor and recipient references are distinct; request IdempotencyKey is distinct from EventId; transactional outbox semantics are specified without claiming exactly-once delivery.
 
-No module-owner technical acceptance has been received by this register. Inventory contract is NOT STARTED. FE-01 and FE-02 remain BLOCKED. Accepted positive Posting Rules: 0. Runtime tests: NOT RUN / NOT VERIFIED. Posting Release: NOT GRANTED.
+No module-owner technical acceptance has been received by this register. Inventory contract proposal v0.1 is registered; Inventory owner technical acceptance remains OPEN. FE-01 and FE-02 remain BLOCKED. Accepted positive Posting Rules: 0. Runtime tests: NOT RUN / NOT VERIFIED. Posting Release: NOT GRANTED.
+
+
+## 14. Inventory source-event and stock ownership proposal
+
+| Artifact | Version | Current status |
+|---|---:|---|
+| Inventory source event and stock ownership proposal | 0.1 | PROPOSAL — INVENTORY OWNER REVIEW REQUIRED |
+
+The Inventory proposal records the exclusive STK-01 boundary for stock quantities, committed movement ledger, fulfillment, transfers, return inspection/disposition, counts/adjustments and valuation evidence. Organization remains owner of warehouse/location master data; Product/catalog remains owner of product/variant and measurement definitions. Sales and RepairOperations retain references only. Accounting retains RecognitionTime, COA, Posting Rules, COGS and GL posting authority.
+
+The proposal specifies candidate stock identity dimensions, quantity/UOM invariants, reservation versus committed movement, movement categories, SalesLine partial fulfillment linkage, RepairServiceLine linkage with strict R1 prohibition, return inspection states, immutable corrections/reversals, valuation evidence requirements without selecting a costing method, common event identity/versioning/idempotency, transactional outbox, concurrency/fail-closed behavior and 18 owner acceptance items.
+
+All Inventory owner technical acceptance items remain OPEN. The proposal is documentation only; no Inventory Contracts project, runtime, SQL, migration, API or publisher is created. Migration 0009 remains reserved by PR #70 and is not consumed. FE-01 and FE-02 remain BLOCKED; accepted positive Posting Rules remain 0; Posting Release remains NOT GRANTED.
