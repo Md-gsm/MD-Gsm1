@@ -11,6 +11,7 @@ P7C = ROOT / "docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_
 ADD = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.2.md"
 P7D = ROOT / "docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md"
 CLOSE7B = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-7B-POSTING-RULE-CLOSURE-001_v0.2.md"
+REGISTER = ROOT / "docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.6.md"
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
@@ -25,7 +26,7 @@ def exact(label: str, actual: list[str], expected: set[str]) -> None:
     if len(actual) != len(set(actual)) or set(actual) != expected or len(actual) != len(expected):
         fail(f"{label}: actual={sorted(actual)} expected={sorted(expected)}")
 
-b, c, a, d, close7b = map(read, (P7B, P7C, ADD, P7D, CLOSE7B))
+b, c, a, d, close7b, register = map(read, (P7B, P7C, ADD, P7D, CLOSE7B, REGISTER))
 section = b.split("## 3. ماتریس تعیین تکلیف نهایی FE-01..FE-38", 1)[1].split("## 4. کنترل‌های عمومی غیرقابل عدول", 1)[0]
 fe_rows = [x for x in section.splitlines() if x.startswith("| FE-")]
 fe_ids = [re.search(r"^\|\s*(FE-\d{2}b?)\s*\|", x).group(1) for x in fe_rows]
@@ -119,6 +120,16 @@ if "Positive accounting journal cases | BLOCKED UNTIL 7B/7C CANONICAL" not in d:
     fail("positive journal tests must remain blocked")
 if "NOT RUN / NOT VERIFIED" not in d or "Posting Release | NOT GRANTED" not in d:
     fail("7D execution/no-release guards missing")
+
+for token in (
+    "Controlled Document Register — Version 0.6",
+    "MDG-WP06-7B-POSTING-RULE-CLOSURE-001 | v0.2",
+    "Accepted positive Posting Rules: 0",
+    "Exact-head validation for the current register/validator changes is PENDING",
+    "Posting Release | NOT GRANTED",
+):
+    if token not in register:
+        fail(f"document register v0.6 missing required control: {token}")
 
 print("PASS: finance workpaper structural consistency")
 print(f"7B: {len(fe_ids)} event rows (38 FE identifiers + FE-10b); 39 fail-closed gate references")
