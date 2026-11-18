@@ -119,6 +119,8 @@ public sealed class AccountCanonicalGateTests
 
     [Fact]
     [Trait("TestId", "MDG-COA-GATE-009")]
+    [Trait("TestId", "MDG-FIN-COA-002")]
+    [Trait("TestScope", "UnitSnapshotOnly")]
     public void Duplicate_account_codes_are_rejected_even_when_account_ids_differ()
     {
         var issues = AccountRegistryValidator.Validate([
