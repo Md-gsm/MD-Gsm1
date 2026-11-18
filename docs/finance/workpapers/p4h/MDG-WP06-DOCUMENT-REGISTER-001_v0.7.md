@@ -1,13 +1,13 @@
 # MDG-WP06-DOCUMENT-REGISTER-001
-## Controlled Document Register — Version 0.8
+## Controlled Document Register — Version 0.9
 
 | Field | Value |
 |---|---|
 | Document ID | MDG-WP06-DOCUMENT-REGISTER-001 |
-| Version | 0.8 |
+| Version | 0.9 |
 | Classification | CONTROLLED REGISTER / IMPLEMENTATION STATUS |
 | Status | DRAFT — CURRENT REGISTER FOR PR #66 |
-| Supersedes | v0.7; v0.7 and earlier versions retained as historical snapshots |
+| Supersedes | v0.8; v0.8 and earlier versions retained as historical snapshots |
 | Architecture baseline | MDG-ARCH-MASTER-001 v2.5 |
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
 | PR | #66 — OPEN / DRAFT |
@@ -119,13 +119,13 @@ Finance Workpaper Structural Validation:
 
 ## 9. Version history
 
-- v0.5 and v0.6 are retained as historical snapshots.
-- v0.7 is the current register reflecting 7B closure ledger v0.2, FE-01/FE-02 source-contract proposals and exact-head CI discipline.
+- v0.5 through v0.8 are retained as historical snapshots.
+- v0.9 updates FE-01/FE-02 proposals to v0.2, aligns them with OWN-FE-01-02-001, and records the R1 repair-intake boundary and common event/outbox requirements.
 
 
 ## 10. FE-01 / FE-02 source contract proposals — owner review pending
 
-The following proposals have been added to make the missing source-module dependencies concrete and reviewable without fabricating runtime contracts:
+The following v0.2 proposals translate approved owner policy into technical dependencies without claiming runtime implementation:
 
 | Proposal | Scope | Status |
 |---|---|---|
@@ -134,12 +134,12 @@ The following proposals have been added to make the missing source-module depend
 | `docs/finance/workpapers/p4h/integration/MDG-WP06-FE01-FE02-SOURCE-CROSSWALK-PROPOSAL-001_v0.1.md` | Cross-module source evidence and RecognitionTime questions for FE-01/FE-02 | PROPOSAL — SOURCE OWNER REVIEW REQUIRED |
 
 Boundaries:
-- These are documentation proposals only. No Sales runtime module, event publisher, outbox, RepairOperations runtime event contract, Inventory adapter or Accounting adapter is added.
+- These are documentation proposals only. Sales, RepairOperations, Inventory and Accounting runtime event publishers/adapters are not added. The proposals now reflect OWN-FE-01-02-001 v1.0; module-owner technical acceptance remains open.
 - The existing RepairOperations Contracts README links the proposal and continues to state that no runtime repair event contract is published.
 - Sales document finalization is not treated as proof of Inventory fulfillment.
-- Repair technical completion, quality acceptance, handover and invoice finalization are distinct candidate facts; no RecognitionTime is selected.
+- Repair technical completion, required QC, readiness, handover, invoice finalization and payment are distinct facts. Standard physical repair requires completion plus confirmed handover. R1 repair intake is disabled; R1 FE-02 posting is blocked absent a real, authorized, immutable and independently addressable source.
 - Inventory's committed movement/fulfillment contract remains a required external dependency and is not fabricated here.
-- All owner decision IDs in the proposals remain OPEN until the respective data owners review and accept them.
+- Business policy OWN-FE-01-02-001 is APPROVED; technical acceptance IDs remain OPEN until their respective data owners review and accept them.
 
 7B disposition remains unchanged:
 - FE-01: BLOCKED.
@@ -149,7 +149,7 @@ Boundaries:
 - Independent review: PENDING.
 - Posting Release: NOT GRANTED.
 
-The finance structural validator now checks the presence and non-runtime/owner-review status of these proposals. A passing structural check does not constitute owner acceptance, source contract publication, Accounting RecognitionTime approval or Posting Release.
+The finance structural validator checks the v0.2 proposal version markers, R1 repair-intake prohibition, ownership boundaries and non-runtime/no-release status. A passing structural check does not constitute owner acceptance, source contract publication, Accounting RecognitionTime approval or Posting Release.
 
 ## 11. Version history
 
@@ -173,3 +173,16 @@ The decision fixes the approved business policy and technical boundaries, includ
 - RecognitionTime and exact Posting Matrix: PENDING.
 - Runtime implementation/tests and independent review: NOT RUN / NOT VERIFIED.
 - Accepted positive Posting Rules: 0; Posting Release: NOT GRANTED.
+
+
+## 13. v0.2 proposal alignment status
+
+| Artifact | Version | Current status |
+|---|---:|---|
+| Sales source event proposal | 0.2 | PROPOSAL — OWNER REVIEW REQUIRED |
+| RepairOperations source event proposal | 0.2 | PROPOSAL — OWNER REVIEW REQUIRED |
+| FE-01/FE-02 Accounting source crosswalk | 0.2 | PROPOSAL — SOURCE OWNER REVIEW REQUIRED |
+
+The v0.2 revisions implement the approved policy boundaries in documentation: Inventory exclusively owns committed movement/fulfillment and valuation; Sales owns commercial documents and references Inventory evidence; revenue recognition is separate from payment/settlement; return entitlement/revenue reversal is separate from Inventory inspection/restock; standard physical repair requires technical completion plus confirmed handover; R1 repair intake is disabled and no synthetic RepairCase is permitted; any R1 FE-02 posting requires a real, approved external source; actor and recipient references are distinct; request IdempotencyKey is distinct from EventId; transactional outbox semantics are specified without claiming exactly-once delivery.
+
+No module-owner technical acceptance has been received by this register. Inventory contract is NOT STARTED. FE-01 and FE-02 remain BLOCKED. Accepted positive Posting Rules: 0. Runtime tests: NOT RUN / NOT VERIFIED. Posting Release: NOT GRANTED.
