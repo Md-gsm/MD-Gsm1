@@ -1,10 +1,10 @@
 # MDG-WP06-DOCUMENT-REGISTER-001
-## Controlled Document Register — Version 1.3
+## Controlled Document Register — Version 1.2
 
 | Field | Value |
 |---|---|
 | Document ID | MDG-WP06-DOCUMENT-REGISTER-001 |
-| Version | 1.3 |
+| Version | 1.2 |
 | Classification | CONTROLLED REGISTER / IMPLEMENTATION STATUS |
 | Status | DRAFT — CURRENT REGISTER FOR PR #66 |
 | Supersedes | v1.1; prior versions retained as historical snapshots |
