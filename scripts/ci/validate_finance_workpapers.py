@@ -37,6 +37,43 @@ for row in fe_rows:
     if len(cells) < 3 or "BLOCKED" not in cells[1]:
         fail(f"non fail-closed FE row: {row}")
 
+def table_rows_between(document: str, start: str, end: str) -> list[str]:
+    if start not in document or end not in document:
+        fail(f"missing section boundary: {start} / {end}")
+    return [x for x in document.split(start, 1)[1].split(end, 1)[0].splitlines()
+            if x.startswith("| FE-")]
+
+owner_rows = table_rows_between(
+    b, "## 6. Owner Action Register برای هر FE", "## 7. Field-Level Disposition Register"
+)
+field_rows = table_rows_between(
+    b, "## 7. Field-Level Disposition Register", "### 7.1 تفسیر وضعیت"
+)
+issue_rows = table_rows_between(
+    b, "### 7.2 OpenIssue ID و SourceRef دوطرفه برای تمام FEها", "تمام OpenIssueها"
+)
+for label, rows in (("7B Owner Action", owner_rows), ("7B Field-Level", field_rows),
+                    ("7B OpenIssue", issue_rows)):
+    ids = [re.search(r"^\\|\\s*(FE-\\d{2}b?)\\s*\\|", x).group(1)
+           for x in rows if re.search(r"^\\|\\s*(FE-\\d{2}b?)\\s*\\|", x)]
+    exact(label, ids, expected_fe)
+
+issue_ids = [re.search(r"(7B-OPEN-\\d{3})", x).group(1)
+             for x in issue_rows if re.search(r"(7B-OPEN-\\d{3})", x)]
+exact("7B OpenIssue IDs", issue_ids, {f"7B-OPEN-{n:03d}" for n in range(1, 40)})
+if "- Event disposition coverage: 39/39 rows" not in b:
+    fail("7B must distinguish 38 FE identifiers from 39 event rows including FE-10b")
+if "Integrated v0.6 §6.2" not in b or "7C v0.4 §5" not in b:
+    fail("7B source crosswalk must reference current integrated v0.6 and 7C v0.4")
+if "Integrated v0.4 §6.2" in b or "7C v0.2 §5" in b:
+    fail("7B contains stale source-version references")
+fe09 = next((x for x in fe_rows if x.startswith("| FE-09 |")), "")
+if "110807 inactive R1" not in fe09 or "OWN-7C-038" not in fe09 or "6105/1202" not in fe09:
+    fail("7B must keep FE-09 separate from OWN-7C-038 fixed-asset treatment")
+fe14_issue = next((x for x in issue_rows if x.startswith("| FE-14 |")), "")
+if "OWN-7C-004-R1" not in fe14_issue:
+    fail("7B FE-14 must cite the controlling cheque owner decision")
+
 base_open = re.findall(r"^\|\s*(7C-OPEN-\d{3})\s*\|", c, re.MULTILINE)
 added_open = re.findall(r"^\|\s*(7C-OPEN-\d{3})\s*\|", a, re.MULTILINE)
 open_ids = base_open + added_open
