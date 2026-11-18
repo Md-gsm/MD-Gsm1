@@ -54,7 +54,7 @@ public sealed record PostingRuleDefinition(
         FieldEvidenceValidator.IsComplete(
             AcceptanceEvidence,
             RequiredAcceptanceFields,
-            new HashSet<string>(StringComparer.Ordinal)) &&
+            RequiredVerifiedAcceptanceFields) &&
         RequiredAcceptanceFields
             .Select(fieldName => (Field: fieldName, Expected: ExpectedEvidenceValue(fieldName)))
             .Where(item => item.Expected is not null)
