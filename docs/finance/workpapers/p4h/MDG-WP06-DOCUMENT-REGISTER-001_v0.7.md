@@ -1,10 +1,10 @@
 # MDG-WP06-DOCUMENT-REGISTER-001
-## Controlled Document Register — Version 1.2
+## Controlled Document Register — Version 1.3
 
 | Field | Value |
 |---|---|
 | Document ID | MDG-WP06-DOCUMENT-REGISTER-001 |
-| Version | 1.2 |
+| Version | 1.3 |
 | Classification | CONTROLLED REGISTER / IMPLEMENTATION STATUS |
 | Status | DRAFT — CURRENT REGISTER FOR PR #66 |
 | Supersedes | v1.1; prior versions retained as historical snapshots |
@@ -209,7 +209,7 @@ Sales reservation has configurable TTL; Repair reservation has no automatic TTL.
 | INVENTORY-STATE-MOVEMENT-SPEC-001 | 0.1 | DESIGN PROPOSAL — OWNER REVIEW REQUIRED |
 | INVENTORY-TEST-SPEC-001 | 0.1 | TEST DESIGN — QA/DB/OWNER REVIEW REQUIRED |
 
-These specifications define a conceptual ERD/data dictionary, separate state and movement machines, and 65 test definitions (34 owner-approved baseline + 31 additional). They are design/test proposals, not physical schema, executable migrations or evidence of execution.
+These specifications define a conceptual ERD/data dictionary, separate state and movement machines, and 66 test definitions at the time of initial drafting (34 owner-approved baseline + 31 additional + 1 targeted per-observation stocktake case added as INV-T-078). They are design/test proposals, not physical schema, executable migrations or evidence of execution.
 
 Before implementation, resolve Decimal precision/scale and UOM fractional rules, default Sales TTL, serial uniqueness namespace, landed-cost/True-up allocation and rounding, stocktake cut-off strategy, and exact in-transit COA/Posting Rule mapping.
 
@@ -233,7 +233,7 @@ Before implementation, resolve Decimal precision/scale and UOM fractional rules,
 
 The internal review found seven blocking design parameters/decisions (Decimal/UOM precision; Sales reservation TTL; serial namespace; landed-cost allocation and rounding; stocktake concurrency/cut-off; in-transit accounting classification and COA/Posting Rule; and provisional valuation for permitted negative stock) plus five ERD/state-model refinements. It also proposes 12 additional test cases, expanding the test design from 65 to 77 cases if accepted.
 
-The review does not constitute approval by Organization, Catalog, Purchasing, Sales, RepairOperations, Accounting, Security, Platform/DB or QA. Those owners must explicitly accept their assigned items against exact document versions and SHA. The three design specifications remain proposals and are not ready for physical schema or implementation until the blocking actions are closed.
+The review does not constitute approval by Organization, Catalog, Purchasing, Sales, RepairOperations, Accounting, Security, Platform/DB or QA. Those owners must explicitly accept their assigned items against exact document versions and SHA. The three design specifications remain proposals. The targeted stocktake cut-off ambiguity is clarified in the technical resolution proposal and test specification; this is not evidence of implementation or PostgreSQL execution.
 
 No architecture master change, runtime, SQL, migration, API, publisher, grant, Posting Rule or release authorization is included. Migration 0009 remains reserved by PR #70. OWN-INV-018 v1.0 remains the business-policy authority.
 
@@ -244,6 +244,6 @@ No architecture master change, runtime, SQL, migration, API, publisher, grant, P
 |---|---:|---|
 | INVENTORY-TECHNICAL-RESOLUTION-PROPOSAL-001 | 0.1 | TECHNICAL DISPOSITION PROPOSED — CROSS-MODULE OWNER ACCEPTANCE REQUIRED |
 
-The proposal records explicit technical dispositions for INV-REV-01..07: PostgreSQL numeric/UOM precision; configurable Sales reservation TTL; serial/IMEI normalization and active uniqueness; evidence-based landed-cost allocation and True-up; immutable stocktake cut-off with ordered delta replay; Inventory in-transit custody with GL posting blocked until canonical COA evidence and a separately approved Posting Rule; and provisional valuation for permitted non-serialized shortage. It also records the related ERD/state invariants and test additions INV-T-066..077.
+The proposal records explicit technical dispositions for INV-REV-01..07: PostgreSQL numeric/UOM precision; configurable Sales reservation TTL; serial/IMEI normalization and active uniqueness; evidence-based landed-cost allocation and True-up; immutable per-observation stocktake cut-off with ordered delta replay; Inventory in-transit custody with GL posting blocked until canonical COA evidence and a separately approved Posting Rule; and provisional valuation for permitted non-serialized shortage. It also records the related ERD/state invariants and test additions INV-T-066..077. A focused correction now requires each physical count observation to capture its own committed per-scope ledger watermark under a consistent database snapshot; reconciliation replays only movements committed after that observation. Test INV-T-078 covers per-observation watermark capture, concurrent movement/count ordering, exclusion of pre-observation movements, and rollback/sequence visibility.
 
-These are design proposals, not owner acceptance. The seven internal design questions now have proposed dispositions, but cross-module acceptance remains OPEN. In particular, the exact in-transit GL account and Posting Rule are intentionally not selected; absence of canonical evidence is fail-closed. The proposal does not authorize physical schema, SQL, migration, runtime, publisher, grants, Posting Release or operational release. Migration 0009 remains reserved by PR #70.
+These are design proposals, not owner acceptance. The seven internal design questions now have proposed dispositions, but cross-module acceptance remains OPEN pending the user's requested reviewer and Accounting confirmations. In particular, the exact in-transit GL account and Posting Rule are intentionally not selected; absence of canonical evidence is fail-closed. The proposal does not authorize physical schema, SQL, migration, runtime, publisher, grants, Posting Release or operational release. Migration 0009 remains reserved by PR #70.
