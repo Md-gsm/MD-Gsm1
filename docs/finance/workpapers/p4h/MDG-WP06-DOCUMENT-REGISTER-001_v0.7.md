@@ -1,5 +1,5 @@
 # MDG-WP06-DOCUMENT-REGISTER-001
-## Controlled Document Register — Version 1.2
+## Controlled Document Register — Version 1.3
 
 | Field | Value |
 |---|---|
