@@ -10,6 +10,7 @@ public enum AccountRegistryIssueCode
     IncompleteCanonicalAttributes,
     MissingParentAccount,
     ParentCycle,
+    ParentLevelOrderMismatch,
     ExplicitParentRelationMismatch
 }
 
@@ -82,8 +83,19 @@ public static class AccountRegistryValidator
         foreach (var account in items)
         {
             var parentId = account.CanonicalAttributes?.ParentAccountId;
-            if (parentId.HasValue && !uniqueById.ContainsKey(parentId.Value))
+            if (!parentId.HasValue)
+                continue;
+
+            if (!uniqueById.TryGetValue(parentId.Value, out var parent))
+            {
                 issues.Add(new(AccountRegistryIssueCode.MissingParentAccount, account.AccountCode, "ParentAccountId must resolve to exactly one canonical account."));
+                continue;
+            }
+
+            var parentLevel = parent.CanonicalAttributes?.Level;
+            var childLevel = account.CanonicalAttributes?.Level;
+            if (parentLevel.HasValue && childLevel.HasValue && parentLevel.Value >= childLevel.Value)
+                issues.Add(new(AccountRegistryIssueCode.ParentLevelOrderMismatch, account.AccountCode, "A child account must have a strictly greater Level than its explicitly referenced parent."));
         }
 
         var parentById = uniqueById.Values
