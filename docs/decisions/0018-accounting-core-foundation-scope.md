@@ -8,7 +8,7 @@
 | Data owners | ACC-01, ACC-02, FY-01 — Accounting |
 | Architecture parent | MDG-ARCH-MASTER-001 v2.5 |
 | COA authority | MDG-COA-MASTER-001 v1.2 master; v1.4 supplementary register |
-| Migration | 0009 reservation PR #70; SQL use prohibited until reservation is merged to main |
+| Migration | 0009 is RESERVED in main by PR #70; SQL NOT AUTHORIZED YET. Physical design: MDG-ACC-PDS-001 v0.1. |
 
 ## Owner direction
 
