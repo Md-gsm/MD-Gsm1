@@ -296,8 +296,8 @@ a9255c9a73cabff91d87ee0ba888ada25c4b56221f924816cad2f672fcde2ed0  docs/finance/w
 f64cc10f4c448fe6ea57205d3eab1564b720d70269fe30a6e6003644fb559759  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-RECOVERY-001_v0.1.md
 2de6c16e724fe0b06faf5978f95020c3fe602433f38655906024a4073aed3d81  docs/architecture/change-requests/CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001_v0.1.md
 afd34e3764474e17bde774280b39335615ac5e1b1850f2b3e277a4e300f9a67e  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
-4afad0b1bcd9ddc407de58a97d577be281c384d31551c1157977c81bce003b1e  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.3.md
-4bfe815dfa644ab31b96373559ebf9a5c6a06aa4c362fff7ec45fa1c3c3ca340  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.5.md
+7fcdb743eb137630c9b882a514da4f8a1fe6a6b8bd7d9c444a2aa6d182988724  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.3.md
+74a2285653aa80f5b8e507c708bdb754cebd37f9dc53d59d7ad219b8b5585117  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.5.md
 12eeb495c3996efed5279076ae91cdcff1d04c115bd40792cd1a2e940e0c003a  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.3.md
 ff9ce8d87fb27233be69ce9e3be46474e09e44f68abfbd96bae6f8b621c7b4c1  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.2.md
 a6c4e507ad4cb222101a3f8f629273d9b8effbbd09ad89f3fcb5225d0df65820  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.2.md
@@ -308,7 +308,7 @@ bd6fc6e3a8e88e3e0b404f667bbf6ea3fb97b2d152845867d11f999350faff52  docs/finance/w
 a0466daca95ee3422e58b70e9ff3f1c0a85511e07f7f97f654c9e0995de523d0  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md
 fe670fad99204e025ff59c68c2feddcd9bb401a70a83f77dabe44fb217792e7b  docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md
 339a1f85e7ae607b0c0361dc55bb10abcd8000cffe3734bd419faf396b9c7fe4  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.1.md
-5476a502b05262f6fe86e77d1fb07ec4fdbc97b262876406c1dcc8601988e665  docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.1.md
-34055198fc068fff21a9ce0d0d14f536778260308e41c82509539144930bb9ea  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.3.md
+ca0d70f11281101599342b48c894364db0388a7775bf9bdc2f1f032f56446e6c  docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.1.md
+658bc3fdbe33cb30672d74bdb2b9c2f5afab01d9ef24101b5f3f9b9b944d636d  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.3.md
 07a14cbe65817c3e1d1054554f73b67c6491a0b18adc3bbde4c363b6137259cc  scripts/ci/validate_finance_workpapers.py
 89d2a2614e7e1377dadca23986bfb23815a4b5e46bed1e329fb610929025713b  .github/workflows/finance-workpaper-validation.yml
