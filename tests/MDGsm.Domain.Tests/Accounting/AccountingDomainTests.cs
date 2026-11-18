@@ -69,7 +69,7 @@ public sealed class AccountingDomainTests
     [Fact]
     public void Direct_posting_permission_is_separate_from_automated_posting_eligibility()
     {
-        var account = EligibleAccount("1101", Guid.CreateVersion7(), "FE-03") with { DirectPostingAllowed = false };
+        var account = EligibleAccount("1101", Guid.CreateVersion7(), "FE-03", directPostingAllowed: false);
         Assert.True(account.CanAutomatedPost("FE-03", EffectiveDate, true));
         Assert.False(account.CanManualPost("FE-03", EffectiveDate, true));
     }
@@ -265,7 +265,7 @@ public sealed class AccountingDomainTests
             new RuleCatalog(rule),
             new AccountCatalog([
                 EligibleAccount("1101", Guid.CreateVersion7(), "FE-06"),
-                EligibleAccount("2101", Guid.CreateVersion7(), "FE-06", AccountNature.Liability, AccountNormalBalance.Credit)
+                EligibleAccount("4101", Guid.CreateVersion7(), "FE-06", AccountNature.Revenue, AccountNormalBalance.Credit)
             ]),
             new PeriodCatalog(OpenPeriod()));
 
@@ -297,9 +297,10 @@ public sealed class AccountingDomainTests
     private static AccountDefinition EligibleAccount(
         string code, Guid id, string eventId,
         AccountNature nature = AccountNature.Asset,
-        AccountNormalBalance normalBalance = AccountNormalBalance.Debit)
+        AccountNormalBalance normalBalance = AccountNormalBalance.Debit,
+        bool directPostingAllowed = true)
     {
-        var account = new AccountDefinition(id, code, "حساب آزمون", nature, normalBalance, true, true,
+        var account = new AccountDefinition(id, code, "حساب آزمون", nature, normalBalance, true, directPostingAllowed,
             AccountStatus.Active, new DateOnly(2026, 1, 1), null,
             new HashSet<string>(StringComparer.Ordinal) { eventId },
             new HashSet<string>(StringComparer.Ordinal), false);
