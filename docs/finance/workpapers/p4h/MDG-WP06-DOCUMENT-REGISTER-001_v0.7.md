@@ -1,13 +1,13 @@
 # MDG-WP06-DOCUMENT-REGISTER-001
-## Controlled Document Register — Version 0.7
+## Controlled Document Register — Version 0.8
 
 | Field | Value |
 |---|---|
 | Document ID | MDG-WP06-DOCUMENT-REGISTER-001 |
-| Version | 0.7 |
+| Version | 0.8 |
 | Classification | CONTROLLED REGISTER / IMPLEMENTATION STATUS |
 | Status | DRAFT — CURRENT REGISTER FOR PR #66 |
-| Supersedes | v0.6; v0.6 and earlier versions retained as historical snapshots |
+| Supersedes | v0.7; v0.7 and earlier versions retained as historical snapshots |
 | Architecture baseline | MDG-ARCH-MASTER-001 v2.5 |
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
 | PR | #66 — OPEN / DRAFT |
@@ -154,4 +154,22 @@ The finance structural validator now checks the presence and non-runtime/owner-r
 ## 11. Version history
 
 - v0.5 and v0.6 are retained as historical snapshots.
-- v0.7 registers the FE-01/FE-02 source-contract proposals and their explicit owner-review boundary; the underlying 7B/7C/7D workpaper versions remain unchanged.
+- v0.7 registered the FE-01/FE-02 source-contract proposals and their explicit owner-review boundary; the underlying 7B/7C/7D workpaper versions remain unchanged.\n- v0.8 records owner approval of FE-01/FE-02 and shared contract policies in OWN-FE-01-02-001 v1.0; source contracts and runtime gates remain pending.
+
+
+## 12. Approved FE-01 / FE-02 owner decision
+
+| Decision | Scope | Status |
+|---|---|---|
+| OWN-FE-01-02-001 v1.0 | FE-01 (28), FE-02 (37), shared controls C-01..C-15 and accounting principles A-01..A-10 | APPROVED — OWNER POLICY DECISIONS |
+
+Authoritative record: `docs/finance/workpapers/p4h/integration/OWN-FE-01-02-001-v1.0.md`.
+
+The decision fixes the approved business policy and technical boundaries, including Inventory ownership of committed fulfillment/movements, separation of revenue recognition from receipts/settlements, R1 repair-intake prohibition, restricted R1 repair financial facts, physical handover for standard repair revenue recognition, distinct recipient/actor references, scoped idempotency and transactional outbox. It does not publish runtime contracts, authorize any Posting Rule, or grant Posting Release.
+
+- Sales source contract: revise proposal and obtain Sales/Pricing/Tax owner acceptance — PENDING.
+- RepairOperations source contract: revise proposal and obtain owner acceptance — PENDING.
+- Inventory committed movement/fulfillment contract: NOT STARTED.
+- RecognitionTime and exact Posting Matrix: PENDING.
+- Runtime implementation/tests and independent review: NOT RUN / NOT VERIFIED.
+- Accepted positive Posting Rules: 0; Posting Release: NOT GRANTED.
