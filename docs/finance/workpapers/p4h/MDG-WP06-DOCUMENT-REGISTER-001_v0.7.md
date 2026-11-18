@@ -209,7 +209,7 @@ Sales reservation has configurable TTL; Repair reservation has no automatic TTL.
 | INVENTORY-STATE-MOVEMENT-SPEC-001 | 0.1 | DESIGN PROPOSAL — OWNER REVIEW REQUIRED |
 | INVENTORY-TEST-SPEC-001 | 0.1 | TEST DESIGN — QA/DB/OWNER REVIEW REQUIRED |
 
-These specifications define a conceptual ERD/data dictionary, separate state and movement machines, and 66 test definitions at the time of initial drafting (34 owner-approved baseline + 31 additional + 1 targeted per-observation stocktake case added as INV-T-078). They are design/test proposals, not physical schema, executable migrations or evidence of execution.
+These specifications define a conceptual ERD/data dictionary, separate state and movement machines, and 78 test definitions (34 owner-approved baseline + 31 additional + 12 review additions INV-T-066..077 + 1 targeted per-observation stocktake case INV-T-078). They are design/test proposals, not physical schema, executable migrations or evidence of execution.
 
 Before implementation, resolve Decimal precision/scale and UOM fractional rules, default Sales TTL, serial uniqueness namespace, landed-cost/True-up allocation and rounding, stocktake cut-off strategy, and exact in-transit COA/Posting Rule mapping.
 
