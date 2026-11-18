@@ -338,14 +338,21 @@
 
 | شناسه | موضوع | اقدام لازم | وضعیت |
 |---|---|---|---|
-| AP-01 | COA snapshot در Journal Domain | افزودن CoaSnapshotId به Journal/factory/reversal و تست‌ها؛ سپس persistence mapping | BLOCKS SQL |
-| AP-02 | payload conflict برای idempotency | قرارداد canonical payload hash + version در Application و تست same-key/same-payload و same-key/different-payload | BLOCKS SQL |
+| AP-01 | COA snapshot در Journal Domain | `Journal.CoaSnapshotId` اجباری شد؛ factory، finalize، reversal و تست‌های مثبت/منفی به‌روزرسانی شدند. Persistence mapping همچنان مرحله بعد است. | DOMAIN IMPLEMENTED — CI NOT YET VERIFIED |
+| AP-02 | payload conflict برای idempotency | قرارداد `ICanonicalPostingPayload`، fingerprint نسخه‌دار SHA-256 و policy تشخیص replay/conflict در Application اضافه شد؛ تست payload یکسان، payload متفاوت، نسخه متفاوت و درخواست جدید افزوده شد. | APPLICATION CONTRACT + UNIT TESTS IMPLEMENTED — CI NOT YET VERIFIED |
 | AP-03 | deferred balance trigger | اثبات PostgreSQL 18 trigger برای حداقل دو خط، توازن، overflow و transaction end | DESIGN SPECIFIED; TEST NOT RUN |
 | AP-04 | finalized immutability | privilege + trigger برای header/lines/audit/transition/accepted snapshot و تست منفی | DESIGN SPECIFIED; TEST NOT RUN |
 | AP-05 | recovery policy | مستندکردن تفاوت disposable rollback پیش از داده مالی و forward-only پس از داده مالی | DESIGN SPECIFIED; IMPLEMENTATION NOT VERIFIED |
 | AP-06 | registry CI | اصلاح MigrationResourceTests تا RESERVED future slot را بدون SQL مجاز بداند، اما IMPLEMENTED/VERIFIED را با SQL تطبیق دهد | INCLUDED IN THIS PR |
 | AP-07 | DB privilege | تهیه grant matrix اختصاصی Accounting و تست runtime role least privilege | NOT STARTED |
 | AP-08 | COA evidence crosswalk | تکمیل crosswalk معتبر v1.2/v1.4؛ بدون seed و بدون حدس | BLOCKED BY SOURCE EVIDENCE |
+
+### وضعیت اجرای AP-01 و AP-02 در برش فعلی
+
+- AP-01 در Domain اعمال شده است: هر Journal شناسه غیرخالی `CoaSnapshotId` می‌خواهد؛ Finalize آن را حفظ می‌کند و Reversal باید snapshot صریح خود را دریافت کند. این تغییر هیچ COA واقعی را seed یا تأیید نمی‌کند.
+- AP-02 در Application به‌صورت قرارداد pure اضافه شده است: تولیدکننده payload باید UTF-8 canonical و نسخه‌دار ارائه کند؛ fingerprint با SHA-256 محاسبه می‌شود؛ فقط تطابق هم‌زمان نسخه و hash، replay معتبر است. payload متفاوت یا نسخه متفاوت برای همان identity، Conflict است.
+- این قرارداد هنوز persistence/transactional idempotency را اجرا نمی‌کند و به‌تنهایی مانع race در دیتابیس نیست؛ رفتار رقابت هم‌زمان باید در لایه persistence با unique constraint و PostgreSQL integration tests اثبات شود.
+- تست‌های جدید به مخزن افزوده شده‌اند؛ تا نتیجه CI روی SHA نهایی، وضعیت آن‌ها `NOT VERIFIED` است.
 
 ## 11. آزمون‌های الزامی پیش از پذیرش persistence
 
