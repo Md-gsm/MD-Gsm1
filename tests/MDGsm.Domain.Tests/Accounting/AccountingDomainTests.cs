@@ -308,7 +308,7 @@ public sealed class AccountingDomainTests
 
         var evidence = CanonicalAccountAttributes.RequiredFields.Select(field =>
         {
-            var value = attributes.GetExpectedValueForTesting(account, field);
+            var value = attributes.GetExpectedValue(account, field);
             return value is null
                 ? new FieldEvidence(field, EvidenceDisposition.NotApplicable, null, "test-source", "Explicitly not applicable in this controlled test fixture.")
                 : new FieldEvidence(field, EvidenceDisposition.Verified, value, "test-source", null);
