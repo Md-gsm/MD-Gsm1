@@ -191,7 +191,7 @@
 - `version bigint NOT NULL DEFAULT 1`
 
 قیود:
-- FK به fiscal_periods، coa_snapshots، posting_idempotency و audit_events با RESTRICT؛ reversal self-FK با RESTRICT.
+- FK به fiscal_periods، coa_snapshots، posting_idempotency و audit_events با RESTRICT؛ reversal self-FK با RESTRICT. رابطه یک‌به‌یک با posting_idempotency فقط از journals به کلید idempotency برقرار می‌شود تا FK دوری ایجاد نشود.
 - قید سازگاری: Draft فاقد finalized metadata؛ Finalized دارای finalized_by/at/audit و زمان UTC.
 - journal_date باید در بازه دوره باشد و هنگام Finalize دوره Open باشد.
 - reversal فقط به Journal Finalized اشاره می‌کند و identity مستقل با PostingPurpose=REVERSAL دارد؛ reversal خود نیز سند مستقل است.
@@ -234,15 +234,15 @@
 - `allocation_id text NULL`
 - `canonicalization_version integer NOT NULL`
 - `request_payload_sha256 char(64) NOT NULL`
-- `journal_id uuid NOT NULL UNIQUE`
 - `created_at_utc timestamptz NOT NULL`
 
 قیود:
 - هر دو hash دقیقاً 64 رقم hex lowercase.
-- UNIQUE روی ترکیب identity components برای جلوگیری از دو representation یکسان با key مختلف.
-- همان key + همان payload hash: نتیجه قبلی/Journal قبلی بازگردانده می‌شود.
-- همان key + payload hash متفاوت: درخواست رد و conflict امنیتی/یکپارچگی audit می‌شود؛ هیچ overwrite انجام نمی‌شود.
-- رقابت هم‌زمان با UNIQUE PK تعیین تکلیف می‌شود؛ transaction بازنده Journal خودش را rollback می‌کند و پس از خواندن رکورد برنده، hash را مقایسه می‌کند.
+- UNIQUE روی ترکیب identity components با `NULLS NOT DISTINCT` برای optional components، تا دو representation یکسان با key متفاوت ساخته نشود.
+- Journal از طریق `journals.idempotency_key` به این جدول FK می‌دهد؛ `posting_idempotency` عمداً `journal_id` ندارد تا چرخه FK ایجاد نشود. unique بودن کلید در هر دو سمت، رابطه یک‌به‌یک را برقرار می‌کند.
+- همان key + همان payload hash + همان canonicalization_version: Journal قبلی از طریق idempotency_key بازیابی می‌شود.
+- همان key با payload hash یا canonicalization_version متفاوت: درخواست رد و conflict یکپارچگی audit می‌شود؛ هیچ overwrite انجام نمی‌شود.
+- رقابت هم‌زمان با UNIQUE PK تعیین تکلیف می‌شود؛ transaction بازنده rollback می‌کند و پس از خواندن رکورد برنده، hash و canonicalization_version را مقایسه می‌کند.
 - AP-02: payload hash و canonicalization_version باید در Application contract تعریف شوند؛ hash از payload canonical و versioned، نه از JSON serialization تصادفی، محاسبه شود.
 - هیچ source event adapter در این slice ساخته نمی‌شود.
 
@@ -305,10 +305,10 @@
 
 ### Idempotent persistence
 1. محاسبه PostingIdentity موجود و payload hash canonical/versioned.
-2. ایجاد Journal و خطوط در transaction.
-3. درج idempotency record با unique key.
-4. در duplicate key، transaction بازنده rollback؛ سپس رکورد موجود خوانده و payload hash مقایسه شود.
-5. hash یکسان => نتیجه قبلی؛ hash متفاوت => رد قطعی و audit conflict در transaction مستقل و محدودشده، بدون تغییر Journal قبلی.
+2. درج idempotency record با unique key در transaction.
+3. ایجاد Journal با همان idempotency_key و خطوط؛ FK در انتهای transaction برقرار است.
+4. در duplicate key، transaction بازنده rollback؛ سپس رکورد موجود خوانده و payload hash و canonicalization_version مقایسه شود.
+5. تطابق کامل => Journal موجود از طریق idempotency_key بازیابی شود؛ هر mismatch => رد قطعی و audit conflict در transaction مستقل و محدودشده، بدون تغییر Journal قبلی.
 
 ### Close/Reopen period
 - قفل ردیف دوره و بررسی version در همان transaction.
