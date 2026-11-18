@@ -109,7 +109,7 @@ if "NOT RUN / NOT VERIFIED" not in d or "Posting Release | NOT GRANTED" not in d
     fail("7D execution/no-release guards missing")
 
 print("PASS: finance workpaper structural consistency")
-print(f"7B: {len(fe_ids)} FE rows; 39 fail-closed gate references")
+print(f"7B: {len(fe_ids)} event rows (38 FE identifiers + FE-10b); 39 fail-closed gate references")
 print(f"7C: {len(open_ids)} Open Items; 16 mapped COA gate tests")
 print(f"7D: {len(fin)} FE + {len(coa)} COA + {len(shared)} shared = 67 unique Test IDs")
 print("Scope: document structure only; no accounting runtime or positive journal execution.")
