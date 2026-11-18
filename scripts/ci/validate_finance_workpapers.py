@@ -54,12 +54,12 @@ issue_rows = table_rows_between(
 )
 for label, rows in (("7B Owner Action", owner_rows), ("7B Field-Level", field_rows),
                     ("7B OpenIssue", issue_rows)):
-    ids = [re.search(r"^\\|\\s*(FE-\\d{2}b?)\\s*\\|", x).group(1)
-           for x in rows if re.search(r"^\\|\\s*(FE-\\d{2}b?)\\s*\\|", x)]
+    ids = [re.search(r"^\|\s*(FE-\d{2}b?)\s*\|", x).group(1)
+           for x in rows if re.search(r"^\|\s*(FE-\d{2}b?)\s*\|", x)]
     exact(label, ids, expected_fe)
 
-issue_ids = [re.search(r"(7B-OPEN-\\d{3})", x).group(1)
-             for x in issue_rows if re.search(r"(7B-OPEN-\\d{3})", x)]
+issue_ids = [re.search(r"(7B-OPEN-\d{3})", x).group(1)
+             for x in issue_rows if re.search(r"(7B-OPEN-\d{3})", x)]
 exact("7B OpenIssue IDs", issue_ids, {f"7B-OPEN-{n:03d}" for n in range(1, 40)})
 if "- Event disposition coverage: 39/39 rows" not in b:
     fail("7B must distinguish 38 FE identifiers from 39 event rows including FE-10b")
