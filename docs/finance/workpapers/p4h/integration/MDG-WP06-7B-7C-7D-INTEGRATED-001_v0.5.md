@@ -6,7 +6,7 @@
 | مشخصه | مقدار |
 |---|---|
 | Document ID | MDG-WP06-7B-7C-7D-INTEGRATED-001 |
-| Version | 0.4 |
+| Version | 0.5 |
 | Project | MD-Gsm1 |
 | Repository | Md-gsm/MD-Gsm1 |
 | Architecture Baseline | MDG-ARCH-MASTER-001 v2.5 |
