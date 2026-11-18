@@ -31,7 +31,7 @@
 | 0006 | `database/migrations/0006_finance_party_accounts.sql` | Finance | VERIFIED_DISPOSABLE | main |
 | 0007 | `database/migrations/0007_persons_temporary_workflows.sql` | Persons | VERIFIED_DISPOSABLE | main |
 | 0008 | `database/migrations/0008_persons_party_merge.sql` | Persons | VERIFIED_DISPOSABLE | main |
-| 0009 | — | تخصیص‌نیافته | AVAILABLE / رزرو نشده | اولین شماره قابل رزرو؛ استفاده فقط پس از ثبت رزرو |
+| 0009 | `database/migrations/0009_accounting_core.sql` (پس از ادغام رزرو) | Accounting | RESERVED — SQL NOT AUTHORIZED YET | Issue #69؛ درخواست WG-0؛ scope: canonical COA metadata, fiscal periods, journal header/lines, posting identity/idempotency and audit linkage; no tax or external module posting |
 | 0010+ | — | تخصیص‌نیافته | UNALLOCATED | تا ثبت درخواست رزرو استفاده نشود |
 
 ## فرم رزرو الزامی
@@ -46,4 +46,4 @@
 - پس از ادغام Migration: SHA-256 فایل SQL، commit ادغام و وضعیت `VERIFIED_DISPOSABLE`؛
 - در صورت لغو: علت، تأیید WG-0 و شواهد عدم اعمال.
 
-**هشدار:** در حال حاضر 0009 فقط AVAILABLE است، نه رزروشده. هیچ گروهی نباید شماره را صرفاً از روی این جدول در شاخه خودش مصرف کند؛ ابتدا باید ردیف رزرو رسمی ثبت شود.
+**وضعیت درخواست 2026-11-18:** ردیف 0009 در شاخه رزرو و Issue #69 ثبت شده است. تا ادغام همین PR رزرو در `main`، شماره برای نوشتن/افزودن SQL قابل مصرف نیست. این PR هیچ فایل Migration ایجاد نمی‌کند و هیچ اجرای دیتابیسی را مجاز نمی‌کند.
