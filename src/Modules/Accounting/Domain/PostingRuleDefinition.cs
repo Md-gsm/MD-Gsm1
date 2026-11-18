@@ -44,7 +44,7 @@ public sealed record PostingRuleDefinition(
     public bool HasCompleteAcceptanceEvidence =>
         FieldEvidenceValidator.IsComplete(AcceptanceEvidence, RequiredAcceptanceFields, RequiredVerifiedAcceptanceFields) &&
         RequiredAcceptanceFields
-            .Select(field => (Field: field, Expected: ExpectedEvidenceValue(field)))
+            .Select(fieldName => (Field: fieldName, Expected: ExpectedEvidenceValue(fieldName)))
             .Where(item => item.Expected is not null)
             .All(item => FieldEvidenceValidator.Matches(AcceptanceEvidence, item.Field, item.Expected));
 
