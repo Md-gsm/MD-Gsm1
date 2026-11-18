@@ -176,7 +176,7 @@ public sealed class AccountCanonicalGateTests
     {
         foreach (var code in new[] { "4201", "4202", "4203" })
         {
-            var account = CreateAccount(code, Guid.CreateVersion7(), allowedEvents: []);
+            var account = CreateAccount(code, Guid.CreateVersion7(), allowedEvents: new HashSet<string>(StringComparer.Ordinal));
             Assert.False(account.CanAutomatedPost("FE-13", TestDate, true));
         }
     }
