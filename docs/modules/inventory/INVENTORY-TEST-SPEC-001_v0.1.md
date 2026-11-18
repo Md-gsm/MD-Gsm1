@@ -77,6 +77,7 @@ A test definition is not a test result. Unexecuted = NOT_RUN. Acceptance require
 | INV-T-063 | Cross-module write | DB grants deny direct Inventory writes by other modules |
 | INV-T-064 | Transfer financial neutrality | No revenue/expense; in-transit mapping only after Accounting approval |
 | INV-T-065 | Opening balance | No opening stock without approved source/quantity/value evidence |
+| INV-T-078 | Per-observation stocktake watermark | Each physical count captures its own committed ledger sequence under a consistent DB snapshot; reconciliation replays only later committed movements; pre-observation movements are excluded; concurrent count/movement race is serialized; rollback cannot expose an uncommitted sequence |
 
 ## 4. PostgreSQL suite
 Run against actual target PostgreSQL: atomicity/rollback at each persistence boundary; isolation/serialization conflicts; row/advisory locks at Warehouse+Variant; unique serial/IMEI constraints; concurrent reservation/issue/transfer/TrueUp; deadlock/retry; transactional outbox and consumer replay; migration apply/failure; backup/restore; ledger/projection/valuation reconciliation; grants and denial of direct writes.
