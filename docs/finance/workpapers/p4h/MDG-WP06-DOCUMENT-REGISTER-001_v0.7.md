@@ -1,13 +1,13 @@
 # MDG-WP06-DOCUMENT-REGISTER-001
-## Controlled Document Register — Version 1.0
+## Controlled Document Register — Version 1.1
 
 | Field | Value |
 |---|---|
 | Document ID | MDG-WP06-DOCUMENT-REGISTER-001 |
-| Version | 1.0 |
+| Version | 1.1 |
 | Classification | CONTROLLED REGISTER / IMPLEMENTATION STATUS |
 | Status | DRAFT — CURRENT REGISTER FOR PR #66 |
-| Supersedes | v0.9; v0.9 and earlier versions retained as historical snapshots |
+| Supersedes | v1.0; prior versions retained as historical snapshots |
 | Architecture baseline | MDG-ARCH-MASTER-001 v2.5 |
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
 | PR | #66 — OPEN / DRAFT |
@@ -188,14 +188,36 @@ The v0.2 revisions implement the approved policy boundaries in documentation: In
 No module-owner technical acceptance has been received by this register. Inventory contract proposal v0.1 is registered; Inventory owner technical acceptance remains OPEN. FE-01 and FE-02 remain BLOCKED. Accepted positive Posting Rules: 0. Runtime tests: NOT RUN / NOT VERIFIED. Posting Release: NOT GRANTED.
 
 
-## 14. Inventory source-event and stock ownership proposal
+## 14. Inventory source-event and stock ownership decision
 
-| Artifact | Version | Current status |
+| Artifact | Version | Status |
 |---|---:|---|
-| Inventory source event and stock ownership proposal | 0.1 | PROPOSAL — INVENTORY OWNER REVIEW REQUIRED |
+| OWN-INV-018 | 1.0 | APPROVED — BUSINESS OWNER POLICY |
+| Inventory source event and stock ownership contract | 0.2 | BUSINESS POLICY APPROVED — TECHNICAL OWNER ACCEPTANCE REQUIRED |
 
-The Inventory proposal records the exclusive STK-01 boundary for stock quantities, committed movement ledger, fulfillment, transfers, return inspection/disposition, counts/adjustments and valuation evidence. Organization remains owner of warehouse/location master data; Product/catalog remains owner of product/variant and measurement definitions. Sales and RepairOperations retain references only. Accounting retains RecognitionTime, COA, Posting Rules, COGS and GL posting authority.
+OWN-INV-018 v1.0 approves INV-EVT-001..018 on 2026-11-18 and resolves D-213 and D-215. The approved policy fixes exclusive Inventory ownership; Organization-owned warehouse/location masters; Variant/SKU stock identity; tracking and dual-IMEI rules; Decimal/UOM governance; type-specific reservations; movement boundaries; Sales/RepairOperations linkage; in-transit transfer custody; return inspection; stocktake; default -2 non-serialized shortage and serialized prohibition; Moving Weighted Average/Specific Identification; True-up; event identity; atomic outbox; PostgreSQL testing; and exact-SHA independent acceptance.
 
-The proposal specifies candidate stock identity dimensions, quantity/UOM invariants, reservation versus committed movement, movement categories, SalesLine partial fulfillment linkage, RepairServiceLine linkage with strict R1 prohibition, return inspection states, immutable corrections/reversals, valuation evidence requirements without selecting a costing method, common event identity/versioning/idempotency, transactional outbox, concurrency/fail-closed behavior and 18 owner acceptance items.
+Sales reservation has configurable TTL; Repair reservation has no automatic TTL. Transfers require in-transit custody; Accounting must separately approve the exact COA mapping and Posting Rule. No account code is inferred. All technical acceptance items remain open for Inventory and relevant module owners. No runtime, SQL, migration, API, publisher or grants are added. Migration 0009 remains reserved by PR #70.
 
-All Inventory owner technical acceptance items remain OPEN. The proposal is documentation only; no Inventory Contracts project, runtime, SQL, migration, API or publisher is created. Migration 0009 remains reserved by PR #70 and is not consumed. FE-01 and FE-02 remain BLOCKED; accepted positive Posting Rules remain 0; Posting Release remains NOT GRANTED.
+## 15. Inventory design deliverables
+
+| Artifact | Version | Status |
+|---|---:|---|
+| INVENTORY-ERD-DATA-DICTIONARY-001 | 0.1 | DESIGN PROPOSAL — OWNER REVIEW REQUIRED |
+| INVENTORY-STATE-MOVEMENT-SPEC-001 | 0.1 | DESIGN PROPOSAL — OWNER REVIEW REQUIRED |
+| INVENTORY-TEST-SPEC-001 | 0.1 | TEST DESIGN — QA/DB/OWNER REVIEW REQUIRED |
+
+These specifications define a conceptual ERD/data dictionary, separate state and movement machines, and 65 test definitions (34 owner-approved baseline + 31 additional). They are design/test proposals, not physical schema, executable migrations or evidence of execution.
+
+Before implementation, resolve Decimal precision/scale and UOM fractional rules, default Sales TTL, serial uniqueness namespace, landed-cost/True-up allocation and rounding, stocktake cut-off strategy, and exact in-transit COA/Posting Rule mapping.
+
+## 16. Status and release boundary
+
+- Business owner policy INV-EVT-001..018: APPROVED.
+- D-213 and D-215: RESOLVED.
+- Technical owner acceptance: OPEN.
+- Inventory runtime/persistence/SQL/migrations: NOT IMPLEMENTED / NOT VERIFIED.
+- Inventory tests: NOT RUN.
+- FE-01 and FE-02: BLOCKED under separate source/Accounting gates; FE-09 remains controlling.
+- Accepted positive Posting Rules: 0.
+- Posting Release and operational release: NOT GRANTED.
