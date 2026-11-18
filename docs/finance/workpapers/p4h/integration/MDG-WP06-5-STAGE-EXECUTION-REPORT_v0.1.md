@@ -14,7 +14,7 @@
 
 ## 1. خلاصه اجرایی
 
-پنج مرحله بررسی شدند؛ اما O-01 کامل یا پذیرفته نشده است. متن کامل COA v1.4 در همین گفتگو دریافت و بررسی شده و دیگر مانع «عدم دسترسی به v1.4» معتبر نیست. بااین‌حال v1.4 تمام صفات canonical هر حساب، به‌ویژه AccountId، Parent/Level، NormalBalance، Postable، DirectPostingAllowed، Effective Dates و همه حساب‌های مقابل FEها را تعیین نمی‌کند. همچنین Accounting runtime/schema/Posting API در این PR وجود ندارد. بنابراین تکمیل قواعد مثبت 7B و اجرای رفتاری 7D بدون منبع/پیاده‌سازی لازم ممکن نیست.
+پنج مرحله بررسی شدند؛ اما O-01 کامل یا پذیرفته نشده است. متن کامل COA v1.4 در همین گفتگو دریافت و بررسی شده و دیگر مانع «عدم دسترسی به v1.4» معتبر نیست. بااین‌حال v1.4 تمام صفات canonical هر حساب، به‌ویژه AccountId، Parent/Level، NormalBalance، Postable، DirectPostingAllowed، Effective Dates و همه حساب‌های مقابل FEها را تعیین نمی‌کند. در PR #66 نخستین برش اجرایی Accounting در لایه‌های Domain/Application پیاده‌سازی شده است: محاسبات integer-only IRR، شواهد canonical حساب، شواهد پذیرش Posting Rule، FiscalPeriod، Journal متوازن و تغییرناپذیر با Audit و Reversal، PostingIdentity و Preflight فقط‌خواندنی. بااین‌حال persistence، schema/migration مالی، transactional Posting writer و Posting API هنوز وجود ندارد؛ بنابراین تکمیل قواعد مثبت 7B و آزمون رفتاری end-to-end در 7D همچنان مسدود است.
 
 این گزارش علاوه بر نتیجه پنج مرحله، الحاقیه اجرایی 7C است و چهار Open Item مفقود 013..016 را به رجیستر 12 موردی 7C v0.3 اضافه می‌کند.
 
@@ -26,7 +26,7 @@
 | 2. Canonical attributes | AccountId، Parent/Level، Nature، NormalBalance، eligibility، Subledger و Effective Dates بررسی؛ رجیستر شکاف‌ها تکمیل شد | 16 Open Item و 16 COA Gate Test متناظر؛ هیچ مقدار canonical از prefix یا نسخه میانی استنتاج نشد | PARTIAL — NOT ACCEPTED |
 | 3. Positive 7B rules | 39 رویداد FE-01..FE-38 + FE-10b بررسی شد | 39/39 disposition و Test ID دارند؛ 0 positive Posting Rule کامل و قابل‌پذیرش | BLOCKED — no positive journal authorization |
 | 4. 7D assertions | 39 FE + 16 COA + 12 shared controls تطبیق شد | 67 Test ID یکتا؛ positive journal assertions مسدود | DESIGN SPECIFIED — not behaviorally verified |
-| 5. Test execution | validator ساختاری 7B/7C/7D و workflow مستقل CI اضافه شد | تست ساختاری مستندات قابل اجراست؛ تست واقعی Posting/GL/Subledger/Tax به علت نبود runtime در این PR قابل اجرا نیست | STRUCTURAL CI PENDING; RUNTIME TESTS NOT RUN |
+| 5. Test execution | validator ساختاری 7B/7C/7D و workflow مستقل CI اضافه شد | اعتبارسنجی ساختاری مستندات اجرا می‌شود؛ نخستین برش Domain/Application دارای 20 test method و 61 test case است؛ اجرای کامل CI روی SHA فعلی 192 تست Domain را PASS کرده است؛ آزمون end-to-end Posting/GL/Subledger/Tax هنوز به علت نبود persistence و transactional writer قابل اجرا نیست | STRUCTURAL CI PASS; DOMAIN TESTS PASS; POSTING RUNTIME TESTS NOT RUN |
 
 ## 3. COA authority and reconciliation basis
 
@@ -78,8 +78,8 @@
 - 12 shared controls: atomicity (3)، idempotency (2)، reversal (1)، period (1)، COA eligibility/collision (2)، tax (1)، subledger (1)، IMEI (1).
 - همه 39 رویداد باید BLOCKED یا SCOPE_BLOCKED باقی بمانند تا positive rule کامل شود.
 
-### 6.2 غیرقابل‌اجرا بدون Accounting runtime
-Debit/Credit journal assertions، GL/Subledger atomicity، posting idempotency/reversal، TaxMode=0 در کانال‌های واقعی، COA eligibility در API/DB و PostgreSQL finance reconciliation. PR #66 فقط بسته مستندات است؛ workflowهای Persons/Build/Installer جایگزین تست مالی نیستند.
+### 6.2 غیرقابل‌اجرا بدون transactional Posting runtime
+آزمون‌های دامنه‌ای توازن Journal، Audit reference، Reversal، شواهد حساب/قاعده، FiscalPeriod و Preflight در AccountingDomainTests پیاده‌سازی شده و در CI اجرا می‌شوند. اما ثبت اتمیک Journal و GL/Subledger در PostgreSQL، Idempotency در DB، Reversal پایدار، TaxMode=0 در کانال‌های واقعی، COA eligibility در API/DB و reconciliation مالی end-to-end تا پیاده‌سازی persistence، schema و Posting API قابل اجرا نیستند. تست دامنه‌ای جایگزین آزمون رفتاری پایگاه‌داده نیست.
 
 ## 7. مانع‌های رفع‌نشده
 
@@ -93,8 +93,9 @@ Debit/Credit journal assertions، GL/Subledger atomicity، posting idempotency/r
 - Canonical account attributes: NOT ACCEPTED.
 - Positive 7B rules: NOT COMPLETE; 0 accepted positive rules.
 - 7D: 67 IDs specified; positive journal assertions blocked.
-- Finance runtime tests: NOT RUN.
-- Structural CI: added; result pending exact SHA.
+- Accounting Domain unit tests: PASS — 192/192 tests in MDGsm.Domain.Tests on the recorded CI run.
+- End-to-end Finance Posting/GL/Subledger/Tax tests: NOT RUN; transactional persistence and Posting API are not implemented.
+- Structural CI: PASS on the tested source SHA; any subsequent document-only commit requires a fresh exact-SHA structural run.
 - Evidence: NOT ACCEPTED.
 - Independent review on final SHA: PENDING.
 - Gate 3 / Gate 4: OPEN / OPEN.
@@ -113,6 +114,20 @@ Debit/Credit journal assertions، GL/Subledger atomicity، posting idempotency/r
 3. Workbook نه‌شیتی از معیارها و موانع اجرایی حذف شده است؛ هیچ دریافت مجدد یا استخراج مجدد آن شرط تکمیل 7C نیست.
 4. مانع واقعی 7C فقط صفات/نگاشت‌هایی است که v1.2، v1.4، تصمیمات مالک و ADRها صریحاً تعیین نکرده‌اند. موارد نامعلوم باید fail-closed بمانند.
 5. 7B همچنان صفر Posting Rule مثبت پذیرفته‌شده دارد؛ زیرا صفات canonical و حساب‌های مقابل/شرایط شناسایی برای رویدادهای باقیمانده مستند نیستند و ساختن آن‌ها با حدس خلاف COA v1.2/v1.4 است.
-6. 7D دارای 67 شناسه طراحی است، اما آزمون رفتاری مالی قابل اجرا نیست؛ Accounting runtime، schema/migrations مالی، Posting API و disposable finance test harness در این PR وجود ندارد. CI ساختاری اسناد، جایگزین آن نیست.
+6. 7D دارای 67 شناسه طراحی است. نخستین برش اجرایی Domain/Application در PR #66 موجود است و تست‌های واحد آن اجرا شده‌اند؛ اما persistence، schema/migrations مالی، transactional Posting writer، Posting API و disposable finance test harness هنوز وجود ندارد. بنابراین آزمون end-to-end ثبت مالی، GL/Subledger، atomicity و idempotency هنوز قابل اجرا نیست. CI ساختاری اسناد و Domain unit tests جایگزین آن نیستند.
 
 نتیجه: ایراد مستنداتی v1.4/Workbook اصلاح شد؛ اما این اصلاحیه به معنی بسته‌شدن سه مانع فنی، PASS آزمون مالی، پذیرش Evidence یا Posting Release نیست.
+
+
+## Addendum — Accounting Domain/Application first implementation slice — 2026-11-18
+
+در PR #66، برش اول هسته حسابداری پیاده‌سازی شد:
+
+- Domain: IrrAmount و Largest Remainder، CanonicalAccountAttributes و FieldEvidence، PostingRuleDefinition و AcceptanceEvidence، FiscalPeriod، Journal/JournalLine، Audit references و Reversal.
+- Application: catalog ports و PostingPreflightService فقط‌خواندنی و fail-closed؛ هیچ Journal یا Subledger را persist/post نمی‌کند.
+- کنترل‌های مهم: همه صفات canonical حساب باید برای فیلدهای کلیدی VERIFIED و برای موارد واقعاً نامرتبط N/A مستند باشند؛ همه فیلدهای الزامی Posting Rule باید شواهد کامل داشته باشند؛ موارد کلیدی SourceEvent/Trigger/Recognition/Accounts/Amount/Idempotency/Reversal/Period/Audit/Test باید VERIFIED باشند.
+- آزمون‌های دامنه: 192/192 تست پروژه MDGsm.Domain.Tests در CI روی SHA مربوط به این برش PASS شدند.
+- هیچ حساب canonical واقعی یا Posting Rule مثبت مالی seed نشده است؛ این کار تا تکمیل منبع/تصمیم و تطبیق 7B/7C ممنوع است.
+- مرحله بعدی persistence و transactional Posting است؛ اجرای SQL و Migration 0009 تا ادغام PR رزرو #70 در main ممنوع می‌ماند.
+
+این وضعیت فقط PASS آزمون‌های دامنه و اجرای ساختاری را اثبات می‌کند؛ O-01، Gate 3، Gate 4 و Posting Release همچنان OPEN / NOT GRANTED هستند.
