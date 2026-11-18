@@ -61,6 +61,8 @@ Versioned event fields include EventId, EventType, ContractVersion, AggregateId/
 
 Movement ledger, projection, Audit and Outbox commit in one Inventory database transaction. Failure rolls back all. Publish after commit; at-least-once delivery; idempotent consumers; no exactly-once transport claim. Projection is rebuildable from immutable movement history. Database constraints, concurrency locks/versioning and stable lock order are mandatory.
 
+The accepted owner decision scope is explicitly INV-EVT-001 through INV-EVT-018; all eighteen business policy dispositions are recorded in OWN-INV-018 v1.0.
+
 ## 12. Technical acceptance and status
 All 18 owner decisions are business-approved. Technical acceptance remains open for Inventory and the relevant owners: Organization, Catalog, Purchasing, Sales, RepairOperations, Accounting, Security, Platform/DB and QA. The three design outputs are separately registered: ERD/Data Dictionary v0.1, State/Movement v0.1 and Test Specification v0.1. Numeric precision, Sales TTL default, serial namespace, landed-cost/True-up allocation, count cut-off strategy and exact in-transit COA mapping must be resolved before implementation.
 
