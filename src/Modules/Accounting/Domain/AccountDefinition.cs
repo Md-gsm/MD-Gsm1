@@ -123,10 +123,11 @@ public sealed record CanonicalAccountAttributes(
 
     public static IReadOnlyList<string> RequiredVerifiedFields { get; } =
     [
-        "AccountId", "AccountCode", "TitleFa", "TitleEn", "Level", "AccountClass",
+        "AccountId", "AccountCode", "TitleFa", "Level", "AccountClass",
         "Nature", "NormalBalance", "Postable", "DirectPostingAllowed", "Status",
-        "EffectiveFrom", "FinancialEventEligibility", "TaxMode", "RecognitionGate",
-        "SourceReference", "DecisionReference", "DefinitionVersion", "AuditReference"
+        "EffectiveFrom", "SubledgerType", "FinancialEventEligibility", "TaxMode",
+        "TaxTreatment", "RecognitionGate", "ReconciliationPolicy", "AgingPolicy",
+        "StatementMapping", "SourceReference", "DecisionReference", "DefinitionVersion", "AuditReference"
     ];
 
     public bool IsCompleteFor(AccountDefinition account)
@@ -157,9 +158,7 @@ public sealed record CanonicalAccountAttributes(
         "EffectiveFrom" => account.EffectiveFrom?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         "EffectiveTo" => account.EffectiveTo?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         "SubledgerType" => SubledgerType,
-        "FinancialEventEligibility" => account.AllowedFinancialEvents is { Count: > 0 }
-            ? string.Join("\u001f", account.AllowedFinancialEvents.OrderBy(value => value, StringComparer.Ordinal))
-            : null,
+        "FinancialEventEligibility" => FormatFinancialEventEligibility(account),
         "TaxMode" => TaxMode?.ToString(CultureInfo.InvariantCulture),
         "TaxTreatment" => TaxTreatment,
         "RecognitionGate" => RecognitionGate,
@@ -173,6 +172,18 @@ public sealed record CanonicalAccountAttributes(
         "AuditReference" => AuditReference,
         _ => null
     };
+
+    private static string FormatFinancialEventEligibility(AccountDefinition account)
+    {
+        var allowed = account.AllowedFinancialEvents is null
+            ? Array.Empty<string>()
+            : account.AllowedFinancialEvents.OrderBy(value => value, StringComparer.Ordinal).ToArray();
+        var forbidden = account.ForbiddenFinancialEvents is null
+            ? Array.Empty<string>()
+            : account.ForbiddenFinancialEvents.OrderBy(value => value, StringComparer.Ordinal).ToArray();
+
+        return $"ALLOW[{string.Join("\u001f", allowed)}]|FORBID[{string.Join("\u001f", forbidden)}]";
+    }
 }
 
 public sealed record AccountDefinition(
