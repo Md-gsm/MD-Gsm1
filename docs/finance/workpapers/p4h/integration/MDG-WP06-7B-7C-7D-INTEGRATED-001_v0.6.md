@@ -1031,7 +1031,7 @@ End of Document
 
 ### 19.1. Current independent workpaper versions
 - 7B: `WP06-P4H-7B-POSTING-MATRIX-001 v0.2` — 39 event rows, Owner Action Register present; positive posting rules remain partial/blocked where source/canonical fields are unresolved.
-- 7C: `WP06-P4H-7C-COA-RECONCILIATION-001 v0.3` — owner decision overlay added; 76 verified source rows plus owner-added 2114 and 5106; 78 unique identifiers including prohibited 110809.
+- 7C: `WP06-P4H-7C-COA-RECONCILIATION-001 v0.4` — owner decision overlay added; 76 verified source rows plus owner-added 2114 and 5106; 78 unique identifiers including prohibited 110809.
 - 7D: `WP06-P4H-7D-TEST-REGISTRY-001 v0.2` — 39 reconstructed gate test IDs; not runtime executed.
 
 ### 19.2. 7C decision overlay — reconciliation boundary
