@@ -366,6 +366,31 @@ public sealed class AccountingDomainTests
     }
 
     [Fact]
+    public void Every_7B_contract_field_must_be_present_and_match_its_runtime_value()
+    {
+        var accepted = AcceptedRule("FE-03");
+
+        foreach (var field in PostingRuleDefinition.RequiredAcceptanceFields)
+        {
+            var missing = accepted with
+            {
+                AcceptanceEvidence = accepted.AcceptanceEvidence!
+                    .Where(item => item.Field != field).ToArray()
+            };
+            var altered = accepted with
+            {
+                AcceptanceEvidence = accepted.AcceptanceEvidence!
+                    .Select(item => item.Field == field
+                        ? item with { Value = item.Value + "_ALTERED" }
+                        : item).ToArray()
+            };
+
+            Assert.False(missing.IsExecutableOn(EffectiveDate), $"Missing 7B field: {field}");
+            Assert.False(altered.IsExecutableOn(EffectiveDate), $"Altered 7B field: {field}");
+        }
+    }
+
+    [Fact]
     public void Posting_rule_evidence_must_match_each_runtime_contract_field()
     {
         var accepted = AcceptedRule("FE-03");
