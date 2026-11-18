@@ -130,6 +130,7 @@ public sealed class AccountingDomainTests
         Assert.Equal(original.Lines[0].Debit, reversal.Lines[0].Credit);
         Assert.Equal(original.Lines[0].Credit, reversal.Lines[0].Debit);
         Assert.NotEqual(original.JournalId, reversal.JournalId);
+        Assert.Equal("audit-reversal-create", reversal.CreatedAuditEventId);
     }
 
     [Fact]
