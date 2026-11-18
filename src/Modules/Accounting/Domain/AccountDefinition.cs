@@ -31,19 +31,35 @@ public sealed record FieldEvidence(
 
 public static class FieldEvidenceValidator
 {
-    public static bool IsComplete(IReadOnlyCollection<FieldEvidence>? evidence, IReadOnlyCollection<string> requiredFields)
+    public static bool IsComplete(
+        IReadOnlyCollection<FieldEvidence>? evidence,
+        IReadOnlyCollection<string> requiredFields,
+        IReadOnlyCollection<string>? mustBeVerifiedFields = null)
     {
-        if (evidence is null || evidence.Count != requiredFields.Count)
+        if (evidence is null || evidence.Count != requiredFields.Count ||
+            evidence.Any(item => item is null || string.IsNullOrWhiteSpace(item.Field)))
             return false;
 
-        var indexed = evidence.ToDictionary(item => item.Field, StringComparer.Ordinal);
+        var groups = evidence.GroupBy(item => item.Field, StringComparer.Ordinal).ToArray();
+        if (groups.Any(group => group.Count() != 1))
+            return false;
+
+        var indexed = groups.ToDictionary(group => group.Key, group => group.Single(), StringComparer.Ordinal);
         if (indexed.Count != requiredFields.Count || requiredFields.Any(field => !indexed.ContainsKey(field)))
+            return false;
+
+        var requiredVerified = mustBeVerifiedFields ?? Array.Empty<string>();
+        if (requiredVerified.Any(field => !requiredFields.Contains(field, StringComparer.Ordinal)))
             return false;
 
         return requiredFields.All(field =>
         {
             var item = indexed[field];
             if (string.IsNullOrWhiteSpace(item.SourceReference))
+                return false;
+
+            if (requiredVerified.Contains(field, StringComparer.Ordinal) &&
+                item.Disposition != EvidenceDisposition.Verified)
                 return false;
 
             return item.Disposition switch
@@ -105,16 +121,24 @@ public sealed record CanonicalAccountAttributes(
         "DefinitionVersion", "AuditReference"
     ];
 
+    public static IReadOnlyList<string> RequiredVerifiedFields { get; } =
+    [
+        "AccountId", "AccountCode", "TitleFa", "TitleEn", "Level", "AccountClass",
+        "Nature", "NormalBalance", "Postable", "DirectPostingAllowed", "Status",
+        "EffectiveFrom", "FinancialEventEligibility", "TaxMode", "RecognitionGate",
+        "SourceReference", "DecisionReference", "DefinitionVersion", "AuditReference"
+    ];
+
     public bool IsCompleteFor(AccountDefinition account)
     {
-        if (!FieldEvidenceValidator.IsComplete(Evidence, RequiredFields))
+        if (!FieldEvidenceValidator.IsComplete(Evidence, RequiredFields, RequiredVerifiedFields))
             return false;
 
         return RequiredFields.All(field =>
             FieldEvidenceValidator.Matches(Evidence, field, ExpectedValue(account, field)));
     }
 
-    public string? GetExpectedValueForTesting(AccountDefinition account, string field) => ExpectedValue(account, field);
+    public string? GetExpectedValue(AccountDefinition account, string field) => ExpectedValue(account, field);
 
     private string? ExpectedValue(AccountDefinition account, string field) => field switch
     {
