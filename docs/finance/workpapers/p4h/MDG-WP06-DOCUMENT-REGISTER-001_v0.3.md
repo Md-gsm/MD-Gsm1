@@ -106,10 +106,10 @@ The current branch head is read live from PR #66; no moving SHA is hard-coded he
 |---|---:|---|---|---|
 | 7B Master Posting Matrix | 0.2 | docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md | afd34e3764474e17bde774280b39335615ac5e1b1850f2b3e277a4e300f9a67e | 39/39 event dispositions; all BLOCKED/SCOPE_BLOCKED; positive rules incomplete |
 | 7C baseline | 0.3 | docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.3.md | a09b83f47a69d26ce976031091f579752b108b7f46de59d4e6ff1271dc37f6f5 | 12 baseline Open Items; internal header/version mismatch recorded |
-| 7C execution addendum | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.1.md | f8d9700bc094dd1fed7ae972004bce204d15d08e6d98c73157912c95be1bc079 | Extends Open Items to 16; v1.4 row-level reconciliation blocked |
+| 7C execution addendum | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.1.md | d763a89d0b9718b6027af39beb86c6e7d4a01f8f973f662652d08b3539346149 | Extends Open Items to 16; v1.4 row-level reconciliation blocked |
 | 7D Test Registry | 0.2 | docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md | 596ed924816876d9a64ed08b39c96735ba8c17b2e31202f354d0136508a470a2 | 67 Test IDs; positive journal assertions blocked; NOT RUN |
 | Integrated 7B/7C/7D | 0.5 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.5.md | 4bfe815dfa644ab31b96373559ebf9a5c6a06aa4c362fff7ec45fa1c3c3ca340 | Prior integrated draft, supplemented by this report |
-| Five-stage execution report | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.1.md | f8d9700bc094dd1fed7ae972004bce204d15d08e6d98c73157912c95be1bc079 | Partial execution; acceptance blockers recorded |
+| Five-stage execution report | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.1.md | d763a89d0b9718b6027af39beb86c6e7d4a01f8f973f662652d08b3539346149 | Partial execution; Accounting Domain/Application first slice implemented; persistent Posting runtime and acceptance blockers remain |
 
 ### 8.1 Structural validation
 - Validator: `scripts/ci/validate_finance_workpapers.py`
