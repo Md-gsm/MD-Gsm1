@@ -71,7 +71,7 @@ Append-only؛ runtime حق UPDATE/DELETE/TRUNCATE ندارد. ActorReference opa
 - imported_by text NOT NULL (opaque)
 - status text NOT NULL: Draft / Accepted / Retired
 
-Hash باید 64 رقم hex lowercase باشد. یکتایی authority_document + authority_version + source_sha256. Snapshot Accepted immutable است. Accepted فقط تأیید manifest و سلسله‌مراتب منبع را نشان می‌دهد و به‌تنهایی هیچ حسابی را Canonical، Postable یا مجاز برای Posting نمی‌کند.
+Hash باید 64 رقم hex lowercase باشد. یکتایی authority_document + authority_version + source_sha256. source_sha256 hash یک manifest قطعی و مرتب‌شده از Artifactهای snapshot است. پیش از Accepted شدن، تمام Artifactهای الزامی باید از نظر authority و integrity تعیین تکلیف شده باشند؛ وجود Artifact با وضعیت MISSING/NOT_VERIFIED مانع پذیرش snapshot به‌عنوان source-complete است. Snapshot Accepted immutable است. Accepted فقط تأیید manifest و سلسله‌مراتب منبع را نشان می‌دهد و به‌تنهایی هیچ حسابی را Canonical، Postable یا مجاز برای Posting نمی‌کند.
 
 ### 4.3 accounting.coa_source_artifacts — افزوده نسخه 0.2
 
@@ -108,7 +108,7 @@ Hash باید 64 رقم hex lowercase باشد. یکتایی authority_document 
 - recorded_by text NOT NULL
 - UNIQUE(artifact_id, row_locator)
 
-row_payload فقط داده استخراج‌شده است، نه حقیقت Canonical. هیچ مقدار آن بدون SourceRef/DecisionRef و evidence به accounts منتقل نمی‌شود. استخراج اصلاح‌شده با نسخه جدید ثبت می‌شود؛ overwrite خاموش ممنوع است. Hash ردیف باید بر اساس extraction/canonicalization version مشخص محاسبه شود.
+row_payload فقط داده استخراج‌شده است، نه حقیقت Canonical. هیچ مقدار آن بدون SourceRef/DecisionRef و evidence به accounts منتقل نمی‌شود. استخراج اصلاح‌شده با نسخه جدید ثبت می‌شود؛ overwrite خاموش ممنوع است. پس از پذیرش snapshot، artifact و source rowهای متصل به آن immutable می‌شوند. Hash ردیف باید بر اساس extraction/canonicalization version مشخص محاسبه شود.
 
 ### 4.5 accounting.coa_registry_entries — افزوده نسخه 0.2
 
@@ -117,12 +117,14 @@ row_payload فقط داده استخراج‌شده است، نه حقیقت Can
 - coa_snapshot_id uuid NOT NULL
 - account_code text NOT NULL
 - disposition text NOT NULL: UNRESOLVED / CANDIDATE / DESIGN_ONLY / INACTIVE / PROHIBITED / RESERVED / CANONICAL
-- source_artifact_id uuid NULL
-- source_row_id uuid NULL
+- source_artifact_id uuid NULL FK → coa_source_artifacts ON DELETE RESTRICT
+- source_row_id uuid NULL FK → coa_source_rows ON DELETE RESTRICT
 - owner_decision_reference text NULL
 - disposition_reason text NOT NULL
+- audit_event_id text NOT NULL FK → audit_events ON DELETE RESTRICT
 - recorded_at_utc timestamptz NOT NULL
 - PRIMARY KEY(coa_snapshot_id, account_code)
+- اگر source_row_id مقدار داشته باشد، آن ردیف باید متعلق به همان source_artifact_id باشد؛ در صورت نیاز این تطابق با FK مرکب enforce می‌شود.
 
 هر کد در هر snapshot یک disposition جاری دارد. تغییر disposition باید با تصمیم/نسخه جدید و audit انجام شود. نبود منبع به معنی UNRESOLVED است، نه CANONICAL. کد 110809 باید PROHIBITED باشد؛ ساخت حساب Canonical، JournalLine، eligibility مثبت یا Posting برای آن باید در Application و DB رد شود. 2114 و 5106 تا تکمیل صفات و شواهد حداکثر DESIGN_ONLY/CANDIDATE هستند. وجود 78 شناسه به معنی وجود 78 حساب Canonical نیست.
 
