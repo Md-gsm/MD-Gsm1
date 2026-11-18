@@ -96,6 +96,7 @@ a2e404772a0c570095fc334285ca93370f461dd088bfbc69a54e6fed2893d277  docs/finance/w
 339a1f85e7ae607b0c0361dc55bb10abcd8000cffe3734bd419faf396b9c7fe4  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.1.md
 a6c4e507ad4cb222101a3f8f629273d9b8effbbd09ad89f3fcb5225d0df65820  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.2.md
 0c6655f0223461336e6e55b5c933eb844d4b2d274e33b3c67056382936a75ed8  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.3.md
+624b5c4b200a9d3e824ebe1234f07b4f20fe569e3897ef2940d1c25a3b8e4c64  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.4.md
 0c0298a100c87498022de2793f6b60783a4932f5a0dcf92d4fe29737abe92774  docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.1.md
 0aac1aa24a47522e795237a7cbbd8418acbfcafa68012c85ca123b24a1c8ff8c  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md
 ff9ce8d87fb27233be69ce9e3be46474e09e44f68abfbd96bae6f8b621c7b4c1  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.2.md
