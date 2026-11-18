@@ -31,9 +31,9 @@ fe_rows = [x for x in section.splitlines() if x.startswith("| FE-")]
 fe_ids = [re.search(r"^\|\s*(FE-\d{2}b?)\s*\|", x).group(1) for x in fe_rows]
 expected_fe = {f"FE-{n:02d}" for n in range(1, 39)} | {"FE-10b"}
 exact("7B FE rows", fe_ids, expected_fe)
-closure_event_ids = re.findall(r"^\\|\\s*(FE-\\d{2}b?)\\s*\\|", close7b, re.MULTILINE)
+closure_event_ids = re.findall(r"^\|\s*(FE-\d{2}b?)\s*\|", close7b, re.MULTILINE)
 exact("7B closure event rows", closure_event_ids, expected_fe)
-closure_ids = re.findall(r"^\\|\\s*(7B-CL-\\d{3})", close7b, re.MULTILINE)
+closure_ids = re.findall(r"^\|\s*(7B-CL-\d{3})", close7b, re.MULTILINE)
 exact("7B closure ledger IDs", closure_ids, {f"7B-CL-{n:03d}" for n in range(1, 21)})
 for token in (
     "7B-CL-014 — R2 scope guards", "CLOSED — POLICY/DISPOSITION ONLY",
