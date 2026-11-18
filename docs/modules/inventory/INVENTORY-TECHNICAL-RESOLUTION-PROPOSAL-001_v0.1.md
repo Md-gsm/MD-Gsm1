@@ -154,8 +154,10 @@ No silence, reviewer approval, code-owner fallback or CI pass is treated as modu
 
 ## 6. Release boundary
 
-- Technical design dispositions: proposed in this document; not yet owner-accepted.
-- Cross-module technical acceptance: OPEN until all named owners record acceptance of this version and exact head SHA.
+- Technical design dispositions: reviewed and accepted by the user and Accounting, as confirmed by the user in the project conversation on 2026-11-18.
+- Independent reviewer acceptance: PENDING; the reviewer will record their review after the requested CI/test run completes.
+- Cross-module acceptance: the user has confirmed that separate per-module sign-offs are not required for this design gate.
+- Accounting boundary: approval covers the Inventory technical disposition; it does not invent or select an exact in-transit GL account or Posting Rule. Those remain blocked until the canonical COA evidence and the applicable Accounting authorization are explicitly recorded.
 - Physical ERD/Data Dictionary promotion: NOT AUTHORIZED until owner acceptance and integration of this proposal.
 - Inventory runtime/SQL/migrations/API/publisher/grants: NOT AUTHORIZED.
 - Migration 0009: remains reserved by PR #70.
