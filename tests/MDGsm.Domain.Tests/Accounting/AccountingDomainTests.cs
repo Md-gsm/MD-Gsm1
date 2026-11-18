@@ -174,47 +174,52 @@ public sealed class AccountingDomainTests
         Assert.Contains(PostingBlockReason.PostingRuleNotFound, result.BlockReasons);
     }
 
+    public static IEnumerable<object[]> FinancialEventCases { get; } =
+    [
+        new object[] { "MDG-FIN-GATE-001", "FE-01" },
+        new object[] { "MDG-FIN-GATE-002", "FE-02" },
+        new object[] { "MDG-FIN-GATE-003", "FE-03" },
+        new object[] { "MDG-FIN-GATE-004", "FE-04" },
+        new object[] { "MDG-FIN-GATE-005", "FE-05" },
+        new object[] { "MDG-FIN-GATE-006", "FE-06" },
+        new object[] { "MDG-FIN-GATE-007", "FE-07" },
+        new object[] { "MDG-FIN-GATE-008", "FE-08" },
+        new object[] { "MDG-FIN-GATE-009", "FE-09" },
+        new object[] { "MDG-FIN-GATE-010", "FE-10" },
+        new object[] { "MDG-FIN-GATE-011", "FE-10b" },
+        new object[] { "MDG-FIN-GATE-012", "FE-11" },
+        new object[] { "MDG-FIN-GATE-013", "FE-12" },
+        new object[] { "MDG-FIN-GATE-014", "FE-13" },
+        new object[] { "MDG-FIN-GATE-015", "FE-14" },
+        new object[] { "MDG-FIN-GATE-016", "FE-15" },
+        new object[] { "MDG-FIN-GATE-017", "FE-16" },
+        new object[] { "MDG-FIN-GATE-018", "FE-17" },
+        new object[] { "MDG-FIN-GATE-019", "FE-18" },
+        new object[] { "MDG-FIN-GATE-020", "FE-19" },
+        new object[] { "MDG-FIN-GATE-021", "FE-20" },
+        new object[] { "MDG-FIN-GATE-022", "FE-21" },
+        new object[] { "MDG-FIN-GATE-023", "FE-22" },
+        new object[] { "MDG-FIN-GATE-024", "FE-23" },
+        new object[] { "MDG-FIN-GATE-025", "FE-24" },
+        new object[] { "MDG-FIN-GATE-026", "FE-25" },
+        new object[] { "MDG-FIN-GATE-027", "FE-26" },
+        new object[] { "MDG-FIN-GATE-028", "FE-27" },
+        new object[] { "MDG-FIN-GATE-029", "FE-28" },
+        new object[] { "MDG-FIN-GATE-030", "FE-29" },
+        new object[] { "MDG-FIN-GATE-031", "FE-30" },
+        new object[] { "MDG-FIN-GATE-032", "FE-31" },
+        new object[] { "MDG-FIN-GATE-033", "FE-32" },
+        new object[] { "MDG-FIN-GATE-034", "FE-33" },
+        new object[] { "MDG-FIN-GATE-035", "FE-34" },
+        new object[] { "MDG-FIN-GATE-036", "FE-35" },
+        new object[] { "MDG-FIN-GATE-037", "FE-36" },
+        new object[] { "MDG-FIN-GATE-038", "FE-37" },
+        new object[] { "MDG-FIN-GATE-039", "FE-38" }
+    ];
+
     [Theory]
-    [InlineData("FE-01")]
-    [InlineData("FE-02")]
-    [InlineData("FE-03")]
-    [InlineData("FE-04")]
-    [InlineData("FE-05")]
-    [InlineData("FE-06")]
-    [InlineData("FE-07")]
-    [InlineData("FE-08")]
-    [InlineData("FE-09")]
-    [InlineData("FE-10")]
-    [InlineData("FE-10b")]
-    [InlineData("FE-11")]
-    [InlineData("FE-12")]
-    [InlineData("FE-13")]
-    [InlineData("FE-14")]
-    [InlineData("FE-15")]
-    [InlineData("FE-16")]
-    [InlineData("FE-17")]
-    [InlineData("FE-18")]
-    [InlineData("FE-19")]
-    [InlineData("FE-20")]
-    [InlineData("FE-21")]
-    [InlineData("FE-22")]
-    [InlineData("FE-23")]
-    [InlineData("FE-24")]
-    [InlineData("FE-25")]
-    [InlineData("FE-26")]
-    [InlineData("FE-27")]
-    [InlineData("FE-28")]
-    [InlineData("FE-29")]
-    [InlineData("FE-30")]
-    [InlineData("FE-31")]
-    [InlineData("FE-32")]
-    [InlineData("FE-33")]
-    [InlineData("FE-34")]
-    [InlineData("FE-35")]
-    [InlineData("FE-36")]
-    [InlineData("FE-37")]
-    [InlineData("FE-38")]
-    public async Task Every_financial_event_without_an_accepted_rule_is_blocked(string financialEventId)
+    [MemberData(nameof(FinancialEventCases))]
+    public async Task Every_financial_event_without_an_accepted_rule_is_blocked(string testId, string financialEventId)
     {
         var service = new PostingPreflightService(
             new RuleCatalog(null),
@@ -224,7 +229,7 @@ public sealed class AccountingDomainTests
         var result = await service.EvaluateAsync(
             new(financialEventId, EffectiveDate, true, null));
 
-        Assert.False(result.IsEligible);
+        Assert.False(result.IsEligible, $"{testId} ({financialEventId}) must fail closed without an accepted rule.");
         Assert.Contains(PostingBlockReason.PostingRuleNotFound, result.BlockReasons);
     }
 
