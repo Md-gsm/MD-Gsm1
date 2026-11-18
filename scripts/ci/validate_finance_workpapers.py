@@ -125,7 +125,7 @@ if "NOT RUN / NOT VERIFIED" not in d or "Posting Release | NOT GRANTED" not in d
     fail("7D execution/no-release guards missing")
 
 for token in (
-    "Controlled Document Register — Version 0.8",
+    "Controlled Document Register — Version 0.9",
     "MDG-WP06-7B-POSTING-RULE-CLOSURE-001 | v0.2",
     "Accepted positive Posting Rules: 0",
     "PROPOSAL — OWNER REVIEW REQUIRED", "FE-01: BLOCKED", "FE-02: BLOCKED", "No Sales runtime module",
@@ -136,19 +136,21 @@ for token in (
 
 
 for token in (
-    "SalesDocumentFinalized", "Inventory-owned committed fulfillment",
-    "PROPOSAL — OWNER REVIEW REQUIRED", "FE-01 remains",
+    "SalesDocumentFinalized", "Inventory exclusively owns committed stock movements",
+    "transactional", "FE-01: BLOCKED", "Posting Release: NOT GRANTED",
 ):
     if token not in sales_proposal:
         fail(f"Sales source-event proposal missing required control: {token}")
 for token in (
     "RepairTechnicalCompletionRecorded", "RepairOrderHandedOver",
-    "Accounting must not infer RecognitionTime", "PROPOSAL — OWNER REVIEW REQUIRED",
+    "پذیرش تعمیر در نسخهٔ بعدی فعال می‌شود.", "R1 intake: DISABLED",
+    "R1 FE-02 posting: BLOCKED", "Posting Release: NOT GRANTED",
 ):
     if token not in repair_proposal:
         fail(f"RepairOperations source-event proposal missing required control: {token}")
 for token in (
     "FE-01 — goods sale", "FE-02 — repair service", "RecognitionTime",
+    "OWN-FE-01-02-001 v1.0", "at-least-once",
     "Accepted positive Posting Rules: 0", "Posting Release: NOT GRANTED",
 ):
     if token not in source_crosswalk:
