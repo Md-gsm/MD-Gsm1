@@ -358,5 +358,5 @@ e8d15efa06af664e962d668c066f395b095500ceebd9465cd0590369775c80de  src/Modules/Ac
 b25d96fa7780d8c5653c73f6a27fd53629ec5cd9e9c9ff4e1275fbd9d6f8e3b5  scripts/ci/test_accounting_postgres_ap03_ap04.sh
 c2308a332b1dcf72a6e18f234ea18a9ff70a6c77b5f9d02a648051e32fbaa7f2  docs/security/accounting-runtime-privilege-matrix-fa.md
 521a5404930b6012839844d559a9937df3fd10f5b5d4db2a3bfefa0974931a33  docs/data/accounting-recovery-runbook-fa.md
-0988785b0296fbe6a4cb10717a569a0fa36a0e12895fb0c3791b05d964e34c35  docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.2.md
+
 c8acf0dd0036d177439623ee45efb389b10b615a96e656d57466a4f662bc9325  docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.2.md
