@@ -32,8 +32,17 @@ public sealed record PostingRuleDefinition(
         "AuditEvents", "TestCaseIds", "EvidenceRequirements", "SourceReferences", "DecisionReferences"
     ];
 
+    public static IReadOnlyList<string> RequiredVerifiedAcceptanceFields { get; } =
+    [
+        "FinancialEventId", "SourceEvent", "Trigger", "Preconditions", "RecognitionTime",
+        "SourceDocument", "DebitAccountCode", "CreditAccountCode", "DebitAccountConditions",
+        "CreditAccountConditions", "AmountBasis", "PostingIdentity", "IdempotencyKey",
+        "ReversalRule", "PeriodRule", "AtomicityBoundary", "RetryBehavior", "Authorization",
+        "AuditEvents", "TestCaseIds", "EvidenceRequirements", "SourceReferences", "DecisionReferences"
+    ];
+
     public bool HasCompleteAcceptanceEvidence =>
-        FieldEvidenceValidator.IsComplete(AcceptanceEvidence, RequiredAcceptanceFields) &&
+        FieldEvidenceValidator.IsComplete(AcceptanceEvidence, RequiredAcceptanceFields, RequiredVerifiedAcceptanceFields) &&
         RequiredAcceptanceFields
             .Select(field => (Field: field, Expected: ExpectedEvidenceValue(field)))
             .Where(item => item.Expected is not null)
