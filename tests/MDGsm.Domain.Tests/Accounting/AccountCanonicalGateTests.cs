@@ -48,12 +48,12 @@ public sealed class AccountCanonicalGateTests
         Assert.Contains(cycle, issue => issue.Code == AccountRegistryIssueCode.ParentCycle);
 
         var parentId = Guid.CreateVersion7();
-        var parent = CreateAccount("1103", parentId);
-        var childWithExplicitParent = CreateAccount("110302", Guid.CreateVersion7(), parentId);
+        var parent = CreateAccount("1103", parentId, level: 1);
+        var childWithExplicitParent = CreateAccount("110302", Guid.CreateVersion7(), parentId, level: 2);
         Assert.DoesNotContain(AccountRegistryValidator.Validate([parent, childWithExplicitParent]),
             issue => issue.Code == AccountRegistryIssueCode.ExplicitParentRelationMismatch);
 
-        var childWithoutParentEvidence = CreateAccount("110302", Guid.CreateVersion7());
+        var childWithoutParentEvidence = CreateAccount("110302", Guid.CreateVersion7(), level: 2);
         Assert.Contains(AccountRegistryValidator.Validate([parent, childWithoutParentEvidence]),
             issue => issue.Code == AccountRegistryIssueCode.ExplicitParentRelationMismatch);
     }
@@ -90,7 +90,9 @@ public sealed class AccountCanonicalGateTests
     [Trait("TestId", "MDG-COA-GATE-006")]
     public void Missing_subledger_type_is_not_treated_as_an_implicit_none()
     {
-        var account = CreateAccount("110802", Guid.CreateVersion7(), subledgerType: null);
+        var account = WithUnverifiedSubledgerType(
+            CreateAccount("110802", Guid.CreateVersion7(), subledgerType: null,
+                allowedEvents: new HashSet<string>(StringComparer.Ordinal) { "FE-07" }));
 
         Assert.False(account.CanAutomatedPost("FE-07", TestDate, true));
         Assert.Contains(AccountRegistryValidator.Validate([account]),
@@ -101,7 +103,7 @@ public sealed class AccountCanonicalGateTests
     [Trait("TestId", "MDG-COA-GATE-007")]
     public void Missing_or_invalid_effective_start_date_blocks_account()
     {
-        var missing = CreateAccount("1101", Guid.CreateVersion7(), effectiveFrom: null);
+        var missing = CreateAccount("1101", Guid.CreateVersion7(), missingEffectiveFrom: true);
         var expired = CreateAccount("1102", Guid.CreateVersion7(), effectiveFrom: new DateOnly(2026, 1, 1), effectiveTo: new DateOnly(2026, 1, 31));
 
         Assert.False(missing.CanAutomatedPost("FE-03", TestDate, true));
@@ -183,7 +185,7 @@ public sealed class AccountCanonicalGateTests
     [Trait("TestId", "MDG-COA-GATE-014")]
     public void Trade_in_inventory_account_requires_ownership_and_recognition_evidence()
     {
-        var account = CreateAccount("110803", Guid.CreateVersion7(), recognitionEvidenceRequired: true);
+        var account = CreateAccount("110803", Guid.CreateVersion7(), allowedEvents: new HashSet<string>(StringComparer.Ordinal) { "FE-21" }, recognitionEvidenceRequired: true);
 
         Assert.False(account.CanAutomatedPost("FE-21", TestDate, false));
         Assert.True(account.CanAutomatedPost("FE-21", TestDate, true));
@@ -193,7 +195,9 @@ public sealed class AccountCanonicalGateTests
     [Trait("TestId", "MDG-COA-GATE-015")]
     public void Subledger_account_requires_explicit_subledger_contract_value()
     {
-        var account = CreateAccount("110802", Guid.CreateVersion7(), subledgerType: null);
+        var account = WithUnverifiedSubledgerType(
+            CreateAccount("110802", Guid.CreateVersion7(), subledgerType: null,
+                allowedEvents: new HashSet<string>(StringComparer.Ordinal) { "FE-07" }));
 
         Assert.False(account.CanAutomatedPost("FE-07", TestDate, true));
     }
@@ -226,18 +230,20 @@ public sealed class AccountCanonicalGateTests
         DateOnly? effectiveTo = null,
         string? subledgerType = "NONE",
         IReadOnlySet<string>? allowedEvents = null,
-        bool recognitionEvidenceRequired = false)
+        bool recognitionEvidenceRequired = false,
+        int level = 1,
+        bool missingEffectiveFrom = false)
     {
         var allowed = allowedEvents ?? new HashSet<string>(StringComparer.Ordinal) { "FE-03" };
         var account = new AccountDefinition(
             id, code, "حساب آزمون", nature, normalBalance, postable, directPostingAllowed, status,
-            effectiveFrom ?? new DateOnly(2026, 1, 1), effectiveTo,
+            missingEffectiveFrom ? null : effectiveFrom ?? new DateOnly(2026, 1, 1), effectiveTo,
             allowed,
             new HashSet<string>(StringComparer.Ordinal) { "FE-36" },
             recognitionEvidenceRequired);
 
         var attributes = new CanonicalAccountAttributes(
-            "Test account", parentId, 1, "ASSET", subledgerType, 0, "NONE",
+            "Test account", parentId, level, "ASSET", subledgerType, 0, "NONE",
             "SOURCE_DOCUMENT_FINALIZED", "NOT_REQUIRED", "NOT_REQUIRED", "TEST_MAPPING",
             "test-source", "test-decision", "test-cr", 1, "test-audit", null);
 
@@ -249,6 +255,16 @@ public sealed class AccountCanonicalGateTests
                 : new FieldEvidence(field, EvidenceDisposition.Verified, value, "test-source", null);
         }).ToArray();
 
+        return account with { CanonicalAttributes = attributes with { Evidence = evidence } };
+    }
+
+    private static AccountDefinition WithUnverifiedSubledgerType(AccountDefinition account)
+    {
+        var attributes = account.CanonicalAttributes!;
+        var evidence = attributes.Evidence!.Select(item =>
+            item.Field == "SubledgerType"
+                ? item with { Disposition = EvidenceDisposition.Unverified, Value = null, Rationale = null }
+                : item).ToArray();
         return account with { CanonicalAttributes = attributes with { Evidence = evidence } };
     }
 
