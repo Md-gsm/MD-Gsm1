@@ -137,7 +137,7 @@ for token in (
 
 for token in (
     "SalesDocumentFinalized", "Inventory exclusively owns committed stock movements",
-    "transactional", "FE-01: BLOCKED", "Posting Release: NOT GRANTED",
+    "Outbox record", "FE-01: BLOCKED", "Posting Release: NOT GRANTED",
 ):
     if token not in sales_proposal:
         fail(f"Sales source-event proposal missing required control: {token}")
