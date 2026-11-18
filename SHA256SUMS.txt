@@ -87,7 +87,7 @@ e8cc56bb618d51962a175d8d18c37b6c1b265b6f216dab28d7fe98a7a0c57260  docs/decisions
 e5c3172b78d4212bf63c4084bfb7b4989a310b0e69c86b749902170f4fcce199  docs/decisions/0017-irr-document-total-rounding.md
 6d145019731839cbdaa8d1340b0cd97827e6f2e971340c85d5b4bdf05efa3434  docs/decisions/0018-accounting-core-foundation-scope.md
 d1370355da7531ce6c7d5563ea86d5497eb7f526725dfb3eee75be62079ba7bc  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.1.md
-3272feed4669b55b5f0befab146d529e31ce26c1911d068733c2b7d2495e1b5b  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
+538513765394e14f012f7cb4e96d878aa86be27c5414847f44474d061405027e  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
 1bc5a374c362b2d38bb48379612a59af86c27a2997176505868d46b6f4f1e2cb  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.1.md
 5baa7e854d289dabff67dc28bc3c9d2cdd936a8ddc10345f2cd96a703a4e9775  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.2.md
 7fcdb743eb137630c9b882a514da4f8a1fe6a6b8bd7d9c444a2aa6d182988724  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.3.md
