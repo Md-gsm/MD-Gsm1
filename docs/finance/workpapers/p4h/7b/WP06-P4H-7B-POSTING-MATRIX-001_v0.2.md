@@ -34,7 +34,7 @@
 | FE-06 | BLOCKED_PENDING_RULE | 2101 بدهی فاکتورشده؛ 2103 کالا GRNI؛ 110701 مالیات خرید مشروط | invoice/receipt timing، tax matrix، inventory/cost recognition و هر دو سمت | MDG-FIN-GATE-006 |
 | FE-07 | BLOCKED_PENDING_RULE | 110801 تنها GL inventory control؛ 110802..110806 زیرمعین‌اند | ownership/receipt trigger، valuation، inventory subledger و atomicity | MDG-FIN-GATE-007 |
 | FE-08 | BLOCKED_PENDING_RULE | 5101 candidate؛ WAC در ProductVariant×Warehouse و Specific Identification برای serial item | valuation policy کامل، source movement، cost layers، inventory credit و concurrency | MDG-FIN-GATE-008 |
-| FE-09 | BLOCKED_R1 | 110807 inactive R1؛ COGS پیش از تحویل/شرط شناخت ممنوع | تصمیم scope/ownership و قرارداد مستقل؛ بدون فعال‌سازی 110807 در R1 | MDG-FIN-GATE-009 |
+| FE-09 | BLOCKED_R1 | 110807 inactive R1؛ COGS پیش از تحویل/شرط شناخت ممنوع؛ این FE با OWN-7C-038 درباره 6105/1202 اشتباه نشود (آن موضوع مستقل دارایی ثابت است) | تصمیم scope/ownership و قرارداد مستقل؛ بدون فعال‌سازی 110807 در R1 | MDG-FIN-GATE-009 |
 | FE-10 | BLOCKED_PENDING_RULE | برگشت مالی از فروش اصلی؛ مستقل از برگشت فیزیکی | credit/refund، tax/price/COGS، source link و reversal | MDG-FIN-GATE-010 |
 | FE-10b | BLOCKED_PENDING_RULE | حرکت فیزیکی برگشت کالا مستقل از refund | inspection, disposition, warehouse, valuation و link به اصل | MDG-FIN-GATE-011 |
 | FE-11 | BLOCKED_PENDING_RULE | برگشت خرید به سند خرید/دریافت اصلی وصل باشد | supplier credit, inventory, tax, AP/GRNI و reversal | MDG-FIN-GATE-012 |
@@ -81,7 +81,7 @@
 
 ## 5. وضعیت
 
-- FE disposition coverage: 38/38 — COMPLETE AT DESIGN-GATE LEVEL.
+- Event disposition coverage: 39/39 rows — COMPLETE AT DESIGN-GATE LEVEL (38 FE identifiers + separate FE-10b event row).
 - Posting rule detail: PARTIAL; no incomplete FE is authorized to post.
 - Positive posting journals: NOT SPECIFIED where 7B/7C incomplete.
 - Test linkage: MDG-FIN-GATE-001..039 in 7D v0.2.
@@ -199,7 +199,7 @@
 
 ### 7.2 OpenIssue ID و SourceRef دوطرفه برای تمام FEها
 
-هر ردیف مسدود یک شناسه Issue مستقل دارد. SourceRef به ردیف رویداد در Integrated v0.6 §6.2، disposition حاکم حساب در 7C v0.4 §5 و تصمیم/ADR قابل اعمال اشاره می‌کند؛ نام فنی SourceEvent/trigger تا زمان تأیید قرارداد ماژول مالک صریحاً OPEN است.
+هر یک از 39 ردیف رویدادی یک شناسه Issue مستقل دارد. SourceRef به ردیف رویداد در Integrated v0.6 §6.2، توضیحات تکمیلی رویدادمحور در §6.3 هرجا موجود است، disposition حاکم حساب در 7C v0.4 §5 و تصمیم دقیق مالک در مواردی که شناسه آن صریحاً درج شده اشاره می‌کند؛ نام فنی SourceEvent/trigger تا زمان تأیید قرارداد ماژول مالک صریحاً OPEN است.
 
 | FE | OpenIssueID | SourceRefs | Test ID | Owner Action |
 |---|---|---|---|---|
@@ -211,26 +211,26 @@
 | FE-06 | 7B-OPEN-006 | Integrated v0.6 §6.2 (FE-06); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-006 | Purchasing + Finance + Tax |
 | FE-07 | 7B-OPEN-007 | Integrated v0.6 §6.2 (FE-07); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-007 | Inventory + Finance |
 | FE-08 | 7B-OPEN-008 | Integrated v0.6 §6.2 (FE-08); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-008 | Sales + Inventory + Finance |
-| FE-09 | 7B-OPEN-009 | Integrated v0.6 §6.2 (FE-09); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-009 | RepairOperations + Inventory + Finance |
+| FE-09 | 7B-OPEN-009 | Integrated v0.6 §6.2 (FE-09); §6.3 (تفکیک FE-09 از OWN-7C-038/6105/1202); 7C v0.4 §5; exact source-module event contract pending | MDG-FIN-GATE-009 | RepairOperations + Inventory + Finance |
 | FE-10 | 7B-OPEN-010 | Integrated v0.6 §6.2 (FE-10); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-010 | Sales + Finance |
 | FE-10b | 7B-OPEN-011 | Integrated v0.6 §6.2 (FE-10b); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-011 | Inventory + Sales |
 | FE-11 | 7B-OPEN-012 | Integrated v0.6 §6.2 (FE-11); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-012 | Purchasing + Inventory + Finance |
-| FE-12 | 7B-OPEN-013 | Integrated v0.6 §6.2 (FE-12); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-013 | Treasury + Sales + Finance |
+| FE-12 | 7B-OPEN-013 | Integrated v0.6 §6.2 (FE-12); §6.3 (Refund Payable is distinct from unallocated receipt); 7C v0.4 §5; exact source-module event contract pending | MDG-FIN-GATE-013 | Treasury + Sales + Finance |
 | FE-13 | 7B-OPEN-014 | Integrated v0.6 §6.2 (FE-13); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-014 | Sales + Pricing + Finance |
-| FE-14 | 7B-OPEN-015 | Integrated v0.6 §6.2 (FE-14); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-015 | Treasury + Finance |
+| FE-14 | 7B-OPEN-015 | Integrated v0.6 §6.2 (FE-14); §6.3; 7C v0.4 §5.1; OWN-7C-004-R1; source-title/attributes crosswalk remains open | MDG-FIN-GATE-015 | Treasury + Finance |
 | FE-15 | 7B-OPEN-016 | Integrated v0.6 §6.2 (FE-15); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-016 | Purchasing + Finance |
 | FE-16 | 7B-OPEN-017 | Integrated v0.6 §6.2 (FE-16); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-017 | Inventory + Finance |
 | FE-17 | 7B-OPEN-018 | Integrated v0.6 §6.2 (FE-17); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-018 | Treasury + Finance |
 | FE-18 | 7B-OPEN-019 | Integrated v0.6 §6.2 (FE-18); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-019 | Treasury + Finance |
 | FE-19 | 7B-OPEN-020 | Integrated v0.6 §6.2 (FE-19); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-020 | Inventory/RepairOperations + Finance |
-| FE-20 | 7B-OPEN-021 | Integrated v0.6 §6.2 (FE-20); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-021 | Purchasing + RepairOperations + Finance |
-| FE-21 | 7B-OPEN-022 | Integrated v0.6 §6.2 (FE-21); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-022 | Purchasing + Sales + Inventory + Finance |
-| FE-22 | 7B-OPEN-023 | Integrated v0.6 §6.2 (FE-22); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-023 | Treasury + Finance |
+| FE-20 | 7B-OPEN-021 | Integrated v0.6 §6.2 (FE-20); §6.3; 7C v0.4 §5; exact source-module event contract and expense counterpart pending | MDG-FIN-GATE-021 | Purchasing + RepairOperations + Finance |
+| FE-21 | 7B-OPEN-022 | Integrated v0.6 §6.2 (FE-21); §6.3 (two documents/TradeInId/no netting/IMEI guard); 7C v0.4 §5; exact source-module event contract pending | MDG-FIN-GATE-022 | Purchasing + Sales + Inventory + Finance |
+| FE-22 | 7B-OPEN-023 | Integrated v0.6 §6.2 (FE-22); §6.3 (bank/PSP fee separation); 7C v0.4 §5; exact source-module event contract pending | MDG-FIN-GATE-023 | Treasury + Finance |
 | FE-23 | 7B-OPEN-024 | Integrated v0.6 §6.2 (FE-23); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-024 | RepairOperations + Payroll + Finance |
 | FE-24 | 7B-OPEN-025 | Integrated v0.6 §6.2 (FE-24); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-025 | Finance + Fixed Assets (R2) |
 | FE-25 | 7B-OPEN-026 | Integrated v0.6 §6.2 (FE-25); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-026 | Finance + Treasury (R2) |
 | FE-26 | 7B-OPEN-027 | Integrated v0.6 §6.2 (FE-26); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-027 | Finance + Treasury (R2) |
-| FE-27 | 7B-OPEN-028 | Integrated v0.6 §6.2 (FE-27); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-028 | Finance + Tax |
+| FE-27 | 7B-OPEN-028 | Integrated v0.6 §6.2 (FE-27); §6.3 (TaxMode/Tax Matrix channel guard); 7C v0.4 §5; exact source-module event contract pending | MDG-FIN-GATE-028 | Finance + Tax |
 | FE-28 | 7B-OPEN-029 | Integrated v0.6 §6.2 (FE-28); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-029 | Finance |
 | FE-29 | 7B-OPEN-030 | Integrated v0.6 §6.2 (FE-29); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-030 | Finance |
 | FE-30 | 7B-OPEN-031 | Integrated v0.6 §6.2 (FE-30); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-031 | Finance + IdentityAccess/Security |
@@ -240,7 +240,7 @@
 | FE-34 | 7B-OPEN-035 | Integrated v0.6 §6.2 (FE-34); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-035 | Finance |
 | FE-35 | 7B-OPEN-036 | Integrated v0.6 §6.2 (FE-35); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-036 | Finance + Treasury |
 | FE-36 | 7B-OPEN-037 | Integrated v0.6 §6.2 (FE-36); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-037 | Source module owner + Finance |
-| FE-37 | 7B-OPEN-038 | Integrated v0.6 §6.2 (FE-37); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-038 | Payroll + RepairOperations + Finance (R2) |
+| FE-37 | 7B-OPEN-038 | Integrated v0.6 §6.2 (FE-37); §6.3 (Payroll separate from operational commission); 7C v0.4 §5; exact source-module event contract pending | MDG-FIN-GATE-038 | Payroll + RepairOperations + Finance (R2) |
 | FE-38 | 7B-OPEN-039 | Integrated v0.6 §6.2 (FE-38); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-039 | Finance + Product Owner |
 
 تمام OpenIssueها تا رفع فیلدهای NOT SPECIFIED/BLOCKED باز می‌مانند. بستن یک Issue نیازمند تکمیل قرارداد، بازبینی مستقل، به‌روزرسانی 7B/7C/7D و ثبت Evidence است؛ صرف تغییر وضعیت در جدول کافی نیست.
