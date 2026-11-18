@@ -340,12 +340,19 @@
 |---|---|---|---|
 | AP-01 | COA snapshot در Journal Domain | `Journal.CoaSnapshotId` اجباری شد؛ factory، finalize، reversal و تست‌های مثبت/منفی به‌روزرسانی شدند. Persistence mapping همچنان مرحله بعد است. | DOMAIN IMPLEMENTED — CI NOT YET VERIFIED |
 | AP-02 | payload conflict برای idempotency | قرارداد `ICanonicalPostingPayload`، fingerprint نسخه‌دار SHA-256 و policy تشخیص replay/conflict در Application اضافه شد؛ تست payload یکسان، payload متفاوت، نسخه متفاوت و درخواست جدید افزوده شد. | APPLICATION CONTRACT + UNIT TESTS IMPLEMENTED — CI NOT YET VERIFIED |
-| AP-03 | deferred balance trigger | PoC مستقل در schema آزمایشی `ap_proof`؛ حداقل دو خط، توازن، overflow و بررسی deferred در commit | POSTGRESQL 18 POC ADDED — CI PENDING |
-| AP-04 | finalized immutability | PoC مستقل برای header/lines، append-only audit/transition، accepted COA snapshot، TRUNCATE guards و runtime least-privilege | POSTGRESQL 18 POC ADDED — CI PENDING |
-| AP-05 | recovery policy | مستندکردن تفاوت disposable rollback پیش از داده مالی و forward-only پس از داده مالی | DESIGN SPECIFIED; IMPLEMENTATION NOT VERIFIED |
+| AP-03 | deferred balance trigger | PoC مستقل در schema آزمایشی `ap_proof`؛ حداقل دو خط، توازن، overflow و بررسی deferred در commit | PREVIOUS POC RUN PASSED; LATEST GRANT-ALIGNED RUN PENDING |
+| AP-04 | finalized immutability | PoC مستقل برای header/lines، append-only audit/transition، accepted COA snapshot، TRUNCATE guards و runtime least-privilege | PREVIOUS POC RUN PASSED; LATEST GRANT-ALIGNED RUN PENDING |
+| AP-05 | recovery policy | افزودن `MDG-ACC-OPS-REC-001` برای guard محیط disposable، backup/restore، recovery پیش و پس از داده مالی و forward-only repair | RUNBOOK ADDED; OPERATIONAL RECOVERY NOT VERIFIED |
 | AP-06 | registry CI | اصلاح MigrationResourceTests تا RESERVED future slot را بدون SQL مجاز بداند، اما IMPLEMENTED/VERIFIED را با SQL تطبیق دهد | INCLUDED IN THIS PR |
-| AP-07 | DB privilege | تهیه grant matrix اختصاصی Accounting و تست runtime role least privilege | NOT STARTED |
+| AP-07 | DB privilege | افزودن `MDG-ACC-SEC-PRIV-001` و هم‌راستاسازی grants و آزمون runtime least-privilege در PoC PostgreSQL | MATRIX + TESTS ADDED; LATEST CI PENDING |
 | AP-08 | COA evidence crosswalk | تکمیل crosswalk معتبر v1.2/v1.4؛ بدون seed و بدون حدس | BLOCKED BY SOURCE EVIDENCE |
+
+### وضعیت اجرای AP-05 و AP-07 در برش فعلی
+
+- AP-05: رویه `MDG-ACC-OPS-REC-001` اضافه شد. این runbook بین کنارگذاشتن دیتابیس disposable پیش از داده مالی و forward-only recovery پس از ایجاد داده مالی تمایز می‌گذارد. این سند اجرای backup/restore عملیاتی Accounting را ادعا نمی‌کند.
+- AP-07: ماتریس `MDG-ACC-SEC-PRIV-001` اضافه شد. Runtime برای خطوط و append-only records مجوز UPDATE/DELETE ندارد؛ UPDATE روی Journal فقط به ستون‌های transition نهایی‌سازی محدود می‌شود؛ COA و FiscalPeriod برای runtime read-only باقی می‌مانند.
+- PoC قبلی AP-03/AP-04 روی PostgreSQL 18.6 موفق شد؛ پس از هم‌راستاسازی grants با ماتریس AP-07، CI جدید باید دوباره روی SHA نهایی اجرا شود.
+- هیچ GRANT واقعی روی schema دائمی Accounting اعمال نشده و هیچ نقش عملیاتی ساخته نشده است.
 
 ### وضعیت اجرای AP-03 و AP-04 در برش فعلی
 
