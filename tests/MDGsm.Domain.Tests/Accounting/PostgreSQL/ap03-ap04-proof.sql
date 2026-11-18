@@ -79,12 +79,12 @@ FOR EACH ROW EXECUTE FUNCTION ap_proof.check_journal_balance_deferred();
 CREATE FUNCTION ap_proof.check_journal_header_balance_deferred()
 RETURNS trigger
 LANGUAGE plpgsql
-AS $
+AS $$
 BEGIN
     PERFORM ap_proof.assert_journal_balanced(NEW.journal_id);
     RETURN NULL;
 END;
-$;
+$$;
 
 CREATE CONSTRAINT TRIGGER trg_ap_proof_journal_header_balance
 AFTER INSERT OR UPDATE ON ap_proof.journals
@@ -103,7 +103,7 @@ BEGIN
     IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
     RETURN NEW;
 END;
-$;
+$$;
 
 CREATE TRIGGER trg_ap_proof_journal_header_immutable
 BEFORE UPDATE OR DELETE ON ap_proof.journals
@@ -135,7 +135,7 @@ BEGIN
     IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
     RETURN NEW;
 END;
-$;
+$$;
 
 CREATE TRIGGER trg_ap_proof_journal_lines_immutable
 BEFORE INSERT OR UPDATE OR DELETE ON ap_proof.journal_lines
@@ -226,7 +226,7 @@ BEGIN
     IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
     RETURN NEW;
 END;
-$;
+$$;
 CREATE TRIGGER trg_ap_proof_accepted_snapshot_immutable
 BEFORE UPDATE OR DELETE ON ap_proof.coa_snapshots
 FOR EACH ROW EXECUTE FUNCTION ap_proof.guard_accepted_snapshot();
