@@ -41,9 +41,13 @@ base_open = re.findall(r"^\|\s*(7C-OPEN-\d{3})\s*\|", c, re.MULTILINE)
 added_open = re.findall(r"^\|\s*(7C-OPEN-\d{3})\s*\|", a, re.MULTILINE)
 open_ids = base_open + added_open
 exact("7C Open Items", open_ids, {f"7C-OPEN-{n:03d}" for n in range(1, 17)})
-for token in ("NOT EXECUTABLE — SOURCE CONTENT REQUIRED", "110302→1103", "610801→6108", "620201→6202", "2114", "5106", "110809"):
+for token in ("COA v1.2", "v1.4", "110302→1103", "610801→6108", "620201→6202", "2114", "5106", "110809"):
     if token not in c + a:
         fail(f"missing 7C control: {token}")
+if "NOT EXECUTABLE — SOURCE CONTENT REQUIRED" in c + a:
+    fail("obsolete v1.4 source-content blocker must be removed")
+if "Workbook نه‌شیتی" not in c or "از موانع" not in c:
+    fail("7C must explicitly remove the 9-sheet workbook as an execution blocker")
 
 fin = re.findall(r"^\|\s*(MDG-FIN-GATE-\d{3})\s*\|", d, re.MULTILINE)
 coa = re.findall(r"^\|\s*(MDG-COA-GATE-\d{3})\s*\|", d, re.MULTILINE)
