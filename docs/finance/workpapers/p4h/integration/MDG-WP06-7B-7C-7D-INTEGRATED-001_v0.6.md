@@ -1035,7 +1035,7 @@ End of Document
 - 7D: `WP06-P4H-7D-TEST-REGISTRY-001 v0.2` — 39 reconstructed gate test IDs; not runtime executed.
 
 ### 19.2. 7C decision overlay — reconciliation boundary
-7C v0.3 separates source rows from owner-approved dispositions. It applies OWN-7C-043 and OWN-7C-004-R1 as an overlay, without silently rewriting source titles or assigning canonical IDs/parents/NormalBalance/eligibility. The supplementary identifiers 2114 and 5106 are part of the 78-ID v1.4 register under accepted owner decisions. 110809 remains a prohibited identifier and is not an active account.
+7C v0.4 separates the 76 base codes in v1.2 from the two supplementary identifiers in v1.4 and applies owner-approved dispositions. It applies OWN-7C-043 and OWN-7C-004-R1 as an overlay, without silently rewriting source titles or assigning canonical IDs/parents/NormalBalance/eligibility. The supplementary identifiers 2114 and 5106 are part of the 78-ID v1.4 register under accepted owner decisions. 110809 remains a prohibited identifier and is not an active account.
 
 ### 19.3. 7C remaining canonicalization work
 The exact account-level canonical values must be reconciled against the owner's current COA baseline. The available 7C package does not infer values from numeric prefixes or treat the intermediate v1.3 reconstruction as the current baseline. Until the row-level crosswalk is verified, all unresolved canonical attributes remain UNVERIFIED/NOT ASSIGNED/NOT SET and no posting is allowed.
