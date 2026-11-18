@@ -129,9 +129,9 @@ The following v0.2 proposals translate approved owner policy into technical depe
 
 | Proposal | Scope | Status |
 |---|---|---|
-| `docs/modules/sales/SALES-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.1.md` | Sales document/line facts for FE-01, explicitly dependent on Inventory-owned committed fulfillment evidence | PROPOSAL — OWNER REVIEW REQUIRED |
-| `docs/modules/repairoperations/REPAIROPERATIONS-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.1.md` | Separate technical completion, optional quality acceptance and handover facts for FE-02 | PROPOSAL — OWNER REVIEW REQUIRED |
-| `docs/finance/workpapers/p4h/integration/MDG-WP06-FE01-FE02-SOURCE-CROSSWALK-PROPOSAL-001_v0.1.md` | Cross-module source evidence and RecognitionTime questions for FE-01/FE-02 | PROPOSAL — SOURCE OWNER REVIEW REQUIRED |
+| `docs/modules/sales/SALES-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.2.md` | Sales document/line facts for FE-01, explicitly dependent on Inventory-owned committed fulfillment evidence | PROPOSAL — OWNER REVIEW REQUIRED |
+| `docs/modules/repairoperations/REPAIROPERATIONS-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.2.md` | Separate technical completion, optional quality acceptance and handover facts for FE-02 | PROPOSAL — OWNER REVIEW REQUIRED |
+| `docs/finance/workpapers/p4h/integration/MDG-WP06-FE01-FE02-SOURCE-CROSSWALK-PROPOSAL-001_v0.2.md` | Cross-module source evidence and RecognitionTime questions for FE-01/FE-02 | PROPOSAL — SOURCE OWNER REVIEW REQUIRED |
 
 Boundaries:
 - These are documentation proposals only. Sales, RepairOperations, Inventory and Accounting runtime event publishers/adapters are not added. The proposals now reflect OWN-FE-01-02-001 v1.0; module-owner technical acceptance remains open.
