@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>MDGsm.Accounting.Application</AssemblyName>
+    <RootNamespace>MDGsm.Accounting.Application</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Domain\MDGsm.Accounting.Domain.csproj" />
+    <ProjectReference Include="..\Contracts\MDGsm.Accounting.Contracts.csproj" />
+  </ItemGroup>
+</Project>

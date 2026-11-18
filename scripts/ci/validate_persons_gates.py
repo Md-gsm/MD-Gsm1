@@ -282,10 +282,14 @@ def run_architecture(root: Path) -> None:
         },
         "Host/Desktop/MDGsm.Desktop.csproj": {"MDGsm.Client"},
     }
-    modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance")
+    modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance", "Accounting")
     for module in modules:
         expected_projects[f"Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj"] = set()
     expected_projects["Modules/Finance/MDGsm.Finance.csproj"] = {"MDGsm.Finance.Contracts", "MDGsm.Persons.Contracts"}
+    expected_projects["Modules/Accounting/Domain/MDGsm.Accounting.Domain.csproj"] = set()
+    expected_projects["Modules/Accounting/Application/MDGsm.Accounting.Application.csproj"] = {
+        "MDGsm.Accounting.Domain", "MDGsm.Accounting.Contracts"
+    }
 
     # IdentityAccess is the first module allowed to add internal layers on its
     # isolated feature branch. Contracts remain dependency-free; Application
@@ -342,6 +346,7 @@ def run_architecture(root: Path) -> None:
         root / "src/Modules/IdentityAccess/Contracts/README.md",
         root / "src/Modules/RepairOperations/Contracts/README.md",
         root / "src/Modules/Finance/Contracts/README.md",
+        root / "src/Modules/Accounting/Contracts/README.md",
     ]
     if not target.exists() or any(not path.exists() for path in required_readmes):
         raise GateFailure("Modular target specification or required Host/Contracts boundary documentation is missing.")

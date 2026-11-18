@@ -1,0 +1,272 @@
+using System.Numerics;
+using MDGsm.Accounting.Application;
+using MDGsm.Accounting.Domain;
+using Xunit;
+
+namespace MDGsm.Domain.Tests.Accounting;
+
+public sealed class AccountingDomainTests
+{
+    private static readonly DateOnly EffectiveDate = new(2026, 11, 18);
+    private static readonly DateTimeOffset UtcNow = new(2026, 11, 18, 8, 0, 0, TimeSpan.Zero);
+
+    [Theory]
+    [InlineData("1250", "100", 13)]
+    [InlineData("-1250", "100", -13)]
+    [InlineData("1249", "100", 12)]
+    [InlineData("-1249", "100", -12)]
+    public void Irr_rounding_uses_away_from_zero(string numerator, string denominator, long expected)
+    {
+        var actual = IrrAmount.RoundAwayFromZero(BigInteger.Parse(numerator), BigInteger.Parse(denominator));
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void Irr_rounding_handles_int64_minimum_and_rejects_overflow()
+    {
+        Assert.Equal(long.MinValue, IrrAmount.RoundAwayFromZero(new BigInteger(long.MinValue), BigInteger.One));
+        Assert.Throws<OverflowException>(() =>
+            IrrAmount.RoundAwayFromZero(BigInteger.Parse("9223372036854775808"), BigInteger.One));
+    }
+
+    [Fact]
+    public void Largest_remainder_allocation_is_conservative_and_order_independent()
+    {
+        var first = IrrAmount.AllocateLargestRemainder(new(100), [new("C", 1), new("B", 1), new("A", 1)]);
+        var second = IrrAmount.AllocateLargestRemainder(new(100), [new("A", 1), new("B", 1), new("C", 1)]);
+
+        Assert.Equal(first, second);
+        Assert.Equal(new[] { "A", "B", "C" }, first.Select(item => item.LineId));
+        Assert.Equal(new long[] { 34, 33, 33 }, first.Select(item => item.Amount.Value));
+        Assert.Equal(100, first.Sum(item => item.Amount.Value));
+
+        var negative = IrrAmount.AllocateLargestRemainder(new(-100), [new("A", 1), new("B", 1), new("C", 1)]);
+        Assert.Equal(new long[] { -34, -33, -33 }, negative.Select(item => item.Amount.Value));
+        Assert.Equal(-100, negative.Sum(item => item.Amount.Value));
+    }
+
+    [Fact]
+    public void Largest_remainder_rejects_duplicate_ids_negative_weights_and_zero_total_weight()
+    {
+        Assert.Throws<ArgumentException>(() => IrrAmount.AllocateLargestRemainder(new(1), [new("A", 1), new("A", 2)]));
+        Assert.Throws<ArgumentOutOfRangeException>(() => IrrAmount.AllocateLargestRemainder(new(1), [new("A", -1)]));
+        Assert.Throws<ArgumentException>(() => IrrAmount.AllocateLargestRemainder(new(1), [new("A", 0)]));
+    }
+
+    [Fact]
+    public void Unverified_or_prohibited_accounts_fail_closed()
+    {
+        var unverified = new AccountDefinition(
+            null, "1101", "صندوق", null, null, null, null, AccountStatus.Active, null, null,
+            new HashSet<string>(StringComparer.Ordinal) { "FE-03" },
+            new HashSet<string>(StringComparer.Ordinal), true);
+        var prohibited = EligibleAccount("110809", Guid.CreateVersion7(), "FE-03");
+
+        Assert.False(unverified.CanAutomatedPost("FE-03", EffectiveDate, true));
+        Assert.False(prohibited.CanAutomatedPost("FE-03", EffectiveDate, true));
+    }
+
+    [Fact]
+    public void Direct_posting_permission_is_separate_from_automated_posting_eligibility()
+    {
+        var account = EligibleAccount("1101", Guid.CreateVersion7(), "FE-03") with { DirectPostingAllowed = false };
+        Assert.True(account.CanAutomatedPost("FE-03", EffectiveDate, true));
+        Assert.False(account.CanManualPost("FE-03", EffectiveDate, true));
+    }
+
+    [Fact]
+    public void Recognition_evidence_and_event_allowlist_are_enforced()
+    {
+        var account = EligibleAccount("1101", Guid.CreateVersion7(), "FE-03") with { RecognitionEvidenceRequired = true };
+        Assert.False(account.CanAutomatedPost("FE-03", EffectiveDate, false));
+        Assert.False(account.CanAutomatedPost("FE-04", EffectiveDate, true));
+        Assert.True(account.CanAutomatedPost("FE-03", EffectiveDate, true));
+    }
+
+    [Fact]
+    public void Journal_requires_balanced_positive_lines_and_an_open_period_to_finalize()
+    {
+        var journal = CreateBalancedDraft();
+        var openPeriod = OpenPeriod(journal.FiscalPeriodId);
+        var finalized = journal.Finalize(openPeriod, "actor-1", UtcNow);
+
+        Assert.Equal(JournalStatus.Draft, journal.Status);
+        Assert.Equal(JournalStatus.Finalized, finalized.Status);
+        Assert.Equal(new IrrAmount(100), finalized.TotalDebits);
+        Assert.Equal(new IrrAmount(100), finalized.TotalCredits);
+
+        var closed = openPeriod with { Status = FiscalPeriodStatus.Closed };
+        Assert.Throws<InvalidOperationException>(() => journal.Finalize(closed, "actor-1", UtcNow));
+    }
+
+    [Fact]
+    public void Journal_rejects_unbalanced_lines_and_zero_or_two_sided_lines()
+    {
+        var debit = JournalLine.Create(Guid.CreateVersion7(), Guid.CreateVersion7(), "1101", new(100), IrrAmount.Zero);
+        var credit = JournalLine.Create(Guid.CreateVersion7(), Guid.CreateVersion7(), "4101", IrrAmount.Zero, new(99));
+
+        Assert.Throws<InvalidOperationException>(() => Journal.CreateDraft(
+            Guid.CreateVersion7(), Guid.CreateVersion7(), EffectiveDate, Identity("SALE"),
+            [debit, credit], "SALE-1", "actor-1", UtcNow));
+        Assert.Throws<ArgumentException>(() => JournalLine.Create(
+            Guid.CreateVersion7(), Guid.CreateVersion7(), "1101", IrrAmount.Zero, IrrAmount.Zero));
+        Assert.Throws<ArgumentException>(() => JournalLine.Create(
+            Guid.CreateVersion7(), Guid.CreateVersion7(), "1101", new(1), new(1)));
+    }
+
+    [Fact]
+    public void Reversal_is_a_new_journal_and_does_not_mutate_the_finalized_original()
+    {
+        var originalDraft = CreateBalancedDraft();
+        var original = originalDraft.Finalize(OpenPeriod(originalDraft.FiscalPeriodId), "actor-1", UtcNow);
+        var reversal = original.CreateReversal(
+            Guid.CreateVersion7(), Guid.CreateVersion7(), EffectiveDate, Identity("REVERSAL"), "actor-2", UtcNow);
+
+        Assert.Equal(JournalStatus.Finalized, original.Status);
+        Assert.Equal(JournalStatus.Draft, reversal.Status);
+        Assert.Equal(original.JournalId, reversal.ReversalOfJournalId);
+        Assert.Equal(original.Lines[0].Debit, reversal.Lines[0].Credit);
+        Assert.Equal(original.Lines[0].Credit, reversal.Lines[0].Debit);
+        Assert.NotEqual(original.JournalId, reversal.JournalId);
+    }
+
+    [Fact]
+    public void Fiscal_period_close_requires_all_reconciliations_and_reopen_requires_independent_approval()
+    {
+        var period = OpenPeriod();
+        var incomplete = new PeriodCloseEvidence(true, true, true, false, true, true, true, true);
+        Assert.Throws<InvalidOperationException>(() => period.Close(incomplete, "actor-1", UtcNow, "audit-close"));
+
+        var complete = new PeriodCloseEvidence(true, true, true, true, true, true, true, true);
+        var closed = period.Close(complete, "actor-1", UtcNow, "audit-close");
+        Assert.Equal(FiscalPeriodStatus.Closed, closed.Status);
+        Assert.Throws<InvalidOperationException>(() =>
+            closed.Reopen(new("actor-1", "actor-1", "reason", "audit-reopen"), UtcNow));
+
+        var reopened = closed.Reopen(new("actor-1", "actor-2", "مغایرت مستند", "audit-reopen"), UtcNow);
+        Assert.Equal(FiscalPeriodStatus.Open, reopened.Status);
+        Assert.Equal("audit-reopen", reopened.LastAuditEventId);
+    }
+
+    [Fact]
+    public void Posting_identity_is_stable_and_distinguishes_source_version_and_allocation()
+    {
+        var first = Identity("SALE");
+        var replay = Identity("SALE");
+        var newVersion = PostingIdentity.Create("Sales", "sale-1", "delivered", "SALE", "2");
+        var allocation = PostingIdentity.Create("Sales", "sale-1", "delivered", "SALE", "1", allocationId: "alloc-2");
+
+        Assert.Equal(first.IdempotencyKey, replay.IdempotencyKey);
+        Assert.NotEqual(first.IdempotencyKey, newVersion.IdempotencyKey);
+        Assert.NotEqual(first.IdempotencyKey, allocation.IdempotencyKey);
+    }
+
+    [Fact]
+    public async Task Posting_preflight_fails_closed_when_no_accepted_rule_exists()
+    {
+        var service = new PostingPreflightService(new RuleCatalog(null), new AccountCatalog([]), new PeriodCatalog(OpenPeriod()));
+        var result = await service.EvaluateAsync(new("FE-03", EffectiveDate, true, null));
+
+        Assert.False(result.IsEligible);
+        Assert.Contains(PostingBlockReason.PostingRuleNotFound, result.BlockReasons);
+    }
+
+    [Fact]
+    public async Task Posting_preflight_requires_complete_rule_accounts_and_open_period()
+    {
+        var rule = AcceptedRule("FE-03");
+        var accounts = new AccountCatalog([
+            EligibleAccount("1101", Guid.CreateVersion7(), "FE-03"),
+            EligibleAccount("4101", Guid.CreateVersion7(), "FE-03", AccountNature.Revenue, AccountNormalBalance.Credit)
+        ]);
+        var service = new PostingPreflightService(new RuleCatalog(rule), accounts, new PeriodCatalog(OpenPeriod()));
+        var result = await service.EvaluateAsync(new("FE-03", EffectiveDate, true, null));
+
+        Assert.True(result.IsEligible);
+        Assert.Empty(result.BlockReasons);
+    }
+
+    [Fact]
+    public async Task Posting_preflight_blocks_tax_lines_when_tax_mode_is_zero()
+    {
+        var rule = AcceptedRule("FE-06") with { CreatesTaxLine = true };
+        var service = new PostingPreflightService(
+            new RuleCatalog(rule),
+            new AccountCatalog([
+                EligibleAccount("1101", Guid.CreateVersion7(), "FE-06"),
+                EligibleAccount("2101", Guid.CreateVersion7(), "FE-06", AccountNature.Liability, AccountNormalBalance.Credit)
+            ]),
+            new PeriodCatalog(OpenPeriod()));
+
+        var result = await service.EvaluateAsync(
+            new("FE-06", EffectiveDate, true, new TaxPolicySnapshot(0, null, null, null, null, false)));
+
+        Assert.False(result.IsEligible);
+        Assert.Contains(PostingBlockReason.TaxModeDisabled, result.BlockReasons);
+    }
+
+    [Fact]
+    public async Task Posting_preflight_blocks_accounts_without_canonical_attributes()
+    {
+        var rule = AcceptedRule("FE-03");
+        var unresolved = EligibleAccount("1101", Guid.CreateVersion7(), "FE-03") with { NormalBalance = null };
+        var service = new PostingPreflightService(
+            new RuleCatalog(rule),
+            new AccountCatalog([
+                unresolved,
+                EligibleAccount("4101", Guid.CreateVersion7(), "FE-03", AccountNature.Revenue, AccountNormalBalance.Credit)
+            ]),
+            new PeriodCatalog(OpenPeriod()));
+
+        var result = await service.EvaluateAsync(new("FE-03", EffectiveDate, true, null));
+        Assert.False(result.IsEligible);
+        Assert.Contains(PostingBlockReason.DebitAccountIneligible, result.BlockReasons);
+    }
+
+    private static AccountDefinition EligibleAccount(
+        string code, Guid id, string eventId,
+        AccountNature nature = AccountNature.Asset,
+        AccountNormalBalance normalBalance = AccountNormalBalance.Debit) =>
+        new(id, code, "حساب آزمون", nature, normalBalance, true, true, AccountStatus.Active,
+            new DateOnly(2026, 1, 1), null,
+            new HashSet<string>(StringComparer.Ordinal) { eventId },
+            new HashSet<string>(StringComparer.Ordinal), false);
+
+    private static PostingRuleDefinition AcceptedRule(string eventId) =>
+        new(eventId, 1, PostingRuleStatus.Accepted, "1101", "4101", "SOURCE_AMOUNT",
+            "SOURCE_DOCUMENT_FINALIZED", "test-source", "test-decision",
+            new DateOnly(2026, 1, 1), null, true, true, false);
+
+    private static FiscalPeriod OpenPeriod(Guid? id = null) =>
+        new(id ?? Guid.CreateVersion7(), new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31), FiscalPeriodStatus.Open);
+
+    private static PostingIdentity Identity(string purpose) =>
+        PostingIdentity.Create("Sales", "sale-1", "delivered", purpose, "1");
+
+    private static Journal CreateBalancedDraft()
+    {
+        var periodId = Guid.CreateVersion7();
+        var debit = JournalLine.Create(Guid.CreateVersion7(), Guid.CreateVersion7(), "1101", new(100), IrrAmount.Zero);
+        var credit = JournalLine.Create(Guid.CreateVersion7(), Guid.CreateVersion7(), "4101", IrrAmount.Zero, new(100));
+        return Journal.CreateDraft(Guid.CreateVersion7(), periodId, EffectiveDate, Identity("SALE"),
+            [debit, credit], "SALE-1", "actor-1", UtcNow);
+    }
+
+    private sealed class RuleCatalog(PostingRuleDefinition? rule) : IPostingRuleCatalog
+    {
+        public ValueTask<PostingRuleDefinition?> FindAsync(string financialEventId, DateOnly effectiveDate, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(rule);
+    }
+
+    private sealed class AccountCatalog(IReadOnlyList<AccountDefinition> items) : IAccountCatalog
+    {
+        public ValueTask<AccountDefinition?> FindByCodeAsync(string accountCode, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(items.SingleOrDefault(item => item.AccountCode == accountCode));
+    }
+
+    private sealed class PeriodCatalog(FiscalPeriod? period) : IFiscalPeriodCatalog
+    {
+        public ValueTask<FiscalPeriod?> FindForDateAsync(DateOnly effectiveDate, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(period);
+    }
+}

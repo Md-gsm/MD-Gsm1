@@ -37,6 +37,12 @@ public sealed class ArchitectureBoundaryTests
             "..\\..\\Modules\\RepairOperations\\Contracts\\MDGsm.RepairOperations.Contracts.csproj",
             "..\\..\\Modules\\Finance\\Contracts\\MDGsm.Finance.Contracts.csproj",
             "..\\..\\Modules\\Finance\\MDGsm.Finance.csproj");
+        AssertReferences(root, "src/Modules/Accounting/Domain/MDGsm.Accounting.Domain.csproj");
+        AssertReferences(
+            root,
+            "src/Modules/Accounting/Application/MDGsm.Accounting.Application.csproj",
+            "..\\Domain\\MDGsm.Accounting.Domain.csproj",
+            "..\\Contracts\\MDGsm.Accounting.Contracts.csproj");
         AssertReferences(
             root,
             "src/Host/Desktop/MDGsm.Desktop.csproj",
@@ -48,7 +54,7 @@ public sealed class ArchitectureBoundaryTests
     {
         var root = FindSolutionRoot();
         var solution = File.ReadAllText(Path.Combine(root, "MDGsm.sln"));
-        foreach (var module in new[] { "Persons", "IdentityAccess", "RepairOperations", "Finance" })
+        foreach (var module in new[] { "Persons", "IdentityAccess", "RepairOperations", "Finance", "Accounting" })
         {
             var relative = $"src/Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj";
             var project = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
