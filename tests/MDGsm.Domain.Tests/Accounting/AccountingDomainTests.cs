@@ -294,16 +294,84 @@ public sealed class AccountingDomainTests
     private static AccountDefinition EligibleAccount(
         string code, Guid id, string eventId,
         AccountNature nature = AccountNature.Asset,
-        AccountNormalBalance normalBalance = AccountNormalBalance.Debit) =>
-        new(id, code, "حساب آزمون", nature, normalBalance, true, true, AccountStatus.Active,
-            new DateOnly(2026, 1, 1), null,
+        AccountNormalBalance normalBalance = AccountNormalBalance.Debit)
+    {
+        var account = new AccountDefinition(id, code, "حساب آزمون", nature, normalBalance, true, true,
+            AccountStatus.Active, new DateOnly(2026, 1, 1), null,
             new HashSet<string>(StringComparer.Ordinal) { eventId },
             new HashSet<string>(StringComparer.Ordinal), false);
 
-    private static PostingRuleDefinition AcceptedRule(string eventId) =>
-        new(eventId, 1, PostingRuleStatus.Accepted, "1101", "4101", "SOURCE_AMOUNT",
-            "SOURCE_DOCUMENT_FINALIZED", "test-source", "test-decision",
+        var attributes = new CanonicalAccountAttributes(
+            "Test account", null, 1, nature.ToString(), null, 0, "NONE",
+            "SOURCE_DOCUMENT_FINALIZED", "NOT_REQUIRED", "NOT_REQUIRED", "TEST_MAPPING",
+            "test-source", "test-decision", "test-cr", 1, "test-audit", null);
+
+        var evidence = CanonicalAccountAttributes.RequiredFields.Select(field =>
+        {
+            var value = attributes.GetExpectedValueForTesting(account, field);
+            return value is null
+                ? new FieldEvidence(field, EvidenceDisposition.NotApplicable, null, "test-source", "Explicitly not applicable in this controlled test fixture.")
+                : new FieldEvidence(field, EvidenceDisposition.Verified, value, "test-source", null);
+        }).ToArray();
+
+        return account with { CanonicalAttributes = attributes with { Evidence = evidence } };
+    }
+
+    private static PostingRuleDefinition AcceptedRule(string eventId)
+    {
+        var rule = new PostingRuleDefinition(eventId, 1, PostingRuleStatus.Accepted, "1101", "4101",
+            "SOURCE_AMOUNT", "SOURCE_DOCUMENT_FINALIZED", "test-source", "test-decision",
             new DateOnly(2026, 1, 1), null, true, true, false);
+        var evidence = PostingRuleDefinition.RequiredAcceptanceFields.Select(field =>
+        {
+            var value = field switch
+            {
+                "FinancialEventId" => rule.FinancialEventId,
+                "DebitAccountCode" => rule.DebitAccountCode,
+                "CreditAccountCode" => rule.CreditAccountCode,
+                "AmountBasis" => rule.AmountBasis,
+                "RecognitionTime" => rule.RecognitionGate,
+                "IdempotencyKey" => "REQUIRED",
+                "AtomicityBoundary" => "REQUIRED",
+                "SourceReferences" => rule.SourceReference,
+                "DecisionReferences" => rule.DecisionReference,
+                _ => $"TEST:{field}"
+            };
+            return new FieldEvidence(field, EvidenceDisposition.Verified, value, "test-source", null);
+        }).ToArray();
+        return rule with { AcceptanceEvidence = evidence };
+    }
+
+    [Fact]
+    public void Posting_rule_without_complete_field_level_evidence_is_not_executable()
+    {
+        var accepted = AcceptedRule("FE-03");
+        var incomplete = accepted with
+        {
+            AcceptanceEvidence = accepted.AcceptanceEvidence!
+                .Where(item => item.Field != "InventoryEffect").ToArray()
+        };
+
+        Assert.True(accepted.IsExecutableOn(EffectiveDate));
+        Assert.False(incomplete.IsExecutableOn(EffectiveDate));
+    }
+
+    [Fact]
+    public void Account_without_complete_canonical_field_evidence_is_not_eligible()
+    {
+        var account = EligibleAccount("1101", Guid.CreateVersion7(), "FE-03");
+        var incomplete = account with
+        {
+            CanonicalAttributes = account.CanonicalAttributes! with
+            {
+                Evidence = account.CanonicalAttributes.Evidence!
+                    .Where(item => item.Field != "StatementMapping").ToArray()
+            }
+        };
+
+        Assert.True(account.CanAutomatedPost("FE-03", EffectiveDate, true));
+        Assert.False(incomplete.CanAutomatedPost("FE-03", EffectiveDate, true));
+    }
 
     private static FiscalPeriod OpenPeriod(Guid? id = null) =>
         new(id ?? Guid.CreateVersion7(), new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31), FiscalPeriodStatus.Open);
