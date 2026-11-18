@@ -23,12 +23,12 @@
 | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 | 0.1 | docs/architecture/change-requests/CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001_v0.1.md | 2de6c16e724fe0b06faf5978f95020c3fe602433f38655906024a4073aed3d81 | OWNER APPROVED; independent review pending |
 | WP06-P4H-7B-POSTING-MATRIX-001 | 0.2 | docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md | 4db46c270000c5565a7cc2408c8225d4d1c52e8310225416d0b7e13f6c58f814 | DRAFT; 39 event rows; field-level disposition complete; positive posting rule detail partial |
 | WP06-P4H-7C-COA-RECONCILIATION-001 | 0.3 | docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.3.md | a09b83f47a69d26ce976031091f579752b108b7f46de59d4e6ff1271dc37f6f5 | DRAFT; owner overlay 44 dispositions; canonical row reconciliation open |
-| WP06-P4H-7D-TEST-REGISTRY-001 | 0.2 | docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md | 364b33a49d3846506a940169b1d1d275c14c94809911fee1594d9e702f7d6603 | DRAFT; 51 fail-closed cases (39 FE + 12 COA); positive journal assertions pending; NOT RUN |
-| MDG-WP06-7B-7C-7D-INTEGRATED-001 | 0.4 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md | d23e476c51af16e2510a4d854967f686d3ff477fbfb89c9084ddbe0238fc2e48 | DRAFT; integrated crosswalk and governance baseline |
+| WP06-P4H-7D-TEST-REGISTRY-001 | 0.2 | docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md | 364b33a49d3846506a940169b1d1d275c14c94809911fee1594d9e702f7d6603 | DRAFT; 67 IDs (39 FE + 16 COA + 12 shared); positive journal assertions blocked; NOT RUN |
+| MDG-WP06-7B-7C-7D-INTEGRATED-001 | 0.4 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md | d23e476c51af16e2510a4d854967f686d3ff477fbfb89c9084ddbe0238fc2e48 | DRAFT; integrated crosswalk and governance baseline v0.5 |
 | MDG-WP06-7B-7C-7D-CROSS-AUDIT-001 | 0.2 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md | 8eaeed9e7a910f66a83f19e6e997ab6b6367d83a04b7339a5799cb6bb087e2cc | STRUCTURAL CHECKS RECORDED; independent review pending |
 | MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md | fd1e3af32354b8503b04c023cf1b28bbb6993b995a849fba77d18f4a05d5add0 | PROGRESS REGISTER; O-01 OPEN |
 
-| MDG-WP06-7D-TEST-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md | 267e9842469d3c784ae9a4aa8d5e03480de581667fc27b6bbe53a82cd18befa5 | SUPPORTING WORKPAPER; 51 test IDs tracked; NOT RUN |
+| MDG-WP06-7D-TEST-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md | 267e9842469d3c784ae9a4aa8d5e03480de581667fc27b6bbe53a82cd18befa5 | SUPPORTING WORKPAPER; 67 current test IDs (39 FE + 16 COA + 12 shared); NOT RUN |
 
 ## 2. اسناد معماری و منبع ثبت‌شده در Library
 
@@ -44,10 +44,10 @@
 ## 3. سلسله‌مراتب COA
 
 - Architecture v2.5 remains the last accepted architecture baseline until v2.6 passes independent review and document acceptance.
-- COA v1.2 is the previous controlled design baseline.
-- COA v1.4 is the current owner-declared design baseline built from v1.2.
-- COA v1.3 is an intermediate stage only; it is not substituted for v1.4.
-- Excel/TXT v1.0 are source evidence, not the ultimate decision authority.
+- **COA v1.2 is the master document and primary authority for account coding and General Ledger rules.**
+- **COA v1.4 is the current supplementary register used for account-level 7C reconciliation, based on v1.2.**
+- COA v1.3 is an intermediate stage only.
+- The 9-sheet workbook/CSV is historical supporting evidence only; it is not a prerequisite or blocker for 7C completion.
 - The 76-row CSV v0.2 preserves all source fields and explicitly marks canonical attributes UNVERIFIED/NOT ASSIGNED/NOT SET pending row-level reconciliation to v1.4.
 
 ## 4. Supersession and lineage
@@ -124,3 +124,12 @@ The current branch head is read live from PR #66; no moving SHA is hard-coded he
 - Evidence: NOT ACCEPTED.
 - Independent review on exact final SHA: PENDING.
 - Posting Release: NOT GRANTED.
+
+
+## 8. اصلاحیه مرجعیت و شمار آزمون‌ها — 2026-11-18
+
+- COA v1.2 سند مادر؛ v1.4 رجیستر تکمیلی جاری؛ v1.3 مرحله میانی.
+- Workbook نه‌شیتی و CSV تاریخی، شرط و مانع تکمیل 7C نیستند.
+- 7C v0.3 در این بسته 78 شناسه را scope می‌کند؛ صفات canonical نامشخص صریحاً OPEN/NOT VERIFIED باقی می‌مانند.
+- 7D v0.2 شامل 67 Test ID است: 39 FE + 16 COA + 12 shared؛ شمار 51 موردی در ردیف‌های قدیمی رجیستر superseded است.
+- 7B v0.2 هنوز صفر positive Posting Rule پذیرفته‌شده دارد؛ runtime tests اجرا نشده‌اند؛ Gate 3/4 باز و Posting Release صادر نشده است.
