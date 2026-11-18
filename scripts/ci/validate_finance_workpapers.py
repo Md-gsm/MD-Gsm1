@@ -129,11 +129,11 @@ for token in (
     "Controlled Document Register — Version 1.0",
     "MDG-WP06-7B-POSTING-RULE-CLOSURE-001 | v0.2",
     "Accepted positive Posting Rules: 0",
-    "PROPOSAL — OWNER REVIEW REQUIRED", "FE-01: BLOCKED", "FE-02: BLOCKED", "No Sales runtime module",
+    "PROPOSAL — OWNER REVIEW REQUIRED", "FE-01: BLOCKED", "FE-02: BLOCKED", "No runtime event publishers/adapters are added."
     "Posting Release | NOT GRANTED",
 ):
     if token not in register:
-        fail(f"document register v0.7 missing required control: {token}")
+        fail(f"document register v1.0 missing required control: {token}")
 
 
 for token in (
