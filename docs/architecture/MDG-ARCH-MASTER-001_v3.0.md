@@ -2839,8 +2839,8 @@ Shared controls: EventId پایدار و جدا از Request IdempotencyKey؛ Ac
 | OWN-INV-018 | v1.0, 2026-11-18 | 18 approved Inventory business policies; execution/test still open. | d929dfb8e0dca05579d8123bfb9dab9343e741f9 |
 | OWN-FE-01-02-001 | v1.0, 2026-11-18 | Owner-approved FE-01/FE-02 policy boundaries; no positive Posting Rules. | e6909cf08dd03a24c3ea9edb3ae5883224204d9a |
 | Accounting PDS | v0.2, PR #71 | 13-table physical design proposal; not accepted as SQL authorization; Audit table conflict must be corrected. | 15d238af725c2b854ef51b125b5bbe54805d04fc |
-| Controlled Document Register | v1.3 (updated in the v3.0 master-document PR) | Corrected PR #66/#70 merge states, PR #71 draft metadata, exact-head approval/CI, and current 0009 reservation boundary. | fe7d9250490e1a0fadd1966f3b3172ca7fcc2b18 |
-| Migration Registry | MIG-REG-001 | 0009 reserved in main; no SQL authorized. | 4446c8b0935e997369de6b1df900fa7266ec351a |
+| Controlled Document Register | v1.3 (updated in the v3.0 master-document PR) | Corrected PR #66/#70 merge states, PR #71 draft metadata, exact-head approval/CI, and current 0009 reservation boundary. | 0fe587cbcc7bf996b020d0c047cbf23b077d013a |
+| Migration Registry | MIG-REG-001 | 0009 reserved in main; no SQL authorized. | 707a263a794aaaf1495ca57c8d36fc8e7a6f0228 |
 
 ## U.2 ممیزی C0/C1 — disposition
 
