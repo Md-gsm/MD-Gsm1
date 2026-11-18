@@ -11,7 +11,10 @@ P7C = ROOT / "docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_
 ADD = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.2.md"
 P7D = ROOT / "docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md"
 CLOSE7B = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-7B-POSTING-RULE-CLOSURE-001_v0.2.md"
-REGISTER = ROOT / "docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.6.md"
+REGISTER = ROOT / "docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.7.md"
+SALES_PROPOSAL = ROOT / "docs/modules/sales/SALES-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.1.md"
+REPAIR_PROPOSAL = ROOT / "docs/modules/repairoperations/REPAIROPERATIONS-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.1.md"
+SOURCE_CROSSWALK = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-FE01-FE02-SOURCE-CROSSWALK-PROPOSAL-001_v0.1.md"
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
@@ -26,7 +29,7 @@ def exact(label: str, actual: list[str], expected: set[str]) -> None:
     if len(actual) != len(set(actual)) or set(actual) != expected or len(actual) != len(expected):
         fail(f"{label}: actual={sorted(actual)} expected={sorted(expected)}")
 
-b, c, a, d, close7b, register = map(read, (P7B, P7C, ADD, P7D, CLOSE7B, REGISTER))
+b, c, a, d, close7b, register, sales_proposal, repair_proposal, source_crosswalk = map(read, (P7B, P7C, ADD, P7D, CLOSE7B, REGISTER, SALES_PROPOSAL, REPAIR_PROPOSAL, SOURCE_CROSSWALK))
 section = b.split("## 3. ماتریس تعیین تکلیف نهایی FE-01..FE-38", 1)[1].split("## 4. کنترل‌های عمومی غیرقابل عدول", 1)[0]
 fe_rows = [x for x in section.splitlines() if x.startswith("| FE-")]
 fe_ids = [re.search(r"^\|\s*(FE-\d{2}b?)\s*\|", x).group(1) for x in fe_rows]
@@ -122,16 +125,36 @@ if "NOT RUN / NOT VERIFIED" not in d or "Posting Release | NOT GRANTED" not in d
     fail("7D execution/no-release guards missing")
 
 for token in (
-    "Controlled Document Register — Version 0.6",
+    "Controlled Document Register — Version 0.7",
     "MDG-WP06-7B-POSTING-RULE-CLOSURE-001 | v0.2",
     "Accepted positive Posting Rules: 0",
-    "Exact-head validation for the current register/validator changes is PENDING",
+    "Source-event contract proposals are owner-review drafts; no runtime event contract is published",
     "Posting Release | NOT GRANTED",
 ):
     if token not in register:
-        fail(f"document register v0.6 missing required control: {token}")
+        fail(f"document register v0.7 missing required control: {token}")
 
-print("PASS: finance workpaper structural consistency")
+
+for token in (
+    "SalesDocumentFinalized", "Inventory-owned committed fulfillment",
+    "PROPOSAL — OWNER REVIEW REQUIRED", "FE-01 remains",
+):
+    if token not in sales_proposal:
+        fail(f"Sales source-event proposal missing required control: {token}")
+for token in (
+    "RepairTechnicalCompletionRecorded", "RepairOrderHandedOver",
+    "not automatically Accounting RecognitionTime", "PROPOSAL — OWNER REVIEW REQUIRED",
+):
+    if token not in repair_proposal:
+        fail(f"RepairOperations source-event proposal missing required control: {token}")
+for token in (
+    "FE-01 — goods sale", "FE-02 — repair service", "RecognitionTime",
+    "Accepted positive Posting Rules: 0", "Posting Release: NOT GRANTED",
+):
+    if token not in source_crosswalk:
+        fail(f"FE-01/FE-02 source crosswalk proposal missing required control: {token}")
+
+print("PASS: finance workpaper structural consistency")\nprint("PASS: FE-01/FE-02 source contract proposals remain explicitly non-runtime and owner-review pending")
 print(f"7B: {len(fe_ids)} event rows (38 FE identifiers + FE-10b); 39 fail-closed gate references")
 print(f"7C: {len(open_ids)} Open Items; 16 mapped COA gate tests")
 print(f"7D: {len(fin)} FE + {len(coa)} COA + {len(shared)} shared = 67 unique Test IDs")
