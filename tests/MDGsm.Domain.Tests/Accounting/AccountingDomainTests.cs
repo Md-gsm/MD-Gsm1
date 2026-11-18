@@ -265,7 +265,7 @@ public sealed class AccountingDomainTests
             new RuleCatalog(rule),
             new AccountCatalog([
                 EligibleAccount("1101", Guid.CreateVersion7(), "FE-06"),
-                EligibleAccount("4101", Guid.CreateVersion7(), "FE-06", AccountNature.Revenue, AccountNormalBalance.Credit)
+                EligibleAccount("2101", Guid.CreateVersion7(), "FE-06", AccountNature.Liability, AccountNormalBalance.Credit)
             ]),
             new PeriodCatalog(OpenPeriod()));
 
@@ -310,20 +310,6 @@ public sealed class AccountingDomainTests
             "SOURCE_DOCUMENT_FINALIZED", "NOT_REQUIRED", "NOT_REQUIRED", "TEST_MAPPING",
             "test-source", "test-decision", "test-cr", 1, "test-audit", null);
 
-        var evidence = CanonicalAccountAttributes.RequiredFields.Select(field =>
-        {
-            var value = attributes.GetExpectedValue(account, field);
-            return value is null
-                ? new FieldEvidence(field, EvidenceDisposition.NotApplicable, null, "test-source", "Explicitly not applicable in this controlled test fixture.")
-                : new FieldEvidence(field, EvidenceDisposition.Verified, value, "test-source", null);
-        }).ToArray();
-
-        return account with { CanonicalAttributes = attributes with { Evidence = evidence } };
-    }
-
-    private static AccountDefinition RefreshCanonicalEvidence(AccountDefinition account)
-    {
-        var attributes = account.CanonicalAttributes!;
         var evidence = CanonicalAccountAttributes.RequiredFields.Select(field =>
         {
             var value = attributes.GetExpectedValue(account, field);
