@@ -1,0 +1,87 @@
+# MDG-WP06-DOCUMENT-REGISTER-001
+## رجیستر نسخه‌ها و وضعیت پذیرش بسته O-01
+
+| مشخصه | مقدار |
+|---|---|
+| Version | 0.1 |
+| Status | CONTROLLED DOCUMENT REGISTER — DRAFT PACKAGE |
+| Owner criterion | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 — OWNER APPROVED |
+| Architecture | MDG-ARCH-MASTER-001 v2.5 last accepted; v2.6 draft pending independent review |
+| PR | #66 |
+| Branch | docs/finance-7b-7c-7d-integrated-baseline-20261117 |
+| PR head SHA | Live value in PR #66; the register does not hard-code a moving branch head |
+| O-01 | OPEN — replacement criterion approved; deliverable acceptance pending |
+| Gate 3 / Gate 4 | OPEN / OPEN |
+| Posting Release | NOT GRANTED |
+
+## 1. اسناد مرجع جاری این بسته
+
+| شناسه | نسخه | مسیر/محل | SHA-256 | وضعیت |
+|---|---|---|---|---|
+| CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 | 0.1 | docs/architecture/change-requests/CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001_v0.1.md | 2de6c16e724fe0b06faf5978f95020c3fe602433f38655906024a4073aed3d81 | OWNER APPROVED; independent review pending |
+| WP06-P4H-7B-POSTING-MATRIX-001 | 0.2 | docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md | afd34e3764474e17bde774280b39335615ac5e1b1850f2b3e277a4e300f9a67e | DRAFT; 39 event rows; field-level disposition complete; positive posting rule detail partial |
+| WP06-P4H-7C-COA-RECONCILIATION-001 | 0.2 | docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.2.md | 5baa7e854d289dabff67dc28bc3c9d2cdd936a8ddc10345f2cd96a703a4e9775 | DRAFT; source verified; canonical v1.4 row reconciliation open |
+| WP06-P4H-7D-TEST-REGISTRY-001 | 0.2 | docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md | 596ed924816876d9a64ed08b39c96735ba8c17b2e31202f354d0136508a470a2 | DRAFT; 67 Test IDs (39 FE + 16 COA + 12 shared controls); positive journal assertions pending; NOT RUN |
+| MDG-WP06-7B-7C-7D-INTEGRATED-001 | 0.4 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md | a0466daca95ee3422e58b70e9ff3f1c0a85511e07f7f97f654c9e0995de523d0 | DRAFT; integrated crosswalk and governance baseline |
+| MDG-WP06-7B-7C-7D-CROSS-AUDIT-001 | 0.2 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md | bd6fc6e3a8e88e3e0b404f667bbf6ea3fb97b2d152845867d11f999350faff52 | STRUCTURAL CHECKS RECORDED; independent review pending |
+| MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md | 0aac1aa24a47522e795237a7cbbd8418acbfcafa68012c85ca123b24a1c8ff8c | PROGRESS REGISTER; O-01 OPEN |
+
+| MDG-WP06-7D-TEST-CLOSURE-001 | 0.1 | docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md | fe670fad99204e025ff59c68c2feddcd9bb401a70a83f77dabe44fb217792e7b | SUPPORTING WORKPAPER; 67 test IDs tracked; NOT RUN |
+
+## 2. اسناد معماری و منبع ثبت‌شده در Library
+
+| شناسه/Artifact | نسخه | Library path | SHA-256 | وضعیت |
+|---|---|---|---|---|
+| MDG-ARCH-MASTER-001 | 2.6 Draft — Markdown | /MDGsm_Unified_Architecture_Blueprint_v2.6_Draft.md | 01463112db7e7b4c3f6aed171aa16f63eead93235b00acacb01bbd882b7d386d | DRAFT; pending independent review |
+| MDG-ARCH-MASTER-001 | 2.6 Draft — Word | /MDGsm_Unified_Architecture_Blueprint_v2.6_Draft.docx | 084a10ecccb3a163b9b3d66481b969ee14b3923614cf6f3b20b1563bfa03ad0a | DRAFT; pending independent review |
+| MDG-WP06-COA-76-ROW-SOURCE-REGISTER | 0.2 CSV | /MDG-WP06-COA-76-ROW-SOURCE-REGISTER_v0.2.csv | 78c3793c075ff4aaebef4b86230411d3dca52233f0cca3c81278b2f4607acbb1 | 76 rows × 39 columns; source snapshot + canonical status |
+| COA group source ZIP | v1.0 source bundle | /فهرست جامع و مرجع کدینگ حساب‌ها.zip | c17e3c16d05abb9d2ae57b8cfa0c8860e69b613ececb0db7758668cd1db04449 | Source evidence |
+| COA source Excel extracted | v1.0 | inside source ZIP | a6ca3377fde5863455a3b4bccf9a000d0dbf23f44bd66eeae51c44d0f3697866 | 9 sheets; account sheet 76 rows × 24 columns |
+| COA source TXT | v1.0 | inside source ZIP | 777328fdc9f42b1884ba8cf5884308f840893534ba86e51212328d4a7e174d79 | Source evidence |
+
+## 3. سلسله‌مراتب COA
+
+- Architecture v2.5 remains the last accepted architecture baseline until v2.6 passes independent review and document acceptance.
+- COA v1.2 is the previous controlled design baseline.
+- COA v1.4 is the current owner-declared design baseline built from v1.2.
+- COA v1.3 is an intermediate stage only; it is not substituted for v1.4.
+- Excel/TXT v1.0 are source evidence, not the ultimate decision authority.
+- The 76-row CSV v0.2 preserves all source fields and explicitly marks canonical attributes UNVERIFIED/NOT ASSIGNED/NOT SET pending row-level reconciliation to v1.4.
+
+## 4. Supersession and lineage
+
+- 7B v0.1 is superseded by 7B v0.2.
+- 7C v0.1 is superseded by 7C v0.2.
+- 7D v0.1 is superseded by 7D v0.2.
+- Integrated v0.2 and v0.3 are historical interim baselines; integrated v0.4 is the current integrated draft.
+- Source row register v0.1 is superseded by v0.2.
+- Architecture v2.5 is not modified; v2.6 is a controlled amendment draft and does not become accepted until independent review and formal document acceptance.
+
+## 5. پذیرش و بستن O-01
+
+این رجیستر به‌تنهایی هیچ سندی را ACCEPTED یا O-01 را CLOSED نمی‌کند. بسته‌شدن O-01 منوط است به:
+1. 7B complete field-level matrix or explicit blocked fields, owner action, clear condition, Test ID and no-posting guard for every FE.
+2. 7C canonical attribute reconciliation to COA v1.4; no prefix inference; unresolved fields explicit per account.
+3. 7D complete test crosswalk, positive journal assertions for posting-ready rules, and fail-closed tests for blocked/scope-excluded rules.
+4. Independent audit on exact final SHA; no unresolved critical document-integrity/provenance/crosswalk/control defects.
+5. Execution of all tests that are currently executable, with reproducible evidence; tests blocked by incomplete 7B/7C must remain NOT RUN/BLOCKED.
+6. Professional review for all rules/attributes declared FINAL/ACCEPTED.
+7. Formal acceptance and supersession record for final versions.
+
+Until then:
+- O-01: OPEN.
+- Implementation: NOT VERIFIED.
+- Test execution: NOT RUN / NOT VERIFIED.
+- Evidence: NOT ACCEPTED.
+- Gate 3 / Gate 4: OPEN / OPEN.
+- Posting Release: NOT GRANTED.
+
+## 6. Integrity
+
+All repository document hashes are listed in SHA256SUMS.txt at the exact PR head. Library artifacts carry the hashes listed above. Any change to a registered artifact requires a new version or controlled revision and a corresponding hash update; historical versions must remain traceable.
+
+
+## 7. COA baseline lineage evidence
+- v1.2 DOCX: SHA-256 `5721ba8db3b355dad26752be49fa9a5f1603620a411a4e675a42f9e281f586b0`; 76/76 account identifiers matched to source register; prior-baseline dispositions 45 OPEN/NOT VERIFIED and 31 conditional/inactive/blocked.
+- v1.3 TXT: SHA-256 `dd32fca0d4faa2c8e21bcb65f956a326e6d0e9c996551663e39f06152e6edf94`; 78 IDs = 76 source codes + 2114 + 5106; intermediate only.
+- v1.4 remains current baseline by owner direction. v1.2/v1.3 remain lineage evidence; no unverified attribute is silently promoted to canonical.

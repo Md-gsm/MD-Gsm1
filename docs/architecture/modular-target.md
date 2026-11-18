@@ -26,6 +26,9 @@ src/
     IdentityAccess/Contracts/
     Finance/Contracts/
     Finance/Infrastructure/               # narrow runtime slice
+    Accounting/Contracts/                 # versioned public boundary (PR #66)
+    Accounting/Domain/                    # initial GL/Journal domain kernel (PR #66)
+    Accounting/Application/               # read-only posting preflight (PR #66)
     RepairOperations/Contracts/           # boundary marker only
 ```
 
@@ -34,7 +37,8 @@ The Persons module internal implementation remains transitional under BuildingBl
 
 - **Persons:** PartyId, natural/legal party identity, contact methods, and technician work-role identity.
 - **RepairOperations:** technician skills, capabilities, scheduling, and assignment.
-- **Finance/Payroll:** salary, commission, payroll and financial records.
+- **Accounting:** canonical Chart of Accounts, fiscal periods, Journal/JournalLine and General Ledger posting (ACC-01, ACC-02, FY-01).
+- **Finance/Payroll:** salary, commission, payroll and financial records; Finance retains Party subledger-account identity.
 - **IdentityAccess:** opaque access-token lifecycle, account/session state, authentication and authorization.
 - **Organization:** branch and warehouse master records, organizational structure, and user membership/scope. Inventory owns quantities, stock movements, and transfers.
 - Each module publishes versioned Contracts. Consumers depend on Contracts, not another module's internal Domain or Infrastructure implementation.
@@ -80,3 +84,16 @@ These are partial runtime slices, not complete Persons or Finance modules. AC-31
 WG-001 was merged by PR #54 at main commit `4933cc9abda03568a23979e3ac25a085981ff84e`. PR #53 branch-protection helper hardening is also present in main through base commit `30e8a4d4b667ca08d6df18dd94b9e3a82030c4c1`. PR #54's head SHA `83b551683b0dbd7fa8bc383ec4c21469e0e45149` passed 18/18 check-runs. The merge commit's own CI snapshot is 13/15 successful, with `persons-postgres-windows-migrations` and `codeql-csharp` still in progress; no failures were observed at this snapshot. This is governance documentation only and does not change module runtime scope, data ownership, or G1 authorization.
 
 The next execution priority remains Persons/IdentityAccess acceptance preparation. AC-31..AC-49 criterion-level traceability, Persons create/search and full ContactPoint lifecycle, operational Desktop wiring, IdentityAccess bootstrap/recovery and production hardening, ADR-0014 source relocation, independent security/architecture evidence, and Windows/backup-restore acceptance remain open gates. `g1Authorized=false`; no production migration or module activation is authorized.
+
+
+## Accounting foundation implementation update — PR #66 (2026-11-18)
+
+This is an owner-authorized foundational implementation slice. It does not change the approved phase order and does not claim Accounting Phase 8 completion.
+
+- Data ownership follows ACC-01 (Chart of Accounts/GL), ACC-02 (Journal/JournalLine) and FY-01 (Fiscal Period).
+- The canonical implementation location is `src/Modules/Accounting/{Contracts,Domain,Application}`.
+- The first code slice enforces integer-only IRR, deterministic largest-remainder allocation, fail-closed account eligibility, fiscal-period posting/close/reopen guards, balanced journals, immutable finalization, separate reversals and stable Posting Identity.
+- `PostingPreflightService` is read-only. It requires a complete accepted 7B rule, eligible canonical 7C accounts and an open fiscal period; tax lines additionally require a verified tax policy. It does not create Journal records or mutate data.
+- Inventory remains a prerequisite for Inventory-dependent event posting. No Inventory, Treasury, Sales, Purchasing or RepairOperations event adapter is included.
+- Migration 0009 is reserved separately by PR #70. No SQL or database persistence may be added until the reservation PR is merged to `main`.
+- No COA seed, guessed AccountId/Parent/Nature/NormalBalance/effective date, positive FE rule, Tax Matrix, production migration, Posting Release or G1 activation is implied.

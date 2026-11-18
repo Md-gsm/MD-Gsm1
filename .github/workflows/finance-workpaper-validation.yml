@@ -1,0 +1,30 @@
+name: Finance Workpaper Structural Validation
+on:
+  pull_request:
+    paths:
+      - "docs/finance/workpapers/p4h/**"
+      - "scripts/ci/validate_finance_workpapers.py"
+      - ".github/workflows/finance-workpaper-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/finance/workpapers/p4h/**"
+      - "scripts/ci/validate_finance_workpapers.py"
+      - ".github/workflows/finance-workpaper-validation.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: finance-workpaper-validation-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  finance-workpaper-structure:
+    name: finance-workpaper-structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: "3.12"
+      - name: Validate 7B / 7C / 7D crosswalk
+        run: python scripts/ci/validate_finance_workpapers.py
