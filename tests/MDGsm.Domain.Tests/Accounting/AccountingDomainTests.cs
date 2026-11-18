@@ -395,6 +395,7 @@ SourceDocument = "TEST_SOURCE_DOCUMENT",
     {
         var accepted = AcceptedRule("FE-03");
         var changedTrigger = accepted with { Trigger = "A_DIFFERENT_TRIGGER" };
+        var changedRecognitionTime = accepted with { RecognitionTime = "A_DIFFERENT_RECOGNITION_TIME" };
         var changedEvidence = accepted with
         {
             AcceptanceEvidence = accepted.AcceptanceEvidence!
@@ -406,6 +407,7 @@ SourceDocument = "TEST_SOURCE_DOCUMENT",
 
         Assert.True(accepted.IsExecutableOn(EffectiveDate));
         Assert.False(changedTrigger.IsExecutableOn(EffectiveDate));
+        Assert.False(changedRecognitionTime.IsExecutableOn(EffectiveDate));
         Assert.False(changedEvidence.IsExecutableOn(EffectiveDate));
         Assert.False(missingRuntimeField.IsExecutableOn(EffectiveDate));
     }
