@@ -126,7 +126,7 @@ if "NOT RUN / NOT VERIFIED" not in d or "Posting Release | NOT GRANTED" not in d
     fail("7D execution/no-release guards missing")
 
 for token in (
-    "Controlled Document Register — Version 1.2",
+    "Controlled Document Register — Version 1.3",
     "MDG-WP06-7B-POSTING-RULE-CLOSURE-001 | v0.2",
     "Accepted positive Posting Rules: 0",
     "PROPOSAL — OWNER REVIEW REQUIRED", "FE-01: BLOCKED", "FE-02: BLOCKED", "runtime event publishers/adapters are not added.",
