@@ -69,6 +69,20 @@ public sealed class AccountRegistryValidatorTests
     }
 
     [Fact]
+    public void Child_level_must_be_greater_than_its_explicit_parent_level()
+    {
+        var parentId = Guid.CreateVersion7();
+        var parent = CanonicalAccount("1103", parentId, null, 2);
+        var child = CanonicalAccount("110302", Guid.CreateVersion7(), parentId, 2);
+
+        var issues = AccountRegistryValidator.Validate([parent, child]);
+
+        Assert.Contains(issues, issue =>
+            issue.Code == AccountRegistryIssueCode.ParentLevelOrderMismatch &&
+            issue.AccountCode == "110302");
+    }
+
+    [Fact]
     public void Parent_relationship_is_not_inferred_from_account_code_prefix()
     {
         var parent = CanonicalAccount("1103", Guid.CreateVersion7(), null, 1);
