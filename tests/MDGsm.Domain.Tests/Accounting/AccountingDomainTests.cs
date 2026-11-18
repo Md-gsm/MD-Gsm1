@@ -343,7 +343,7 @@ public sealed class AccountingDomainTests
         {
             EventName = "Test financial event", SourceEvent = "TEST_SOURCE_EVENT",
             Trigger = "SOURCE_DOCUMENT_FINALIZED", Preconditions = "SOURCE_DOCUMENT_VALIDATED",
-            RecognitionTime = "SOURCE_DOCUMENT_FINALIZED", SourceDocument = "TEST_SOURCE_DOCUMENT",
+SourceDocument = "TEST_SOURCE_DOCUMENT",
             DebitCondition = "DEBIT_ACCOUNT_ELIGIBLE", CreditCondition = "CREDIT_ACCOUNT_ELIGIBLE",
             CostBasis = "NOT_APPLICABLE", DesignStatus = "ACCEPTED",
             TaxModeDefinition = "TaxMode=0 blocks Tax Lines; positive TaxMode requires approved Tax Matrix",
