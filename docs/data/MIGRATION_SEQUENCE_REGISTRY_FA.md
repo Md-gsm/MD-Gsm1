@@ -17,7 +17,7 @@
 5. پس از ادغام و اعمال صرفاً در محیط disposable/مجاز، ردیف به `VERIFIED_DISPOSABLE` تغییر می‌کند و SHA-256 SQL و PR/commit ثبت می‌شود. این رجیستری مجوز اجرای migration روی دیتابیس واقعی نیست.
 6. رزرو استفاده‌نشده فقط با ثبت دلیل، تأیید WG-0 و اثبات عدم ادغام/عدم اعمال آزاد می‌شود. شماره Migration اعمال‌شده هرگز بازاستفاده، جابه‌جا یا rename نمی‌شود.
 7. هر تغییر در Migration باید هم‌زمان این رجیستری، تست یکتایی `MigrationResourceTests` و `SHA256SUMS.txt` را به‌روز کند.
-8. تست CI باید نام فایل، شماره عددی، نام Embedded Resource و فهرست فایل‌های ثبت‌شده در این رجیستری را با کل زیرپوشه‌ها تطبیق دهد. قبولی تست به معنی مجوز schema change یا production apply نیست.
+8. تست CI باید نام فایل، شماره عددی، نام Embedded Resource و فهرست فایل‌های ثبت‌شده در این رجیستری را با کل زیرپوشه‌ها تطبیق دهد. ردیف `RESERVED` باید شماره و مسیر هدف یکتا داشته باشد اما فایل SQL متناظر نداشته باشد؛ ردیف‌های دارای SQL باید دقیقاً با فایل‌ها تطبیق یک‌به‌یک داشته باشند. قبولی تست به معنی مجوز schema change یا production apply نیست.
 
 ## موجودی فعلی
 
@@ -31,7 +31,7 @@
 | 0006 | `database/migrations/0006_finance_party_accounts.sql` | Finance | VERIFIED_DISPOSABLE | main |
 | 0007 | `database/migrations/0007_persons_temporary_workflows.sql` | Persons | VERIFIED_DISPOSABLE | main |
 | 0008 | `database/migrations/0008_persons_party_merge.sql` | Persons | VERIFIED_DISPOSABLE | main |
-| 0009 | `database/migrations/0009_accounting_core.sql` (پس از ادغام رزرو) | Accounting | RESERVED — SQL NOT AUTHORIZED YET | Issue #69؛ درخواست WG-0؛ scope: canonical COA metadata, fiscal periods, journal header/lines, posting identity/idempotency and audit linkage; no tax or external module posting |
+| 0009 | `database/migrations/0009_accounting_core.sql` | Accounting | RESERVED — SQL NOT AUTHORIZED YET | Issue #69؛ WG-0 PR #70 merged to main at `b8c672cb70dcb2b274f43f118ac08b2eea8438c5`; scope محدود به COA metadata، fiscal periods، journal header/lines، posting identity/idempotency و audit linkage؛ بدون tax یا external module posting |
 | 0010+ | — | تخصیص‌نیافته | UNALLOCATED | تا ثبت درخواست رزرو استفاده نشود |
 
 ## فرم رزرو الزامی
@@ -44,6 +44,6 @@
 - PR/Issue مربوط و SHA شاخه؛
 - تاریخ رزرو و وضعیت `RESERVED`؛
 - پس از ادغام Migration: SHA-256 فایل SQL، commit ادغام و وضعیت `VERIFIED_DISPOSABLE`؛
-- در صورت لغو: علت، تأیید WG-0 و شواهد عدم اعمال.
+- در صورت لغو: علت، تأیید WG-0 و شواهد عدم ادغام/عدم اعمال.
 
-**وضعیت درخواست 2026-11-18:** ردیف 0009 در شاخه رزرو و Issue #69 ثبت شده است. تا ادغام همین PR رزرو در `main`، شماره برای نوشتن/افزودن SQL قابل مصرف نیست. این PR هیچ فایل Migration ایجاد نمی‌کند و هیچ اجرای دیتابیسی را مجاز نمی‌کند.
+**وضعیت در 2026-11-18:** رزرو 0009 از طریق PR #70 در `main` ادغام شده و شماره به‌طور رسمی برای Accounting رزرو است. این فقط مجوز نگهداری slot رزروشده است؛ فایل SQL ایجاد نشده و `SQL NOT AUTHORIZED YET` باقی می‌ماند. نوشتن Migration 0009 نیازمند پذیرش طراحی فیزیکی، رفع پیش‌نیازهای ثبت‌شده و مجوز صریح جداگانه مالک پروژه است.
