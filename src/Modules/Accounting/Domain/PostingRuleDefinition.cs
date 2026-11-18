@@ -6,7 +6,7 @@ public enum PostingRuleStatus { Draft, Accepted, Blocked, Inactive }
 public sealed record PostingRuleDefinition(
     string FinancialEventId, int Version, PostingRuleStatus Status,
     string DebitAccountCode, string CreditAccountCode, string AmountBasis,
-    string RecognitionGate, string SourceReference, string DecisionReference,
+    string RecognitionTime, string SourceReference, string DecisionReference,
     DateOnly EffectiveFrom, DateOnly? EffectiveTo, bool IdempotencyRequired,
     bool AtomicityRequired, bool CreatesTaxLine,
     IReadOnlyCollection<FieldEvidence>? AcceptanceEvidence = null)
@@ -15,7 +15,6 @@ public sealed record PostingRuleDefinition(
     public string? SourceEvent { get; init; }
     public string? Trigger { get; init; }
     public string? Preconditions { get; init; }
-    public string? RecognitionTime { get; init; }
     public string? SourceDocument { get; init; }
     public string? DebitCondition { get; init; }
     public string? CreditCondition { get; init; }
@@ -63,7 +62,7 @@ public sealed record PostingRuleDefinition(
         string.Equals(DesignStatus, "ACCEPTED", StringComparison.Ordinal) &&
         OpenIssueIds is { Count: 0 } &&
         !string.IsNullOrWhiteSpace(AmountBasis) &&
-        !string.IsNullOrWhiteSpace(RecognitionGate) &&
+        !string.IsNullOrWhiteSpace(RecognitionTime) &&
         !string.IsNullOrWhiteSpace(SourceReference) &&
         !string.IsNullOrWhiteSpace(DecisionReference) &&
         !string.IsNullOrWhiteSpace(TaxModeDefinition) &&
