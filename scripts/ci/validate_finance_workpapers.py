@@ -154,7 +154,8 @@ for token in (
     if token not in source_crosswalk:
         fail(f"FE-01/FE-02 source crosswalk proposal missing required control: {token}")
 
-print("PASS: finance workpaper structural consistency")\nprint("PASS: FE-01/FE-02 source contract proposals remain explicitly non-runtime and owner-review pending")
+print("PASS: finance workpaper structural consistency")
+print("PASS: FE-01/FE-02 source contract proposals remain explicitly non-runtime and owner-review pending")
 print(f"7B: {len(fe_ids)} event rows (38 FE identifiers + FE-10b); 39 fail-closed gate references")
 print(f"7C: {len(open_ids)} Open Items; 16 mapped COA gate tests")
 print(f"7D: {len(fin)} FE + {len(coa)} COA + {len(shared)} shared = 67 unique Test IDs")
