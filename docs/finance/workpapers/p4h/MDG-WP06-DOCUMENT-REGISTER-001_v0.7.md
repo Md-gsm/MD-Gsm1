@@ -1,10 +1,10 @@
 # MDG-WP06-DOCUMENT-REGISTER-001
-## Controlled Document Register — Version 1.1
+## Controlled Document Register — Version 1.2
 
 | Field | Value |
 |---|---|
 | Document ID | MDG-WP06-DOCUMENT-REGISTER-001 |
-| Version | 1.1 |
+| Version | 1.2 |
 | Classification | CONTROLLED REGISTER / IMPLEMENTATION STATUS |
 | Status | DRAFT — CURRENT REGISTER FOR PR #66 |
 | Supersedes | v1.0; prior versions retained as historical snapshots |
@@ -120,7 +120,9 @@ Finance Workpaper Structural Validation:
 ## 9. Version history
 
 - v0.5 through v0.9 are retained as historical snapshots.
-- v1.0 registers the Inventory stock ownership/source-event proposal v0.1 and its owner-review boundary; no runtime contract or posting authorization is implied.
+- v1.0 registered the Inventory stock ownership/source-event proposal v0.1 as a historical snapshot.
+- v1.1 registered OWN-INV-018 v1.0, Inventory contract v0.2 and the three design deliverables.
+- v1.2 registers the internal technical owner review and its blocking actions; no technical owner acceptance or runtime authorization is implied.
 
 
 ## 10. FE-01 / FE-02 source contract proposals — owner review pending
@@ -169,7 +171,7 @@ The decision fixes the approved business policy and technical boundaries, includ
 
 - Sales source contract: revise proposal and obtain Sales/Pricing/Tax owner acceptance — PENDING.
 - RepairOperations source contract: revise proposal and obtain owner acceptance — PENDING.
-- Inventory committed movement/fulfillment contract: PROPOSAL v0.1 — INVENTORY OWNER REVIEW REQUIRED.
+- Inventory committed movement/fulfillment contract: v0.2 — BUSINESS OWNER POLICY APPROVED; technical owner acceptance remains OPEN.
 - RecognitionTime and exact Posting Matrix: PENDING.
 - Runtime implementation/tests and independent review: NOT RUN / NOT VERIFIED.
 - Accepted positive Posting Rules: 0; Posting Release: NOT GRANTED.
@@ -185,7 +187,7 @@ The decision fixes the approved business policy and technical boundaries, includ
 
 The v0.2 revisions implement the approved policy boundaries in documentation: Inventory exclusively owns committed movement/fulfillment and valuation; Sales owns commercial documents and references Inventory evidence; revenue recognition is separate from payment/settlement; return entitlement/revenue reversal is separate from Inventory inspection/restock; standard physical repair requires technical completion plus confirmed handover; R1 repair intake is disabled and no synthetic RepairCase is permitted; any R1 FE-02 posting requires a real, approved external source; actor and recipient references are distinct; request IdempotencyKey is distinct from EventId; transactional outbox semantics are specified without claiming exactly-once delivery.
 
-No module-owner technical acceptance has been received by this register. Inventory contract proposal v0.1 is registered; Inventory owner technical acceptance remains OPEN. FE-01 and FE-02 remain BLOCKED. Accepted positive Posting Rules: 0. Runtime tests: NOT RUN / NOT VERIFIED. Posting Release: NOT GRANTED.
+No module-owner technical acceptance has been received by this register. Inventory contract v0.2 is registered; business policy is approved and cross-module technical owner acceptance remains OPEN. FE-01 and FE-02 remain BLOCKED. Accepted positive Posting Rules: 0. Runtime tests: NOT RUN / NOT VERIFIED. Posting Release: NOT GRANTED.
 
 
 ## 14. Inventory source-event and stock ownership decision
@@ -221,3 +223,16 @@ Before implementation, resolve Decimal precision/scale and UOM fractional rules,
 - FE-01 and FE-02: BLOCKED under separate source/Accounting gates; FE-09 remains controlling.
 - Accepted positive Posting Rules: 0.
 - Posting Release remains NOT GRANTED; operational release remains NOT GRANTED.
+
+
+## 17. Inventory technical owner review
+
+| Artifact | Version | Status |
+|---|---:|---|
+| INVENTORY-TECHNICAL-OWNER-REVIEW-001 | 0.1 | INTERNAL DESIGN REVIEW COMPLETE WITH BLOCKERS — CROSS-MODULE OWNER ACCEPTANCE OPEN |
+
+The internal review found seven blocking design parameters/decisions (Decimal/UOM precision; Sales reservation TTL; serial namespace; landed-cost allocation and rounding; stocktake concurrency/cut-off; in-transit accounting classification and COA/Posting Rule; and provisional valuation for permitted negative stock) plus five ERD/state-model refinements. It also proposes 12 additional test cases, expanding the test design from 65 to 77 cases if accepted.
+
+The review does not constitute approval by Organization, Catalog, Purchasing, Sales, RepairOperations, Accounting, Security, Platform/DB or QA. Those owners must explicitly accept their assigned items against exact document versions and SHA. The three design specifications remain proposals and are not ready for physical schema or implementation until the blocking actions are closed.
+
+No architecture master change, runtime, SQL, migration, API, publisher, grant, Posting Rule or release authorization is included. Migration 0009 remains reserved by PR #70. OWN-INV-018 v1.0 remains the business-policy authority.
