@@ -197,3 +197,5 @@ for doc, tokens, label in (
 for token in ("OWN-INV-018 v1.0", "INVENTORY-ERD-DATA-DICTIONARY-001", "INVENTORY-STATE-MOVEMENT-SPEC-001", "INVENTORY-TEST-SPEC-001", "65 test definitions", "Posting Release and operational release: NOT GRANTED"):
     if token not in register: fail(f"register v1.1 missing: {token}")
 print("PASS: OWN-INV-018 and three Inventory design/test proposals are structurally registered")
+
+print("PASS: Inventory owner decision scope INV-EVT-001..018 is registered")
