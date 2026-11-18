@@ -83,7 +83,7 @@ public sealed record PostingRuleDefinition(
         "SourceEvent" => SourceEvent,
         "Trigger" => Trigger,
         "Preconditions" => Preconditions,
-        "RecognitionTime" => RecognitionTime ?? RecognitionGate,
+        "RecognitionTime" => RecognitionTime,
         "SourceDocument" => SourceDocument,
         "DebitAccountCode" => DebitAccountCode,
         "DebitCondition" => DebitCondition,
