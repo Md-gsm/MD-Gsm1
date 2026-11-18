@@ -308,7 +308,7 @@ bd6fc6e3a8e88e3e0b404f667bbf6ea3fb97b2d152845867d11f999350faff52  docs/finance/w
 a0466daca95ee3422e58b70e9ff3f1c0a85511e07f7f97f654c9e0995de523d0  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md
 fe670fad99204e025ff59c68c2feddcd9bb401a70a83f77dabe44fb217792e7b  docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md
 339a1f85e7ae607b0c0361dc55bb10abcd8000cffe3734bd419faf396b9c7fe4  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.1.md
-b961be618f89b50791b992e7a5130b89ce1a0ef35d983c1b7bacb2a8f38868e8  docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.1.md
+5476a502b05262f6fe86e77d1fb07ec4fdbc97b262876406c1dcc8601988e665  docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.1.md
 34055198fc068fff21a9ce0d0d14f536778260308e41c82509539144930bb9ea  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.3.md
 07a14cbe65817c3e1d1054554f73b67c6491a0b18adc3bbde4c363b6137259cc  scripts/ci/validate_finance_workpapers.py
 89d2a2614e7e1377dadca23986bfb23815a4b5e46bed1e329fb610929025713b  .github/workflows/finance-workpaper-validation.yml
