@@ -10,6 +10,7 @@ P7B = ROOT / "docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2
 P7C = ROOT / "docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.4.md"
 ADD = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.2.md"
 P7D = ROOT / "docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md"
+CLOSE7B = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-7B-POSTING-RULE-CLOSURE-001_v0.2.md"
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
@@ -24,12 +25,23 @@ def exact(label: str, actual: list[str], expected: set[str]) -> None:
     if len(actual) != len(set(actual)) or set(actual) != expected or len(actual) != len(expected):
         fail(f"{label}: actual={sorted(actual)} expected={sorted(expected)}")
 
-b, c, a, d = map(read, (P7B, P7C, ADD, P7D))
+b, c, a, d, close7b = map(read, (P7B, P7C, ADD, P7D, CLOSE7B))
 section = b.split("## 3. ماتریس تعیین تکلیف نهایی FE-01..FE-38", 1)[1].split("## 4. کنترل‌های عمومی غیرقابل عدول", 1)[0]
 fe_rows = [x for x in section.splitlines() if x.startswith("| FE-")]
 fe_ids = [re.search(r"^\|\s*(FE-\d{2}b?)\s*\|", x).group(1) for x in fe_rows]
 expected_fe = {f"FE-{n:02d}" for n in range(1, 39)} | {"FE-10b"}
 exact("7B FE rows", fe_ids, expected_fe)
+closure_event_ids = re.findall(r"^\\|\\s*(FE-\\d{2}b?)\\s*\\|", close7b, re.MULTILINE)
+exact("7B closure event rows", closure_event_ids, expected_fe)
+closure_ids = re.findall(r"^\\|\\s*(7B-CL-\\d{3})", close7b, re.MULTILINE)
+exact("7B closure ledger IDs", closure_ids, {f"7B-CL-{n:03d}" for n in range(1, 21)})
+for token in (
+    "7B-CL-014 — R2 scope guards", "CLOSED — POLICY/DISPOSITION ONLY",
+    "7B-CL-019 — FE-36 unknown event", "Fully accepted positive Posting Rules: 0",
+    "Posting Release: NOT GRANTED",
+):
+    if token not in close7b:
+        fail(f"7B closure ledger missing required control: {token}")
 fe_gates = [re.search(r"(MDG-FIN-GATE-\d{3})", x).group(1) for x in fe_rows]
 exact("7B FE gate references", fe_gates, {f"MDG-FIN-GATE-{n:03d}" for n in range(1, 40)})
 for row in fe_rows:
