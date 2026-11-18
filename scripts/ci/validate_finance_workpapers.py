@@ -46,8 +46,8 @@ for token in ("COA v1.2", "v1.4", "110302→1103", "610801→6108", "620201→62
         fail(f"missing 7C control: {token}")
 if "NOT EXECUTABLE — SOURCE CONTENT REQUIRED" in c + a:
     fail("obsolete v1.4 source-content blocker must be removed")
-if "Workbook نه‌شیتی" not in c or "از موانع" not in c:
-    fail("7C must explicitly remove the 9-sheet workbook as an execution blocker")
+if "v1.4 در دسترس و بررسی شده است" not in c or "7C-OPEN-001 مانع دسترسی نیست" not in c:
+    fail("7C v0.4 must affirm current v1.4 source availability and identify canonical reconciliation—not source access—as the remaining blocker")
 
 fin = re.findall(r"^\|\s*(MDG-FIN-GATE-\d{3})\s*\|", d, re.MULTILINE)
 coa = re.findall(r"^\|\s*(MDG-COA-GATE-\d{3})\s*\|", d, re.MULTILINE)
