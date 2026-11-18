@@ -15,7 +15,7 @@ REGISTER = ROOT / "docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0
 SALES_PROPOSAL = ROOT / "docs/modules/sales/SALES-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.2.md"
 REPAIR_PROPOSAL = ROOT / "docs/modules/repairoperations/REPAIROPERATIONS-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.2.md"
 SOURCE_CROSSWALK = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-FE01-FE02-SOURCE-CROSSWALK-PROPOSAL-001_v0.2.md"
-INVENTORY_PROPOSAL = ROOT / "docs/modules/inventory/INVENTORY-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.1.md"
+INVENTORY_PROPOSAL = ROOT / "docs/modules/inventory/INVENTORY-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.2.md"
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
@@ -126,7 +126,7 @@ if "NOT RUN / NOT VERIFIED" not in d or "Posting Release | NOT GRANTED" not in d
     fail("7D execution/no-release guards missing")
 
 for token in (
-    "Controlled Document Register — Version 1.0",
+    "Controlled Document Register — Version 1.1",
     "MDG-WP06-7B-POSTING-RULE-CLOSURE-001 | v0.2",
     "Accepted positive Posting Rules: 0",
     "PROPOSAL — OWNER REVIEW REQUIRED", "FE-01: BLOCKED", "FE-02: BLOCKED", "runtime event publishers/adapters are not added.",
@@ -159,7 +159,7 @@ for token in (
 
 print("PASS: finance workpaper structural consistency")
 for token in (
-    "INVENTORY-SOURCE-EVENT-CONTRACT-PROPOSAL-001", "Version | 0.1", "STK-01",
+    "INVENTORY-SOURCE-EVENT-CONTRACT-PROPOSAL-001", "Version | 0.2", "STK-01",
     "SalesLineId", "RepairServiceLineId", "RETURNED_PENDING_INSPECTION", "SELLABLE",
     "DEFECTIVE", "QUARANTINED", "UNUSABLE", "at-least-once", "INV-EVT-018",
     "NOT IMPLEMENTED / NOT VERIFIED", "Accepted positive Posting Rules: 0",
@@ -168,14 +168,32 @@ for token in (
     if token not in inventory_proposal:
         fail(f"Inventory source-event proposal missing required control: {token}")
 for token in (
-    "Inventory source-event and stock ownership proposal", "INVENTORY OWNER REVIEW REQUIRED",
+    "Inventory source event and stock ownership contract", "BUSINESS POLICY APPROVED — TECHNICAL OWNER ACCEPTANCE REQUIRED",
     "Migration 0009", "FE-01 and FE-02 remain BLOCKED", "Posting Release remains NOT GRANTED",
 ):
     if token not in register:
-        fail(f"document register v1.0 missing Inventory control: {token}")
+        fail(f"document register v1.1 missing Inventory control: {token}")
 
 print("PASS: FE-01/FE-02 and Inventory source contract proposals remain explicitly non-runtime and owner-review pending")
 print(f"7B: {len(fe_ids)} event rows (38 FE identifiers + FE-10b); 39 fail-closed gate references")
 print(f"7C: {len(open_ids)} Open Items; 16 mapped COA gate tests")
 print(f"7D: {len(fin)} FE + {len(coa)} COA + {len(shared)} shared = 67 unique Test IDs")
 print("Scope: document structure only; no accounting runtime or positive journal execution.")
+
+OWNER_INVENTORY = ROOT / "docs/modules/inventory/OWN-INV-018_v1.0.md"
+INVENTORY_ERD = ROOT / "docs/modules/inventory/INVENTORY-ERD-DATA-DICTIONARY-001_v0.1.md"
+INVENTORY_STATE = ROOT / "docs/modules/inventory/INVENTORY-STATE-MOVEMENT-SPEC-001_v0.1.md"
+INVENTORY_TESTS = ROOT / "docs/modules/inventory/INVENTORY-TEST-SPEC-001_v0.1.md"
+owner_inventory, inventory_erd, inventory_state, inventory_tests = map(read, (OWNER_INVENTORY, INVENTORY_ERD, INVENTORY_STATE, INVENTORY_TESTS))
+for token in ("OWN-INV-018", "APPROVED — BUSINESS OWNER POLICY", "INV-EVT-018", "D-213", "D-215", "-2", "Moving Weighted Average", "Specific Identification", "NOT_VERIFIED", "NOT_RUN", "NOT_GRANTED"):
+    if token not in owner_inventory: fail(f"OWN-INV-018 missing: {token}")
+for doc, tokens, label in (
+    (inventory_erd, ("INVENTORY ERD", "StockPosition", "StockMovementLine", "Variant", "D-213", "D-215"), "Inventory ERD"),
+    (inventory_state, ("INVENTORY STATE", "RETURNED_PENDING_INSPECTION", "IN_TRANSIT", "Moving Weighted Average", "FE-09"), "Inventory state/movement"),
+    (inventory_tests, ("Inventory Test Specification", "INV-T-001", "INV-T-034", "INV-T-065", "PostgreSQL", "NOT_RUN"), "Inventory tests"),
+):
+    for token in tokens:
+        if token not in doc: fail(f"{label} missing: {token}")
+for token in ("OWN-INV-018 v1.0", "INVENTORY-ERD-DATA-DICTIONARY-001", "INVENTORY-STATE-MOVEMENT-SPEC-001", "INVENTORY-TEST-SPEC-001", "65 test definitions", "Posting Release and operational release: NOT GRANTED"):
+    if token not in register: fail(f"register v1.1 missing: {token}")
+print("PASS: OWN-INV-018 and three Inventory design/test proposals are structurally registered")
