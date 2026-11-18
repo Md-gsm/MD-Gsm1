@@ -188,8 +188,8 @@ owner_inventory, inventory_erd, inventory_state, inventory_tests = map(read, (OW
 for token in ("OWN-INV-018", "APPROVED — BUSINESS OWNER POLICY", "INV-EVT-018", "D-213", "D-215", "-2", "Moving Weighted Average", "Specific Identification", "NOT_VERIFIED", "NOT_RUN", "NOT_GRANTED"):
     if token not in owner_inventory: fail(f"OWN-INV-018 missing: {token}")
 for doc, tokens, label in (
-    (inventory_erd, ("INVENTORY ERD", "StockPosition", "StockMovementLine", "Variant", "D-213", "D-215"), "Inventory ERD"),
-    (inventory_state, ("INVENTORY STATE", "RETURNED_PENDING_INSPECTION", "IN_TRANSIT", "Moving Weighted Average", "FE-09"), "Inventory state/movement"),
+    (inventory_erd, ("Inventory ERD", "StockPosition", "StockMovementLine", "Variant", "D-213", "D-215"), "Inventory ERD"),
+    (inventory_state, ("Inventory State", "RETURNED_PENDING_INSPECTION", "IN_TRANSIT", "Moving Weighted Average", "FE-09"), "Inventory state/movement"),
     (inventory_tests, ("Inventory Test Specification", "INV-T-001", "INV-T-034", "INV-T-065", "PostgreSQL", "NOT_RUN"), "Inventory tests"),
 ):
     for token in tokens:
