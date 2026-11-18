@@ -174,7 +174,7 @@ for token in (
     if token not in register:
         fail(f"document register v1.1 missing Inventory control: {token}")
 
-print("PASS: FE-01/FE-02 and Inventory source contract proposals remain explicitly non-runtime and owner-review pending")
+print("PASS: FE-01/FE-02 remain blocked; Inventory business policy is approved while technical acceptance and runtime remain pending")
 print(f"7B: {len(fe_ids)} event rows (38 FE identifiers + FE-10b); 39 fail-closed gate references")
 print(f"7C: {len(open_ids)} Open Items; 16 mapped COA gate tests")
 print(f"7D: {len(fin)} FE + {len(coa)} COA + {len(shared)} shared = 67 unique Test IDs")
@@ -194,7 +194,7 @@ for doc, tokens, label in (
 ):
     for token in tokens:
         if token not in doc: fail(f"{label} missing: {token}")
-for token in ("OWN-INV-018 v1.0", "INVENTORY-ERD-DATA-DICTIONARY-001", "INVENTORY-STATE-MOVEMENT-SPEC-001", "INVENTORY-TEST-SPEC-001", "65 test definitions", "Posting Release and operational release: NOT GRANTED"):
+for token in ("OWN-INV-018 v1.0", "INVENTORY-ERD-DATA-DICTIONARY-001", "INVENTORY-STATE-MOVEMENT-SPEC-001", "INVENTORY-TEST-SPEC-001", "65 test definitions", "Posting Release remains NOT GRANTED; operational release remains NOT GRANTED"):
     if token not in register: fail(f"register v1.1 missing: {token}")
 print("PASS: OWN-INV-018 and three Inventory design/test proposals are structurally registered")
 
