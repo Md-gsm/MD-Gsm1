@@ -340,12 +340,21 @@
 |---|---|---|---|
 | AP-01 | COA snapshot در Journal Domain | `Journal.CoaSnapshotId` اجباری شد؛ factory، finalize، reversal و تست‌های مثبت/منفی به‌روزرسانی شدند. Persistence mapping همچنان مرحله بعد است. | DOMAIN IMPLEMENTED — CI NOT YET VERIFIED |
 | AP-02 | payload conflict برای idempotency | قرارداد `ICanonicalPostingPayload`، fingerprint نسخه‌دار SHA-256 و policy تشخیص replay/conflict در Application اضافه شد؛ تست payload یکسان، payload متفاوت، نسخه متفاوت و درخواست جدید افزوده شد. | APPLICATION CONTRACT + UNIT TESTS IMPLEMENTED — CI NOT YET VERIFIED |
-| AP-03 | deferred balance trigger | اثبات PostgreSQL 18 trigger برای حداقل دو خط، توازن، overflow و transaction end | DESIGN SPECIFIED; TEST NOT RUN |
-| AP-04 | finalized immutability | privilege + trigger برای header/lines/audit/transition/accepted snapshot و تست منفی | DESIGN SPECIFIED; TEST NOT RUN |
+| AP-03 | deferred balance trigger | PoC مستقل در schema آزمایشی `ap_proof`؛ حداقل دو خط، توازن، overflow و بررسی deferred در commit | POSTGRESQL 18 POC ADDED — CI PENDING |
+| AP-04 | finalized immutability | PoC مستقل برای header/lines، append-only audit/transition، accepted COA snapshot، TRUNCATE guards و runtime least-privilege | POSTGRESQL 18 POC ADDED — CI PENDING |
 | AP-05 | recovery policy | مستندکردن تفاوت disposable rollback پیش از داده مالی و forward-only پس از داده مالی | DESIGN SPECIFIED; IMPLEMENTATION NOT VERIFIED |
 | AP-06 | registry CI | اصلاح MigrationResourceTests تا RESERVED future slot را بدون SQL مجاز بداند، اما IMPLEMENTED/VERIFIED را با SQL تطبیق دهد | INCLUDED IN THIS PR |
 | AP-07 | DB privilege | تهیه grant matrix اختصاصی Accounting و تست runtime role least privilege | NOT STARTED |
 | AP-08 | COA evidence crosswalk | تکمیل crosswalk معتبر v1.2/v1.4؛ بدون seed و بدون حدس | BLOCKED BY SOURCE EVIDENCE |
+
+### وضعیت اجرای AP-03 و AP-04 در برش فعلی
+
+- دو فایل PoC فقط زیر مسیرهای `tests/` و `scripts/ci/` افزوده شده‌اند؛ این‌ها migration نیستند و schema دائمی `accounting` یا Migration 0009 ایجاد نمی‌کنند.
+- PoC در schema موقت `ap_proof` روی همان دیتابیس disposable علامت‌گذاری‌شده اجرا می‌شود و پس از پایان job همراه دیتابیس آزمایشی حذف خواهد شد.
+- AP-03: deferred constraint trigger در پایان transaction حداقل دو خط، برابری مجموع بدهکار/بستانکار و سقف bigint را بررسی می‌کند. آزمون‌های منفی برای یک‌خطی، عدم توازن و overflow افزوده شده‌اند.
+- AP-04: triggerهای دفاعی برای header/lines اسناد نهایی، audit و period-transition append-only، snapshot پذیرفته‌شده و TRUNCATE افزوده شده‌اند؛ privilegeهای runtime نیز جداگانه بررسی می‌شوند.
+- اجرای واقعی فقط پس از CI روی PostgreSQL 18.6 قابل تأیید است؛ تا آن زمان AP-03/AP-04 برابر `NOT VERIFIED` باقی می‌مانند.
+- این PoC هنوز جایگزین schema review و پیاده‌سازی نهایی Migration 0009 نیست؛ تفاوت‌های محیط آزمایشی با DDL نهایی باید در مرحله مجاز SQL دوباره ممیزی شوند.
 
 ### وضعیت اجرای AP-01 و AP-02 در برش فعلی
 
@@ -371,7 +380,7 @@
 
 طراحی فیزیکی در این سند baseline مورد تأیید مالک است؛ اما عبور به SQL فقط وقتی مجاز است که:
 1. AP-01 و AP-02 در Domain/Application و تست‌ها تکمیل و مستقل review شوند.
-2. AP-03/AP-04 با PostgreSQL 18 proof-of-concept disposable اثبات شوند.
+2. AP-03/AP-04 با PostgreSQL 18 proof-of-concept disposable اجرا و مستقل review شوند.
 3. AP-05 و AP-07 تعیین تکلیف و grant matrix بازبینی شود.
 4. AP-08 فقط بر اساس شواهد معتبر COA حل شود؛ در غیر این صورت حساب‌ها unresolved باقی می‌مانند و seed نمی‌شوند.
 5. رجیستری و تست migration اصلاح‌شده در CI سبز شوند.
