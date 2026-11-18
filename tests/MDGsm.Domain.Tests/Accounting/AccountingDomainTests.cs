@@ -260,7 +260,7 @@ public sealed class AccountingDomainTests
     [Fact]
     public async Task Posting_preflight_blocks_tax_lines_when_tax_mode_is_zero()
     {
-        var rule = AcceptedRule("FE-06") with { CreatesTaxLine = true };
+        var rule = AcceptedRule("FE-06", "2101") with { CreatesTaxLine = true };
         var service = new PostingPreflightService(
             new RuleCatalog(rule),
             new AccountCatalog([
@@ -321,9 +321,23 @@ public sealed class AccountingDomainTests
         return account with { CanonicalAttributes = attributes with { Evidence = evidence } };
     }
 
-    private static PostingRuleDefinition AcceptedRule(string eventId)
+    private static AccountDefinition RefreshCanonicalEvidence(AccountDefinition account)
     {
-        var rule = new PostingRuleDefinition(eventId, 1, PostingRuleStatus.Accepted, "1101", "4101",
+        var attributes = account.CanonicalAttributes!;
+        var evidence = CanonicalAccountAttributes.RequiredFields.Select(field =>
+        {
+            var value = attributes.GetExpectedValue(account, field);
+            return value is null
+                ? new FieldEvidence(field, EvidenceDisposition.NotApplicable, null, "test-source", "Explicitly not applicable in this controlled test fixture.")
+                : new FieldEvidence(field, EvidenceDisposition.Verified, value, "test-source", null);
+        }).ToArray();
+
+        return account with { CanonicalAttributes = attributes with { Evidence = evidence } };
+    }
+
+    private static PostingRuleDefinition AcceptedRule(string eventId, string creditAccountCode = "4101")
+    {
+        var rule = new PostingRuleDefinition(eventId, 1, PostingRuleStatus.Accepted, "1101", creditAccountCode,
             "SOURCE_AMOUNT", "SOURCE_DOCUMENT_FINALIZED", "test-source", "test-decision",
             new DateOnly(2026, 1, 1), null, true, true, false);
         var evidence = PostingRuleDefinition.RequiredAcceptanceFields.Select(field =>
