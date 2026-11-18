@@ -341,12 +341,21 @@ public sealed class AccountingDomainTests
             "SOURCE_AMOUNT", "SOURCE_DOCUMENT_FINALIZED", "test-source", "test-decision",
             new DateOnly(2026, 1, 1), null, true, true, false)
         {
-            EventName = "Test financial event",
-            DesignStatus = "ACCEPTED",
+            EventName = "Test financial event", SourceEvent = "TEST_SOURCE_EVENT",
+            Trigger = "SOURCE_DOCUMENT_FINALIZED", Preconditions = "SOURCE_DOCUMENT_VALIDATED",
+            RecognitionTime = "SOURCE_DOCUMENT_FINALIZED", SourceDocument = "TEST_SOURCE_DOCUMENT",
+            DebitCondition = "DEBIT_ACCOUNT_ELIGIBLE", CreditCondition = "CREDIT_ACCOUNT_ELIGIBLE",
+            CostBasis = "NOT_APPLICABLE", DesignStatus = "ACCEPTED",
             TaxModeDefinition = "TaxMode=0 blocks Tax Lines; positive TaxMode requires approved Tax Matrix",
-            IdempotencyKeyDefinition = "SourceModule|SourceDocumentId|SourceEventId|PostingPurpose|SourceVersion|AllocationId",
+            SubledgerUpdates = "NONE", Dimensions = "SOURCE_DIMENSIONS",
+            InventoryEffect = "NOT_APPLICABLE", PartyEffect = "NOT_APPLICABLE",
+            PostingIdentityDefinition = "SourceModule|SourceDocumentId|SourceEventId|PostingPurpose|SourceVersion|AllocationId",
+            IdempotencyKeyDefinition = "SHA256_CANONICAL_POSTING_IDENTITY",
+            ReversalRule = "REVERSAL_DOCUMENT", PeriodRule = "OPEN_FISCAL_PERIOD",
             AtomicityBoundaryDefinition = "Journal, GL, Subledger, source state and audit writes in one database transaction",
-            OpenIssueIds = Array.Empty<string>()
+            RetryBehavior = "IDEMPOTENT_RETRY", Authorization = "SERVER_SIDE_AUTHORIZATION",
+            AuditEvents = "POSTING_CREATED|POSTING_FINALIZED", TestCaseIds = "TEST_ACCOUNTING_DOMAIN",
+            EvidenceRequirements = "SOURCE_AND_DECISION_EVIDENCE", OpenIssueIds = Array.Empty<string>()
         };
         var evidence = PostingRuleDefinition.RequiredAcceptanceFields.Select(field =>
         {
@@ -354,6 +363,26 @@ public sealed class AccountingDomainTests
             return new FieldEvidence(field, EvidenceDisposition.Verified, value, "test-source", null);
         }).ToArray();
         return rule with { AcceptanceEvidence = evidence };
+    }
+
+    [Fact]
+    public void Posting_rule_evidence_must_match_each_runtime_contract_field()
+    {
+        var accepted = AcceptedRule("FE-03");
+        var changedTrigger = accepted with { Trigger = "A_DIFFERENT_TRIGGER" };
+        var changedEvidence = accepted with
+        {
+            AcceptanceEvidence = accepted.AcceptanceEvidence!
+                .Select(item => item.Field == "DebitCondition"
+                    ? item with { Value = "A_DIFFERENT_DEBIT_CONDITION" }
+                    : item).ToArray()
+        };
+        var missingRuntimeField = accepted with { RetryBehavior = null };
+
+        Assert.True(accepted.IsExecutableOn(EffectiveDate));
+        Assert.False(changedTrigger.IsExecutableOn(EffectiveDate));
+        Assert.False(changedEvidence.IsExecutableOn(EffectiveDate));
+        Assert.False(missingRuntimeField.IsExecutableOn(EffectiveDate));
     }
 
     [Fact]
