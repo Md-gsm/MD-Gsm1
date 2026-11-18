@@ -1027,7 +1027,7 @@ End of Document
 8. O-01 به دلیل عدم دسترسی به منبع باز نیست؛ معیار جایگزین مالک برقرار است و شکاف واقعی، canonicalization و پذیرش 7B/7D است.
 
 
-## 19. Controlled Replacement Update — 7C v0.3 — 2026-11-18
+## 19. Controlled Replacement Update — 7C v0.4 — 2026-11-18
 
 ### 19.1. Current independent workpaper versions
 - 7B: `WP06-P4H-7B-POSTING-MATRIX-001 v0.2` — 39 event rows, Owner Action Register present; positive posting rules remain partial/blocked where source/canonical fields are unresolved.
