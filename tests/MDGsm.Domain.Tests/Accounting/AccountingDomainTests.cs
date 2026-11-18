@@ -171,6 +171,60 @@ public sealed class AccountingDomainTests
         Assert.Contains(PostingBlockReason.PostingRuleNotFound, result.BlockReasons);
     }
 
+    [Theory]
+    [InlineData("FE-01")]
+    [InlineData("FE-02")]
+    [InlineData("FE-03")]
+    [InlineData("FE-04")]
+    [InlineData("FE-05")]
+    [InlineData("FE-06")]
+    [InlineData("FE-07")]
+    [InlineData("FE-08")]
+    [InlineData("FE-09")]
+    [InlineData("FE-10")]
+    [InlineData("FE-10b")]
+    [InlineData("FE-11")]
+    [InlineData("FE-12")]
+    [InlineData("FE-13")]
+    [InlineData("FE-14")]
+    [InlineData("FE-15")]
+    [InlineData("FE-16")]
+    [InlineData("FE-17")]
+    [InlineData("FE-18")]
+    [InlineData("FE-19")]
+    [InlineData("FE-20")]
+    [InlineData("FE-21")]
+    [InlineData("FE-22")]
+    [InlineData("FE-23")]
+    [InlineData("FE-24")]
+    [InlineData("FE-25")]
+    [InlineData("FE-26")]
+    [InlineData("FE-27")]
+    [InlineData("FE-28")]
+    [InlineData("FE-29")]
+    [InlineData("FE-30")]
+    [InlineData("FE-31")]
+    [InlineData("FE-32")]
+    [InlineData("FE-33")]
+    [InlineData("FE-34")]
+    [InlineData("FE-35")]
+    [InlineData("FE-36")]
+    [InlineData("FE-37")]
+    [InlineData("FE-38")]
+    public async Task Every_financial_event_without_an_accepted_rule_is_blocked(string financialEventId)
+    {
+        var service = new PostingPreflightService(
+            new RuleCatalog(null),
+            new AccountCatalog([]),
+            new PeriodCatalog(OpenPeriod()));
+
+        var result = await service.EvaluateAsync(
+            new(financialEventId, EffectiveDate, true, null));
+
+        Assert.False(result.IsEligible);
+        Assert.Contains(PostingBlockReason.PostingRuleNotFound, result.BlockReasons);
+    }
+
     [Fact]
     public async Task Posting_preflight_requires_complete_rule_accounts_and_open_period()
     {
