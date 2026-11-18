@@ -26,7 +26,7 @@
 
 | Workpaper | Current version | Status |
 |---|---:|---|
-| WP06-P4H-7B-POSTING-MATRIX-001 | v0.2 | 39 FE dispositions; 0 accepted positive Posting Rules; unresolved fields BLOCKED |
+| WP06-P4H-7B-POSTING-MATRIX-001 | v0.2 | 39 event dispositions (38 FE identifiers + FE-10b); 0 accepted positive Posting Rules; unresolved fields BLOCKED |
 | WP06-P4H-7C-COA-RECONCILIATION-001 | v0.4 | 78 identifiers; v1.2 master + v1.4 supplement; canonical attribute gaps OPEN |
 | WP06-P4H-7D-TEST-REGISTRY-001 | v0.2 | 67 Test IDs: 39 FE + 16 COA + 12 shared controls; runtime tests NOT RUN |
 | MDG-WP06-7B-7C-7D-INTEGRATED-001 | v0.6 | Current integrated crosswalk and implementation status |
