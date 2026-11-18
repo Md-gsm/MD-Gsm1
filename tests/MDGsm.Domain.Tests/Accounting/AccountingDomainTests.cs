@@ -371,6 +371,34 @@ public sealed class AccountingDomainTests
     }
 
     [Fact]
+    public void Posting_rule_requires_verified_not_applicable_values_for_every_contract_field()
+    {
+        var accepted = AcceptedRule("FE-03");
+        var explicitNotApplicable = accepted with
+        {
+            AcceptanceEvidence = accepted.AcceptanceEvidence!
+                .Select(item => item.Field == "InventoryEffect"
+                    ? item with { Value = "NOT_APPLICABLE" }
+                    : item).ToArray()
+        };
+        var unverifiedDisposition = accepted with
+        {
+            AcceptanceEvidence = accepted.AcceptanceEvidence!
+                .Select(item => item.Field == "InventoryEffect"
+                    ? item with
+                    {
+                        Disposition = EvidenceDisposition.NotApplicable,
+                        Value = null,
+                        Rationale = "Not applicable"
+                    }
+                    : item).ToArray()
+        };
+
+        Assert.True(explicitNotApplicable.IsExecutableOn(EffectiveDate));
+        Assert.False(unverifiedDisposition.IsExecutableOn(EffectiveDate));
+    }
+
+    [Fact]
     public void Posting_rule_with_open_issues_or_nonaccepted_design_status_is_not_executable()
     {
         var accepted = AcceptedRule("FE-03");
