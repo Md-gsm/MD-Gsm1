@@ -9,6 +9,8 @@
 | Supersedes | v0.1 (retained as historical snapshot) |
 
 ## 1. Authority and scope
+
+Data ownership classification: STK-01 — Inventory. Cross-module source-line keys include SalesLineId and RepairServiceLineId; these are immutable references, not Inventory-owned source records.
 This proposal incorporates the owner's approval of INV-EVT-001..018 dated 2026-11-18. It resolves D-213 and D-215. Business policy is approved; technical contracts remain subject to acceptance by all named module owners. This is not an executable schema, migration, runtime contract, Posting Rule or release.
 
 ## 2. Ownership
