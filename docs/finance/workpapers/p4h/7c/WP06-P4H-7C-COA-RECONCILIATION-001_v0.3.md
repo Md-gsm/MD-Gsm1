@@ -3,16 +3,16 @@
 
 | مشخصه | مقدار |
 |---|---|
-| Version | 0.2 |
+| Version | 0.3 |
 | Classification | CONTROLLED RECONSTRUCTION / CONTROLLED REPLACEMENT |
 | Parent | WP06-P4H-7C-COA-RECONCILIATION-001 v0.1 |
 | Architecture | MDG-ARCH-MASTER-001 v2.5 |
 | Owner decision | OWN-7C-043 and prior effective owner decisions |
-| COA design lineage | v1.2 prior baseline → v1.4 current owner-declared baseline; v1.3 intermediate |
-| Source workbook | Group Excel v1.0 inside `فهرست جامع و مرجع کدینگ حساب‌ها.zip` |
-| Source ZIP SHA-256 | `c17e3c16d05abb9d2ae57b8cfa0c8860e69b613ececb0db7758668cd1db04449` |
+| COA authority | v1.2 master baseline; v1.4 current supplementary account register; v1.3 intermediate only |
+| Source register | COA v1.2 master + COA v1.4 supplementary register + owner decisions; legacy workbook is non-blocking historical evidence |
+| Source ZIP SHA-256 | Historical provenance only; not a completion prerequisite |
 | Extracted Excel SHA-256 | `a6ca3377fde5863455a3b4bccf9a000d0dbf23f44bd66eeae51c44d0f3697866` |
-| Source scope | 76 unique account codes × 24 columns; 9 workbook sheets |
+| COA register scope | 78 identifiers: 76 RECON codes + owner-added 2114 and 5106; 110809 prohibited |
 | Design status | SOURCE VERIFIED; CANONICAL ATTRIBUTE RECONCILIATION PARTIAL / OPEN |
 | Implementation / Tests | NOT VERIFIED / NOT RUN |
 | Evidence / Posting Release | NOT ACCEPTED / NOT GRANTED |
@@ -27,7 +27,7 @@
 5. COA v1.3 فقط به‌عنوان مرحله میانی؛
 6. Excel/TXT v1.0 و workpaperها به‌عنوان منبع/شواهد، نه مرجع نهایی تصمیم.
 
-هر تعارض با تصمیم صریح مالک از طریق lineage ثبت می‌شود؛ متن منبع خام بازنویسی یا حذف نمی‌شود. عدم دسترسی به Excel دیگر مانع نیست؛ فایل در ZIP بازیابی و hash آن احراز شده است.
+هر تعارض با تصمیم صریح مالک از طریق lineage ثبت می‌شود. Workbook نه‌شیتی از معیارهای اجرایی حذف شده و هیچ دریافت/استخراج مجدد آن شرط تکمیل 7C نیست. مبنای کار، v1.2 به‌عنوان سند مادر، v1.4 به‌عنوان رجیستر تکمیلی جاری و تصمیمات مالک است.
 
 ## 2. رجیستر دامنه 76 حساب منبعی
 
@@ -125,7 +125,7 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 
 | ID | موضوع | Owner action / نقش مسئول | شرط رفع BLOCKED | Test ID | Evidence plan | وضعیت |
 |---|---|---|---|---|---|---|
-| 7C-OPEN-001 | COA v1.4 row-level crosswalk | Finance / COA Custodian | تطبیق 76 کد و تمام صفات با v1.4 و تصمیمات حاکم؛ ثبت lineage و اختلاف‌ها | MDG-COA-GATE-001 | crosswalk کامل، source refs، diff report و hash | BLOCKED — NO POSTING |
+| 7C-OPEN-001 | Account-level canonical attribute reconciliation | Finance / COA Custodian | تطبیق 78 شناسه با v1.2 master، v1.4 supplementary register و تصمیمات مالک؛ تکمیل صفات فقط در صورت وجود منبع؛ unresolvedهای واقعی صریح بمانند | MDG-COA-GATE-001 | account crosswalk، source/decision lineage، unresolved register و diff report | OPEN — ATTRIBUTE GAPS; NO POSTING |
 | 7C-OPEN-002 | AccountId registry | Finance + Data Architecture | تخصیص شناسه پایدار یکتا، immutable و constraint؛ بدون reuse | MDG-COA-GATE-002 | registry export، uniqueness test و migration review | BLOCKED — NO POSTING |
 | 7C-OPEN-003 | Parent/Level hierarchy | Finance + Data Architecture | تکمیل درخت با روابط مستند، بدون cycle و بدون prefix inference | MDG-COA-GATE-003 | hierarchy graph، cycle test و source lineage | BLOCKED — NO POSTING |
 | 7C-OPEN-004 | Nature/NormalBalance | Finance / Accounting Policy | تعیین مقدار canonical و lineage برای هر حساب؛ unresolved باقی‌مانده ممنوع برای posting | MDG-COA-GATE-004 | attribute matrix، policy approval و debit/credit validation | BLOCKED — NO POSTING |
@@ -264,3 +264,19 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 - Posting Release: NOT GRANTED.
 
 Status: CONTROLLED RECONSTRUCTION — DRAFT v0.3; supersedes v0.2 as the latest 7C workpaper draft only after review; not a posting release or final canonical COA.
+
+
+## اصلاحیه حاکم بر Workbook و سلسله‌مراتب COA — 2026-11-18
+
+این اصلاحیه بر تمام عبارت‌های متعارض این فایل مقدم است:
+
+- COA v1.2 سند مادر و مرجع اصلی کدینگ/قواعد دفترکل است.
+- COA v1.4 رجیستر تکمیلی جاری برای تطبیق حساب‌به‌حساب 7C و مبتنی بر v1.2 است.
+- COA v1.3 مرحله میانی است.
+- Workbook نه‌شیتی، ZIP و استخراج 76×24 از موانع، معیار پذیرش و وابستگی‌های اجرایی حذف شده‌اند؛ نگهداری hash تاریخی صرفاً برای provenance اختیاری است.
+- v1.4 در دسترس و بررسی شده است؛ عبارت «محتوای v1.4 در دسترس نیست» یا «SOURCE CONTENT REQUIRED» معتبر نیست.
+- رجیستر v1.4 شامل 78 شناسه است؛ 110809 ممنوع است. نقش‌های صریح و محدودیت‌های OWN-7C-043 باید برای هر حساب در crosswalk منعکس شوند.
+- تکمیل canonical attributes فقط در حدود منابع واقعی مجاز است. AccountId، Parent/Level، Nature/NormalBalance، Postable/DirectPostingAllowed، Effective Dates و Subledger هرجا تعیین نشده‌اند OPEN/NOT VERIFIED می‌مانند و Posting ممنوع است.
+- 7C-OPEN-001 از مانع دسترسی به فایل به مانع واقعی «تطبیق صفات canonical» تغییر کرده است.
+
+Status: SOURCE CONTENT AVAILABLE; ACCOUNT-LEVEL CANONICALIZATION PARTIAL / OPEN; IMPLEMENTATION NOT VERIFIED; TESTS NOT RUN; EVIDENCE NOT ACCEPTED; POSTING RELEASE NOT GRANTED.
