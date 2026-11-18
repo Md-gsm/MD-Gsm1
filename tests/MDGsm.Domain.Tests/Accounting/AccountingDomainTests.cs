@@ -88,15 +88,17 @@ public sealed class AccountingDomainTests
     {
         var journal = CreateBalancedDraft();
         var openPeriod = OpenPeriod(journal.FiscalPeriodId);
-        var finalized = journal.Finalize(openPeriod, "actor-1", UtcNow);
+        var finalized = journal.Finalize(openPeriod, "actor-1", UtcNow, "audit-finalize");
 
         Assert.Equal(JournalStatus.Draft, journal.Status);
         Assert.Equal(JournalStatus.Finalized, finalized.Status);
         Assert.Equal(new IrrAmount(100), finalized.TotalDebits);
         Assert.Equal(new IrrAmount(100), finalized.TotalCredits);
+        Assert.Equal("audit-create", finalized.CreatedAuditEventId);
+        Assert.Equal("audit-finalize", finalized.FinalizedAuditEventId);
 
         var closed = openPeriod with { Status = FiscalPeriodStatus.Closed };
-        Assert.Throws<InvalidOperationException>(() => journal.Finalize(closed, "actor-1", UtcNow));
+        Assert.Throws<InvalidOperationException>(() => journal.Finalize(closed, "actor-1", UtcNow, "audit-finalize"));
     }
 
     [Fact]
@@ -107,7 +109,7 @@ public sealed class AccountingDomainTests
 
         Assert.Throws<InvalidOperationException>(() => Journal.CreateDraft(
             Guid.CreateVersion7(), Guid.CreateVersion7(), EffectiveDate, Identity("SALE"),
-            [debit, credit], "SALE-1", "actor-1", UtcNow));
+            [debit, credit], "SALE-1", "actor-1", UtcNow, "audit-create"));
         Assert.Throws<ArgumentException>(() => JournalLine.Create(
             Guid.CreateVersion7(), Guid.CreateVersion7(), "1101", IrrAmount.Zero, IrrAmount.Zero));
         Assert.Throws<ArgumentException>(() => JournalLine.Create(
@@ -118,9 +120,9 @@ public sealed class AccountingDomainTests
     public void Reversal_is_a_new_journal_and_does_not_mutate_the_finalized_original()
     {
         var originalDraft = CreateBalancedDraft();
-        var original = originalDraft.Finalize(OpenPeriod(originalDraft.FiscalPeriodId), "actor-1", UtcNow);
+        var original = originalDraft.Finalize(OpenPeriod(originalDraft.FiscalPeriodId), "actor-1", UtcNow, "audit-finalize");
         var reversal = original.CreateReversal(
-            Guid.CreateVersion7(), Guid.CreateVersion7(), EffectiveDate, Identity("REVERSAL"), "actor-2", UtcNow);
+            Guid.CreateVersion7(), Guid.CreateVersion7(), EffectiveDate, Identity("REVERSAL"), "actor-2", UtcNow, "audit-reversal-create");
 
         Assert.Equal(JournalStatus.Finalized, original.Status);
         Assert.Equal(JournalStatus.Draft, reversal.Status);
@@ -385,7 +387,7 @@ public sealed class AccountingDomainTests
         var debit = JournalLine.Create(Guid.CreateVersion7(), Guid.CreateVersion7(), "1101", new(100), IrrAmount.Zero);
         var credit = JournalLine.Create(Guid.CreateVersion7(), Guid.CreateVersion7(), "4101", IrrAmount.Zero, new(100));
         return Journal.CreateDraft(Guid.CreateVersion7(), periodId, EffectiveDate, Identity("SALE"),
-            [debit, credit], "SALE-1", "actor-1", UtcNow);
+            [debit, credit], "SALE-1", "actor-1", UtcNow, "audit-create");
     }
 
     private sealed class RuleCatalog(PostingRuleDefinition? rule) : IPostingRuleCatalog
