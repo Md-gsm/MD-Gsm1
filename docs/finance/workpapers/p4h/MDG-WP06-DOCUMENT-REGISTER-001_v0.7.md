@@ -4,15 +4,15 @@
 | Field | Value |
 |---|---|
 | Document ID | MDG-WP06-DOCUMENT-REGISTER-001 |
-| Version | 1.2 |
+| Version | 1.3 |
 | Classification | CONTROLLED REGISTER / IMPLEMENTATION STATUS |
-| Status | DRAFT — CURRENT REGISTER FOR PR #66 |
-| Supersedes | v1.1; prior versions retained as historical snapshots |
-| Architecture baseline | MDG-ARCH-MASTER-001 v2.5 |
+| Status | CONTROLLED REGISTER — CURRENT AS OF 2026-11-19; MASTER V3.0 CANDIDATE UNDER REVIEW |
+| Supersedes | v1.2; prior versions retained as historical snapshots |
+| Architecture baseline | v2.5 remains last accepted baseline; MDG-ARCH-MASTER-001 v3.0 candidate submitted for independent review |
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
-| PR | #66 — OPEN / DRAFT |
-| Branch | docs/finance-7b-7c-7d-integrated-baseline-20261117 |
-| Current source head at register preparation | tracked by PR #66 head metadata; exact-head CI pending |
+| PR status | #66 MERGED; #70 MERGED; #71 OPEN (GitHub draft=false; title still contains [Draft]) |
+| Branch | Historical PR #66 branch; v1.3 updates tracked in the MD-Gsm architecture master v3.0 review PR |
+| Current main SHA at register preparation | b8c672cb70dcb2b274f43f118ac08b2eea8438c5 |
 | Exact-head CI for this register/validator commit | PENDING — must run after all changes including this register and integrity manifest |
 
 ## 1. Authority hierarchy
@@ -52,7 +52,7 @@ The current 7B closure ledger distinguishes policy/disposition closure from posi
 
 ## 4. Implemented Accounting Domain/Application slice
 
-PR #66 contains isolated Accounting.Contracts, Accounting.Domain and Accounting.Application projects.
+PR #66 was merged into main at merge commit a8b9b6fe2a4b91a1d429a29a53558d7102be293c and contains isolated Accounting.Contracts, Accounting.Domain and Accounting.Application projects.
 
 Implemented:
 - Integer-only IRR amount operations and deterministic Largest Remainder allocation.
@@ -95,7 +95,7 @@ Finance Workpaper Structural Validation:
 
 ### Persistence dependency
 - No Accounting SQL schema/migration, persistent Journal/Subledger repository, transactional Posting writer or public Posting API exists in this slice.
-- Migration 0009 is reserved by PR #70 only. PR #70 remains OPEN/DRAFT and has no independent review. No SQL migration may be added or consumed until PR #70 is reviewed and merged into main.
+- PR #70 was merged at b8c672cb70dcb2b274f43f118ac08b2eea8438c5. Migration 0009 is RESERVED in main; no SQL file was created, SQL remains NOT AUTHORIZED, and no database migration was applied.
 - No merge is performed by this work.
 
 ## 7. Gate and release status
@@ -111,9 +111,9 @@ Finance Workpaper Structural Validation:
 
 ## 8. PR and integrity controls
 
-- PR #66 remains OPEN and DRAFT; no merge has occurred.
-- No valid independent approval on the final SHA is recorded.
-- CI must be checked against the exact current head SHA before readiness claims.
+- PR #66 is MERGED. Its merge is not a Posting Release and does not establish PostgreSQL persistence or runtime posting.
+- PR #71 has reviewer approval by mrdeljoe4 on exact head SHA b165e957ff7bf886616de21933018395d76bbff9; this review is limited to PDS v0.2.
+- PR #71 has six successful workflow runs on exact head SHA b165e957ff7bf886616de21933018395d76bbff9; these runs do not prove SQL, PostgreSQL Posting, production readiness or Master acceptance.
 - SHA256SUMS.txt is the integrity manifest for tracked source and workpaper files.
 - Owner approval of design is not implementation acceptance, test acceptance or Posting Release.
 
@@ -123,6 +123,7 @@ Finance Workpaper Structural Validation:
 - v1.0 registered the Inventory stock ownership/source-event proposal v0.1 as a historical snapshot.
 - v1.1 registered OWN-INV-018 v1.0, Inventory contract v0.2 and the three design deliverables.
 - v1.2 registers the internal technical owner review and its blocking actions; no technical owner acceptance or runtime authorization is implied.
+- v1.3 corrects PR #66/#70 merge states, PR #71 draft metadata/review/CI, current main SHA and Migration 0009 authorization boundary; adds the v3.0 master candidate crosswalk.
 
 
 ## 10. FE-01 / FE-02 source contract proposals — owner review pending
@@ -199,7 +200,7 @@ No module-owner technical acceptance has been received by this register. Invento
 
 OWN-INV-018 v1.0 approves INV-EVT-001..018 on 2026-11-18 and resolves D-213 and D-215. The approved policy fixes exclusive Inventory ownership; Organization-owned warehouse/location masters; Variant/SKU stock identity; tracking and dual-IMEI rules; Decimal/UOM governance; type-specific reservations; movement boundaries; Sales/RepairOperations linkage; in-transit transfer custody; return inspection; stocktake; default -2 non-serialized shortage and serialized prohibition; Moving Weighted Average/Specific Identification; True-up; event identity; atomic outbox; PostgreSQL testing; and exact-SHA independent acceptance.
 
-Sales reservation has configurable TTL; Repair reservation has no automatic TTL. Transfers require in-transit custody; Accounting must separately approve the exact COA mapping and Posting Rule. No account code is inferred. All technical acceptance items remain open for Inventory and relevant module owners. No runtime, SQL, migration, API, publisher or grants are added. Migration 0009 remains reserved by PR #70.
+Sales reservation has configurable TTL; Repair reservation has no automatic TTL. Transfers require in-transit custody; Accounting must separately approve the exact COA mapping and Posting Rule. No account code is inferred. All technical acceptance items remain open for Inventory and relevant module owners. No runtime, SQL, migration, API, publisher or grants are added. Migration 0009 is reserved in main after PR #70 merged; SQL remains NOT AUTHORIZED and no migration file exists.
 
 ## 15. Inventory design deliverables
 
@@ -235,7 +236,7 @@ The internal review found seven blocking design parameters/decisions (Decimal/UO
 
 The review does not constitute approval by Organization, Catalog, Purchasing, Sales, RepairOperations, Accounting, Security, Platform/DB or QA. Those owners must explicitly accept their assigned items against exact document versions and SHA. The three design specifications remain proposals. The targeted stocktake cut-off ambiguity is clarified in the technical resolution proposal and test specification; this is not evidence of implementation or PostgreSQL execution.
 
-No architecture master change, runtime, SQL, migration, API, publisher, grant, Posting Rule or release authorization is included. Migration 0009 remains reserved by PR #70. OWN-INV-018 v1.0 remains the business-policy authority.
+No architecture master change, runtime, SQL, migration, API, publisher, grant, Posting Rule or release authorization is included. Migration 0009 is reserved in main after PR #70 merged; SQL remains NOT AUTHORIZED and no migration file exists. OWN-INV-018 v1.0 remains the business-policy authority.
 
 
 ## 18. Inventory technical resolution proposal
@@ -246,4 +247,24 @@ No architecture master change, runtime, SQL, migration, API, publisher, grant, P
 
 The proposal records explicit technical dispositions for INV-REV-01..07: PostgreSQL numeric/UOM precision; configurable Sales reservation TTL; serial/IMEI normalization and active uniqueness; evidence-based landed-cost allocation and True-up; immutable per-observation stocktake cut-off with ordered delta replay; Inventory in-transit custody with GL posting blocked until canonical COA evidence and a separately approved Posting Rule; and provisional valuation for permitted non-serialized shortage. It also records the related ERD/state invariants and test additions INV-T-066..077. A focused correction now requires each physical count observation to capture its own committed per-scope ledger watermark under a consistent database snapshot; reconciliation replays only movements committed after that observation. Test INV-T-078 covers per-observation watermark capture, concurrent movement/count ordering, exclusion of pre-observation movements, and rollback/sequence visibility.
 
-User-confirmed acceptance: the user and Accounting have approved the technical disposition proposal. Separate per-module sign-offs are not required for this design gate. Independent reviewer acceptance remains PENDING and will be recorded by the reviewer after CI/tests complete. In particular, the exact in-transit GL account and Posting Rule are intentionally not selected; absence of canonical evidence is fail-closed. The proposal does not authorize physical schema, SQL, migration, runtime, publisher, grants, Posting Release or operational release. Migration 0009 remains reserved by PR #70.
+User-confirmed acceptance: the user and Accounting have approved the technical disposition proposal. Separate per-module sign-offs are not required for this design gate. Independent reviewer acceptance remains PENDING and will be recorded by the reviewer after CI/tests complete. In particular, the exact in-transit GL account and Posting Rule are intentionally not selected; absence of canonical evidence is fail-closed. The proposal does not authorize physical schema, SQL, migration, runtime, publisher, grants, Posting Release or operational release. Migration 0009 is reserved in main after PR #70 merged; SQL remains NOT AUTHORIZED and no migration file exists.
+
+
+## 19. Verified repository and release status — 2026-11-19
+
+| Item | Verified state | Scope limitation |
+|---|---|---|
+| main | `b8c672cb70dcb2b274f43f118ac08b2eea8438c5` | Current source baseline at register preparation. |
+| PR #66 | MERGED; merge commit `a8b9b6fe2a4b91a1d429a29a53558d7102be293c` | Accounting Foundation projects and controlled workpapers are in main; no Posting Release. |
+| PR #70 | MERGED; merge commit `b8c672cb70dcb2b274f43f118ac08b2eea8438c5` | Migration 0009 reservation is in main; SQL file not created; SQL NOT AUTHORIZED. |
+| PR #71 | OPEN; GitHub metadata `draft=false`; title contains `[Draft]`; head `b165e957ff7bf886616de21933018395d76bbff9` | PDS v0.2 only; not merged; not SQL or Posting authorization. |
+| PR #71 review | APPROVED by `mrdeljoe4` on exact head SHA | Limited to PR #71 changes/PDS v0.2, not this Master document. |
+| PR #71 CI | Six successful runs: Project Charter Owner Gate #44361437434/#44357509586/#44357487928; Windows Preview Installer #44357487917; CodeQL #44357487885; Persons Module Gates #44357487900 | Exact SHA only; no PostgreSQL Posting or production proof. |
+| Accounting Foundation | Implemented within ADR-0018 scope and merged in PR #66 | Persistence, Posting runtime and positive Posting Rules remain unaccepted. |
+| 7B/7C/7D | 39/39 policy dispositions; 78 COA identifiers; 67 Test IDs | Accepted positive Posting Rules = 0; runtime tests NOT RUN / NOT VERIFIED. |
+| Inventory | OWN-INV-018 v1.0 owner-approved business policy | Runtime NOT VERIFIED; tests NOT RUN; operational release NOT GRANTED. |
+| Master v3.0 | Controlled candidate in architecture review PR | v2.5 remains last accepted Master until independent review and document acceptance. |
+
+**Migration 0009 boundary:** PR #70 merge records only a reserved migration slot. It does not create SQL, authorize DDL, permit a disposable or production migration, seed COA, persist journals or enable Posting. Any later SQL requires the separately controlled review/authorization path and applicable architecture gates.
+
+**PDS v0.2 audit note:** the proposed `accounting.audit_events` table conflicts with the single shared AuditEvent owner (AuditSecurity). PDS v0.2 must be revised before design acceptance; no SQL may be created from the current table definition.
