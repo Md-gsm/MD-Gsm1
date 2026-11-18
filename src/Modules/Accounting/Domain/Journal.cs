@@ -63,7 +63,7 @@ public sealed class Journal
         ArgumentNullException.ThrowIfNull(lines);
 
         if (journalId == Guid.Empty || fiscalPeriodId == Guid.Empty || coaSnapshotId == Guid.Empty)
-            throw new ArgumentException("Journal and fiscal period identifiers are required.");
+            throw new ArgumentException("Journal, fiscal period and COA snapshot identifiers are required.");
         if (reversalOfJournalId == Guid.Empty)
             throw new ArgumentException("A reversal reference cannot be an empty identifier.");
         if (string.IsNullOrWhiteSpace(sourceDocumentReference) || string.IsNullOrWhiteSpace(createdBy) ||
