@@ -3,107 +3,134 @@
 | Field | Value |
 |---|---|
 | Document ID | SALES-SOURCE-EVENT-CONTRACT-PROPOSAL-001 |
-| Version | 0.1 |
+| Version | 0.2 |
 | Status | PROPOSAL — OWNER REVIEW REQUIRED |
 | Scope | Source facts required to evaluate FE-01 (sale of goods) |
 | Architecture | MDG-ARCH-MASTER-001 v2.5 |
-| Data ownership | SELL-01 — Sales/Invoice; STK-01 — Inventory movement |
+| Owner decision | OWN-FE-01-02-001 v1.0 — APPROVED POLICY |
+| Data ownership | SELL-01 — Sales/Invoice; STK-01 — Inventory movement and fulfillment |
 
-## 1. Purpose and non-authority
+## 1. Authority and boundary
 
-This proposal defines the minimum source facts that Sales must make addressable to downstream consumers. It does not approve a revenue-recognition policy, a Posting Rule, a debit/credit pair, a tax treatment, or an Accounting integration.
+This proposal translates approved owner policy into a candidate source contract. It is not an accepted module contract, runtime schema, event publisher, Posting Rule or Posting Release.
 
-The Sales module owns the sales document and its lines (SELL-01). Inventory owns committed stock movements and fulfillment evidence (STK-01). A Sales document by itself must not be treated as proof that goods were delivered or that inventory ownership/control transferred.
+The controlling business policy is OWN-FE-01-02-001 v1.0. Sales owns commercial documents, immutable line snapshots, commercial handover acknowledgment and references. Inventory exclusively owns committed stock movements, fulfillment records, stock status and valuation. Sales MUST NOT create, mutate, reverse or independently assert an Inventory movement or fulfillment record.
 
-## 2. Proposed source facts
+## 2. Distinct source facts
 
-The following are proposed event concepts, not currently published runtime events:
+The eventual integration must preserve these as separate facts:
 
-1. `SalesDocumentFinalized` — a versioned, immutable sales document and its finalized line snapshots.
-2. `SalesDocumentVoided` or a separately linked compensating document — only if the Sales owner confirms the supported cancellation lifecycle. A finalized document must not be silently overwritten.
-3. Inventory fulfillment evidence — a reference to the Inventory-owned committed movement/fulfillment record. Sales must not create a parallel stock ledger or claim an Inventory event on Inventory's behalf.
+1. `SalesDocumentFinalized`: immutable commercial document and finalized line snapshots.
+2. Sales commercial handover acknowledgment/reference: evidence that the commercial delivery/recipient step was acknowledged, where the Sales workflow owns that acknowledgment. It is not an Inventory movement.
+3. Inventory-owned committed fulfillment/movement fact: published only by Inventory under its own contract and linked to originating Sales line(s).
+4. Correction, cancellation, return entitlement and commercial reversal: new linked source facts/documents; never silent mutation.
+5. Payment receipt, payment allocation, PSP settlement and refund: distinct payment/settlement facts; none is a substitute for delivery or revenue recognition.
 
-The exact Inventory event name and contract are deliberately not prescribed here; Inventory is the owner and its contract must be reviewed separately.
+Exact event names and schemas remain subject to source-owner approval. The Inventory event name and payload are not prescribed here.
 
-## 3. Proposed event envelope
+## 3. Ownership and linkage
 
-The owner should approve a common envelope before runtime publication:
+- Sales owns SalesDocumentId, SalesDocumentVersion, SalesLineId, commercial pricing/discount snapshots, commercial terms and commercial recipient acknowledgment.
+- Inventory owns FulfillmentId/MovementId, committed movement state, stock disposition, valuation and movement correction/reversal.
+- Each Inventory fulfillment line must reference the originating SalesDocumentId/version and SalesLineId, or an explicitly approved equivalent stable source-line reference.
+- A Sales line may be fulfilled partially or in multiple stages. The relationship must support one SalesLine to many fulfillment lines and, where a committed Inventory fulfillment aggregates multiple source lines, many source lines to one fulfillment aggregate without losing line-level quantities.
+- Sales stores immutable references to Inventory evidence. A missing, uncommitted, reversed or unresolved Inventory reference cannot be represented as completed fulfillment.
 
-| Field | Meaning | Constraint |
-|---|---|---|
-| EventId | Stable source-event identity | Unique and immutable |
-| EventType | Exact event name | Versioned contract vocabulary |
-| ContractVersion | Published schema version | Explicit; never inferred |
-| AggregateId | Sales document identity | Stable opaque identifier |
-| AggregateVersion | Version of the finalized source aggregate | Monotonic within the aggregate |
-| OccurredAtUtc | Time the source fact occurred | UTC instant; not an Accounting RecognitionTime |
-| RecordedAtUtc | Time the source system persisted the event | UTC instant |
-| ActorReference | Authenticated server-side actor reference, where applicable | Never trusted from a client-supplied actor field |
-| CorrelationId / CausationId | Workflow trace references | Opaque identifiers; no credentials |
-| SourceDocumentReference | Stable document reference and version | Must resolve to the immutable source snapshot |
+## 4. Candidate Sales document/line snapshot
 
-Transport, outbox implementation, delivery guarantees and retry protocol require separate platform approval; this proposal does not claim they exist.
+The Sales owner must specify type, nullability, precision and lineage for:
+- SalesDocumentId and immutable SalesDocumentVersion;
+- SalesLineId and stable line version;
+- PartyId (canonical identity reference only);
+- product/catalog and variant references;
+- quantity and UOM;
+- finalized unit price, gross amount, line discount allocation, net amount and currency;
+- document-level discount allocation result and deterministic line allocation evidence;
+- applicable TaxSnapshotReference and source result only when Sales owns the legally determined tax snapshot; otherwise an explicit not-applicable/unresolved state;
+- commercial terms and their effective snapshot;
+- source finalization time and actor reference;
+- links to Inventory-owned fulfillment/movement references, with source versions.
 
-## 4. Proposed finalized sales-line snapshot
+Historical snapshots are never recalculated downstream. No legal rate, account, tax result or valuation is fabricated.
 
-The Sales owner should confirm whether the finalized document can publish these fields, with explicit nullability and source lineage:
+## 5. Revenue and delivery evidence boundary
 
-- SalesDocumentId and SalesDocumentVersion.
-- SalesLineId and stable line version.
-- PartyId reference (Persons remains the identity owner); no copied customer identity.
-- Product/Service catalog reference and variant reference where applicable.
-- Quantity and UOM reference.
-- Finalized unit price, line gross amount, line discount allocation and line net amount, each with explicit currency and precision.
-- Tax snapshot reference/value only when the source Sales document actually owns a legally determined tax result; otherwise an explicit unresolved/no-tax state. No legal rate or tax result is fabricated by this contract.
-- Document finalization status and source timestamp.
-- Link to the Inventory-owned fulfillment/movement reference, once that source contract exists.
+FE-01 source completeness requires all of:
+- immutable Sales document and line snapshots;
+- Inventory-owned committed fulfillment evidence linked to source line and fulfilled quantity;
+- evidence that the relevant goods were delivered and control transferred under the approved commercial policy;
+- approved Pricing/Tax snapshots where applicable;
+- Accounting's separately approved RecognitionTime decision.
 
-The contract must preserve the exact source snapshot. It must not recalculate historical prices, discounts, tax, or quantities downstream.
+SalesDocumentFinalized, invoice issue, payment receipt, payment allocation, PSP settlement, reservation, shipment request, pick-list, uncommitted movement or mere stock decrement alone MUST NOT be substituted for the required delivery/transfer-of-control evidence.
 
-## 5. FE-01 evidence composition
+For cash-at-handover, payment and recognition may occur in the same business operation, but remain distinct source facts and accounting effects. The revenue recognition rule must not assume receipt or PSP settlement.
 
-FE-01 cannot be considered source-complete from `SalesDocumentFinalized` alone. The eventual crosswalk must identify, without inference:
+## 6. Returns, refunds and corrections
 
-- the immutable Sales document/line snapshot;
-- the Inventory-owned committed fulfillment/stock-movement evidence and its ownership/control semantics;
-- the relationship between each fulfilled quantity and the originating SalesLineId;
-- partial, multiple, split, cancelled and reversed fulfillment behavior;
-- source amount basis and any line-level discount/tax allocation;
-- the approved RecognitionTime decision and its owner/source reference.
+- Physical receipt of returned goods, commercial acceptance/return entitlement, revenue/tax reversal, refund, Inventory inspection and stock disposition are separate facts.
+- Sales owns commercial return entitlement and commercial credit/correction documents.
+- Inventory owns returned-item inspection, quarantine/disposition, restock and inventory/valuation effects.
+- A returned item remains unavailable for sellable/ATP stock until Inventory explicitly sets an eligible disposition.
+- Revenue/tax reversal follows the approved commercial return/contractual entitlement decision; inventory restock/COGS effects follow Inventory inspection and disposition. Neither is inferred from the other.
+- Corrections to finalized records are linked new documents/events with source references and reason evidence.
 
-A document issue/finalization timestamp, payment receipt, shipment request, reservation, pick-list, or uncommitted stock operation must not be silently substituted for delivery/fulfillment evidence.
+## 7. Common event envelope requirements
 
-## 6. Identity, idempotency and corrections
+The approved shared policy requires a common envelope with:
+- EventId (stable immutable event identity);
+- EventType and ContractVersion;
+- AggregateId and AggregateVersion;
+- SourceDocumentReference and immutable source version/lineage;
+- OccurredAtUtc and RecordedAtUtc;
+- server-derived ActorReference where an authenticated operator/system actor exists;
+- CorrelationId and CausationId;
+- PartyId where a party reference is relevant;
+- scoped request IdempotencyKey distinct from EventId.
 
-- Party references use canonical PartyId; Sales does not create a parallel customer identity.
-- EventId and source aggregate version must support deterministic duplicate detection.
-- Replays must preserve source identity and must not create duplicate downstream effects.
-- Corrections to finalized documents must be represented through an explicitly linked correction/void/replacement lifecycle approved by the Sales owner; silent mutation is prohibited.
-- No payment instrument, PAN, authentication secret or unnecessary personal data belongs in the event payload.
+RecipientReference and recipient authorization evidence are separate from ActorReference. Monetary fields (Currency, SourceAmount, tax snapshot references) are required only for event types carrying monetary facts; each event schema must declare required/optional/nullability and precision. Non-monetary events do not invent currency or amount.
 
-## 7. Open owner decisions
+Same event/request identity with a different canonical payload fails closed. Corrections use new linked identities. Retries preserve original identity and do not duplicate effects.
 
-| ID | Decision required | Owner | Status |
+## 8. Outbox and delivery semantics
+
+The approved shared policy requires source document/fact, audit record and Outbox record to be committed atomically within the owning database transaction. Publication occurs only after commit. Delivery is at-least-once; consumers are idempotent and deduplicate using stable event identity and validated payload. Retry reuses the original EventId and does not create a new business fact. No exactly-once transport guarantee is claimed.
+
+This section is a normative requirement for the eventual design, not evidence that Sales or platform runtime currently implements it.
+
+## 9. Owner acceptance register
+
+| ID | Required acceptance | Owner | Status |
 |---|---|---|---|
-| SALES-EVT-001 | Confirm SalesDocumentFinalized semantics and immutable line snapshot | Sales | OPEN |
-| SALES-EVT-002 | Confirm cancellation/correction lifecycle and event identity | Sales | OPEN |
-| SALES-EVT-003 | Confirm line-level price/discount/amount precision and currency contract | Sales + Pricing | OPEN |
-| SALES-EVT-004 | Confirm tax snapshot ownership and TaxMode interaction | Sales + Tax | OPEN |
-| SALES-EVT-005 | Confirm Inventory fulfillment reference contract and partial/reversal behavior | Inventory + Sales | OPEN |
-| SALES-EVT-006 | Approve envelope, event versioning, outbox and replay semantics | Sales + Platform Architecture | OPEN |
-| SALES-EVT-007 | Approve whether any event/time is a source for FE-01 RecognitionTime | Sales + Accounting owner | OPEN |
+| SALES-EVT-001 | Finalization semantics, aggregate identity and immutable line snapshot | Sales | OPEN |
+| SALES-EVT-002 | Cancellation, correction, return-entitlement and credit-document lifecycle | Sales | OPEN |
+| SALES-EVT-003 | Price, discount, currency, precision and deterministic rounding contract | Sales + Pricing | OPEN |
+| SALES-EVT-004 | Tax snapshot ownership, reference and effective TaxMode interaction | Sales + Tax | OPEN |
+| SALES-EVT-005 | Sales-to-Inventory source-line linkage and partial fulfillment behavior | Sales + Inventory | OPEN |
+| SALES-EVT-006 | Envelope, versioning, idempotency and outbox implementation design | Sales + Platform Architecture | OPEN |
+| SALES-EVT-007 | Source evidence and RecognitionTime mapping for FE-01 | Sales + Accounting | OPEN |
+| SALES-EVT-008 | Recipient acknowledgment and authorized representative evidence | Sales + Persons/Security | OPEN |
 
-## 8. Acceptance criteria before publication
+Business policy approval OWN-FE-01-02-001 is recorded; it does not substitute for these technical/data-owner acceptances.
 
-1. Sales owner signs off event semantics, aggregate identity and immutable snapshot.
-2. Inventory owner supplies its own committed-movement/fulfillment contract; Sales only references it.
-3. All fields have type, nullability, precision, identity and versioning rules.
-4. Partial fulfillment, cancellation, correction, replay and duplicate-delivery cases are specified.
-5. Contract tests prove source payload stability and reference integrity.
-6. Accounting separately approves the FE-01 source crosswalk and RecognitionTime. This proposal itself grants no posting permission.
+## 10. Acceptance criteria before publication
 
-## 9. Current implementation status
+1. Sales owner accepts aggregate, finalization, commercial handover, immutable line snapshot and correction semantics.
+2. Inventory owner independently publishes/accepts committed fulfillment/movement contract and source-line linkage.
+3. Pricing and Tax owners approve snapshot ownership, precision, rounding and effective-rule references.
+4. Per-event schema specifies types, nullability, precision, identity and version compatibility.
+5. Partial fulfillment, returns, corrections, duplicate delivery, retry and replay are contract-tested.
+6. Accounting approves FE-01 source crosswalk and RecognitionTime separately.
+7. Runtime implementation, PostgreSQL atomicity/idempotency tests and independent review pass on exact commit.
 
-No Sales module runtime contract, event publisher, outbox, adapter or Accounting integration is created by this proposal. No positive FE-01 Posting Rule is accepted. FE-01 remains `BLOCKED`; Posting Release remains NOT GRANTED.
+## 11. Status
+
+- Owner policy: APPROVED — OWN-FE-01-02-001 v1.0.
+- Sales technical contract: PROPOSAL — OWNER REVIEW REQUIRED.
+- Inventory contract: NOT STARTED.
+- Runtime Sales event/outbox/adapter: NOT IMPLEMENTED / NOT VERIFIED.
+- FE-01: BLOCKED.
+- Accepted positive Posting Rules: 0.
+- Posting Release: NOT GRANTED.
 
 **End of proposal.**
