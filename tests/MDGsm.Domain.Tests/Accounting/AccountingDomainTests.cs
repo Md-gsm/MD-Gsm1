@@ -311,7 +311,7 @@ public sealed class AccountingDomainTests
             new HashSet<string>(StringComparer.Ordinal), false);
 
         var attributes = new CanonicalAccountAttributes(
-            "Test account", null, 1, nature.ToString(), null, 0, "NONE",
+            "Test account", null, 1, nature.ToString(), "NONE", 0, "NONE",
             "SOURCE_DOCUMENT_FINALIZED", "NOT_REQUIRED", "NOT_REQUIRED", "TEST_MAPPING",
             "test-source", "test-decision", "test-cr", 1, "test-audit", null);
 
