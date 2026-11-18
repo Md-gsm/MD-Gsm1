@@ -128,7 +128,7 @@ for token in (
     "Controlled Document Register — Version 0.7",
     "MDG-WP06-7B-POSTING-RULE-CLOSURE-001 | v0.2",
     "Accepted positive Posting Rules: 0",
-    "Source-event contract proposals are owner-review drafts; no runtime event contract is published",
+    "PROPOSAL — OWNER REVIEW REQUIRED", "FE-01: BLOCKED", "FE-02: BLOCKED", "No Sales runtime module",
     "Posting Release | NOT GRANTED",
 ):
     if token not in register:
@@ -143,7 +143,7 @@ for token in (
         fail(f"Sales source-event proposal missing required control: {token}")
 for token in (
     "RepairTechnicalCompletionRecorded", "RepairOrderHandedOver",
-    "not automatically Accounting RecognitionTime", "PROPOSAL — OWNER REVIEW REQUIRED",
+    "Accounting must not infer RecognitionTime", "PROPOSAL — OWNER REVIEW REQUIRED",
 ):
     if token not in repair_proposal:
         fail(f"RepairOperations source-event proposal missing required control: {token}")
