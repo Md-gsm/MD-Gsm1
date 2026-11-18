@@ -7,7 +7,7 @@
 | Version | 1.2 |
 | Classification | CONTROLLED REGISTER / IMPLEMENTATION STATUS |
 | Status | DRAFT — CURRENT REGISTER FOR PR #66 |
-| Supersedes | v1.0; prior versions retained as historical snapshots |
+| Supersedes | v1.1; prior versions retained as historical snapshots |
 | Architecture baseline | MDG-ARCH-MASTER-001 v2.5 |
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
 | PR | #66 — OPEN / DRAFT |
