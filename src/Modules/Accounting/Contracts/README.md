@@ -6,4 +6,4 @@ Domain, Application, or Infrastructure internals.
 
 Current contract version: 1.0.
 
-The initial implementation slice publishes no external posting command yet.
+No public posting command is published until Accounting transactional persistence, event contracts and acceptance tests are complete.
