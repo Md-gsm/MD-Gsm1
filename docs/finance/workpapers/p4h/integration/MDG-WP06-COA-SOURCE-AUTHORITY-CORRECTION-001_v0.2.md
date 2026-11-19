@@ -59,3 +59,11 @@
 - Posting Release: NOT GRANTED.
 
 این اصلاحیه هیچ حساب یا Posting Rule را فعال نمی‌کند و هیچ مجوز ادغام یا ثبت مالی صادر نمی‌کند.
+
+## Owner-accepted v3.0.3 authority correction — 2026-11-20
+
+The accepted architecture baseline is MDG-ARCH-MASTER-001 v3.0.3; all prior references in this correction to v2.5 as the current accepted architecture are historical and superseded.
+
+The active COA hierarchy under v3.0.3 is: COA v1.2 master coding/GL authority; COA v1.5 controlled supplementary reconstruction/crosswalk; COA v1.4 historical/superseded for current supplementary authority; COA v1.3 intermediate only. The original canonical nine-sheet COA source and independent Part 4H-6 remain unrecovered. The v1.5 reconstruction hash recorded by v3.0.3 U.1 is `b21bb4a9999f6b503c9e3c215a3b5db6029d659a17587e8f7359280c9450e3f8`; this hash proves the identified reconstruction file, not recovery of the original source.
+
+The 78-ID scope remains 76 base codes + 2114 + 5106; 110809 is prohibited. Only parent relations explicitly recorded in v3.0.3 may be used: 110302→1103, 610801→6108, 620201→6202. No prefix inference. Canonical attributes remain partial/open wherever no source/owner decision explicitly sets them. Positive 7B Posting Rules remain 0; 7D 67 Test IDs are not runtime evidence. Gate B-final remains OPEN; Posting Release NOT GRANTED.
