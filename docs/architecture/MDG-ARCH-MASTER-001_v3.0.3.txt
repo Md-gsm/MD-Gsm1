@@ -107,13 +107,12 @@
 ‫ سند یکپارچه مرجع معماری و حسابداری‬MD-Gsm
 Unified Architecture & Accounting Blueprint — Version 3.0.3
 
-‫شناسه مرجع‬: MDG-ARCH-MASTER-001 3.0.3 :‫ — نسخه‬Controlled Integrated Master Candidate (O-65 Owner
-Decision Approved; Technical, Independent Review and Document Acceptance Gates Remain) ‫ نوامبر‬19 :‫تاریخ‬
+‫شناسه مرجع‬: MDG-ARCH-MASTER-001 3.0.3 :‫ — نسخه‬Accepted Master Architecture Baseline — Owner Accepted v3.0.3; implementation and release gates remain independent ‫ نوامبر‬19 :‫تاریخ‬
 
-‫ وضعیت‬2026: CONTROLLED MASTER CANDIDATE — O-65 OWNER DECISION APPROVED ON 2026-11-19;
-INDEPENDENT REVIEW AND DOCUMENT ACCEPTANCE PENDING; v2.5 REMAINS LAST ACCEPTED BASELINE
+‫ وضعیت‬2026: OWNER-ACCEPTED MASTER BASELINE — v3.0.3 ACCEPTED BY EXPLICIT OWNER DIRECTIVE ON 2026-11-20;
+PRIOR VERSIONS ARE HISTORICAL REFERENCES ONLY. IMPLEMENTATION, INDEPENDENT TECHNICAL REVIEW, TEST, RELEASE AND GO-LIVE GATES REMAIN SEPARATE;
 
-UNTIL FORMAL ACCEPTANCE; ADR-0018 ACCOUNTING FOUNDATION SCOPE IMPLEMENTED; DATABASE DDL /
+ ADR-0018 ACCOUNTING FOUNDATION SCOPE IMPLEMENTED; DATABASE DDL /
 
 PRODUCTION MIGRATION / POSTING RELEASE / GO-LIVE NOT AUTHORIZED. ‫مبنای معماری‬: v2.5 ‫آخرین خط‌مبنای‬
 
@@ -1739,6 +1738,27 @@ DocumentFile
 ‫مدیر عملیاتی برای عملیات معمول مالی‪/‬تجاری از تأیید دوم ‪ System Manager.‬کاربر عملیاتی مالی است نه‬
 ‫‪.‬و کنترل‌های داخلی را حذف نمی‌کند ‪، Audit‬معاف است؛ این معافیت‬
 
+
+‫تصمیم تکمیلی مالک — O-25 (پذیرفته‌شده در ۲۰۲۶-۱۱-۱۹)‬
+
+‫مدل هویت و نقش مالک‬
+‫مالک سامانه فقط یک حساب کاربری واحد دارد. همین حساب، نقش‌های OWNER، GENERAL_MANAGER و SYSTEM_MANAGER را به‌صورت هم‌زمان در خود جمع می‌کند؛ برای این سه عنوان، حساب یا هویت جداگانه‌ای برای مالک ساخته نمی‌شود.‬
+
+‫مدل نقش و مجوز‬
+‫نقش‌های پیش‌فرض، الگوهای آغازین دسترسی‌اند و سقف یا محدودیت غیرقابل‌تغییر مجوزها نیستند. مجوز هر کاربر می‌تواند مستقل از عنوان شغلی او، به‌صورت فردی فعال یا غیرفعال شود؛ هر تغییر باید تابع اختیار مالک و کنترل‌های امنیتی باشد.‬
+
+‫ماتریس مجوز‬
+‫ماتریس نهایی در سطح هر منبع/عملیات و دامنه داده تعریف می‌شود و دست‌کم این عملیات را جداگانه پوشش می‌دهد: READ، CREATE، EDIT/UPDATE، FINALIZE، APPROVE، REVERSE، EXPORT و CONFIGURE. دامنه داده نیز باید صریح باشد و به‌صورت ضمنی از نقش استنتاج نشود.‬
+
+‫اعمال سمت سرور و چرخه حساب‬
+‫تمام مجوزها در سمت سرور enforce می‌شوند؛ کنترل رابط کاربری به‌تنهایی کنترل امنیتی محسوب نمی‌شود. غیرفعال‌کردن حساب، ورود و ایجاد نشست را متوقف می‌کند؛ غیرفعال‌کردن یک مجوز فقط همان عملیات را مسدود می‌کند و سایر مجوزهای حساب را تغییر نمی‌دهد.‬
+
+‫ممیزی و تفکیک وظایف‬
+‫هر تغییر مجوز باید با مقدار قبل و بعد، عامل تغییر، زمان و دلیل ثبت ممیزی شود. ترکیب نقش‌های مالک، اصل تفکیک وظایف را حذف نمی‌کند: ایجادکننده نمی‌تواند سند خود را تأیید کند و تأییدهای مستقل الزامی باید توسط حساب جداگانه و مستقل انجام شوند. داشتن نقش SYSTEM_MANAGER به‌تنهایی هیچ اختیار تجاری یا مالی ایجاد نمی‌کند. مشاهده گزارش، خروجی‌گرفتن و دسترسی به داده‌های حساس نیز مجوزهای جداگانه‌اند.‬
+
+‫وضعیت تصمیم‬
+‫O-25 از نظر سیاست و طراحی مالک پذیرفته‌شده است؛ پیاده‌سازی ماتریس نهایی، آزمون‌های Role/Permission/RowScope، آزمون دسترسی گزارش و Export و شواهد سمت سرور همچنان پیش‌نیاز بستن Gate C هستند. این تصمیم به‌تنهایی ادعای پیاده‌سازی، قبولی آزمون یا عبور از Gate نیست.‬
+
 ‫و تأیید مستقل ‪۱۶٫۶ D-038‬‬
 ‫‪ Year‬دوره و ‪ Hard Close‬تأیید دوم برای عملیات تجاری‪/‬مالی عادی مدیر پیش‌شرط نیست‪ .‬با این حال‪ ،‬بازگشایی‬
 ‫همیشه و بدون استثنا نیازمند تأیید دوم مستقل از درخواست‌کننده است؛ این کنترل از معافیت عمومی ‪Close‬‬
@@ -2373,9 +2393,9 @@ LEGAL/PRIVACY OPEN
 
 ‫عملیاتی و دسترسی گزارش ‪Permission Matrix‬‬
 
-‫‪SECURITY/PRODUCT DESIGN‬‬
+‫OWNER_APPROVED / IMPLEMENTATION & TEST OPEN‬‬
 
-‫تکمیل و آزمون شو ‪Role/Seat/Report access‬‬
+‫تکمیل ماتریس ‪Role/Permission/RowScope‬ و آزمون‌های دسترسی گزارش و Export؛ پیش‌نیاز بستن Gate C‬
 
 ‫‪O-26‬‬
 
