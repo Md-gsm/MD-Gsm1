@@ -12585,3 +12585,32 @@ FE/PostingRule, software tests and release evidence OPEN.
 
 END OF R.7 OWNER-APPROVED INTEGRATION OVERLAY
 ===============================================================================
+
+## B-FINAL ACCOUNTING / COA CLOSURE OVERLAY — 2026-11-20
+
+**Controlling architecture:** MDG-ARCH-MASTER-001 v3.0.3 (owner-accepted). Any reference in older workpaper text to v2.5 as the current accepted architecture is historical and superseded. The v3.0.3 master governs conflicts.
+
+**Current COA authority:** COA v1.2 remains the master coding/GL authority. COA v1.5 is the controlled supplementary reconstruction/crosswalk recognized by v3.0.3. COA v1.4 is historical/superseded for current supplementary authority; v1.3 is intermediate only. The original canonical nine-sheet source and independent Part 4H-6 are not recovered; no claim of original-source recovery or complete canonical COA is made. COA v1.5 SHA-256 recorded in v3.0.3 U.1: b21bb4a9999f6b503c9e3c215a3b5db6029d659a17587e8f7359280c9450e3f8.
+
+### Owner-approved accounting rules incorporated
+
+1. Monetary base is integer IRR with a minimum unit of 1 IRR. No separate monetary threshold per row exists. Round the exact algebraic document total once using AwayFromZero; maximum absolute document rounding difference is 1 IRR. Do not independently round raw rows and then sum them.
+2. Mixed-sign allocation follows O-65 / CHG-100 exactly: D is the one-time rounded exact signed document net; P is the one-time rounded exact positive-pool total; N=P-D is derived; allocate positive P and absolute negative N separately by exact-rational Largest Remainder with deterministic canonical row-ID tie-break; restore negative signs; preserve destination-account identity and allocation scope; zero rows receive zero; allocations sum exactly to D; ambiguity fails closed. This is policy approval, not Posting Rule or release approval.
+3. 4107 is rounding gain and 5106 rounding loss, but both remain DESIGN ONLY for Posting until canonical attributes, collision/namespace checks, eligibility, FE mapping, Posting Rules and tests are complete. In particular 5106 is not authorized for Posting.
+4. 2114 is the owner-defined liability for service received and accepted with a demonstrable obligation but not yet invoiced. It remains DESIGN ONLY / NO POSTING until its canonical attributes and FE-20 contract are complete; 2110 is not a substitute.
+5. 110809 is PROHIBITED. 110807, 2102, 2106, 620201, 6204 and 6205 remain inactive/prohibited for new R1 posting as specified in v3.0.3. 110801 is the sole GL inventory control; 110802–110806 are inventory subledger categories, not independent GL controls.
+6. Explicit Parent relationships only: 110302→1103, 610801→6108, 620201→6202. No parent/level may be inferred from code prefixes or titles.
+7. O-09 high-value sales approval remains a separate authorization threshold and is not a rounding threshold.
+8. RecognitionTime is an Accounting decision and must come from an approved source event/contract; it must not be inferred from invoice, payment, occurrence or status timestamps. Receipt, allocation, settlement, revenue recognition, inventory movement, COGS, tax and refund remain separate events/rules.
+9. TaxMode=0 means no Tax Line or tax Posting through UI/API/manual/import/integration/retry; it is not a legal declaration of exemption. Positive TaxMode requires an accepted Tax Matrix and legal evidence.
+10. SOFT_CLOSED/HARD_CLOSED/YEAR_CLOSED behavior follows O-51; hard/year reopen requires documented request and independent approval. Close policy does not itself provide posting eligibility.
+
+### B-final disposition
+
+- **Closed at owner-policy/design disposition level:** rounding basis and mixed-sign allocation; time-zone semantics; period close/reopen semantics; O-64 shortage-threshold authority mapping; owner-approved account dispositions explicitly listed above.
+- **Still blocking B-final positive Posting Rules:** complete source-event contracts and RecognitionTime for each FE; both debit and credit rules with conditions; AmountBasis/CostBasis; canonical eligibility and account attributes; Subledger/dimensions; tax treatment; PostingIdentity/idempotency; reversal; period; atomicity/retry; authorization/audit; linked test cases and evidence.
+- **7B:** 39/39 event dispositions remain covered, but accepted positive Posting Rules remain 0. No event is promoted to POSTABLE by this overlay.
+- **7C:** 78 identifiers remain in scope (76 base + 2114 + 5106); 110809 prohibited. Canonical attributes without an authoritative source/owner decision remain NOT VERIFIED / NOT SPECIFIED and block Posting. The missing original nine-sheet COA and Part 4H-6 cannot be reconstructed by inference.
+- **7D:** 67 test IDs are design/traceability identifiers, not execution evidence. PostgreSQL transactional Posting, GL/Subledger reconciliation, tax-channel enforcement and end-to-end tests remain NOT RUN unless exact-head evidence is separately recorded.
+
+**Gate status:** B-final remains OPEN. Gate C/implementation and Gate D/evidence remain independently OPEN. Posting Release, production migration and Go-Live are NOT GRANTED. This overlay closes policy conflicts and updates authority; it does not falsely close technical/source gaps.
