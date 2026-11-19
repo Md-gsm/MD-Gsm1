@@ -268,3 +268,14 @@ User-confirmed acceptance: the user and Accounting have approved the technical d
 **Migration 0009 boundary:** PR #70 merge records only a reserved migration slot. It does not create SQL, authorize DDL, permit a disposable or production migration, seed COA, persist journals or enable Posting. Any later SQL requires the separately controlled review/authorization path and applicable architecture gates.
 
 **PDS v0.2 audit note:** the proposed `accounting.audit_events` table conflicts with the single shared AuditEvent owner (AuditSecurity). PDS v0.2 must be revised before design acceptance; no SQL may be created from the current table definition.
+
+## Current authority/status correction — 2026-11-20
+
+- Sole accepted architecture baseline: MDG-ARCH-MASTER-001 v3.0.3. References in prior register text to v2.5 as the last accepted baseline are historical and superseded.
+- COA hierarchy: v1.2 master; v1.5 controlled supplementary reconstruction/crosswalk under v3.0.3; v1.4 historical/superseded for current supplementary authority; v1.3 intermediate only. Original canonical nine-sheet source and Part 4H-6 remain unrecovered.
+- 7B: 39/39 event dispositions; 0 accepted positive Posting Rules; B-final remains OPEN.
+- 7C: 78 IDs in scope; canonical attributes remain partial/open; 110809 prohibited; 2114 and 5106 DESIGN ONLY / NO POSTING until qualified.
+- 7D: 67 Test IDs specified; this is not runtime test PASS or evidence acceptance.
+- Integer IRR base = 1 Rial; one-time document-total AwayFromZero; max 1 IRR per document; no per-row monetary threshold.
+- O-65/CHG-100 mixed-sign allocation is owner-approved policy, not Posting/Release approval.
+- Gate C/D and Posting Release remain open/not granted.
