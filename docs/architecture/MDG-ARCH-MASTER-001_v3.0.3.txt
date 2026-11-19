@@ -12395,3 +12395,193 @@ PG-09
 
 
                                        ‫‪ 251‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+
+
+===============================================================================
+R.7 — OWNER-APPROVED INTEGRATION OVERLAY
+CHG-050 / CHG-071 / CHG-083 / CHG-091 / CHG-092 / CHG-099 / CHG-100
+Baseline: MDG-ARCH-MASTER-001 v3.0.3
+Authority: explicit owner decisions recorded through 2026-11-20
+===============================================================================
+
+CONTROL AND PRECEDENCE
+This section is the controlling integration record for the seven CHG items
+listed above. It is part of the v3.0.3 accepted master baseline. Where an older
+paragraph, table cell, status, or historical proposal in this document conflicts
+with this overlay, this overlay controls. Historical text is retained only as
+history and must not be interpreted as a current requirement. This integration
+does not by itself authorize implementation release, database DDL, production
+migration, posting, or go-live. Decision approval, design completion,
+implementation, test, evidence, gate, legal review, and release remain separate
+statuses.
+
+CHG-050 — DOCUMENT-LEVEL ROUNDING (OWNER-APPROVED POLICY)
+1. Monetary storage and the rounding base are integer IRR; the minimum monetary
+   unit is 1 Rial. The previously mentioned 100,000 IRR threshold is deleted
+   and must not appear as a rounding threshold or minimum.
+2. The authoritative document amount is calculated from the exact algebraic
+   total and rounded once, at document-total level, using MidpointRounding
+   AwayFromZero.
+3. The maximum absolute difference attributable to this one-time document
+   rounding is 1 IRR per document. There is no independent per-line rounding
+   threshold and no separate row-by-row rounding followed by summation.
+4. Any subsequent allocation of the already-rounded document amount is an
+   allocation operation, not a second monetary rounding policy. For mixed-sign
+   documents, the approved two-pool allocation contract is specified under
+   CHG-100 / O-65. It must not alter the document total D.
+5. Rounding gain/loss account treatment remains subject to the controlled
+   account mapping and applicable Posting Rules; 5106 remains DESIGN ONLY
+   pending its independent technical/accounting qualification. This decision
+   does not authorize Posting to 4107 or 5106.
+6. The separate O-09 high-value sales approval threshold is not a rounding
+   threshold and is not changed by this CHG.
+Status: OWNER-APPROVED POLICY; implementation, FE/PostingRule mapping and
+software/runtime evidence remain independently open.
+
+CHG-071 — BUSINESS TIME, CALENDAR AND TIMEZONE
+1. The business timezone is the IANA zone Asia/Tehran.
+2. Technical timestamps are stored and exchanged in UTC. Conversion to local
+   business time is performed using the centrally configured Asia/Tehran zone,
+   not the client machine's timezone or clock.
+3. Operational BusinessDate is derived using the central server's
+   Asia/Tehran-local time. The Persian calendar is the presentation/calendar
+   convention in the user interface; it does not change the underlying
+   Gregorian/UTC technical representation.
+4. Date-only business values are calendar dates and must not shift because of
+   timezone conversion. They are not timestamps and must not be serialized or
+   interpreted as UTC instants.
+5. The central server is the trusted time source and must be synchronized with
+   a reliable time service. Client clock values are untrusted for expiry,
+   ordering, audit, or financial cut-off decisions.
+6. The official CalendarDay source/ownership and deployment evidence remain an
+   explicit open dependency (O-15); this CHG does not invent or approve a
+   statutory calendar source.
+Status: OWNER-APPROVED TIMEZONE/TIME SEMANTICS; CalendarDay source, deployment
+configuration and boundary tests remain open.
+
+CHG-083 — SOFT CLOSE / HARD CLOSE / YEAR CLOSE AND REOPEN
+1. OPEN is the normal operating state.
+2. SOFT_CLOSED blocks ordinary document finalization and ordinary posting.
+   Only documented closing adjustments may proceed, through a dedicated,
+   explicitly authorized closing route and the required accounting permission.
+   SOFT_CLOSED is not equivalent to OPEN and must not silently permit ordinary
+   transactions.
+3. HARD_CLOSED prohibits new financial entries for the closed period. Reopening
+   requires a documented request, a reason, and independent second-person
+   approval; the requester/initiator cannot provide the independent approval.
+4. YEAR_CLOSED is a distinct stronger state and is not interchangeable with
+   HARD_CLOSED. Reopening a year-closed period retains the documented request
+   and independent approval requirement, plus any applicable legal/accounting
+   controls.
+5. A SOFT_CLOSED-to-OPEN transition requires the designated permission,
+   documented reason, actor, timestamp, before/after state, and immutable audit
+   record. A user cannot bypass period state by changing a client clock or
+   submitting through another ordinary workflow.
+6. Closing adjustments must be distinguishable from ordinary entries and
+   traceable to the closing event and authorizing actor(s).
+Status: OWNER-APPROVED STATE AND AUTHORITY POLICY; detailed transition matrix,
+server enforcement, concurrency behavior, accounting route tests and evidence
+remain open. No period is considered tested or released by this policy alone.
+
+CHG-091 — AUTHORITY TO CONFIGURE NEGATIVE-STOCK SHORTAGE LIMIT (O-64)
+1. The permission is the granular capability
+   Inventory.ShortageThreshold.Configure. It is not inferred merely from a
+   display title such as “Manager”.
+2. The default role preset for this permission is GENERAL_MANAGER. Role presets
+   are defaults, not permission ceilings; individual permission overrides are
+   possible only under owner authority and the project's access-control and
+   audit safeguards.
+3. SYSTEM_MANAGER alone does not receive this business permission and must not
+   gain it merely by virtue of technical/system administration authority.
+4. Every change to the shortage threshold requires server-side authorization,
+   an explicit reason, actor identity, timestamp, before/after values, and an
+   immutable audit record. The effective permission and data scope are checked
+   server-side for every relevant command.
+5. This permission governs configuration of the threshold only. It does not
+   remove the product restrictions: serialized/IMEI-tracked goods remain
+   ineligible for negative stock; their shortage limit remains zero. The
+   approved defaults and other constraints in section 8.2 continue to apply.
+6. Negative-stock sales/consumption remain disabled until all required
+   Inventory/ATP/Settlement/Finance contracts, controls and tests pass their
+   applicable gates. Approval of the role authority does not enable the
+   feature or authorize posting.
+Status: OWNER-APPROVED AUTHORITY MAPPING; implementation, access-control tests,
+audit evidence and negative-stock enablement gate remain open.
+
+CHG-092 — TECHNICAL TWO-POOL ALLOCATION PROPOSAL
+The earlier CHG-092 text was a technical proposal for positive/negative pools,
+Largest Remainder allocation and canonical tie-breaking. It was not, at the
+time of proposal, an owner-approved policy and must not be cited as the source
+of authority. Its proposed mechanism is now superseded and controlled only to
+the extent expressly approved by O-65 / CHG-100 below. No additional behavior
+may be inferred from the historical CHG-092 proposal.
+Status: SUPERSEDED AS AN INDEPENDENT PROPOSAL; the controlling policy is
+CHG-100 / O-65. Any implementation detail beyond that approved contract
+requires separate technical specification and review.
+
+CHG-099 — HISTORICAL UNAPPROVED PROPOSAL STATUS
+CHG-099 recorded the separation of the technical mixed-sign allocation proposal
+from owner policy and correctly left the decision open at that historical
+point. That status is superseded by the explicit owner approval recorded as
+O-65 / CHG-100 on 2026-11-19. CHG-099 remains historical traceability only; it
+must not continue to describe O-65 as awaiting owner approval or imply that the
+two-pool contract is unapproved.
+Status: SUPERSEDED BY CHG-100 / O-65. No independent policy authority.
+
+CHG-100 — O-65 OWNER-APPROVED MIXED-SIGN ALLOCATION CONTRACT
+Decision status: OWNER_APPROVED / CLOSED as an owner policy decision, dated
+2026-11-19. This approval does not constitute implementation approval, software
+test PASS, Posting Rule approval, Posting authorization, Release, or Go-Live.
+
+For a single document and a single approved monetary basis:
+1. D is the document amount: calculate the exact algebraic sum of all eligible
+   signed source rows and apply AwayFromZero once to that exact net total.
+   This is the existing document-level rounding rule and is unchanged.
+2. P is the positive-pool allocation target: calculate the exact sum of eligible
+   positive source rows and apply AwayFromZero once. P is an internal allocation
+   target; it is not a second document total.
+3. N is derived as N = P - D. Do not independently round the exact negative-row
+   pool to produce N.
+4. Allocate P among positive rows and N among the absolute values of negative
+   rows separately, using exact rational weights and the Largest Remainder
+   method. Restore the negative sign to negative-row allocations after
+   allocating their absolute values.
+5. Use a deterministic canonical row identifier as the tie-break key. The
+   ordering and tie-break behavior must be deterministic and invariant to input
+   row ordering.
+6. Preserve each row's destination account identity and allocation scope.
+   Rows with different destination accounts must not be blended into one
+   allocation pool merely because they belong to the same document.
+7. Zero-value rows receive zero allocation. The final signed allocations must
+   sum exactly to D. If source scope, destination account, eligible row set,
+   or allocation basis is ambiguous, fail closed; do not guess or silently
+   redistribute.
+8. Separate documents, events, and distinct economic bases remain separate.
+   This contract does not authorize netting across documents or unrelated
+   events.
+9. The one-time document-level AwayFromZero rounding policy, integer-IRR base,
+   and maximum one-IRR per-document rounding difference remain unchanged.
+   The deleted 100,000 IRR threshold is not restored.
+10. The separate O-09 high-value sales approval threshold remains independent
+    and unchanged.
+
+Implementation boundary:
+- Reference arithmetic/model evidence is not application/runtime evidence.
+- FE-specific semantics, Posting Rules, account qualification (including
+  5106), C#/database/journal implementation, migration, and production
+  behavior require their own review, tests and evidence.
+- No DDL, migration, COA seed/import, Posting Release, production migration,
+  or Go-Live is authorized by O-65 alone.
+
+CROSSWALK STATUS RECONCILIATION
+CHG-050: OWNER-APPROVED POLICY; implementation and posting evidence OPEN.
+CHG-071: OWNER-APPROVED TIME SEMANTICS; CalendarDay source and deployment tests OPEN.
+CHG-083: OWNER-APPROVED CLOSE/REOPEN POLICY; transition matrix and tests OPEN.
+CHG-091: OWNER-APPROVED O-64 AUTHORITY MAPPING; enforcement/tests OPEN.
+CHG-092: SUPERSEDED AS AN INDEPENDENT PROPOSAL; refer to CHG-100.
+CHG-099: SUPERSEDED BY O-65 / CHG-100; historical only.
+CHG-100: OWNER_APPROVED / CLOSED for the owner decision; technical implementation,
+FE/PostingRule, software tests and release evidence OPEN.
+
+END OF R.7 OWNER-APPROVED INTEGRATION OVERLAY
+===============================================================================
