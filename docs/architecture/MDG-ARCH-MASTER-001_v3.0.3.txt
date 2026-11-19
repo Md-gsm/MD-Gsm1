@@ -12417,8 +12417,7 @@ statuses.
 
 CHG-050 — DOCUMENT-LEVEL ROUNDING (OWNER-APPROVED POLICY)
 1. Monetary storage and the rounding base are integer IRR; the minimum monetary
-   unit is 1 Rial. The previously mentioned 100,000 IRR threshold is deleted
-   and must not appear as a rounding threshold or minimum.
+   unit is 1 Rial. No independent monetary threshold applies at row level.
 2. The authoritative document amount is calculated from the exact algebraic
    total and rounded once, at document-total level, using MidpointRounding
    AwayFromZero.
@@ -12561,7 +12560,7 @@ For a single document and a single approved monetary basis:
    events.
 9. The one-time document-level AwayFromZero rounding policy, integer-IRR base,
    and maximum one-IRR per-document rounding difference remain unchanged.
-   The deleted 100,000 IRR threshold is not restored.
+   No independent monetary threshold applies at row level.
 10. The separate O-09 high-value sales approval threshold remains independent
     and unchanged.
 
