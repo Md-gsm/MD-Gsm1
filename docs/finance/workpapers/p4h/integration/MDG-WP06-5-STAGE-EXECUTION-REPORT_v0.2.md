@@ -159,3 +159,11 @@
 - PostgreSQL Accounting persistence، transactional Posting writer و Posting API در این برش وجود ندارد.
 
 O-01 و Gate 3/4 باز می‌مانند؛ Evidence پذیرفته نشده و Posting Release صادر نشده است.
+
+## Controlling status correction — 2026-11-20
+
+This report's earlier architecture and COA authority statements are historical. The current accepted architecture is MDG-ARCH-MASTER-001 v3.0.3. Current COA authority is v1.2 master + v1.5 controlled supplementary reconstruction/crosswalk; v1.4 is historical/superseded for current supplementary authority and v1.3 is intermediate only. Original canonical nine-sheet source and Part 4H-6 remain unrecovered.
+
+The monetary base is 1 IRR; one-time document-total AwayFromZero rounding; maximum absolute rounding difference 1 IRR per document; no independent per-row threshold. O-65 / CHG-100 mixed-sign allocation is owner-approved policy, not a positive Posting Rule. O-09 remains separate.
+
+The current decision/policy layer is reconciled, but the following are not closed: 7B positive Posting Rules (0 accepted), 7C canonical attributes and source/namespace evidence, 7D runtime PostgreSQL Posting/GL/Subledger/Tax tests and exact-head evidence. 39 event dispositions and 67 Test IDs are coverage/traceability, not posting authorization or test PASS. Gate B-final, Gate C and Gate D remain OPEN; Posting Release NOT GRANTED.
