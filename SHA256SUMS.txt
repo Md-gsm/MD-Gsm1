@@ -75,15 +75,15 @@ e8cc56bb618d51962a175d8d18c37b6c1b265b6f216dab28d7fe98a7a0c57260  docs/decisions
 e5c3172b78d4212bf63c4084bfb7b4989a310b0e69c86b749902170f4fcce199  docs/decisions/0017-irr-document-total-rounding.md
 6d145019731839cbdaa8d1340b0cd97827e6f2e971340c85d5b4bdf05efa3434  docs/decisions/0018-accounting-core-foundation-scope.md
 d1370355da7531ce6c7d5563ea86d5497eb7f526725dfb3eee75be62079ba7bc  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.1.md
-538513765394e14f012f7cb4e96d878aa86be27c5414847f44474d061405027e  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
+db74e11e8e19652dea63b187662b27683ceecdfda810b986d5e771a9cbaabb3e  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
 1bc5a374c362b2d38bb48379612a59af86c27a2997176505868d46b6f4f1e2cb  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.1.md
 5baa7e854d289dabff67dc28bc3c9d2cdd936a8ddc10345f2cd96a703a4e9775  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.2.md
 7fcdb743eb137630c9b882a514da4f8a1fe6a6b8bd7d9c444a2aa6d182988724  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.3.md
-c213f1234f964cbd06087ac4027ad14544e9d0b74e153b7765dfc930bb419c32  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.4.md
+40a8037fb76ec0b6b1556e60b44e5297313c8cc4c1f241e2ecca73988d31d63b  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.4.md
 a2e404772a0c570095fc334285ca93370f461dd088bfbc69a54e6fed2893d277  docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.1.md
 596ed924816876d9a64ed08b39c96735ba8c17b2e31202f354d0136508a470a2  docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md
 0c0298a100c87498022de2793f6b60783a4932f5a0dcf92d4fe29737abe92774  docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.1.md
-da4219ae0df6ac311a9b570fff6f32fb039bdfd4bd5c9ba8a85ba7d21e533237  docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.2.md
+749b0eebaf3a2d045affc4a0ff70afc2ecbae78c192a90936a602421a830fa92  docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.2.md
 0aac1aa24a47522e795237a7cbbd8418acbfcafa68012c85ca123b24a1c8ff8c  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.1.md
 ff9ce8d87fb27233be69ce9e3be46474e09e44f68abfbd96bae6f8b621c7b4c1  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.2.md
 bd6fc6e3a8e88e3e0b404f667bbf6ea3fb97b2d152845867d11f999350faff52  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.2.md
@@ -92,13 +92,13 @@ bd6fc6e3a8e88e3e0b404f667bbf6ea3fb97b2d152845867d11f999350faff52  docs/finance/w
 9e2519642d2f9191cc8edaf3db877ee1d1264590c2925887953d021a81e377e2  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.3.md
 a0466daca95ee3422e58b70e9ff3f1c0a85511e07f7f97f654c9e0995de523d0  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md
 74a2285653aa80f5b8e507c708bdb754cebd37f9dc53d59d7ad219b8b5585117  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.5.md
-64903d998766cd70ea10bb266c3d76542d7e7b373386aa58908b8b256c324443  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.6.md
+1aa4a25517c54f500558b17c31c245840d845382729ad85816aa431007336e2f  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.6.md
 3ab3f41c400e2a56cd389dfd89d7c6ec6701c27e07ee5efe19575c1ccf5d4e48  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-POSTING-RULE-CLOSURE-001_v0.1.md
-fa6c75f3d02fad405132a08189020c3bebfd82596e12a036a5c270090b3a0a72  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-POSTING-RULE-CLOSURE-001_v0.2.md
+9911700f33e2c396ef1db68cb69a6cb687b4109da647c7349d51f4d0ebd6a514  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-POSTING-RULE-CLOSURE-001_v0.2.md
 ca7b894d2ae9657191336013efb7a972bc058fe8cda0da9db512ed0462f647a8  docs/finance/workpapers/p4h/integration/MDG-WP06-7C-ACCOUNT-DISPOSITION-001_v0.1.md
 fe670fad99204e025ff59c68c2feddcd9bb401a70a83f77dabe44fb217792e7b  docs/finance/workpapers/p4h/integration/MDG-WP06-7D-TEST-CLOSURE-001_v0.1.md
 a9255c9a73cabff91d87ee0ba888ada25c4b56221f924816cad2f672fcde2ed0  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001_v0.1.md
-07c5a3b7ff7ca209b5002cb3d5f4e7e3bf8cba1d6c4b5ada9f70edb429f6de33  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001_v0.2.md
+dd992653bb206c35caf2cc6ac342281b63a9b5e0fd17d3faea120457803561df  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001_v0.2.md
 f64cc10f4c448fe6ea57205d3eab1564b720d70269fe30a6e6003644fb559759  docs/finance/workpapers/p4h/integration/MDG-WP06-COA-SOURCE-RECOVERY-001_v0.1.md
 7a459e03341252f954ea339315c93a56e988a59079571001bc842000e99c45b8  docs/finance/workpapers/p4h/integration/MDG-WP06-FE01-FE02-SOURCE-CROSSWALK-PROPOSAL-001_v0.2.md
 ded420589b33fc3f4237297c8dce717fff45fb3fabee83279f491716f3a9c357  docs/finance/workpapers/p4h/integration/OWN-FE-01-02-001-v1.0.md
@@ -350,6 +350,7 @@ a11fd2731ff4231e58c4e1c22da4e3e7028a881ef42a58d438aa126c25173eae  tools/MDGsm.Db
 9310ab2efe7882d93b95485018da867301d9976cde2f97f0200b8389cedf6d36  tools/MDGsm.DbMigrator/Program.cs
 ac6b08d0457147affed028e1203b37a63d6bc87631ec905be45856efdd5b60af  docs/modules/inventory/INVENTORY-TECHNICAL-OWNER-REVIEW-001_v0.1.md
 84df36fb01d4f8112e43343a2a91087b1a7f0d9ad8954a2bc716ae81b0994537  docs/modules/inventory/INVENTORY-TECHNICAL-RESOLUTION-PROPOSAL-001_v0.1.md
-70b979f0101bab737b71ff8b5fd03b096466af17b45ef78d89ced84a3c0185b5  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.7.md
+211ebacd9b158ebf9fa186649d95f5d2d98081cac99429c903cd69ca60bec0d4  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.7.md
 
 6f0c3396846c141ef74f9481bb646d148b6fa21c84c9c7f4d7547928c543c4c4  docs/architecture/MDG-ARCH-MASTER-001_v3.0.md
+7cf76f79f4370ee4de4ffcbdef5fbcf573f35e9cb1532a96175ad548f33a8e23  docs/architecture/MDG-ARCH-MASTER-001_v3.0.3.txt
