@@ -265,3 +265,15 @@ Status: CONTROLLED RECONSTRUCTION — DRAFT v0.4; supersedes v0.3 as the current
 - 7C-OPEN-001 مانع دسترسی نیست؛ مانع واقعی آن تطبیق صفات Canonical است.
 
 Status: COA AUTHORITY VERIFIED; ACCOUNT-LEVEL CANONICALIZATION PARTIAL / OPEN; IMPLEMENTATION NOT VERIFIED; TESTS NOT RUN; EVIDENCE NOT ACCEPTED; POSTING RELEASE NOT GRANTED.
+
+## Controlling v3.0.3 / COA authority overlay — 2026-11-20
+
+This overlay supersedes historical current-authority statements in this workpaper. The accepted architecture is MDG-ARCH-MASTER-001 v3.0.3. Active COA hierarchy: v1.2 master; v1.5 controlled supplementary reconstruction/crosswalk; v1.4 historical/superseded for current supplementary authority; v1.3 intermediate only. The original canonical nine-sheet COA and independent Part 4H-6 remain unrecovered. COA v1.5 is not represented as the recovered original source. Its SHA-256 is b21bb4a9999f6b503c9e3c215a3b5db6029d659a17587e8f7359280c9450e3f8.
+
+The 78-ID scope remains 76 base codes plus 2114 and 5106; 110809 is prohibited. Explicit parent relations remain only 110302→1103, 610801→6108 and 620201→6202. Do not infer other parent/level values from prefixes or titles.
+
+Owner-approved dispositions now controlling under v3.0.3 include: 110801 sole GL inventory control; 110802–110806 inventory subledger categories; 110807 inactive in R1; 110809 prohibited; 2114 service received/accepted but uninvoiced liability (DESIGN ONLY / NO POSTING pending canonical attributes and FE-20); 4107 rounding gain and 5106 rounding loss (both DESIGN ONLY pending canonical attributes, collision check, eligibility, FE/PostingRule and tests); 6204/6205 superseded/inactive; 620201 inactive; O-65/CHG-100 mixed-sign allocation as specified in P.4. Monetary unit is 1 IRR, document-level one-time AwayFromZero rounding, maximum 1 IRR per document; no independent per-row monetary threshold.
+
+Do not mark an account canonical merely because its code or owner disposition is known. AccountId, ParentAccountId, Level, Nature, NormalBalance, Postable, DirectPostingAllowed, Effective dates, Subledger dimensions, Tax treatment and FE eligibility remain NOT VERIFIED/NOT SPECIFIED wherever the controlling sources do not explicitly determine them. Those unresolved fields remain fail-closed for Posting.
+
+COA authority and owner-policy conflicts are reconciled; canonical row-level attributes, full namespace collision proof, FE↔COA crosswalk, 2114/5106 qualification, 7C gate tests and independent evidence remain open. Gate B-final is not closed by this overlay.
