@@ -1080,3 +1080,25 @@ This update does not close O-01 and does not grant runtime implementation or pos
 - No canonical COA account or positive FE rule is seeded from inference.
 - TaxMode=0 blocks all tax lines; no Tax Matrix or legal rate is fabricated.
 - This foundation slice does not close O-01, Gate 3, Gate 4 or grant Posting Release.
+
+## Controlling v3.0.3 / B-final reconciliation overlay — 2026-11-20
+
+This overlay supersedes historical statements in this workpaper that v2.5 is the current accepted architecture or v1.4 is the current COA supplement. The sole accepted architecture baseline is MDG-ARCH-MASTER-001 v3.0.3. COA v1.2 is the master coding/GL authority; COA v1.5 is the controlled supplementary reconstruction/crosswalk recognized by v3.0.3; v1.4 is historical/superseded for current supplementary authority; v1.3 is intermediate only. The original nine-sheet canonical COA and Part 4H-6 are still not recovered.
+
+### Policy decisions reconciled
+- CHG-050: integer IRR; minimum unit 1 IRR; one-time document-total AwayFromZero; max 1 IRR absolute difference per document; no independent per-row threshold.
+- CHG-100 / O-65: D/P/N mixed-sign allocation as specified in v3.0.3 P.4; exact-rational Largest Remainder, canonical tie-break, preserve destination account and scope, fail closed on ambiguity.
+- CHG-071: Asia/Tehran business timezone; technical timestamps UTC; business date from central server; date-only values do not timezone-shift; official CalendarDay source remains open.
+- CHG-083 / O-51: OPEN/SOFT_CLOSED/HARD_CLOSED/YEAR_CLOSED semantics and independent hard/year reopen approval.
+- CHG-091 / O-64: Inventory.ShortageThreshold.Configure; GENERAL_MANAGER default preset; SYSTEM_MANAGER alone does not grant business authority; feature enablement remains separately gated.
+- O-09 high-value sale approval is independent from rounding.
+- TaxMode=0 blocks all Tax Lines/Posting across all channels; no legal exemption is inferred.
+
+### Current B-final blockers
+1. 7B still has 39/39 policy dispositions but zero accepted positive Posting Rules. Full FE source/recognition, both journal sides, amount/cost basis, tax, subledger, identity/idempotency, reversal, period, atomicity/retry, authorization/audit and evidence must be complete per event.
+2. 7C has 78 IDs in scope but incomplete canonical attributes. The source master nine-sheet workbook and Part 4H-6 are absent; no fabricated source fields, AccountIds, Parent/Level, NormalBalance or posting eligibility are allowed.
+3. 2114 and 5106 remain DESIGN ONLY / NO POSTING until canonical attributes, event mapping, Posting Rules and tests are qualified. 4107 also requires its own eligibility and Posting Rule evidence before use.
+4. 7D has 67 IDs specified, not 67 passing tests. Runtime PostgreSQL transactional Posting, GL/Subledger, tax-channel and end-to-end evidence are not established by domain or structural tests.
+5. COA v1.5 hash/source lineage is recorded in v3.0.3 U.1; the hash of a reconstruction does not prove recovery of the original COA source.
+
+**Disposition:** owner-policy and authority conflicts reconciled; design/source/implementation/evidence blockers remain. B-final OPEN; Gate C and Gate D OPEN; Posting Release NOT GRANTED.
