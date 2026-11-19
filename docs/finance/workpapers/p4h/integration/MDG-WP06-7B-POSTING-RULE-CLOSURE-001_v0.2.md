@@ -160,3 +160,11 @@ The prior v0.1 instruction to seek a new O-01 CR is superseded: the replacement 
 - Posting Release: NOT GRANTED.
 
 **End of document.**
+
+## Current v3.0.3 authority and B-final status — 2026-11-20
+
+This section supersedes conflicting historical authority statements. Accepted architecture is MDG-ARCH-MASTER-001 v3.0.3. COA v1.2 is master; COA v1.5 is the controlled supplementary reconstruction/crosswalk recognized by v3.0.3; v1.4 is historical/superseded for current supplementary authority; v1.3 is intermediate. Original nine-sheet COA and Part 4H-6 remain unrecovered.
+
+Integer monetary base is 1 IRR. Exact document net is rounded once at document total using AwayFromZero; maximum absolute rounding difference is 1 IRR per document. No per-row monetary threshold exists. O-65 / CHG-100 controls mixed-sign D/P/N allocation as stated in v3.0.3 P.4. O-09 is a separate high-value sales approval rule.
+
+The 39/39 event dispositions remain complete only at policy/disposition level. Accepted positive Posting Rules remain 0. Every FE remains POSTING_BLOCKED until the complete source event, trigger, RecognitionTime, both debit/credit sides, amount/cost basis, tax, canonical account eligibility, subledger/dimensions, PostingIdentity/idempotency, reversal, period, atomicity/retry, authorization/audit, test and evidence are complete. No fallback account or inferred recognition time is allowed. B-final remains OPEN; Posting Release NOT GRANTED.
