@@ -102,6 +102,14 @@ check_equal() {
   local label="$1" expected="$2" actual="$3"
   if [[ "$expected" != "$actual" ]]; then
     echo "FAIL $label expected=$expected actual=$actual" >&2
+    if [[ "$label" == schema\ catalog* ]]; then
+      pg_dump --schema-only --no-owner --no-privileges "$MDGSM_TEST_DB" |
+        sed -E '/^--/d; /^$/d; /^\\\\(un)?restrict /d' > "$tmp/source.schema.sql"
+      pg_dump --schema-only --no-owner --no-privileges "$3" |
+        sed -E '/^--/d; /^$/d; /^\\\\(un)?restrict /d' > "$tmp/target.schema.sql"
+      echo "Schema parity diff (first 120 lines):" >&2
+      diff -u "$tmp/source.schema.sql" "$tmp/target.schema.sql" | head -120 >&2 || true
+    fi
     return 1
   fi
   echo "PASS $label"
