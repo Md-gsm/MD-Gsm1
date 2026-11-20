@@ -43,7 +43,7 @@
 | Stage 04 sales/returns/GRNI/credit-exposure tie-out | v0.1 | Design contract completed; source-to-ledger tie-out is specified, not runtime evidence |
 | Inventory Stage 05 equations/custody/stocktake | v0.1 | Integrated design contract; INV-T-001..102 are test specifications, not runtime PASS |
 | Inventory Logical ERD | v0.3 | Owner-directed successor: 24h Sales TTL snapshot, WarehouseId cursor and scoped negative-stock authority concept; independent review pending |
-| Inventory PostgreSQL Physical Design | v0.4 | WarehouseId-wide source cursor, dual cutover budgets, zero-difference/zero-watermark guards, O-64 scope; independent review pending; PD-T-001..046 NOT RUN |
+| Inventory PostgreSQL Physical Design | v0.4 | WarehouseId-wide source cursor, dual cutover budgets, zero-difference/zero-watermark guards, O-64 scope; independent review pending; PD-T-001..048 NOT RUN |
 | Inventory Physical Design Re-audit 002 | v0.1 | Internal re-audit of v0.2; historical supporting evidence |
 | Inventory Physical Design Re-audit 003 | v0.1 | Internal re-audit of v0.3; all 12 design findings closed internally; not independent attestation |
 
@@ -493,7 +493,7 @@ This dated integration record is historical evidence of the PR's scope and bound
 | MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001 | 0.4 | WarehouseId watermark, Projection cursor/cutover protocol, dual independent budgets, O-64 security scope and reservation expiry | CONTROLLED DESIGN SUCCESSOR — INDEPENDENT REVIEW PENDING — NO IMPLEMENTATION AUTHORITY |
 | MDG-INVENTORY-LOGICAL-ERD-001 | 0.3 | Reservation TTL snapshot, WarehouseId CountObservation cursor, NegativeStockLimitScopeAssignment logical concept | LOGICAL DESIGN SUCCESSOR — INDEPENDENT REVIEW PENDING |
 | MDG-INVENTORY-CROSS-MODULE-TECHNICAL-CONTRACT-001 | 1.1 | Owner cross-module contracts, cutover fail-closed policy, O-64 assignment scope and Finance boundary | OWNER APPROVED DESIGN DIRECTION — CROSS-OWNER ACCEPTANCE / BASELINE RECONCILIATION PENDING |
-| MDG-INVENTORY-CROSS-MODULE-TEST-SPEC-001 | 1.1 | Added SCOPE-01..07 and CUT-01..10; all test cases are NOT_RUN | TEST SPECIFICATION ONLY |
+| MDG-INVENTORY-CROSS-MODULE-TEST-SPEC-001 | 1.1 | Added SCOPE-01..07 and CUT-01..12; all test cases are NOT_RUN | TEST SPECIFICATION ONLY |
 | INVENTORY-SOURCE-EVENT-CONTRACT-PROPOSAL-001 | 0.3 | Supersedes stale System Manager threshold authority and Sales TTL terms; current ATP formula restored | OWNER-DECISION SUCCESSOR — TECHNICAL ACCEPTANCE PENDING |
 | MDG-PLATFORM-DB-ROLE-GRANT-MATRIX-001 | 0.1 | Six PostgreSQL roles and object-class privilege intent | DESIGN ONLY; no role/grant created |
 
@@ -502,7 +502,7 @@ Owner decisions recorded: D-15-CUTOVER-GUARD-01 (policy decision CLOSED/APPROVED
 The successor package is design and test specification only. It does not amend v3.0.3 by implication; controlled baseline crosswalk/reconciliation and all relevant consumer-owner acceptance remain required. The privilege matrix does not execute GRANT/REVOKE. All new tests are NOT_RUN.
 
 Open controls:
-- O-35 OPEN pending independent review and exact-SHA PostgreSQL watermark/race/replay/tie-out evidence.
+- O-35 OPEN pending independent review and exact-SHA PostgreSQL watermark/race/replay/tie-out evidence. PD-T-047 covers writer active-Pointer resolution after counter-lock acquisition; PD-T-048 covers abort/rollback and final lock-release duration.
 - O-36 OPEN pending baseline/source reconciliation, implementation and reservation lifecycle tests.
 - O-64 OPEN pending server-side authorization enforcement, scope assignment/approval/Audit proof and deny/allow tests.
 - D-15 policy decision CLOSED/APPROVED; numeric budgets NOT_SET and Cutover Gate unsatisfied.
