@@ -129,3 +129,22 @@ No submitted review records were returned for PR #74 or PR #78. The present revi
 This review accepts only the coherence and completeness of the Stage 08 design specification as a controlled design artifact. It does not accept the Stage 08 runtime, close Gate D, or override any owner, accounting, platform, legal or independent-review gate.
 
 **END — MDG-STAGE-08-GATED-REVIEW-001 v0.1**
+
+
+## 6. Addendum — EVD reconciliation after the review snapshot
+
+**Update date:** 2026-11-20  
+**Updated evidence register:** `docs/operations/evidence/EVD-GATE-D-EXECUTION-001_v0.2.md`
+
+After this review's initial snapshot, EVD was updated to v0.2 and reconciled to the completed PR #79 exact-source workflow set:
+- PR #79 head: `be7e20615438adb2a787c7f7f55bf118212f3927`
+- Workflow merge SHA: `40b333a427d3e0dce37fed6657b1e54a51cf5ad4`
+- Persons Module Gates: run 44714635434 — all 13 jobs SUCCESS, including Linux and Windows PostgreSQL migrations, 36 integration tests and all eight logical restore PoCs.
+- Windows preview installer: run 44714635260 — build/install/uninstall and all five hosted Windows matrix jobs SUCCESS; Authenticode remains NotSigned.
+- CodeQL: run 44714635349 — SUCCESS.
+
+Finding **F-01 is now CLOSED as an evidence-register freshness issue**: EVD v0.2 records the exact head/merge SHA, job outcomes, restore artifact ID/digest, installer artifact ID/digest and CodeQL result. This closure does not close F-02 through F-08 and does not change the Gate D decision.
+
+The updated evidence still records zero account/session/audit rows in the restore source snapshot and remains limited to the existing Infrastructure/IdentityAccess schema. Gate D remains **OPEN / NOT VERIFIED**; no production, G1, Posting Release or Go-Live authorization is created by this addendum.
+
+**END OF ADDENDUM**
