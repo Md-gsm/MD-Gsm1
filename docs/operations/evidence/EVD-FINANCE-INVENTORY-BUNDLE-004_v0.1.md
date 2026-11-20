@@ -3,9 +3,9 @@
 | Field | Value |
 |---|---|
 | Evidence ID | EVD-FINANCE-INVENTORY-BUNDLE-004 |
-| Version | 0.3 |
+| Version | 0.4 |
 | Evidence snapshot | 2026-11-20 |
-| Recorded at | 2026-11-20 13:52 UTC |
+| Recorded at | 2026-11-20 13:55 UTC |
 | Governing architecture | MDG-ARCH-MASTER-001 v3.0.3 |
 | Repository | Md-gsm/MD-Gsm1 |
 | Evidence branch | `evidence/finance-inventory-bundle-004-20261120` |
@@ -89,6 +89,19 @@ After branch realignment, the manifest was rebuilt from the #72 baseline and rec
 
 The two checksum job logs explicitly report successful two-way validation of tracked files against the manifest. The complete Persons Module Gates runs then completed successfully on both exact heads, with all 13 jobs green, including Linux and Windows PostgreSQL migration jobs and commit-bound CI evidence generation. These outcomes supersede the earlier checksum failure and in-progress snapshots for these exact heads only. They do not certify other or later revisions.
 
+### Commit-bound CI evidence artifacts
+
+The completed runs also published commit-bound evidence artifacts:
+
+| PR / exact head | Artifact | Artifact ID | Size | SHA-256 digest |
+|---|---|---:|---:|---|
+| #72 / `3d8262bea8a140056cbdc1c6efcae02e558a6201` | `persons-ci-evidence-44746080861-1` | `14633392797` | 880 bytes | `sha256:601519aebd7d9d579bf423136967e55d28b9db578ce51b1c5207bd6b07627960` |
+| #72 / same head | `foundation-test-results` | `14632618473` | 50,016 bytes | `sha256:c4cf3d4b5d4f6fc8352a2b919fc25829dca857355a85905af1055cffedadc0c9` |
+| #73 / `107ba63ebcdaf10dcce604f197e4c8e73f778c99` | `persons-ci-evidence-44746278646-1` | `14633807063` | 880 bytes | `sha256:ac2afe83ab9d3c70638dedaabcc053d47b6b6f8d2bc05f647f98a743d60921cf` |
+| #73 / same head | `foundation-test-results` | `14632449886` | 49,819 bytes | `sha256:c2cd33307ca11727c9972ad095a523147649760ce6faf051db533b26e70ae0f3` |
+
+These artifacts belong to the workflow runs shown above and are bound to their recorded PR head SHAs. Artifact existence is not a substitute for independent review or the separate finance/inventory runtime tests.
+
 ## 5. Independent review status
 
 - PR #71 has an `APPROVED` review by `mrdeljoe4` attached to exact head `b165e957ff7bf886616de21933018395d76bbff9`. The submitted review body is empty. It is recorded as an exact-SHA approval, but the empty body does not provide a detailed audit rationale.
@@ -138,8 +151,8 @@ These are documentary control findings, not permission to infer missing canonica
 
 ## 8. Decision
 
-**EVD-FINANCE-INVENTORY-BUNDLE-004 v0.3 is the current amended evidence snapshot for the observed exact revisions and CI outcomes above. Package 4 is not accepted as fully closed.**
+**EVD-FINANCE-INVENTORY-BUNDLE-004 v0.4 is the current amended evidence snapshot for the observed exact revisions and CI outcomes above. Package 4 is not accepted as fully closed.**
 
 Checksum repair and finance structural validation are PASS for PR #72 and #73 heads listed in this document. Full Persons CI and independent reviews remain OPEN. Any subsequent change to a source branch requires fresh exact-head evidence and a new EVD revision or amendment.
 
-**END — EVD-FINANCE-INVENTORY-BUNDLE-004 v0.3**
+**END — EVD-FINANCE-INVENTORY-BUNDLE-004 v0.4**
