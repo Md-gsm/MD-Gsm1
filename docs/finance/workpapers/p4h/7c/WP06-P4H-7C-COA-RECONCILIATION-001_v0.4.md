@@ -6,10 +6,10 @@
 | Version | 0.4 |
 | Classification | CONTROLLED RECONSTRUCTION / CONTROLLED REPLACEMENT |
 | Parent | WP06-P4H-7C-COA-RECONCILIATION-001 v0.3 |
-| Architecture | MDG-ARCH-MASTER-001 v2.5 |
+| Architecture | MDG-ARCH-MASTER-001 v3.0.3 |
 | Owner decision | OWN-7C-043 and prior effective owner decisions |
 | COA authority | v1.2 master baseline; v1.4 current supplementary account register; v1.3 intermediate only |
-| Source register | COA v1.2 master + COA v1.4 supplementary register + accepted owner decisions |
+| Source register | COA v1.2 master + COA v1.5 supplementary register + accepted owner decisions |
 | COA register scope | 78 identifiers: 76 RECON codes + owner-added 2114 and 5106; 110809 prohibited |
 | Design status | OWNER SOURCE HIERARCHY VERIFIED; CANONICAL ATTRIBUTE RECONCILIATION PARTIAL / OPEN |
 | Implementation / Tests | NOT VERIFIED / NOT RUN |
@@ -19,17 +19,17 @@
 
 این سند Controlled Replacement برای تکمیل 7C است. سلسله‌مراتب معتبر:
 
-1. Architecture v2.5 و قواعد هنجاری آن؛
+1. Architecture v3.0.3 و قواعد هنجاری آن؛
 2. تصمیمات قطعی مالک و ADRهای پذیرفته‌شده؛
 3. COA v1.2 به‌عنوان سند مادر و مرجع اصلی کدینگ و قواعد دفترکل؛
-4. COA v1.4 به‌عنوان رجیستر تکمیلی جاری و مبنای تطبیق حساب‌به‌حساب بر پایه v1.2؛
+4. COA v1.5 به‌عنوان رجیستر تکمیلی جاری و مبنای تطبیق حساب‌به‌حساب بر پایه v1.2؛
 5. COA v1.3 فقط مرحله میانی مشتق‌شده است و مرجع مستقل جاری نیست.
 
 هیچ AccountId، Parent، Level، Nature، NormalBalance، Postable، DirectPostingAllowed، تاریخ اثر یا FE eligibility بدون منبع/تصمیم صریح ساخته نمی‌شود. هر مقدار تعیین‌نشده OPEN / NOT VERIFIED و برای Posting غیرمجاز باقی می‌ماند.
 
 ## 2. رجیستر دامنه 78 شناسه
 
-COA v1.2 رجیستر 76 کد پایه را در بر دارد. COA v1.4 دو شناسه تکمیلی 2114 و 5106 را بر مبنای تصمیمات معتبر مالک به دامنه تطبیق اضافه می‌کند. فهرست 76 کد پایه:
+COA v1.2 رجیستر 76 کد پایه را در بر دارد. COA v1.5 دو شناسه تکمیلی 2114 و 5106 را بر مبنای تصمیمات معتبر مالک به دامنه تطبیق اضافه می‌کند. فهرست 76 کد پایه:
 
 | گروه | کدها |
 |---|---|
@@ -66,7 +66,7 @@ COA v1.2 رجیستر 76 کد پایه را در بر دارد. COA v1.4 دو ش
 
 ## 4. روابط والد مجاز
 
-فقط این سه رابطه ParentAccountCode در COA v1.4 به‌صورت صریح قابل احرازند:
+فقط این سه رابطه ParentAccountCode در COA v1.5 به‌صورت صریح قابل احرازند:
 - 110302 → 1103
 - 610801 → 6108
 - 620201 → 6202
@@ -125,7 +125,7 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 
 | ID | موضوع | Owner action / نقش مسئول | شرط رفع BLOCKED | Test ID | Evidence plan | وضعیت |
 |---|---|---|---|---|---|---|
-| 7C-OPEN-001 | Account-level canonical attribute reconciliation | Finance / COA Custodian | تطبیق 78 شناسه با v1.2 master، v1.4 supplementary register و تصمیمات مالک؛ تکمیل صفات فقط در صورت وجود منبع؛ unresolvedهای واقعی صریح بمانند | MDG-COA-GATE-001 | account crosswalk، source/decision lineage، unresolved register و diff report | OPEN — ATTRIBUTE GAPS; NO POSTING |
+| 7C-OPEN-001 | Account-level canonical attribute reconciliation | Finance / COA Custodian | تطبیق 78 شناسه با v1.2 master، v1.5 supplementary register و تصمیمات مالک؛ تکمیل صفات فقط در صورت وجود منبع؛ unresolvedهای واقعی صریح بمانند | MDG-COA-GATE-001 | account crosswalk، source/decision lineage، unresolved register و diff report | OPEN — ATTRIBUTE GAPS; NO POSTING |
 | 7C-OPEN-002 | AccountId registry | Finance + Data Architecture | تخصیص شناسه پایدار یکتا، immutable و constraint؛ بدون reuse | MDG-COA-GATE-002 | registry export، uniqueness test و migration review | BLOCKED — NO POSTING |
 | 7C-OPEN-003 | Parent/Level hierarchy | Finance + Data Architecture | تکمیل درخت با روابط مستند، بدون cycle و بدون prefix inference | MDG-COA-GATE-003 | hierarchy graph، cycle test و source lineage | BLOCKED — NO POSTING |
 | 7C-OPEN-004 | Nature/NormalBalance | Finance / Accounting Policy | تعیین مقدار canonical و lineage برای هر حساب؛ unresolved باقی‌مانده ممنوع برای posting | MDG-COA-GATE-004 | attribute matrix، policy approval و debit/credit validation | BLOCKED — NO POSTING |
@@ -151,7 +151,7 @@ OWN-7C-004-R1 مرجع نقش حساب‌هاست:
 
 ## 9. وضعیت
 
-- COA authority hierarchy: VERIFIED — v1.2 master; v1.4 supplementary; v1.3 intermediate.
+- COA authority hierarchy: VERIFIED — v1.2 master; v1.5 supplementary; v1.3 intermediate.
 - Identifier scope: 78 IDs VERIFIED; 110809 PROHIBITED.
 - Canonical account attributes: PARTIAL / OPEN.
 - AccountId and unspecified Parent/Level/Nature/NormalBalance/Postable/DirectPostingAllowed/Effective Dates/Subledger/FE eligibility: NOT VERIFIED where no accepted source exists.
@@ -257,7 +257,7 @@ Status: CONTROLLED RECONSTRUCTION — DRAFT v0.4; supersedes v0.3 as the current
 ## 12. اصلاحیه حاکم مرجعیت COA — 2026-11-18
 
 - COA v1.2 سند مادر و مرجع اصلی کدینگ/قواعد دفترکل است.
-- COA v1.4 رجیستر تکمیلی جاری برای تطبیق حساب‌به‌حساب 7C و مبتنی بر v1.2 است.
+- COA v1.5 رجیستر تکمیلی جاری برای تطبیق حساب‌به‌حساب 7C و مبتنی بر v1.2 است.
 - COA v1.3 مرحله میانی است.
 - رجیستر فعال شامل 78 شناسه است؛ 110809 ممنوع است.
 - v1.4 در دسترس و بررسی شده است؛ عبارت «محتوای v1.4 در دسترس نیست» یا «SOURCE CONTENT REQUIRED» معتبر نیست.
