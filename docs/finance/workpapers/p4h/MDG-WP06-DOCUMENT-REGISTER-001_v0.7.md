@@ -314,3 +314,38 @@ The workpaper uses only v3.0.3, COA v1.2 and v1.5. It does not create missing ac
 - Posting Release, production migration and Go-Live: NOT GRANTED.
 
 This overlay corrects the register's architecture and COA authority references but does not itself accept the Stage 04 workpaper on behalf of Sales, Purchasing, Inventory, Treasury, Accounting, QA or Platform owners.
+
+
+## 20. Controlling v3.0.3 and Stage 05 Inventory overlay — 2026-11-20
+
+All older architecture-baseline references in historical Inventory records are superseded for current work. The sole accepted architecture baseline is **MDG-ARCH-MASTER-001 v3.0.3**. This overlay does not rewrite historical owner decisions or historical proposal files.
+
+### Stage 05 integrated Inventory contract
+
+| Artifact | Version | Scope | Status |
+|---|---:|---|---|
+| MDG-INVENTORY-STAGE-05-EQUATIONS-CUSTODY-STOCKTAKE-001 | 0.1 | Quantity conservation, OnHand/Sellable/ATP/Reserved/InTransit/Custody/Deficit/BookBalance, Custody lifecycle, Section/warehouse transfer, Stocktake watermark/delta replay and tie-out | INTEGRATED DESIGN CONTRACT — runtime evidence pending |
+
+Path: `docs/modules/inventory/MDG-INVENTORY-STAGE-05-EQUATIONS-CUSTODY-STOCKTAKE-001_v0.1.md`.
+
+The workpaper:
+- Defines inventory ownership and canonical stock grain; Movement ledger remains source of truth and StockBalance is rebuildable projection.
+- Defines quantity equations and prevents double counting of aggregate/location, reservation/allocation/picking, custody and in-transit quantities.
+- Defines Custody as a separate committed handover/return/consumption/resolution lifecycle, excluded from ATP until a valid physical return and disposition.
+- Applies v3.0.3 Section transfer Option B as an atomic paired movement; inter-Warehouse FE-31 remains R2.
+- Defines stocktake using immutable cut-off plus a per-observation ledger watermark and ordered delta replay; count alone never changes stock.
+- Preserves v3.0.3 negative-stock classes, five ReasonCodes, feature gate OFF, WAC/Specific Identification, and the distinction between inventory subledger and Accounting GL.
+- Extends the inventory test registry through INV-T-102. These are test specifications, not runtime PASS evidence.
+
+### Stage 05 status
+
+- Semantic equations, Custody and Stocktake design: COMPLETED in the Stage 05 workpaper.
+- O-35: design specified; remains OPEN pending exact-SHA PostgreSQL race, watermark, replay and tie-out evidence.
+- O-36 Sales TTL final value: OPEN/configurable; Repair reservation has no automatic TTL. No proposal-only 30-minute value is adopted.
+- Physical schema/API/runtime and PostgreSQL tests: NOT IMPLEMENTED / NOT VERIFIED / NOT RUN.
+- Negative-stock feature: OFF pending separate Gate.
+- Warehouse transfer FE-31: R2 / NOT ENABLED.
+- B-final, Gate C and Gate D: OPEN.
+- Migration, Posting Release, production migration and Go-Live: NOT GRANTED.
+
+This overlay registers the workpaper but does not infer technical owner acceptance, QA PASS or release authorization.
