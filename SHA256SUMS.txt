@@ -359,4 +359,5 @@ b25d96fa7780d8c5653c73f6a27fd53629ec5cd9e9c9ff4e1275fbd9d6f8e3b5  scripts/ci/tes
 c2308a332b1dcf72a6e18f234ea18a9ff70a6c77b5f9d02a648051e32fbaa7f2  docs/security/accounting-runtime-privilege-matrix-fa.md
 521a5404930b6012839844d559a9937df3fd10f5b5d4db2a3bfefa0974931a33  docs/data/accounting-recovery-runbook-fa.md
 
-c8acf0dd0036d177439623ee45efb389b10b615a96e656d57466a4f662bc9325  docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.2.md
+f196a9465c532deaf30d6674b113a02e273cb47ce7bb491ef91d604f9077d17d  docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.2.md
+a6a32a48b44ab5962907fb6751d2d79f31d7485105b1f28b0c7c0b0a8873c7c5  docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.3.md

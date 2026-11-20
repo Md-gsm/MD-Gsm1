@@ -4,7 +4,7 @@
 | مشخصه | مقدار |
 |---|---|
 | تاریخ | 2026-11-18 |
-| وضعیت | DATABASE BUILD DESIGN — READY FOR FINAL REVIEW; SQL / MIGRATION NOT AUTHORIZED |
+| وضعیت | HISTORICAL / SUPERSEDED BY MDG-ACC-PDS-001 v0.3; not an active implementation or DDL authority |
 | مالک داده | Accounting (ACC-01, ACC-02, FY-01) |
 | معماری والد | MDG-ARCH-MASTER-001 v2.5 |
 | دامنه تصمیم | MDG-ADR-0018 |
