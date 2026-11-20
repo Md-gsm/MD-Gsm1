@@ -1,0 +1,8 @@
+MD-Gsm Package 5 release candidate manifest; version 0.1; date 2026-11-20
+Algorithm: SHA-256 over exact UTF-8 content (Markdown) or raw artifact bytes (PDF/ZIP).
+d1c5388cb885549c4ce5a3b4dc356610bf87e5147bb7aae7d98abc9d8c1e276e  EVD-FINANCE-INVENTORY-BUNDLE-004_v0.5.md
+1bbe39a81fa0da6034c382a120d740032957c8441caba10f54cbbaefb2234f33  EVD-PACKAGE-05-FINAL-RELEASE-001_v0.1.md
+3d6d51a382b42e8a1b2c7c1f4e28d45b39152f5145372a8545cbc0db8ab13372  MDG-Package-05-Final-Release-Candidate_v0.1.pdf (conversation deliverable)
+de58d6487368d2e0fa62eabb59dd1445006a28acc1abc439fe51590700e20e83  MDG-Package-05-Release-Candidate_v0.1.zip (conversation deliverable)
+PDF: A4 landscape, 4 pages; rendered at 150 DPI; all pages visually inspected; no clipped text, overlap or missing table/page elements observed.
+Limit: hashes identify candidate files; they do not imply owner acceptance, independent approval or merge to main.
