@@ -411,3 +411,18 @@ Corrected design: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESI
 Re-audit: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-REAUDIT-002_v0.1.md`.
 
 The correction defines durable command receipts for movement and non-movement commands; Inventory-local transactional audit-intent delivery while AuditSecurity remains sole canonical AuditEvent owner; PostgreSQL-enforced committed-ledger immutability through a restricted command boundary, privilege denial and mutation guards; and one total lock hierarchy. It also resolves the canonical Warehouse × Variant committed-prefix sequence and per-scope stocktake watermark algorithm. Re-audit closes PD-AUD-01..06 at design level only. PD-AUD-07 projection rebuild/cutover and PD-AUD-08..12 data dictionary/edge cases remain open. No DDL, migration, grants, API/runtime, PostgreSQL test, O-35 closure, Posting Release or Go-Live is claimed or authorized.
+
+
+## 25. Inventory PostgreSQL physical-design residual blocker closure — 2026-11-20
+
+| Artifact | Version | Status |
+|---|---:|---|
+| MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001 | 0.3 | PD-AUD-01..12 CLOSED IN DESIGN — INDEPENDENT REVIEW / IMPLEMENTATION EVIDENCE PENDING |
+| MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-REAUDIT-003 | 0.1 | INTERNAL RE-AUDIT — ALL TWELVE DESIGN FINDINGS CLOSED; NOT DDL FREEZE |
+
+Physical design: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.3.md`.
+Re-audit: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-REAUDIT-003_v0.1.md`.
+
+v0.3 closes the six residual design findings from re-audit 002: projection generation/rebuild/catch-up/atomic cutover and rollback; complete StockPosition grain with explicit NULL/applicability states and collision-proof uniqueness; optimistic Draft aggregate versioning and database-enforced header/line commit completeness; persisted reservation expiry with exact UTC equality boundary while preserving Sales TTL OPEN/configurable and no automatic Repair TTL; Inventory/AuditSecurity outbox ownership, retry, quarantine, configurable operational thresholds and daily reconciliation; and canonical naming/nullability data dictionary. Combined with v0.2, PD-AUD-01..12 are CLOSED IN DESIGN.
+
+The supplement adds PD-T-016..039, extending the design catalogue to PD-T-001..039. All remain NOT RUN. This is an internal re-audit by the same assistant workflow, not independent reviewer attestation. AuditSecurity, Catalog and Platform contracts remain implementation dependencies. O-35 remains OPEN pending exact-SHA PostgreSQL watermark/race/replay/tie-out evidence. No SQL, DDL, EF mapping, migration, grants, API/runtime, PostgreSQL test PASS, Posting Release, production migration or Go-Live is claimed or authorized.
