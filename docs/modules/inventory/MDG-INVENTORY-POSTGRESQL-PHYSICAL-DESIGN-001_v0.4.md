@@ -5,7 +5,8 @@
 | Document ID | MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001 |
 | Version | 0.4 |
 | Status | CONTROLLED SUCCESSOR DESIGN — OWNER AMENDMENTS INCORPORATED — INDEPENDENT REVIEW PENDING — IMPLEMENTATION NOT AUTHORIZED |
-| Sole architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 |
+| Candidate semantic source (not formally accepted) | MDG-ARCH-MASTER-001 v3.0.3 |
+| Last accepted architecture baseline | MDG-ARCH-MASTER-001 v2.5 |
 | Predecessor | v0.3; v0.1-v0.3 retained as historical predecessors |
 | Logical model | MDG-INVENTORY-LOGICAL-ERD-001 v0.3 |
 | Governing semantics | MDG-INVENTORY-STAGE-05-EQUATIONS-CUSTODY-STOCKTAKE-001 v0.1 |
@@ -13,7 +14,7 @@
 
 ## 1. Authority and effect
 
-This v0.4 successor consolidates v0.1-v0.3 and applies the owner decisions in OWN-INV-019 v1.0. It supersedes the v0.3 Warehouse×Variant watermark allocator, open Sales TTL wording and retry-exhaustion quarantine behavior where they conflict with the owner-approved rules. PD-AUD-01..12 remain closed only at the internal design level; this v0.4 successor requires independent exact-SHA review. v3.0.3 remains the sole accepted architecture baseline pending controlled baseline crosswalk/reconciliation. Stage 05 and logical ERD v0.3 govern Inventory semantics.
+This v0.4 successor consolidates v0.1-v0.3 and applies the owner decisions in OWN-INV-019 v1.0. It supersedes the v0.3 Warehouse×Variant watermark allocator, open Sales TTL wording and retry-exhaustion quarantine behavior where they conflict with the owner-approved rules. PD-AUD-01..12 remain closed only at the internal design level; this v0.4 successor requires independent exact-SHA review. The supplied v3.0.3 artifact is a verified Controlled Master Candidate, not a formally accepted baseline; v2.5 remains the last accepted architecture baseline pending the candidate's independent review and formal document acceptance. This v0.4 is a controlled design proposal prepared against the candidate semantics; it does not amend the candidate or change accepted-baseline status. Stage 05 and logical ERD v0.3 govern Inventory semantics.
 
 Design closure is not implementation or evidence closure. No schema, SQL, DDL, migration, database grant, EF mapping, API, worker, PostgreSQL test, O-35 closure, Posting Release, production migration or Go-Live is authorized.
 
