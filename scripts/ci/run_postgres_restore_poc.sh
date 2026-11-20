@@ -48,6 +48,136 @@ snapshot() {
 }
 
 source_snapshot="$(snapshot "$MDGSM_TEST_DB")"
+# Structural parity: normalized pg_dump schema covers columns/types, constraints,
+# indexes, triggers, routines, sequences, extensions and schema-owned objects.
+# Ownership and ACL/default-ACL are fingerprinted separately (except DR-07).
+schema_fingerprint() {
+  local db="$1"
+  # pg_dump's per-invocation restrict token and CHECK expression pretty-printing
+  # are not stable across a restore/re-dump. Preserve all other DDL in the dump
+  # fingerprint, and compare CHECK constraint inventory/metadata via pg_catalog.
+  local ddl_hash
+  ddl_hash="$(pg_dump --schema-only --no-owner --no-privileges "$db" |
+    sed -E '/^--/d; /^$/d; /^\\(un)?restrict /d; /^[[:space:]]*CONSTRAINT .* CHECK /d' |
+    sha256sum | awk '{print $1}')"
+  local check_hash
+  check_hash="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c "
+    SELECT md5(COALESCE(jsonb_agg(jsonb_build_array(
+      n.nspname, COALESCE(c.relname,t.typname,''), con.conname, con.contype,
+      con.convalidated, con.condeferrable, con.condeferred, con.conislocal,
+      con.coninhcount, COALESCE(con.conkey::text,''), COALESCE(con.confkey::text,''),
+      COALESCE(con.confrelid::regclass::text,''), con.confupdtype, con.confdeltype,
+      con.confmatchtype
+    ) ORDER BY n.nspname, COALESCE(c.relname,t.typname,''), con.conname)::text, '[]'))
+    FROM pg_constraint con
+    LEFT JOIN pg_class c ON c.oid=con.conrelid
+    LEFT JOIN pg_type t ON t.oid=con.contypid
+    JOIN pg_namespace n ON n.oid=COALESCE(c.relnamespace,t.typnamespace)
+    WHERE con.contype='c'
+      AND n.nspname NOT IN ('pg_catalog','information_schema')
+      AND n.nspname NOT LIKE 'pg_toast%';
+  ")"
+  printf '%s|%s' "$ddl_hash" "$check_hash"
+}
+
+security_catalog_dump() {
+  local db="$1"
+  psql -d "$db" -At -v ON_ERROR_STOP=1 -c "
+    SELECT item::text
+    FROM (
+      SELECT jsonb_build_array('namespace', n.nspname, pg_get_userbyid(n.nspowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(n.nspacl, acldefault('n', n.nspowner))) x WHERE NOT (x.grantee= n.nspowner AND x.grantor= n.nspowner)), '')) AS item
+      FROM pg_namespace n WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('relation', n.nspname, c.relname, c.relkind, pg_get_userbyid(c.relowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(c.relacl, acldefault(CASE WHEN c.relkind='S' THEN 's'::\"char\" ELSE 'r'::\"char\" END, c.relowner))) x WHERE NOT (x.grantee= c.relowner AND x.grantor= c.relowner)), '')) AS item
+      FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('routine', n.nspname, p.proname, pg_get_userbyid(p.proowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) x WHERE NOT (x.grantee= p.proowner AND x.grantor= p.proowner)), '')) AS item
+      FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('type', n.nspname, t.typname, pg_get_userbyid(t.typowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(t.typacl, acldefault('T', t.typowner))) x WHERE NOT (x.grantee= t.typowner AND x.grantor= t.typowner)), '')) AS item
+      FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
+      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('default_acl', COALESCE(n.nspname,''), d.defaclobjtype, pg_get_userbyid(d.defaclrole), COALESCE(d.defaclacl::text,'')) AS item
+      FROM pg_default_acl d LEFT JOIN pg_namespace n ON n.oid=d.defaclnamespace
+      UNION ALL
+      SELECT jsonb_build_array('role', r.rolname, r.rolsuper, r.rolinherit, r.rolcreaterole,
+        r.rolcreatedb, r.rolcanlogin, r.rolreplication, r.rolbypassrls, r.rolconnlimit) AS item
+      FROM pg_roles r WHERE r.rolname !~ '^pg_'
+      UNION ALL
+      SELECT jsonb_build_array('role_membership', pg_get_userbyid(m.roleid), pg_get_userbyid(m.member),
+        pg_get_userbyid(m.grantor), m.admin_option) AS item
+      FROM pg_auth_members m JOIN pg_roles member_role ON member_role.oid=m.member
+      WHERE member_role.rolname !~ '^pg_'
+    ) objects
+    ORDER BY item::text;
+  "
+}
+
+security_catalog_fingerprint() {
+  local db="$1"
+  psql -d "$db" -At -v ON_ERROR_STOP=1 -c "
+    SELECT md5(COALESCE(jsonb_agg(item ORDER BY item::text)::text, '[]'))
+    FROM (
+      SELECT jsonb_build_array('namespace', n.nspname, pg_get_userbyid(n.nspowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(n.nspacl, acldefault('n', n.nspowner))) x WHERE NOT (x.grantee= n.nspowner AND x.grantor= n.nspowner)), '')) AS item
+      FROM pg_namespace n WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('relation', n.nspname, c.relname, c.relkind, pg_get_userbyid(c.relowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(c.relacl, acldefault(CASE WHEN c.relkind='S' THEN 's'::\"char\" ELSE 'r'::\"char\" END, c.relowner))) x WHERE NOT (x.grantee= c.relowner AND x.grantor= c.relowner)), '')) AS item
+      FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('routine', n.nspname, p.proname, pg_get_userbyid(p.proowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) x WHERE NOT (x.grantee= p.proowner AND x.grantor= p.proowner)), '')) AS item
+      FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('type', n.nspname, t.typname, pg_get_userbyid(t.typowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(t.typacl, acldefault('T', t.typowner))) x WHERE NOT (x.grantee= t.typowner AND x.grantor= t.typowner)), '')) AS item
+      FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
+      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('default_acl', COALESCE(n.nspname,''), d.defaclobjtype, pg_get_userbyid(d.defaclrole), COALESCE(d.defaclacl::text,'')) AS item
+      FROM pg_default_acl d LEFT JOIN pg_namespace n ON n.oid=d.defaclnamespace
+      UNION ALL
+      SELECT jsonb_build_array('role', r.rolname, r.rolsuper, r.rolinherit, r.rolcreaterole,
+        r.rolcreatedb, r.rolcanlogin, r.rolreplication, r.rolbypassrls, r.rolconnlimit) AS item
+      FROM pg_roles r WHERE r.rolname !~ '^pg_'
+      UNION ALL
+      SELECT jsonb_build_array('role_membership', pg_get_userbyid(m.roleid), pg_get_userbyid(m.member),
+        pg_get_userbyid(m.grantor), m.admin_option) AS item
+      FROM pg_auth_members m
+      JOIN pg_roles member_role ON member_role.oid=m.member
+      WHERE member_role.rolname !~ '^pg_'
+    ) objects;
+  "
+}
+
+source_schema_fingerprint="$(schema_fingerprint "$MDGSM_TEST_DB")"
+source_security_fingerprint="$(security_catalog_fingerprint "$MDGSM_TEST_DB")"
+check_equal() {
+  local label="$1" expected="$2" actual="$3"
+  if [[ "$expected" != "$actual" ]]; then
+    echo "FAIL $label expected=$expected actual=$actual" >&2
+    if [[ "$label" == schema\ catalog* ]]; then
+      pg_dump --schema-only --no-owner --no-privileges "$MDGSM_TEST_DB" |
+        sed -E '/^--/d; /^$/d; /^\\(un)?restrict /d; /^[[:space:]]*CONSTRAINT .* CHECK /d' > "$tmp/source.schema.sql"
+      target_db="${label#schema catalog }"
+      pg_dump --schema-only --no-owner --no-privileges "$target_db" |
+        sed -E '/^--/d; /^$/d; /^\\(un)?restrict /d; /^[[:space:]]*CONSTRAINT .* CHECK /d' > "$tmp/target.schema.sql"
+      echo "Schema parity diff (first 120 lines):" >&2
+      diff -u "$tmp/source.schema.sql" "$tmp/target.schema.sql" | head -120 >&2 || true
+    fi
+    if [[ "$label" == security\ catalog* ]]; then
+      target_db="${label#security catalog }"
+      security_catalog_dump "$MDGSM_TEST_DB" > "$tmp/source.security.txt"
+      security_catalog_dump "$target_db" > "$tmp/target.security.txt"
+      echo "Security catalog parity diff (first 120 lines):" >&2
+      diff -u "$tmp/source.security.txt" "$tmp/target.security.txt" | head -120 >&2 || true
+    fi
+    return 1
+  fi
+  echo "PASS $label"
+}
 source_version="$(psql -d "$MDGSM_TEST_DB" -At -v ON_ERROR_STOP=1 -c 'SHOW server_version;')"
 drills=()
 
@@ -61,7 +191,7 @@ write_evidence() {
   if [[ -f "$tmp/full.custom" ]]; then dump_hash="$(sha256sum "$tmp/full.custom" | awk '{print $1}')"; fi
   local joined=""
   if (( ${#drills[@]} > 0 )); then joined="$(IFS=,; echo "${drills[*]}")"; fi
-  printf '{\n  "evidenceVersion": "1.0",\n  "evidenceId": "EVD-GATED-RESTORE-POC",\n  "overallStatus": "%s",\n  "exitCode": %s,\n  "repository": "Md-gsm/MD-Gsm1",\n  "commit": "%s",\n  "workflowRunId": "%s",\n  "workflowRunAttempt": "%s",\n  "postgresServerVersion": "%s",\n  "sourceDatabase": "%s",\n  "sourceDatabaseMarker": "MDGSM_DISPOSABLE_TEST_DB",\n  "sourceSnapshot": "%s",\n  "restoreScriptSha256": "%s",\n  "fullCustomDumpSha256": "%s",\n  "scope": "PostgreSQL logical restore PoC against current IdentityAccess/infrastructure schema only; not full Gate D recovery.",\n  "drills": [\n    %s\n  ]\n}\n' "$overall" "$exit_code" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$source_version" "$MDGSM_TEST_DB" "$source_snapshot" "$script_hash" "$dump_hash" "$joined" > artifacts/restore-poc-evidence.json
+  printf '{\n  "evidenceVersion": "1.0",\n  "evidenceId": "EVD-GATED-RESTORE-POC",\n  "overallStatus": "%s",\n  "exitCode": %s,\n  "repository": "Md-gsm/MD-Gsm1",\n  "commit": "%s",\n  "workflowRunId": "%s",\n  "workflowRunAttempt": "%s",\n  "postgresServerVersion": "%s",\n  "sourceDatabase": "%s",\n  "sourceDatabaseMarker": "MDGSM_DISPOSABLE_TEST_DB",\n  "sourceSnapshot": "%s",\n  "sourceSchemaFingerprint": "%s",\n  "sourceSecurityCatalogFingerprint": "%s",\n  "restoreScriptSha256": "%s",\n  "fullCustomDumpSha256": "%s",\n  "scope": "PostgreSQL logical restore PoC against current IdentityAccess/infrastructure schema only; not full Gate D recovery.",\n  "drills": [\n    %s\n  ]\n}\n' "$overall" "$exit_code" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$source_version" "$MDGSM_TEST_DB" "$source_snapshot" "$source_schema_fingerprint" "$source_security_fingerprint" "$script_hash" "$dump_hash" "$joined" > artifacts/restore-poc-evidence.json
 }
 
 finish() {
@@ -87,21 +217,27 @@ record() {
 pg_dump --format=custom --file "$tmp/full.custom" "$MDGSM_TEST_DB"
 db="$(new_target dr01)"
 pg_restore --exit-on-error --dbname "$db" "$tmp/full.custom"
-[[ "$(snapshot "$db")" == "$source_snapshot" ]]
+check_equal "snapshot $db" "$source_snapshot" "$(snapshot "$db")"
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
+check_equal "security catalog $db" "$source_security_fingerprint" "$(security_catalog_fingerprint "$db")"
 record DR-01 "$db" "custom-format full database restore; schema/data snapshot matches"
 
 # DR-02: Plain SQL full backup and restore.
 pg_dump --format=plain --file "$tmp/full.sql" "$MDGSM_TEST_DB"
 db="$(new_target dr02)"
 psql -d "$db" -v ON_ERROR_STOP=1 -f "$tmp/full.sql" >/dev/null
-[[ "$(snapshot "$db")" == "$source_snapshot" ]]
+check_equal "snapshot $db" "$source_snapshot" "$(snapshot "$db")"
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
+check_equal "security catalog $db" "$source_security_fingerprint" "$(security_catalog_fingerprint "$db")"
 record DR-02 "$db" "plain SQL full database restore; schema/data snapshot matches"
 
 # DR-03: Directory archive with parallel dump and restore.
 pg_dump --format=directory --jobs=2 --file "$tmp/full.directory" "$MDGSM_TEST_DB"
 db="$(new_target dr03)"
 pg_restore --jobs=2 --exit-on-error --dbname "$db" "$tmp/full.directory"
-[[ "$(snapshot "$db")" == "$source_snapshot" ]]
+check_equal "snapshot $db" "$source_snapshot" "$(snapshot "$db")"
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
+check_equal "security catalog $db" "$source_security_fingerprint" "$(security_catalog_fingerprint "$db")"
 record DR-03 "$db" "directory archive parallel restore; schema/data snapshot matches"
 
 # DR-04: Schema-only restore creates the same IdentityAccess table set without row data.
@@ -111,6 +247,8 @@ pg_restore --exit-on-error --dbname "$db" "$tmp/schema.custom"
 schema_tables="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='identity' AND table_type='BASE TABLE';")"
 settings_rows="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c 'SELECT count(*) FROM identity.system_settings;')"
 [[ "$schema_tables" == "11" && "$settings_rows" == "0" ]]
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
+check_equal "security catalog $db" "$source_security_fingerprint" "$(security_catalog_fingerprint "$db")"
 record DR-04 "$db" "schema-only restore; 11 IdentityAccess tables present and data absent"
 
 # DR-05: Data-only restore into a schema-only target.
@@ -118,7 +256,9 @@ pg_dump --data-only --format=custom --file "$tmp/data.custom" "$MDGSM_TEST_DB"
 db="$(new_target dr05)"
 pg_restore --exit-on-error --dbname "$db" "$tmp/schema.custom"
 pg_restore --data-only --exit-on-error --dbname "$db" "$tmp/data.custom"
-[[ "$(snapshot "$db")" == "$source_snapshot" ]]
+check_equal "snapshot $db" "$source_snapshot" "$(snapshot "$db")"
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
+check_equal "security catalog $db" "$source_security_fingerprint" "$(security_catalog_fingerprint "$db")"
 record DR-05 "$db" "data-only restore after schema restore; schema/data snapshot matches"
 
 # DR-06: Selective restore of the session policy table into a schema-only target.
@@ -128,12 +268,15 @@ echo "START DR-06 selective system settings restore"
 pg_restore --data-only --schema=identity --table=system_settings --exit-on-error --dbname "$db" "$tmp/data.custom"
 settings="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c "SELECT max_active_users::text || '|' || heartbeat_interval_seconds::text || '|' || session_lease_seconds::text FROM identity.system_settings WHERE settings_id=1;")"
 [[ "$settings" == "5|30|180" ]]
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
 record DR-06 "$db" "selective system settings restore; session policy values preserved"
 
 # DR-07: Restore without source ownership/ACL dependencies.
 db="$(new_target dr07)"
 pg_restore --no-owner --no-privileges --exit-on-error --dbname "$db" "$tmp/full.custom"
-[[ "$(snapshot "$db")" == "$source_snapshot" ]]
+check_equal "snapshot $db" "$source_snapshot" "$(snapshot "$db")"
+# DR-07 intentionally omits owner/ACL; structural schema must still match.
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
 record DR-07 "$db" "ownership-independent restore into a fresh target; schema/data snapshot matches"
 
 # DR-08: Corrupt archive must fail closed and must not be accepted as a successful restore.

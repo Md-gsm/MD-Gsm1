@@ -173,6 +173,33 @@ jobs:
           psql -d "$MDGSM_TEST_DB" -v ON_ERROR_STOP=1 -f database/operations/identityaccess-runtime-role-grants.sql
           grant_checks="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT (has_table_privilege('mdgsm_runtime','identity.sessions','SELECT') AND has_table_privilege('mdgsm_runtime','identity.sessions','INSERT'))::text || '|' || has_column_privilege('mdgsm_runtime','identity.sessions','revoked_at_utc','UPDATE')::text || '|' || has_table_privilege('mdgsm_runtime','identity.security_audit_events','INSERT')::text || '|' || has_table_privilege('mdgsm_runtime','identity.security_audit_events','UPDATE')::text || '|' || has_table_privilege('mdgsm_runtime','identity.accounts','INSERT')::text || '|' || has_schema_privilege('mdgsm_runtime','identity','CREATE')::text;")"
           test "$grant_checks" = 'true|true|true|false|false|false'
+          # Exercise the reviewed privileges through a dedicated run-scoped LOGIN identity.
+          # The isolated CI PostgreSQL service uses runner-local trust authentication only.
+          psql -d "$MDGSM_TEST_DB" -v ON_ERROR_STOP=1 -c "CREATE ROLE mdgsm_ci_runtime_login LOGIN INHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE;"
+          psql -d "$MDGSM_TEST_DB" -v ON_ERROR_STOP=1 -c "GRANT mdgsm_runtime TO mdgsm_ci_runtime_login;"
+          runtime_psql() {
+            PGUSER=mdgsm_ci_runtime_login psql -d "$MDGSM_TEST_DB" -v ON_ERROR_STOP=1 "$@"
+          }
+          expect_permission_denied() {
+            local label="$1"
+            shift
+            local output
+            if output="$("$@" 2>&1)"; then
+              echo "Runtime LOGIN unexpectedly allowed: $label" >&2
+              exit 1
+            fi
+            if ! grep -qi "permission denied" <<<"$output"; then
+              echo "Runtime LOGIN denial test did not fail for a permission reason: $label" >&2
+              echo "$output" >&2
+              exit 1
+            fi
+          }
+          runtime_psql -c "SELECT count(*) FROM identity.accounts;" >/dev/null
+          runtime_psql -c "SELECT count(*) FROM identity.sessions;" >/dev/null
+          expect_permission_denied "schema DDL" runtime_psql -c "CREATE TABLE identity.__runtime_ddl_must_be_denied(id integer);"
+          expect_permission_denied "account provisioning" runtime_psql -c "INSERT INTO identity.accounts DEFAULT VALUES;"
+          expect_permission_denied "append-only audit mutation" runtime_psql -c "DO \$\$ DECLARE col text; BEGIN SELECT attname INTO col FROM pg_attribute WHERE attrelid='identity.security_audit_events'::regclass AND attnum>0 AND NOT attisdropped ORDER BY attnum LIMIT 1; EXECUTE format('UPDATE identity.security_audit_events SET %I=%I',col,col); END \$\$;"
+          echo "PASS: dedicated LOGIN identity inherits only mdgsm_runtime; required reads succeed and DDL/account provisioning/audit mutation are denied."
           # The grant script is intentionally safe to re-apply after reviewed schema changes.
           psql -d "$MDGSM_TEST_DB" -v ON_ERROR_STOP=1 -f database/operations/identityaccess-runtime-role-grants.sql
           backup_file="$RUNNER_TEMP/mdgsm-staging-smoke.backup"
