@@ -7,13 +7,13 @@
 | Version | 1.8 |
 | Classification | CONTROLLED REGISTER / IMPLEMENTATION STATUS |
 | Status | CONTROLLED REGISTER — OWNER-SUPPLIED MASTER v3.0.3 CANDIDATE VERIFIED; FORMAL ACCEPTANCE PENDING; v2.5 LAST ACCEPTED |
-| Supersedes | v1.6; prior versions retained as historical snapshots |
+| Supersedes | v1.7; prior versions retained as historical snapshots |
 | Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 Controlled Master Candidate; O-65 owner-approved; independent review and formal document acceptance pending; v2.5 remains last accepted |
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
 | PR status | #66 MERGED; #70 MERGED; #71 MERGED; #72 CLOSED AS SUPERSEDED; #73 MERGED; #82 OPEN / DRAFT — reviewer mrdeljoe4 requested; latest owner-decision successor commits require exact-head CI rerun/review |
 | Branch | Package base: main at `10c8a8ba8f9aad54c4e2ff05fad49ce12511380f`; proposed branch: docs/inventory-cross-module-contracts-20261120 |
 | Current main SHA at register preparation | 10c8a8ba8f9aad54c4e2ff05fad49ce12511380f |
-| Exact-head CI for this package | PENDING — must run on final PR SHA |
+| Exact-head CI | This register is not a CI attestation; authoritative check runs are recorded by GitHub Actions against the final PR head SHA. |
 
 ## 1. Authority hierarchy
 
@@ -32,8 +32,8 @@
 | WP06-P4H-7C-COA-RECONCILIATION-001 | v0.4 | 78 identifiers; v1.2 master + v1.5 controlled supplement; canonical attribute gaps OPEN |
 | WP06-P4H-7D-TEST-REGISTRY-001 | v0.2 | 67 Test IDs: 39 FE + 16 COA + 12 shared controls; finance runtime tests NOT RUN |
 | MDG-ACC-PDS-001 | v0.4 | Accounting PostgreSQL physical design; reversal retains original COA snapshot; journal/header/line snapshot consistency enforced by composite FKs; exact-head CI/review pending |
-| MDG-WP06-7B-7C-7D-INTEGRATED-001 | v0.6 | Integrated crosswalk, aligned to v3.0.3 and COA v1.5 |
-| MDG-WP06-5-STAGE-EXECUTION-REPORT | v0.2 | Current authority statements corrected to v3.0.3/COA v1.5; execution evidence remains SHA-scoped |
+| MDG-WP06-7B-7C-7D-INTEGRATED-001 | v0.6 | Integrated crosswalk, aligned to candidate v3.0.3 semantics and COA v1.5 |
+| MDG-WP06-5-STAGE-EXECUTION-REPORT | v0.2 | Current authority statements aligned to candidate v3.0.3 semantics/COA v1.5; execution evidence remains SHA-scoped |
 | MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001 | v0.2 | Current hierarchy: COA v1.2 master + v1.5 controlled supplement; v1.4 historical/superseded |
 | MDG-WP06-7B-7C-7D-CROSS-AUDIT-001 | v0.3 | Historical supporting audit; source-authority statements superseded by correction v0.2 |
 | MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001 | v0.2 | Historical audit snapshot; O-01 deliverable acceptance remains open |
@@ -49,7 +49,7 @@
 
 Current Accounting PDS: `docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.4.md`. PDS v0.1, v0.2 and v0.3 are retained as historical/superseded records. No Accounting DDL, Migration 0009 SQL, COA seed, Posting writer, production grant or Posting Release is authorized.
 
-Current Inventory PDS: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.4.md`. Versions v0.1-v0.3 are retained as historical predecessors. PDS v0.4 is a design successor only; PD-T-001..046 remain NOT RUN; O-35 remains OPEN. D-15 policy decision is CLOSED, but both numeric budgets remain NOT_SET and operational Cutover is prohibited. No DDL, SQL, EF mapping, migration, grant or runtime implementation is authorized by these design records.
+Current Inventory PDS: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.4.md`. Versions v0.1-v0.3 are retained as historical predecessors. PDS v0.4 is a design successor only; PD-T-001..048 remain NOT RUN; O-35 remains OPEN. D-15 policy decision is CLOSED, but both numeric budgets remain NOT_SET and operational Cutover is prohibited. No DDL, SQL, EF mapping, migration, grant or runtime implementation is authorized by these design records.
 
 ## 3. 7B closure result — carefully bounded
 
@@ -169,7 +169,8 @@ The finance structural validator checks the v0.2 proposal version markers, R1 re
 ## 11. Version history
 
 - v0.5 and v0.6 are retained as historical snapshots.
-- v0.7 registered the FE-01/FE-02 source-contract proposals and their explicit owner-review boundary; the underlying 7B/7C/7D workpaper versions remain unchanged.\n- v0.8 records owner approval of FE-01/FE-02 and shared contract policies in OWN-FE-01-02-001 v1.0; source contracts and runtime gates remain pending.
+- v0.7 registered the FE-01/FE-02 source-contract proposals and their explicit owner-review boundary; the underlying 7B/7C/7D workpaper versions remain unchanged.
+- v0.8 records owner approval of FE-01/FE-02 and shared contract policies in OWN-FE-01-02-001 v1.0; source contracts and runtime gates remain pending.
 
 
 ## 12. Approved FE-01 / FE-02 owner decision
@@ -489,7 +490,8 @@ This dated integration record is historical evidence of the PR's scope and bound
 
 | Artifact | Version | Scope | Status |
 |---|---:|---|---|
-| OWN-INV-019 Inventory Owner Decision Supplement | 1.0 | D-15 dual cutover budgets/mandatory guards; O-64 scoped GM authority; WarehouseId watermark; Sales 24h reservation TTL | OWNER APPROVED — POLICY ONLY; no implementation/test evidence |\n| CR-ARCH-INV-OWNER-FOLLOWUP-001 | 0.2 | Maps D-15/O-35/O-36/O-64 to Master candidate; verifies owner-supplied v3.0.3 package and distinguishes artifact existence from formal acceptance | CANDIDATE PROVENANCE VERIFIED; independent review/formal acceptance pending |
+| OWN-INV-019 Inventory Owner Decision Supplement | 1.0 | D-15 dual cutover budgets/mandatory guards; O-64 scoped GM authority; WarehouseId watermark; Sales 24h reservation TTL | OWNER APPROVED — POLICY ONLY; no implementation/test evidence |
+| CR-ARCH-INV-OWNER-FOLLOWUP-001 | 0.2 | Maps D-15/O-35/O-36/O-64 to Master candidate; verifies owner-supplied v3.0.3 package and distinguishes artifact existence from formal acceptance | CANDIDATE PROVENANCE VERIFIED; independent review/formal acceptance pending |
 | MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001 | 0.4 | WarehouseId watermark, Projection cursor/cutover protocol, dual independent budgets, O-64 security scope and reservation expiry | CONTROLLED DESIGN SUCCESSOR — INDEPENDENT REVIEW PENDING — NO IMPLEMENTATION AUTHORITY |
 | MDG-INVENTORY-LOGICAL-ERD-001 | 0.3 | Reservation TTL snapshot, WarehouseId CountObservation cursor, NegativeStockLimitScopeAssignment logical concept | LOGICAL DESIGN SUCCESSOR — INDEPENDENT REVIEW PENDING |
 | MDG-INVENTORY-CROSS-MODULE-TECHNICAL-CONTRACT-001 | 1.1 | Owner cross-module contracts, cutover fail-closed policy, O-64 assignment scope and Finance boundary | OWNER APPROVED DESIGN DIRECTION — CROSS-OWNER ACCEPTANCE / BASELINE RECONCILIATION PENDING |
@@ -517,9 +519,9 @@ Open controls:
 - Branch: `docs/inventory-cross-module-contracts-20261120`.
 - Scope: owner decision supplement, verified v3.0.3 candidate package provenance, CR-ARCH-INV-OWNER-FOLLOWUP-001 v0.2, PDS v0.4, Logical ERD v0.3, cross-module contract v1.1, test specification v1.1, source-event proposal v0.3, O-register v1.3, Document Register v1.8, existing role-grant matrix and supporting checksum manifest.
 - Reviewer requested: `mrdeljoe4`. Review is still required on the final head.
-- Previous branch head `4570d8e1bd362a30410b2173aee7e247240885c2` had all five required workflows SUCCESS. That head is superseded by this successor package; all workflows must be rerun against the final head.
+- Previous branch head `234aaf16c6fc92cddfbc168472680d25f42d9c41` had all five required workflows SUCCESS. The document corrections in this v1.8 revision supersede that head, so exact-head CI must be verified against the resulting PR head SHA.
 - SHA256SUMS.txt contains 394 entries in bytewise path order with no duplicate paths; the new CR/OIR/Document Register successor records are included. The owner-supplied ZIP package's own internal manifest was separately verified 11/11.
-- All test specifications remain NOT_RUN. PR merge is intentionally not performed pending exact-head CI, independent review and cross-owner acceptance.
+- All test specifications remain NOT_RUN. At this register snapshot, PR #82 remained Draft while exact-head CI, independent review and cross-owner acceptance were pending. The final PR/review/merge state is tracked by GitHub PR #82; this register is not a live status source.
 
 ## 18. Remaining boundaries and acceptance sequence
 
