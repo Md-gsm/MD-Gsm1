@@ -6,7 +6,7 @@
 | Version | 0.2 |
 | Classification | CONTROLLED RECONSTRUCTION / CONTROLLED REPLACEMENT |
 | Parent | WP06-P4H-7D-TEST-REGISTRY-001 v0.1 |
-| Architecture | MDG-ARCH-MASTER-001 v2.5 |
+| Architecture | MDG-ARCH-MASTER-001 v3.0.3 |
 | O-01 Change Request | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 — OWNER APPROVED |
 | Design | R1 FAIL-CLOSED CONTROL CASES SPECIFIED FOR 39 FE EVENTS + 16 COA OPEN ITEMS + 12 SHARED CONTROLS |
 | Positive accounting journal cases | BLOCKED UNTIL 7B/7C CANONICAL |
@@ -117,7 +117,7 @@
 
 | Test ID | 7C Open | سناریو | اقدام | نتیجه مورد انتظار | Evidence plan |
 |---|---|---|---|---|---|
-| MDG-COA-GATE-001 | 7C-OPEN-001 | حسابی در 76 ردیف بدون crosswalk کامل v1.4 | تلاش برای تأیید canonical release | UNVERIFIED باقی بماند؛ POSTING_BLOCKED؛ هیچ attribute حدس زده نشود | crosswalk diff، source refs، block log |
+| MDG-COA-GATE-001 | 7C-OPEN-001 | حسابی در 76 ردیف بدون crosswalk کامل v1.5 | تلاش برای تأیید canonical release | UNVERIFIED باقی بماند؛ POSTING_BLOCKED؛ هیچ attribute حدس زده نشود | crosswalk diff، source refs، block log |
 | MDG-COA-GATE-002 | 7C-OPEN-002 | AccountId تکراری یا قابل reuse | ثبت/تغییر registry با شناسه تکراری | unique constraint رد کند؛ هیچ حسابی با شناسه مبهم فعال نشود | DB constraint output، duplicate fixture، audit |
 | MDG-COA-GATE-003 | 7C-OPEN-003 | Parent cycle یا رابطه استنباط‌شده از prefix | بارگذاری hierarchy نامعتبر | cycle/prefix-only relation رد شود؛ hierarchy تأیید نشود | graph fixture، cycle detector output، lineage |
 | MDG-COA-GATE-004 | 7C-OPEN-004 | Nature/NormalBalance نامشخص یا متناقض | درخواست Postable شدن حساب | status UNVERIFIED و POSTING_BLOCKED؛ هیچ سمت ثبت از روی نام استنباط نشود | attribute validation report، rejected command |
@@ -150,3 +150,8 @@
 - Evidence: NOT ACCEPTED.
 - Gate 4: OPEN.
 - Posting Release: NOT GRANTED.
+
+
+## کنترل مرجعیت — 2026-11-20
+
+Architecture baseline for this controlled registry is MDG-ARCH-MASTER-001 v3.0.3. The active COA hierarchy is v1.2 master + v1.5 controlled supplementary reconstruction/crosswalk; v1.4 is historical/superseded for current supplementary authority and v1.3 is intermediate only. The 67 Test IDs remain design specifications; execution and evidence acceptance are separate gates.
