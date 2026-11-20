@@ -7,7 +7,8 @@
 | Version / decision date | 1.0 / 2026-11-20 |
 | Status | OWNER APPROVED — CONTROLLED POLICY SUPPLEMENT |
 | Owner authority | Explicit Product/Business Owner decisions recorded 2026-11-20 |
-| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3; this supplement does not silently rewrite the baseline |
+| Candidate semantic source | MDG-ARCH-MASTER-001 v3.0.3 (owner-supplied Controlled Master Candidate; not formally accepted) |
+| Last accepted architecture baseline | MDG-ARCH-MASTER-001 v2.5; this supplement does not silently rewrite or promote the candidate |
 | Related records | OWN-INV-018 v1.0; Inventory Source Event Contract Proposal v0.2; Inventory PDS v0.3; O-35, O-36, O-64, D-15 |
 | Implementation / tests | NOT AUTHORIZED / NOT RUN |
 | Release authority | NOT GRANTED |
@@ -93,10 +94,11 @@ This supplement supersedes only the older "System Manager may change the thresho
 | Inventory PostgreSQL Physical Design | v0.4: WarehouseId cursor, both independent cutover budgets, zero-difference/zero-watermark cutover guards, Sales 24h, retry-attention behavior and O-64 scope |
 | Inventory Logical ERD | v0.3: WarehouseId observation/cursor semantics, Sales 24h snapshot and logical O-64 scope-assignment record |
 | Inventory Cross-Module Technical Contract | v1.1: exact owner scope and D-15 cutover guard |
-| Inventory Source Event Contract Proposal | v0.3: supersede stale System Manager wording |\n| Architecture Master Change Crosswalk | CR-ARCH-INV-OWNER-FOLLOWUP-001 v0.1: maps D-15/O-35/O-36/O-64 and records baseline provenance reconciliation gap |
+| Inventory Source Event Contract Proposal | v0.3: supersede stale System Manager wording |
+| Architecture Master Change Crosswalk | CR-ARCH-INV-OWNER-FOLLOWUP-001 v0.2: maps D-15/O-35/O-36/O-64 and records verified candidate provenance/formal acceptance boundary |
 | Cross-Module Test Specification | v1.1: explicit authorization-scope, watermark and cutover-budget tests |
-| Canonical Open-Issue Register | v1.2: D-15 policy decision closed; O-35/O-36/O-64 remain open for their remaining evidence |
-| Document Register | v1.6: register controlled successors and test status |
+| Canonical Open-Issue Register | v1.3: D-15 policy decision closed; O-35/O-36/O-64 remain open for their remaining evidence |
+| Document Register | v1.8: register controlled successors and test status |
 
 ## 7. Evidence and acceptance boundary
 
