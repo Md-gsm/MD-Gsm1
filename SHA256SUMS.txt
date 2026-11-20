@@ -366,4 +366,4 @@ f00be8a76d3b5edecd849478a0b395c554a0abb99bbc5769fb5a7da220f8492d  docs/security/
 c93ae92a94d7ba03d8ab1f637080d83abd7b8ff97ca2fa2458d8f763ac9d4ad8  .github/workflows/windows-preview-installer.yml
 bb2d9af85fa2d9ccf5ceaf2fdb60e2e6e2d2e14dbe4ae4eabd33455f6ea0b0a9  .github/workflows/persons-module-gates.yml
 4db0702b4aeb209d15782f273efe4b8794de6403743345a0144c9fc0dd2be287  scripts/ci/run_postgres_restore_poc.sh
-0000000000000000000000000000000000000000000000000000000000000000  docs/operations/evidence/EVD-GATE-D-EXECUTION-001_v0.2.md
+b1749a50ea66c5e1e40d006ea45f1170b9c22b20b1f277b5b4b4c48744aea63b  docs/operations/evidence/EVD-GATE-D-EXECUTION-001_v0.2.md
