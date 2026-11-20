@@ -6,8 +6,8 @@
 | Date | 2026-11-18 |
 | Status | OWNER-AUTHORIZED IMPLEMENTATION SCOPE — NOT A POSTING RELEASE |
 | Data owners | ACC-01, ACC-02, FY-01 — Accounting |
-| Architecture parent | MDG-ARCH-MASTER-001 v2.5 |
-| COA authority | MDG-COA-MASTER-001 v1.2 master; v1.4 supplementary register |
+| Architecture parent | MDG-ARCH-MASTER-001 v3.0.3 |
+| COA authority | COA v1.2 master; COA v1.5 controlled supplementary reconstruction/crosswalk (v1.4 historical/superseded; v1.3 intermediate) |
 | Migration | 0009 is RESERVED in main by PR #70; SQL NOT AUTHORIZED YET. Physical design: MDG-ACC-PDS-001 v0.1. |
 
 ## Owner direction
@@ -28,7 +28,7 @@ The product owner explicitly directed the team to begin real Accounting implemen
 
 1. This work does not change the approved phase order or claim that Accounting Phase 8 is complete.
 2. Inventory remains a prerequisite for Inventory-dependent accounting events and integrated posting. No Inventory, Treasury, Sales, Purchasing or RepairOperations event adapter is introduced in this slice.
-3. No account is seeded as canonical. The 7C attributes not established by v1.2, v1.4 and accepted owner decisions remain unresolved; no AccountId, parent, Nature, NormalBalance, effective date or posting permission is invented.
+3. No account is seeded as canonical. The 7C attributes not established by v1.2, v1.5 and accepted owner decisions remain unresolved; no AccountId, parent, Nature, NormalBalance, effective date or posting permission is invented.
 4. No positive FE Posting Rule is seeded merely to make a test pass. 7B remains blocked until each rule is supported by a complete source/decision crosswalk.
 5. No Journal is persisted or posted by this first slice. The preflight service is read-only; transactional PostgreSQL persistence, API composition and runtime posting require the reserved migration and subsequent acceptance.
 6. TaxMode=0 continues to forbid all Tax Lines/Tax Posting. No Tax Matrix or legal rate is fabricated.
