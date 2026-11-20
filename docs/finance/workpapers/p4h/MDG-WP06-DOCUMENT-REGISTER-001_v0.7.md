@@ -398,3 +398,16 @@ Path: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-AUDIT-001
 The internal review compared PostgreSQL physical-design proposal v0.1 with the sole accepted architecture baseline v3.0.3, Stage 05 inventory semantics and logical ERD v0.2. It found four blockers: (1) no complete durable command-idempotency model for both movement and non-movement commands; (2) unresolved atomic durability boundary between Inventory and AuditSecurity while preserving the single canonical AuditEvent owner; (3) committed-ledger immutability is not tied to enforceable PostgreSQL privilege/trigger/procedure controls; and (4) lock ordering is not globally consistent across reservation, stock scope and other mutable aggregates. Three high-priority clarifications concern canonical sequence/watermark scope, executable stocktake snapshot protocol and projection rebuild/cutover concurrency. Additional medium/low findings cover stock-position identity, draft/commit boundary, reservation expiry persistence, audit/outbox states and naming/nullability normalization.
 
 The review is an internal adversarial self-review, not an independent external reviewer attestation. It is a design audit only: no SQL, DDL, migration, PostgreSQL runtime test, implementation, grant, Posting Rule, Posting Release or Go-Live was performed or authorized. Physical-design v0.1 is not ready for DDL/migration freeze until blockers and high findings are closed and an external review is obtained.
+
+
+## 24. Inventory PostgreSQL physical-design correction and re-audit — 2026-11-20
+
+| Artifact | Version | Status |
+|---|---:|---|
+| MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001 | 0.2 | CORRECTED DESIGN — FOUR BLOCKERS CLOSED IN DESIGN; OTHER FINDINGS OPEN |
+| MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-REAUDIT-002 | 0.1 | INTERNAL RE-AUDIT — FOUR BLOCKERS CLOSED IN DESIGN; NOT READY FOR DDL FREEZE |
+
+Corrected design: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.2.md`.
+Re-audit: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-REAUDIT-002_v0.1.md`.
+
+The correction defines durable command receipts for movement and non-movement commands; Inventory-local transactional audit-intent delivery while AuditSecurity remains sole canonical AuditEvent owner; PostgreSQL-enforced committed-ledger immutability through a restricted command boundary, privilege denial and mutation guards; and one total lock hierarchy. It also resolves the canonical Warehouse × Variant committed-prefix sequence and per-scope stocktake watermark algorithm. Re-audit closes PD-AUD-01..06 at design level only. PD-AUD-07 projection rebuild/cutover and PD-AUD-08..12 data dictionary/edge cases remain open. No DDL, migration, grants, API/runtime, PostgreSQL test, O-35 closure, Posting Release or Go-Live is claimed or authorized.
