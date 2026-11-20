@@ -696,7 +696,7 @@ Crosswalk باید سه اتصال مستقل داشته باشد:
 
 | ID | موضوع | معیار بسته‌شدن |
 |---|---|---|
-| INT-7C-OPEN-001 | تطبیق صفات Canonical برای 78 شناسه | COA v1.2 master + v1.4 supplementary register + owner decisions |
+| INT-7C-OPEN-001 | تطبیق صفات Canonical برای 78 شناسه | COA v1.2 master + v1.5 controlled supplementary reconstruction/crosswalk + owner decisions |
 | INT-7C-OPEN-002 | ویژگی‌های 2114 | منبع یا تصمیم معتبر |
 | INT-7C-OPEN-003 | ویژگی‌های 5106 | بررسی عدم برخورد و منبع |
 | INT-7C-OPEN-004 | AccountId | قرارداد شناسه و پیاده‌سازی |
@@ -921,7 +921,7 @@ Pull Request باید:
 
 ---
 
-# 15. ارتباط با Architecture v2.5 و O-01
+# 15. مرجع تاریخی Architecture v2.5 و O-01 (superseded by v3.0.3)
 
 معیار تاریخی O-01 در Architecture v2.5 به بازیابی 7B v0.4، 7C v0.3 و تکمیل Crosswalk اشاره می‌کرد. مالک در 2026-11-18 از طریق CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 معیار جایگزین را تأیید کرده است.
 
