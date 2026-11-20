@@ -10,7 +10,7 @@
 | Project | MD-Gsm1 |
 | Supersedes | MDG-WP06-7B-7C-7D-INTEGRATED-001 v0.5 |
 | Repository | Md-gsm/MD-Gsm1 |
-| Architecture Baseline | MDG-ARCH-MASTER-001 v2.5 |
+| Architecture Baseline | MDG-ARCH-MASTER-001 v3.0.3 |
 | Related Decision | ADR-0017 — Integer-Only IRR |
 | Document Class | Controlled Reconstruction |
 | Status | DRAFT — OWNER CRITERION APPROVED; TECHNICAL CLOSURE PENDING |
@@ -54,7 +54,7 @@ Financial Event → Recognition Rule → Posting Rule → COA → Subledger → 
 
 این سند فقط مرجع طراحی و کنترل اسناد 7B، 7C و 7D در حوزه مالی است. این سند به‌تنهایی مجوز پیاده‌سازی موتور مالی، ایجاد migration، اجرای ثبت واقعی یا فعال‌سازی ماژول Accounting نیست.
 
-این Pull Request بسته مستندات کنترل‌شده 7B/7C/7D را در مسیرهای مستقل و یک سند یکپارچه برای crosswalk و audit ثبت می‌کند. نسخه‌های مستقل در مسیرهای p4h/7b، p4h/7c و p4h/7d نگهداری می‌شوند. COA v1.2 سند مادر و COA v1.4 رجیستر تکمیلی جاری است؛ Architecture v2.5 دست‌نخورده باقی مانده و v2.6 صرفاً پیش‌نویس کنترل‌شده است.
+این Pull Request بسته مستندات کنترل‌شده 7B/7C/7D را در مسیرهای مستقل و یک سند یکپارچه برای crosswalk و audit ثبت می‌کند. نسخه‌های مستقل در مسیرهای p4h/7b، p4h/7c و p4h/7d نگهداری می‌شوند. COA v1.2 سند مادر و COA v1.5 بازسازی تکمیلی/crosswalk کنترل‌شده است؛ COA v1.4 برای مرجعیت تکمیلی جاری تاریخی/منسوخ و v1.3 نسخه میانی است. Architecture v3.0.3 تنها baseline پذیرفته‌شده مالک است.
 
 ## 1.3 وضعیت بازسازی منابع تاریخی و معیار جایگزین O-01
 
@@ -496,15 +496,9 @@ ADR-0017 سیاست integer-only را تثبیت کرده است:
 
 نباید این قاعده به «تلورانس عمومی یک ریال برای هر خط»، «گرد کردن صرفاً در جمع نهایی» یا مجوز ثبت کسری ریال تعبیر شود.
 
-## 7.3 مقدار 100,000 IRR per line
+## 7.3 مبنای پولی و منع آستانه مستقل ردیف
 
-معنای مستقل مقدار 100,000 IRR per line در ADR-0017 باز است و هنوز احراز نشده است. این مقدار:
-- سقف گرد کردن نیست؛
-- تلورانس یک ریالی سند نیست؛
-- مجوز اختلاف قیمت نیست؛
-- نباید در هیچ محاسبه یا کنترل گرد کردن استفاده شود.
-
-وضعیت آن OPEN — SOURCE/OWNER MEANING NOT VERIFIED باقی می‌ماند.
+مبنای پولی حداقل 1 ریال است. هیچ آستانه ریالی مستقل برای هر ردیف تعریف نشده است. مبلغ خالص دقیق سند فقط یک‌بار در سطح جمع سند و با AwayFromZero گرد می‌شود؛ سقف اختلاف مطلق ناشی از این گردکردن حداکثر 1 ریال برای هر سند است. هر عبارت یا تستی که آستانه مستقل ردیف را فرض کند، از مبنای جاری حذف و نامعتبر است.
 
 ## 7.4 حساب‌های 4107 و 5106
 
@@ -702,7 +696,7 @@ Crosswalk باید سه اتصال مستقل داشته باشد:
 
 | ID | موضوع | معیار بسته‌شدن |
 |---|---|---|
-| INT-7C-OPEN-001 | تطبیق صفات Canonical برای 78 شناسه | COA v1.2 master + v1.4 supplementary register + owner decisions |
+| INT-7C-OPEN-001 | تطبیق صفات Canonical برای 78 شناسه | COA v1.2 master + v1.5 controlled supplementary reconstruction/crosswalk + owner decisions |
 | INT-7C-OPEN-002 | ویژگی‌های 2114 | منبع یا تصمیم معتبر |
 | INT-7C-OPEN-003 | ویژگی‌های 5106 | بررسی عدم برخورد و منبع |
 | INT-7C-OPEN-004 | AccountId | قرارداد شناسه و پیاده‌سازی |
@@ -737,7 +731,7 @@ Crosswalk باید سه اتصال مستقل داشته باشد:
 | INT-7D-OPEN-010 | TaxMode | پوشش تمام مسیرها |
 | INT-7D-OPEN-011 | 4107 و 5106 | عدم برخورد و صحت ثبت |
 | INT-7D-OPEN-012 | سقف اثر گرد کردن | مقایسه با مرجع rational دقیق |
-| INT-7D-OPEN-013 | 100,000 IRR per line | تعیین معنای مستقل؛ بدون فرض یا استفاده |
+
 | INT-7D-OPEN-014 | Idempotency | جلوگیری از ثبت تکراری |
 | INT-7D-OPEN-015 | Reversal | برگشت قابل ردیابی |
 | INT-7D-OPEN-016 | Atomicity | عدم ثبت ناقص |
@@ -778,7 +772,7 @@ Crosswalk باید سه اتصال مستقل داشته باشد:
 ## 10.5 اصلاح تعارض‌های کشف‌شده در منبع 7D v0.3
 
 موارد زیر در سند تاریخی 7D v0.3 دیده شدند و تا زمان اصلاح رسمی آن سند، نباید مبنای طراحی یا آزمون قرار گیرند:
-1. تعبیر `100,000 IRR per line` به‌عنوان آستانه/اختلاف گردکردن هر ردیف با ADR-0017 و تصمیمات ثبت‌شده ناسازگار است. معنای این مقدار مستقل و OPEN است؛ این عدد نباید در محاسبه یا آزمون rounding استفاده شود.
+1. هر فرض درباره وجود آستانه مستقل ریالی در سطح ردیف با سیاست جاری ناسازگار است؛ مبنا 1 ریال و گردکردن یک‌باره در سطح جمع سند است. چنین آستانه‌ای در محاسبات یا آزمون‌های rounding وجود ندارد.
 2. عبارت فعال‌سازی/انتقال خودکار 110807 بر اساس معیار شناسایی دارایی با تصمیم نهایی OWN-7C-043 مبنی بر غیرفعال بودن 110807 در R1 و منع Posting جدید ناسازگار است. فقط تاریخچه حفظ می‌شود؛ هیچ مسیر جدیدی فعال نمی‌شود.
 3. هر محتوای تاریخی 7D که وضعیت یا معنای حساب‌ها را پیش از OWN-7C-043 منعکس می‌کند، فقط سابقه تاریخی است و باید با تصمیم متأخر و بدون بازگشایی آن تطبیق داده شود.
 4. این اصلاحات، متن تاریخی 7D v0.3 را بی‌صدا بازنویسی نمی‌کنند؛ نسخه بعدی کنترل‌شده باید Change Log و Source Crosswalk داشته باشد.
@@ -802,7 +796,7 @@ Crosswalk باید سه اتصال مستقل داشته باشد:
 | 110302 | وجه نقد در مسیر | حساب مرتبط با PSP طبق تعریف مصوب |
 | 1110 | حساب PSP | وجه نقد در مسیر |
 | FE-09 | OWN-7C-038 | دو شناسه و موضوع مستقل |
-| 100,000 IRR per line | تلورانس گرد کردن | معنای مستقل هنوز OPEN |
+
 
 ---
 
@@ -927,7 +921,7 @@ Pull Request باید:
 
 ---
 
-# 15. ارتباط با Architecture v2.5 و O-01
+# 15. مرجع تاریخی Architecture v2.5 و O-01 (superseded by v3.0.3)
 
 معیار تاریخی O-01 در Architecture v2.5 به بازیابی 7B v0.4، 7C v0.3 و تکمیل Crosswalk اشاره می‌کرد. مالک در 2026-11-18 از طریق CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 معیار جایگزین را تأیید کرده است.
 
@@ -946,7 +940,7 @@ Pull Request باید:
 بازیابی اسناد تاریخی اصلی دیگر شرط الزامی نیست؛ اما نسخه‌های جدید نباید به‌عنوان اصل تاریخی معرفی شوند. CR معیار O-01 را در سطح تصمیم مالک تأیید کرده است، ولی خود O-01 تا پذیرش تحویل‌دادنی‌ها و شواهد OPEN باقی می‌ماند.
 
 انتشار این سند:
-- Architecture v2.5 را به‌صورت مستقیم تغییر نمی‌دهد؛
+- این workpaper، Architecture Master را تغییر نمی‌دهد؛ تنها baseline جاری و پذیرفته‌شده مالک v3.0.3 است؛
 - O-01 را هنوز نمی‌بندد؛
 - Gate 3 یا Gate 4 را نمی‌بندد؛
 - مجوز پیاده‌سازی یا Posting صادر نمی‌کند.
@@ -970,9 +964,9 @@ Pull Request باید:
 - جلوگیری از القای کامل بودن 7C؛
 - تفکیک Source Verified، ID Only، Reconstructed و Proposed Tests؛
 - اصلاح بیان سقف اثر گرد کردن مطابق ADR-0017؛
-- ثبت معنای 100,000 IRR per line به‌عنوان OPEN و ممنوعیت استفاده از آن در rounding؛
+- حذف فرض آستانه مستقل ریالی در سطح ردیف و تثبیت مبنای یک ریال؛
 - استانداردسازی Issue Register و جداسازی شناسه‌های یکپارچه با پیشوند INT؛
-- افزودن نگاشت شناسه‌های تاریخی 7D و ثبت تعارض‌های 100,000 IRR و 110807؛
+- افزودن نگاشت شناسه‌های تاریخی 7D و ثبت تعارض‌های rounding و 110807؛
 - افزودن شکاف‌های بازیابی Legacy، جزئیات FIN-TST-043..053 و آزمون‌های کنترلی R1/R2؛
 - افزودن معیارهای پذیرش مستقل؛
 - افزودن الزامات Git و Pull Request؛
@@ -1018,7 +1012,7 @@ End of Document
 ## 18. مرجعیت قطعی COA و تطبیق 7C — 2026-11-18
 
 1. COA v1.2 سند مادر و مرجع اصلی کدینگ حساب‌ها و قواعد General Ledger است.
-2. COA v1.4 رجیستر تکمیلی جاری برای تطبیق حساب‌به‌حساب 7C و مبتنی بر v1.2 است.
+2. COA v1.5 بازسازی تکمیلی/crosswalk کنترل‌شده جاری برای تطبیق 7C بر پایه v1.2 است؛ v1.4 تاریخی/منسوخ و v1.3 میانی است.
 3. COA v1.3 فقط مرحله میانی مشتق‌شده است.
 4. دامنه فعال 7C شامل 78 شناسه است: 76 کد پایه از COA v1.2 و دو شناسه تکمیلی 2114 و 5106 از v1.4/تصمیمات مالک؛ 110809 ممنوع است.
 5. سه رابطه والد صریح در v1.4 عبارت‌اند از 110302→1103، 610801→6108 و 620201→6202؛ رابطه 620201 غیرفعال می‌ماند. برای بقیه والدها prefix inference ممنوع است.
@@ -1080,3 +1074,30 @@ This update does not close O-01 and does not grant runtime implementation or pos
 - No canonical COA account or positive FE rule is seeded from inference.
 - TaxMode=0 blocks all tax lines; no Tax Matrix or legal rate is fabricated.
 - This foundation slice does not close O-01, Gate 3, Gate 4 or grant Posting Release.
+
+## Controlling v3.0.3 / B-final reconciliation overlay — 2026-11-20
+
+This overlay supersedes historical statements in this workpaper that v2.5 is the current accepted architecture or v1.4 is the current COA supplement. The sole accepted architecture baseline is MDG-ARCH-MASTER-001 v3.0.3. COA v1.2 is the master coding/GL authority; COA v1.5 is the controlled supplementary reconstruction/crosswalk recognized by v3.0.3; v1.4 is historical/superseded for current supplementary authority; v1.3 is intermediate only. The original nine-sheet canonical COA and Part 4H-6 are still not recovered.
+
+### Policy decisions reconciled
+- CHG-050: integer IRR; minimum unit 1 IRR; one-time document-total AwayFromZero; max 1 IRR absolute difference per document; no independent per-row threshold.
+- CHG-100 / O-65: D/P/N mixed-sign allocation as specified in v3.0.3 P.4; exact-rational Largest Remainder, canonical tie-break, preserve destination account and scope, fail closed on ambiguity.
+- CHG-071: Asia/Tehran business timezone; technical timestamps UTC; business date from central server; date-only values do not timezone-shift; official CalendarDay source remains open.
+- CHG-083 / O-51: OPEN/SOFT_CLOSED/HARD_CLOSED/YEAR_CLOSED semantics and independent hard/year reopen approval.
+- CHG-091 / O-64: Inventory.ShortageThreshold.Configure; GENERAL_MANAGER default preset; SYSTEM_MANAGER alone does not grant business authority; feature enablement remains separately gated.
+- O-09 high-value sale approval is independent from rounding.
+- TaxMode=0 blocks all Tax Lines/Posting across all channels; no legal exemption is inferred.
+
+### Current B-final blockers
+1. 7B still has 39/39 policy dispositions but zero accepted positive Posting Rules. Full FE source/recognition, both journal sides, amount/cost basis, tax, subledger, identity/idempotency, reversal, period, atomicity/retry, authorization/audit and evidence must be complete per event.
+2. 7C has 78 IDs in scope but incomplete canonical attributes. The source master nine-sheet workbook and Part 4H-6 are absent; no fabricated source fields, AccountIds, Parent/Level, NormalBalance or posting eligibility are allowed.
+3. 2114 and 5106 remain DESIGN ONLY / NO POSTING until canonical attributes, event mapping, Posting Rules and tests are qualified. 4107 also requires its own eligibility and Posting Rule evidence before use.
+4. 7D has 67 IDs specified, not 67 passing tests. Runtime PostgreSQL transactional Posting, GL/Subledger, tax-channel and end-to-end evidence are not established by domain or structural tests.
+5. COA v1.5 hash/source lineage is recorded in v3.0.3 U.1; the hash of a reconstruction does not prove recovery of the original COA source.
+
+**Disposition:** owner-policy and authority conflicts reconciled; design/source/implementation/evidence blockers remain. B-final OPEN; Gate C and Gate D OPEN; Posting Release NOT GRANTED.
+
+
+## 17. کنترل مرجعیت جاری — 2026-11-20
+
+The owner-accepted architecture baseline is MDG-ARCH-MASTER-001 v3.0.3. The active COA authority is v1.2 master plus v1.5 controlled supplementary reconstruction/crosswalk. COA v1.4 is historical/superseded for current supplementary authority; v1.3 is intermediate only. The integrated workpaper is documentary control only: it does not grant a Posting Rule, DDL, migration, Posting Release, production migration or Go-Live.

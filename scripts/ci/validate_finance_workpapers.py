@@ -11,7 +11,7 @@ P7C = ROOT / "docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_
 ADD = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-5-STAGE-EXECUTION-REPORT_v0.2.md"
 P7D = ROOT / "docs/finance/workpapers/p4h/7d/WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md"
 CLOSE7B = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-7B-POSTING-RULE-CLOSURE-001_v0.2.md"
-REGISTER = ROOT / "docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.7.md"
+REGISTER = ROOT / "docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v1.4.md"
 SALES_PROPOSAL = ROOT / "docs/modules/sales/SALES-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.2.md"
 REPAIR_PROPOSAL = ROOT / "docs/modules/repairoperations/REPAIROPERATIONS-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.2.md"
 SOURCE_CROSSWALK = ROOT / "docs/finance/workpapers/p4h/integration/MDG-WP06-FE01-FE02-SOURCE-CROSSWALK-PROPOSAL-001_v0.2.md"
@@ -126,7 +126,7 @@ if "NOT RUN / NOT VERIFIED" not in d or "Posting Release | NOT GRANTED" not in d
     fail("7D execution/no-release guards missing")
 
 for token in (
-    "Controlled Document Register — Version 1.2",
+    "Controlled Document Register — Version 1.4",
     "MDG-WP06-7B-POSTING-RULE-CLOSURE-001 | v0.2",
     "Accepted positive Posting Rules: 0",
     "PROPOSAL — OWNER REVIEW REQUIRED", "FE-01: BLOCKED", "FE-02: BLOCKED", "runtime event publishers/adapters are not added.",
@@ -172,7 +172,7 @@ for token in (
     "Migration 0009", "FE-01 and FE-02 remain BLOCKED", "Posting Release remains NOT GRANTED",
 ):
     if token not in register:
-        fail(f"document register v1.1 missing Inventory control: {token}")
+        fail(f"document register v1.4 missing Inventory control: {token}")
 
 print("PASS: FE-01/FE-02 remain blocked; Inventory business policy is approved while technical acceptance and runtime remain pending")
 print(f"7B: {len(fe_ids)} event rows (38 FE identifiers + FE-10b); 39 fail-closed gate references")
@@ -195,7 +195,7 @@ for doc, tokens, label in (
     for token in tokens:
         if token not in doc: fail(f"{label} missing: {token}")
 for token in ("OWN-INV-018 v1.0", "INVENTORY-ERD-DATA-DICTIONARY-001", "INVENTORY-STATE-MOVEMENT-SPEC-001", "INVENTORY-TEST-SPEC-001", "65 test definitions", "Posting Release remains NOT GRANTED; operational release remains NOT GRANTED"):
-    if token not in register: fail(f"register v1.1 missing: {token}")
+    if token not in register: fail(f"register v1.4 missing: {token}")
 print("PASS: OWN-INV-018 and three Inventory design/test proposals are structurally registered")
 
 print("PASS: Inventory owner decision scope INV-EVT-001..018 is registered")

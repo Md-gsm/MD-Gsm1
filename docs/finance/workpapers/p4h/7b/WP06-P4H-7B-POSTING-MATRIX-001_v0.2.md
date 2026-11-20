@@ -6,7 +6,7 @@
 | Version | 0.2 |
 | Classification | CONTROLLED RECONSTRUCTION / CONTROLLED REPLACEMENT |
 | Parent | WP06-P4H-7B-POSTING-MATRIX-001 v0.1 |
-| Architecture | MDG-ARCH-MASTER-001 v2.5 |
+| Architecture | MDG-ARCH-MASTER-001 v3.0.3 |
 | O-01 Change Request | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 — OWNER APPROVED |
 | Design | COMPLETE EVENT DISPOSITION REGISTER; POSTING RULE DETAIL PARTIAL |
 | Implementation | NOT VERIFIED |
@@ -76,7 +76,7 @@
 6. inventory/GL/subledger effects atomic یا دارای recovery contract اثبات‌شده باشند.
 7. TaxMode=0 از UI/API/import/integration/manual journal هیچ tax posting ایجاد نکند.
 8. unknown event/account/mapping fail closed؛ fallback account ممنوع.
-9. 100,000 IRR per line یک موضوع مستقل و OPEN است؛ tolerance یا rounding threshold نیست.
+9. هیچ آستانه ریالی مستقل در سطح ردیف تعریف نشده است؛ مبنای پولی حداقل 1 IRR و گردکردن فقط یک‌بار در سطح جمع سند است.
 10. ADR-0017: integer-only IRR، AwayFromZero، largest remainder deterministic allocation و حداکثر ±1 IRR اثر گردکردن در سطح سند؛ این سیاست به‌تنهایی eligibility حساب‌های 4107/5106 را مجاز نمی‌کند.
 
 ## 5. وضعیت
@@ -186,7 +186,7 @@
 
 ### 7.1 تفسیر وضعیت
 - تمام رویدادهای OPEN/CONDITIONAL تا تکمیل قرارداد مبدأ و 7C canonical، از ایجاد Journal جدید منع می‌شوند.
-- فیلدهای مشترک از قواعد هنجاری Architecture v2.5 و ADR-0017 پیروی می‌کنند؛ جزئیات رویدادمحور باید در نسخه بعدی همین سند مقداردهی شوند.
+- فیلدهای مشترک از قواعد هنجاری Architecture v3.0.3 و ADR-0017 پیروی می‌کنند؛ جزئیات رویدادمحور باید در نسخه بعدی همین سند مقداردهی شوند.
 - برای FE-08، valuation method طبق WAC در ProductVariant×Warehouse و Specific Identification برای serial item حفظ می‌شود؛ valuation service و source movement هنوز باید قرارداد شوند.
 - برای FE-14، نقش‌های 110401..110404 طبق OWN-7C-004-R1 قطعی‌اند؛ source title/attributes و state transition crosswalk باز است.
 - برای FE-21، خرید و فروش دو سند جدا با TradeInId مشترک است؛ netting ممنوع.
@@ -244,3 +244,19 @@
 | FE-38 | 7B-OPEN-039 | Integrated v0.6 §6.2 (FE-38); 7C v0.4 §5; applicable OWN/ADR overlay; exact source-module event contract pending | MDG-FIN-GATE-039 | Finance + Product Owner |
 
 تمام OpenIssueها تا رفع فیلدهای NOT SPECIFIED/BLOCKED باز می‌مانند. بستن یک Issue نیازمند تکمیل قرارداد، بازبینی مستقل، به‌روزرسانی 7B/7C/7D و ثبت Evidence است؛ صرف تغییر وضعیت در جدول کافی نیست.
+
+## Controlling v3.0.3 / B-final overlay — 2026-11-20
+
+This overlay supersedes conflicting historical statements in this workpaper. The accepted architecture baseline is MDG-ARCH-MASTER-001 v3.0.3, not v2.5. COA v1.2 remains the master authority; COA v1.5 is the controlled supplementary reconstruction recognized by v3.0.3; v1.4 is historical/superseded for current supplementary authority and v1.3 is intermediate only.
+
+- Monetary base: integer IRR; minimum unit 1 IRR. There is no independent per-row monetary threshold. Exact signed document net is rounded once at document-total level using AwayFromZero; maximum absolute rounding difference is 1 IRR per document. Independent rounding of raw rows followed by summation is prohibited.
+- Mixed-sign allocation is governed by O-65 / CHG-100 and the v3.0.3 P.4 contract (D/P/N, exact rational Largest Remainder, canonical deterministic tie-break, destination-account preservation, zero-row zero allocation, fail-closed ambiguity). This is not a Posting Rule authorization.
+- O-09 remains an independent high-value-sale approval threshold, not a rounding rule.
+- RecognitionTime is an explicit Accounting decision from the approved source-event contract; never infer it from invoice/payment/status/OccurredAt/RecordedAt timestamps.
+- Receipt, allocation, settlement, revenue recognition, tax, inventory movement, COGS, refund and commission entitlement remain separate event/rule paths.
+- TaxMode=0 prohibits Tax Lines/Tax Posting across UI/API/manual/import/integration/retry. It is not a legal exemption statement. Positive tax requires accepted Tax Matrix and legal evidence.
+- O-51 controls close states; hard/year reopen requires documented request and independent approval.
+
+The prior numeric per-row statement in §4 is removed and must not be reintroduced. The event-level status remains 39/39 dispositions, 0 accepted positive Posting Rules. Each FE remains POSTING_BLOCKED until its full source, recognition, debit/credit, amount/cost, tax, canonical account, subledger, identity/idempotency, reversal, period, atomicity/retry, authorization/audit, test and evidence contract is complete.
+
+B-final remains OPEN; this overlay does not grant Posting Release, migration, or Go-Live.

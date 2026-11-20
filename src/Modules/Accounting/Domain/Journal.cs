@@ -11,13 +11,14 @@ public sealed class Journal
 {
     private readonly IReadOnlyList<JournalLine> _lines;
 
-    private Journal(Guid journalId, Guid fiscalPeriodId, DateOnly journalDate, PostingIdentity postingIdentity,
+    private Journal(Guid journalId, Guid fiscalPeriodId, Guid coaSnapshotId, DateOnly journalDate, PostingIdentity postingIdentity,
         IReadOnlyList<JournalLine> lines, string sourceDocumentReference, string createdBy,
         DateTimeOffset createdAtUtc, string createdAuditEventId, JournalStatus status, string? finalizedBy,
         DateTimeOffset? finalizedAtUtc, string? finalizedAuditEventId, Guid? reversalOfJournalId)
     {
         JournalId = journalId;
         FiscalPeriodId = fiscalPeriodId;
+        CoaSnapshotId = coaSnapshotId;
         JournalDate = journalDate;
         PostingIdentity = postingIdentity;
         _lines = Array.AsReadOnly(lines.ToArray());
@@ -34,6 +35,7 @@ public sealed class Journal
 
     public Guid JournalId { get; }
     public Guid FiscalPeriodId { get; }
+    public Guid CoaSnapshotId { get; }
     public DateOnly JournalDate { get; }
     public PostingIdentity PostingIdentity { get; }
     public IReadOnlyList<JournalLine> Lines => _lines;
@@ -53,15 +55,15 @@ public sealed class Journal
     public IrrAmount TotalCredits =>
         new(checked((long)_lines.Aggregate(BigInteger.Zero, (sum, line) => sum + line.Credit.Value)));
 
-    public static Journal CreateDraft(Guid journalId, Guid fiscalPeriodId, DateOnly journalDate,
+    public static Journal CreateDraft(Guid journalId, Guid fiscalPeriodId, Guid coaSnapshotId, DateOnly journalDate,
         PostingIdentity postingIdentity, IEnumerable<JournalLine> lines, string sourceDocumentReference,
         string createdBy, DateTimeOffset createdAtUtc, string createdAuditEventId, Guid? reversalOfJournalId = null)
     {
         ArgumentNullException.ThrowIfNull(postingIdentity);
         ArgumentNullException.ThrowIfNull(lines);
 
-        if (journalId == Guid.Empty || fiscalPeriodId == Guid.Empty)
-            throw new ArgumentException("Journal and fiscal period identifiers are required.");
+        if (journalId == Guid.Empty || fiscalPeriodId == Guid.Empty || coaSnapshotId == Guid.Empty)
+            throw new ArgumentException("Journal, fiscal period and COA snapshot identifiers are required.");
         if (reversalOfJournalId == Guid.Empty)
             throw new ArgumentException("A reversal reference cannot be an empty identifier.");
         if (string.IsNullOrWhiteSpace(sourceDocumentReference) || string.IsNullOrWhiteSpace(createdBy) ||
@@ -89,7 +91,7 @@ public sealed class Journal
         if (totalDebits != totalCredits)
             throw new InvalidOperationException("Journal is not balanced.");
 
-        return new Journal(journalId, fiscalPeriodId, journalDate, postingIdentity, materialized,
+        return new Journal(journalId, fiscalPeriodId, coaSnapshotId, journalDate, postingIdentity, materialized,
             sourceDocumentReference, createdBy, createdAtUtc, createdAuditEventId,
             JournalStatus.Draft, null, null, null, reversalOfJournalId);
     }
@@ -106,7 +108,7 @@ public sealed class Journal
         if (finalizedAtUtc.Offset != TimeSpan.Zero)
             throw new ArgumentException("Journal timestamps must be UTC.", nameof(finalizedAtUtc));
 
-        return new Journal(JournalId, FiscalPeriodId, JournalDate, PostingIdentity, _lines,
+        return new Journal(JournalId, FiscalPeriodId, CoaSnapshotId, JournalDate, PostingIdentity, _lines,
             SourceDocumentReference, CreatedBy, CreatedAtUtc, CreatedAuditEventId,
             JournalStatus.Finalized, actorId, finalizedAtUtc, finalizedAuditEventId, ReversalOfJournalId);
     }
@@ -124,7 +126,7 @@ public sealed class Journal
             Guid.CreateVersion7(), line.AccountId, line.AccountCode, line.Credit, line.Debit,
             line.PartySubledgerReference, line.DimensionsJson));
 
-        return CreateDraft(reversalJournalId, reversalFiscalPeriodId, reversalDate, reversalIdentity,
+        return CreateDraft(reversalJournalId, reversalFiscalPeriodId, CoaSnapshotId, reversalDate, reversalIdentity,
             reversedLines, SourceDocumentReference, createdBy, createdAtUtc, createdAuditEventId, JournalId);
     }
 }
