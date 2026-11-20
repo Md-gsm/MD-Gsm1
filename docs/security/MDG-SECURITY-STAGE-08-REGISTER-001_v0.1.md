@@ -12,6 +12,7 @@
 | Artifact | Version | Status |
 |---|---:|---|
 | `MDG-SECURITY-STAGE-08-DB-SESSION-RECOVERY-HASHCHAIN-001` | 0.1 | Integrated design specification; exact-SHA independent review and implementation gates remain open |
+| `MDG-SECURITY-STAGE-08-REAUDIT-001` | 0.1 | Internal adversarial design re-audit; not independent attestation; runtime tests NOT RUN |
 
 ## Scope
 
