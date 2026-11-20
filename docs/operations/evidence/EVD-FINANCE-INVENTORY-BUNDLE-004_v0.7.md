@@ -2,7 +2,7 @@
 Date: 2026-11-21 | Repository: Md-gsm/MD-Gsm1
 Architecture: MDG-ARCH-MASTER-001 v3.0.3 — sole owner-accepted and repository-registered Master.
 Status: EXACT-SHA DOCUMENTATION/CI SNAPSHOTS RECONCILED; PACKAGE 5 OWNER ACCEPTANCE AND INDEPENDENT REVIEW PENDING.
-Supersedes v0.5 as current status; v0.4/v0.5 remain immutable history.
+Supersedes v0.6 as current status; v0.4/v0.5/v0.6 remain immutable historical snapshots.
 
 ## 1. Integration state
 - Main snapshot: `971194111d49a7ed1f624e3ba64a7d776f729a08`.
