@@ -2,7 +2,7 @@ MD-Gsm Package 5 refreshed release-candidate manifest; version 0.3; date 2026-11
 Algorithm: SHA-256 over exact UTF-8 content for Markdown/text files; raw artifact bytes for PDF/ZIP.
 ef6ba7b7df401bf8d7a4307056db64b8a93671f3e51b6bf4174f24035b5c21c8  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v2.0.md
 cc7ad106a92801f2333f907f0cb48c5459b8ce3492ca9c6c4c905524acf5c417  docs/governance/MDG-OPEN-ISSUE-REGISTER-001_v1.5.md
-5d876bb8e5f05c29f642abd30d3cd07bd5f9977596b23e6b19ca6499db4e1ee9  docs/operations/evidence/EVD-FINANCE-INVENTORY-BUNDLE-004_v0.7.md
+7cd4e03cf5dfc4ab4202f28f1702177014b6a2dcb9b07bf777bdd027a6749e5d  docs/operations/evidence/EVD-FINANCE-INVENTORY-BUNDLE-004_v0.7.md
 f7354f81b67ebbc66184104ffdce628f4f6d4c275c94a3a55f1e8ce03b62d300  docs/operations/evidence/EVD-PACKAGE-05-FINAL-RELEASE-001_v0.3.md
 PDF: refreshed final PDF not yet generated; hash NOT SET.
 ZIP: refreshed final ZIP not yet generated; hash NOT SET.
