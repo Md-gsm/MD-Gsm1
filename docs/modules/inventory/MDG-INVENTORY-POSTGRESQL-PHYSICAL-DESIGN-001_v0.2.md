@@ -77,7 +77,7 @@ AuditSecurity exclusively owns canonical AuditEvent schema, storage, retention, 
 
 Use a transactional audit-intent outbox:
 1. Inventory constructs a versioned, minimized audit-intent envelope.
-2. The envelope is inserted into inventory.audit_intent_outbox in the same transaction as command receipt, domain changes, movement, scope entries and synchronous projections.
+2. Every mutating Inventory command that changes business/workflow state MUST emit its required audit intent; event classification and minimum evidence are mapped in the AuditSecurity integration contract. The envelope is inserted into inventory.audit_intent_outbox in the same transaction as command receipt, domain changes, movement, scope entries and synchronous projections.
 3. Commit guarantees both the Inventory effect and durable local audit intent.
 4. A worker delivers the envelope after commit through AuditSecurity's published ingestion contract.
 5. AuditSecurity validates and deduplicates by stable EventId, persists canonical AuditEvent and returns durable acknowledgement.
@@ -116,7 +116,7 @@ The implementation MUST enforce the commit boundary in PostgreSQL, not by applic
 - Runtime application role has no direct UPDATE or DELETE privilege on committed movement/header/line/scope-entry storage.
 - Runtime role cannot directly set COMMITTED state or insert committed ledger facts using unrestricted table DML.
 - A narrowly scoped SECURITY DEFINER command function (or equivalent reviewed database-enforced boundary) validates draft/version/authorization/source/idempotency and atomically inserts immutable committed header, lines and scope entries.
-- Function owner is a non-login migration/schema-owner role; search_path is fixed to trusted schemas; object names are schema-qualified; PUBLIC EXECUTE is revoked.
+- Function owner is a non-login migration/schema-owner role; search_path is fixed to trusted schemas with pg_temp placed last; object names are schema-qualified; PUBLIC EXECUTE is revoked; runtime roles have no CREATE privilege on any schema in the function search path; default privileges prevent accidental PUBLIC execution on future functions; and function owner/table-owner credentials are never used by runtime.
 - Actor identity is bound from trusted server execution context, not arbitrary client input.
 - Append-only committed tables permit INSERT only through the controlled function; runtime receives no UPDATE/DELETE/TRUNCATE/ALTER/trigger-disable privilege.
 - BEFORE UPDATE OR DELETE protection triggers reject mutation on committed tables as defense in depth, including child lines and scope entries.
@@ -158,7 +158,7 @@ All rows at a rank are sorted and locked before moving to the next rank. Shared 
 
 ### 6.2 Unified scope lock and sequence
 
-The single authoritative stock serialization scope is Warehouse × Variant across all Sections, locations, status buckets, Lots and serial/IMEI units. inventory.stock_scope_lock is both the negative-stock parent lock across Sections and the transactional committed-sequence allocator. There is no finer-grain authoritative sequence allocator. Fine-grain balances are projections derived from parent-scope ordered movements and line dimensions.
+The single authoritative stock serialization scope is Warehouse × Variant across all Sections, locations, status buckets, Lots and serial/IMEI units. inventory.stock_scope_lock is both the negative-stock parent lock across Sections and the transactional committed-sequence allocator. There is no finer-grain authoritative sequence allocator. The row is provisioned when a Warehouse × Variant becomes a valid stock scope. For legacy/missing pairs, the command performs INSERT ... ON CONFLICT DO NOTHING for all required keys in sorted order, then SELECT ... FOR UPDATE in the same sorted order; every writer must use this exact create-or-lock boundary. A missing row can never be treated as an unlocked scope or bypassed. Fine-grain balances are projections derived from parent-scope ordered movements and line dimensions.
 
 Each movement receives one monotonically increasing ledger_sequence per affected Warehouse × Variant. Multiple lines in the same scope share one sequence. A movement touching multiple scopes acquires all scope rows sorted by (WarehouseId, VariantId), increments each counter and writes one MovementScopeEntry per scope in the same transaction. All scopes commit or roll back together.
 
