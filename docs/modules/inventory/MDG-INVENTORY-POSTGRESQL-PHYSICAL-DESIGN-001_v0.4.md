@@ -64,6 +64,8 @@ Before attempting cutover, the builder performs background contiguous Catch-up o
 
 Normal writers synchronously update only the active generation. They do not dual-write every shadow generation. The builder/catch-up worker alone writes BUILDING generations.
 
+A movement writer must obtain the relevant Warehouse counter lock before resolving the active-generation Pointer and before selecting the Projection generation to update. It must not read or cache the active Pointer before obtaining the counter lock. A writer blocked behind cutover therefore resolves the newly committed Pointer after lock release and updates the new active generation; it cannot write to a retired generation. Ledger movement, Warehouse sequence entry and the Projection update remain one atomic transaction.
+
 A movement writer must obtain the relevant Warehouse counter lock before resolving the active-generation Pointer and before selecting the Projection generation to update. It must not read/cache the active Pointer before obtaining the counter lock. A writer that was blocked behind cutover therefore reads the newly committed Pointer after lock release and updates the new active generation; it cannot write to the retired generation. Ledger movement, Warehouse sequence entry and update to the generation resolved after the counter lock remain one atomic transaction.
 
 
@@ -254,13 +256,13 @@ All are specifications only and NOT RUN.
 | PD-T-041 | Multi-Warehouse movement counter locking | Counter rows acquired in ascending WarehouseId order; all affected entries commit atomically or none. | NOT_RUN |
 | PD-T-042 | WarehouseId projection and stocktake cursor vector | Every per-Warehouse cursor is contiguous; multi-Warehouse observation retains exact vector. | NOT_RUN |
 | PD-T-043 | Cutover tail count budget | MAX_CUTOVER_TAIL_COUNT is checked against movement-level sequence entries across all affected Warehouses; excess aborts with previous Pointer unchanged. | NOT_RUN |
-| PD-T-044 | Cutover lock-duration budget | MAX_CUTOVER_LOCK_DURATION is enforced using trusted server-side elapsed time; reaching/exceeding the limit aborts before Pointer commit. | NOT_RUN |
+| PD-T-044 | Cutover lock-duration budget | MAX_CUTOVER_LOCK_DURATION is enforced through final lock release; abort begins using an evidence-based rollback reserve so rollback/release completes within the limit; any breach fails the Cutover Gate. | NOT_RUN |
 | PD-T-045 | Pre-cutover movement and zero reconciliation guards | Every pre-cutover movement applied; quantity difference and each Warehouse watermark difference are exactly zero before swap. | NOT_RUN |
 | PD-T-046 | O-64 scoped negative-stock authorization | GENERAL_MANAGER is constrained to owner-approved WarehouseId×VariantId assignments; assignment changes are approved/audited; SYSTEM_MANAGER/Emergency denied; Serial/IMEI remains zero-negative. | NOT_RUN |
 | PD-T-047 | Writer paused before Warehouse counter lock during cutover | Writer resolves active Pointer only after obtaining counter lock; after swap it updates the new active generation and no movement is lost on the retired generation. | NOT_RUN |
 | PD-T-048 | Cutover abort/rollback and lock release | Abort begins with measured reserve; total lock-held interval through rollback/release is within budget; any breach keeps prior Pointer and fails Cutover Gate. | NOT_RUN |
 
-Together with PD-T-001..015 in v0.2, the controlled successor catalogue is PD-T-001..046. All tests are specifications only and none is runtime PASS evidence.
+Together with PD-T-001..015 in v0.2, the controlled successor catalogue is PD-T-001..048. All tests are specifications only and none is runtime PASS evidence.
 
 ## 10. Remaining dependencies and gates
 
