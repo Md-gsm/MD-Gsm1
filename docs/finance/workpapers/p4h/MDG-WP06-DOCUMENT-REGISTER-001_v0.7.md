@@ -299,7 +299,7 @@ The Stage 04 workpaper consolidates the v3.0.3 semantics and contracts:
 - Goods-only 2103 GRNI, separate invoiced AP 2101, and separate service-accrual design-only 2114; Purchase Order alone is not a liability or inventory receipt.
 - CreditExposure keyed PartyId × Product/Item, cheque replacement counted once, only explicit allocations reduce exposure, R2 installment scope excluded from R1 unless enabled, aging and overdue review, and O-09 kept independent.
 - Source-to-subledger-to-GL and Treasury external-statement tie-out identities, cutoff, exception register and close blockers.
-- 27 design-level test cases, not represented as executed PASS.
+- 25 design-level test cases, not represented as executed PASS.
 
 The workpaper uses only v3.0.3, COA v1.2 and v1.5. It does not create missing account mappings, debit/credit pairs, tax rates, tolerances or runtime behavior.
 
