@@ -112,7 +112,7 @@ public sealed class AccountingDomainTests
         var credit = JournalLine.Create(Guid.CreateVersion7(), Guid.CreateVersion7(), "4101", IrrAmount.Zero, new(99));
 
         Assert.Throws<InvalidOperationException>(() => Journal.CreateDraft(
-            Guid.CreateVersion7(), Guid.CreateVersion7(), EffectiveDate, Identity("SALE"),
+            Guid.CreateVersion7(), Guid.CreateVersion7(), Guid.CreateVersion7(), EffectiveDate, Identity("SALE"),
             [debit, credit], "SALE-1", "actor-1", UtcNow, "audit-create"));
         Assert.Throws<ArgumentException>(() => JournalLine.Create(
             Guid.CreateVersion7(), Guid.CreateVersion7(), "1101", IrrAmount.Zero, IrrAmount.Zero));
@@ -127,7 +127,7 @@ public sealed class AccountingDomainTests
         var originalDraft = CreateBalancedDraft();
         var original = originalDraft.Finalize(OpenPeriod(originalDraft.FiscalPeriodId), "actor-1", UtcNow, "audit-finalize");
         var reversal = original.CreateReversal(
-            Guid.CreateVersion7(), Guid.CreateVersion7(), EffectiveDate, Identity("REVERSAL"), "actor-2", UtcNow, "audit-reversal-create");
+            Guid.CreateVersion7(), Guid.CreateVersion7(), original.CoaSnapshotId, EffectiveDate, Identity("REVERSAL"), "actor-2", UtcNow, "audit-reversal-create");
 
         Assert.Equal(JournalStatus.Finalized, original.Status);
         Assert.Equal(JournalStatus.Draft, reversal.Status);
@@ -494,7 +494,7 @@ SourceDocument = "TEST_SOURCE_DOCUMENT",
         var periodId = Guid.CreateVersion7();
         var debit = JournalLine.Create(Guid.CreateVersion7(), Guid.CreateVersion7(), "1101", new(100), IrrAmount.Zero);
         var credit = JournalLine.Create(Guid.CreateVersion7(), Guid.CreateVersion7(), "4101", IrrAmount.Zero, new(100));
-        return Journal.CreateDraft(Guid.CreateVersion7(), periodId, EffectiveDate, Identity("SALE"),
+        return Journal.CreateDraft(Guid.CreateVersion7(), periodId, Guid.CreateVersion7(), EffectiveDate, Identity("SALE"),
             [debit, credit], "SALE-1", "actor-1", UtcNow, "audit-create");
     }
 
