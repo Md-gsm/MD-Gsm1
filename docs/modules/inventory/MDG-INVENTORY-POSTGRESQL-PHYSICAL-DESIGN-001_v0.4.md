@@ -248,8 +248,15 @@ All are specifications only and NOT RUN.
 | PD-T-037 | Nullability/state matrix | Illegal combinations rejected |
 | PD-T-038 | Sentinel scan | No magic sentinel identifiers |
 | PD-T-039 | Owner-contract compatibility | IDs/types/requiredness match source contracts |
+| PD-T-040 | Same Warehouse, concurrent different-Variant movements | One contiguous Warehouse-wide sequence; each movement gets one sequence entry and narrower projections advance via verified no-op where applicable. | NOT_RUN |
+| PD-T-041 | Multi-Warehouse movement counter locking | Counter rows acquired in ascending WarehouseId order; all affected entries commit atomically or none. | NOT_RUN |
+| PD-T-042 | WarehouseId projection and stocktake cursor vector | Every per-Warehouse cursor is contiguous; multi-Warehouse observation retains exact vector. | NOT_RUN |
+| PD-T-043 | Cutover tail count budget | MAX_CUTOVER_TAIL_COUNT is checked against movement-level sequence entries across all affected Warehouses; excess aborts with previous Pointer unchanged. | NOT_RUN |
+| PD-T-044 | Cutover lock-duration budget | MAX_CUTOVER_LOCK_DURATION is enforced using trusted server-side elapsed time; reaching/exceeding the limit aborts before Pointer commit. | NOT_RUN |
+| PD-T-045 | Pre-cutover movement and zero reconciliation guards | Every pre-cutover movement applied; quantity difference and each Warehouse watermark difference are exactly zero before swap. | NOT_RUN |
+| PD-T-046 | O-64 scoped negative-stock authorization | GENERAL_MANAGER is constrained to owner-approved WarehouseId×VariantId assignments; assignment changes are approved/audited; SYSTEM_MANAGER/Emergency denied; Serial/IMEI remains zero-negative. | NOT_RUN |
 
-Together with PD-T-001..015 in v0.2, design catalogue is PD-T-001..039. None is runtime PASS evidence.
+Together with PD-T-001..015 in v0.2, the controlled successor catalogue is PD-T-001..046. All tests are specifications only and none is runtime PASS evidence.
 
 ## 10. Remaining dependencies and gates
 
