@@ -31,7 +31,7 @@
 | MDG-WP06-7B-POSTING-RULE-CLOSURE-001 | v0.2 | 39/39 policy dispositions reconciled; 7B-CL-014 and 7B-CL-019 closed at policy-only level; positive posting rules remain 0 |
 | WP06-P4H-7C-COA-RECONCILIATION-001 | v0.4 | 78 identifiers; v1.2 master + v1.5 controlled supplement; canonical attribute gaps OPEN |
 | WP06-P4H-7D-TEST-REGISTRY-001 | v0.2 | 67 Test IDs: 39 FE + 16 COA + 12 shared controls; finance runtime tests NOT RUN |
-| MDG-ACC-PDS-001 | v0.3 | Accounting PostgreSQL physical design; AuditSecurity sole canonical AuditEvent owner; exact-head CI PASS; independent review PENDING |
+| MDG-ACC-PDS-001 | v0.4 | Accounting PostgreSQL physical design; reversal retains original COA snapshot; journal/header/line snapshot consistency enforced by composite FKs; exact-head CI/review pending |
 | MDG-WP06-7B-7C-7D-INTEGRATED-001 | v0.6 | Integrated crosswalk, aligned to v3.0.3 and COA v1.5 |
 | MDG-WP06-5-STAGE-EXECUTION-REPORT | v0.2 | Current authority statements corrected to v3.0.3/COA v1.5; execution evidence remains SHA-scoped |
 | MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001 | v0.2 | Current hierarchy: COA v1.2 master + v1.5 controlled supplement; v1.4 historical/superseded |
@@ -47,7 +47,7 @@
 | Inventory Physical Design Re-audit 002 | v0.1 | Internal re-audit of v0.2; historical supporting evidence |
 | Inventory Physical Design Re-audit 003 | v0.1 | Internal re-audit of v0.3; all 12 design findings closed internally; not independent attestation |
 
-Current Accounting PDS: `docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.3.md`. PDS v0.1 and v0.2 are retained as historical/superseded records. No Accounting DDL, Migration 0009 SQL, COA seed, Posting writer, production grant or Posting Release is authorized.
+Current Accounting PDS: `docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.4.md`. PDS v0.1, v0.2 and v0.3 are retained as historical/superseded records. No Accounting DDL, Migration 0009 SQL, COA seed, Posting writer, production grant or Posting Release is authorized.
 
 Current Inventory PDS: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.3.md`. The v0.2 and v0.3 proposals are design documents only. PD-T-001..039 remain NOT RUN; O-35 remains OPEN. No DDL, SQL, EF mapping, migration, grant or runtime implementation is authorized by these design records.
 
@@ -123,9 +123,9 @@ Finance Workpaper Structural Validation:
 ## 8. PR and integrity controls
 
 - PR #66 is MERGED. Its merge is not a Posting Release and does not establish PostgreSQL persistence or runtime posting.
-- The prior PR #71 review on `b165e957ff7bf886616de21933018395d76bbff9` is historical and does not approve revised PDS v0.3. Reviewer `mrdeljoe4` has been requested again on the current exact head; renewed independent review is PENDING.
-- PR #71's six successful runs are historical and apply only to its prior head `b165e957ff7bf886616de21933018395d76bbff9`; all required workflows must pass again on the revised PDS v0.3 head.
-- SHA256SUMS.txt is the integrity manifest for tracked source and workpaper files. It must be regenerated and verified on the exact final heads after the current authority/PDS corrections.
+- Reviews on earlier PR #71 heads are historical/dismissed and do not approve current PDS v0.4. Reviewer `mrdeljoe4` remains requested for independent review of the final exact PR #71 head; approval is PENDING.
+- CI results for earlier PR #71 heads are historical. All required workflows must pass on the exact final PR #71 head; successful structural/design CI does not establish PostgreSQL runtime or financial Posting.
+- SHA256SUMS.txt is the integrity manifest for tracked source and workpaper files. The exact final PR #71 head must pass the repository checksum verifier after all current register/PDS/domain corrections.
 - PR #72 and PR #73 previously passed checksum and full Persons Module Gates on their earlier heads; those results are historical and must not be transferred to the revised heads. Fresh exact-head validation is required after the document-control corrections.
 - Owner approval of design is not implementation acceptance, test acceptance or Posting Release.
 
@@ -463,3 +463,10 @@ Current finance boundaries recorded by the canonical register:
 - Posting Release is NOT GRANTED; Gate C/Gate D remain OPEN / NOT VERIFIED.
 
 This v1.4 register is carried on PR #71 branch `docs/accounting-physical-schema-design-20261118`; its prior repository path suffix `_v0.8.md` is superseded by the controlled filename suffix `_v1.4.md`. PR #71 contains the complete PR #72 history; after #71 merges, #72 must be closed as superseded rather than merged separately. PR #73 is a separate Inventory extension and must be integrated onto the post-#71 main head. PR #81 is the final evidence-registration PR and is to be completed only after upstream merge SHAs are known. The updated register and checksum manifest require fresh exact-head CI and independent review on the resulting PR #71 SHA before merge.
+
+
+## 27. Accounting Journal snapshot consistency — PDS v0.4 — 2026-11-20
+
+Accounting PDS v0.4 supersedes v0.3 for the explicit Journal/JournalLine/Reversal snapshot invariants. Each JournalLine is constrained to the same COA snapshot as its Journal header by a composite FK. A reversal is an independent Journal in its own posting identity and fiscal period/date, but retains the original finalized Journal's immutable COA snapshot; it cannot rebind copied account identifiers/codes to a different snapshot. The Domain reversal factory enforces this by copying the original aggregate's `CoaSnapshotId`, and the physical design requires a composite self-FK for database enforcement.
+
+This is a design/domain consistency correction only. It creates no SQL, DDL, EF mapping, Migration 0009, COA seed, Posting writer, Posting Release, production migration or Go-Live authorization.

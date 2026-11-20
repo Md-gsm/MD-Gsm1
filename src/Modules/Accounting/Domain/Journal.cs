@@ -113,7 +113,7 @@ public sealed class Journal
             JournalStatus.Finalized, actorId, finalizedAtUtc, finalizedAuditEventId, ReversalOfJournalId);
     }
 
-    public Journal CreateReversal(Guid reversalJournalId, Guid reversalFiscalPeriodId, Guid reversalCoaSnapshotId, DateOnly reversalDate,
+    public Journal CreateReversal(Guid reversalJournalId, Guid reversalFiscalPeriodId, DateOnly reversalDate,
         PostingIdentity reversalIdentity, string createdBy, DateTimeOffset createdAtUtc, string createdAuditEventId)
     {
         ArgumentNullException.ThrowIfNull(reversalIdentity);
@@ -126,7 +126,7 @@ public sealed class Journal
             Guid.CreateVersion7(), line.AccountId, line.AccountCode, line.Credit, line.Debit,
             line.PartySubledgerReference, line.DimensionsJson));
 
-        return CreateDraft(reversalJournalId, reversalFiscalPeriodId, reversalCoaSnapshotId, reversalDate, reversalIdentity,
+        return CreateDraft(reversalJournalId, reversalFiscalPeriodId, CoaSnapshotId, reversalDate, reversalIdentity,
             reversedLines, SourceDocumentReference, createdBy, createdAtUtc, createdAuditEventId, JournalId);
     }
 }

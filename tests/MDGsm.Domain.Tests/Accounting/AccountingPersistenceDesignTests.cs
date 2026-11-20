@@ -30,7 +30,7 @@ public sealed class AccountingPersistenceDesignTests
 
     [Fact]
     [Trait("TestId", "MDG-ACC-AP01-002")]
-    public void Journal_reversal_carries_an_explicit_snapshot_reference()
+    public void Journal_reversal_retains_the_original_coa_snapshot()
     {
         var periodId = Guid.CreateVersion7();
         var snapshotId = Guid.CreateVersion7();
@@ -43,7 +43,7 @@ public sealed class AccountingPersistenceDesignTests
             "actor-1", Utc, "audit-finalize");
 
         var reversal = finalized.CreateReversal(
-            Guid.CreateVersion7(), Guid.CreateVersion7(), snapshotId, Date,
+            Guid.CreateVersion7(), Guid.CreateVersion7(), Date,
             PostingIdentity.Create("Sales", "sale-1", "handover", "REVERSAL", "1"),
             "actor-2", Utc, "audit-reversal");
 

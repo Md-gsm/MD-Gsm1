@@ -127,7 +127,7 @@ public sealed class AccountingDomainTests
         var originalDraft = CreateBalancedDraft();
         var original = originalDraft.Finalize(OpenPeriod(originalDraft.FiscalPeriodId), "actor-1", UtcNow, "audit-finalize");
         var reversal = original.CreateReversal(
-            Guid.CreateVersion7(), Guid.CreateVersion7(), original.CoaSnapshotId, EffectiveDate, Identity("REVERSAL"), "actor-2", UtcNow, "audit-reversal-create");
+            Guid.CreateVersion7(), Guid.CreateVersion7(), EffectiveDate, Identity("REVERSAL"), "actor-2", UtcNow, "audit-reversal-create");
 
         Assert.Equal(JournalStatus.Finalized, original.Status);
         Assert.Equal(JournalStatus.Draft, reversal.Status);
