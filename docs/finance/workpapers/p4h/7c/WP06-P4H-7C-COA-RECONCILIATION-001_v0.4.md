@@ -8,7 +8,7 @@
 | Parent | WP06-P4H-7C-COA-RECONCILIATION-001 v0.3 |
 | Architecture | MDG-ARCH-MASTER-001 v3.0.3 |
 | Owner decision | OWN-7C-043 and prior effective owner decisions |
-| COA authority | v1.2 master baseline; v1.4 current supplementary account register; v1.3 intermediate only |
+| COA authority | v1.2 master baseline; v1.5 controlled supplementary reconstruction/crosswalk; v1.4 historical/superseded; v1.3 intermediate only |
 | Source register | COA v1.2 master + COA v1.5 supplementary register + accepted owner decisions |
 | COA register scope | 78 identifiers: 76 RECON codes + owner-added 2114 and 5106; 110809 prohibited |
 | Design status | OWNER SOURCE HIERARCHY VERIFIED; CANONICAL ATTRIBUTE RECONCILIATION PARTIAL / OPEN |
