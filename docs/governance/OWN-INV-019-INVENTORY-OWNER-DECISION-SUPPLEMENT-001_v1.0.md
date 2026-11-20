@@ -93,7 +93,7 @@ This supplement supersedes only the older "System Manager may change the thresho
 | Inventory PostgreSQL Physical Design | v0.4: WarehouseId cursor, both independent cutover budgets, zero-difference/zero-watermark cutover guards, Sales 24h, retry-attention behavior and O-64 scope |
 | Inventory Logical ERD | v0.3: WarehouseId observation/cursor semantics, Sales 24h snapshot and logical O-64 scope-assignment record |
 | Inventory Cross-Module Technical Contract | v1.1: exact owner scope and D-15 cutover guard |
-| Inventory Source Event Contract Proposal | v0.3: supersede stale System Manager wording |
+| Inventory Source Event Contract Proposal | v0.3: supersede stale System Manager wording |\n| Architecture Master Change Crosswalk | CR-ARCH-INV-OWNER-FOLLOWUP-001 v0.1: maps D-15/O-35/O-36/O-64 and records baseline provenance reconciliation gap |
 | Cross-Module Test Specification | v1.1: explicit authorization-scope, watermark and cutover-budget tests |
 | Canonical Open-Issue Register | v1.2: D-15 policy decision closed; O-35/O-36/O-64 remain open for their remaining evidence |
 | Document Register | v1.6: register controlled successors and test status |
