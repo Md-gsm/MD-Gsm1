@@ -180,20 +180,25 @@ jobs:
           runtime_psql() {
             PGUSER=mdgsm_ci_runtime_login psql -d "$MDGSM_TEST_DB" -v ON_ERROR_STOP=1 "$@"
           }
+          expect_permission_denied() {
+            local label="$1"
+            shift
+            local output
+            if output="$("$@" 2>&1)"; then
+              echo "Runtime LOGIN unexpectedly allowed: $label" >&2
+              exit 1
+            fi
+            if ! grep -qi "permission denied" <<<"$output"; then
+              echo "Runtime LOGIN denial test did not fail for a permission reason: $label" >&2
+              echo "$output" >&2
+              exit 1
+            fi
+          }
           runtime_psql -c "SELECT count(*) FROM identity.accounts;" >/dev/null
           runtime_psql -c "SELECT count(*) FROM identity.sessions;" >/dev/null
-          if runtime_psql -c "CREATE TABLE identity.__runtime_ddl_must_be_denied(id integer);" >/dev/null 2>&1; then
-            echo "Runtime LOGIN unexpectedly created a table." >&2
-            exit 1
-          fi
-          if runtime_psql -c "INSERT INTO identity.accounts DEFAULT VALUES;" >/dev/null 2>&1; then
-            echo "Runtime LOGIN unexpectedly provisioned an account." >&2
-            exit 1
-          fi
-          if runtime_psql -c "DO \\$\\$ DECLARE col text; BEGIN SELECT attname INTO col FROM pg_attribute WHERE attrelid='identity.security_audit_events'::regclass AND attnum>0 AND NOT attisdropped ORDER BY attnum LIMIT 1; EXECUTE format('UPDATE identity.security_audit_events SET %I=%I',col,col); END \\$\\$;" >/dev/null 2>&1; then
-            echo "Runtime LOGIN unexpectedly modified append-only security audit events." >&2
-            exit 1
-          fi
+          expect_permission_denied "schema DDL" runtime_psql -c "CREATE TABLE identity.__runtime_ddl_must_be_denied(id integer);"
+          expect_permission_denied "account provisioning" runtime_psql -c "INSERT INTO identity.accounts DEFAULT VALUES;"
+          expect_permission_denied "append-only audit mutation" runtime_psql -c "DO \$\$ DECLARE col text; BEGIN SELECT attname INTO col FROM pg_attribute WHERE attrelid='identity.security_audit_events'::regclass AND attnum>0 AND NOT attisdropped ORDER BY attnum LIMIT 1; EXECUTE format('UPDATE identity.security_audit_events SET %I=%I',col,col); END \$\$;"
           echo "PASS: dedicated LOGIN identity inherits only mdgsm_runtime; required reads succeed and DDL/account provisioning/audit mutation are denied."
           # The grant script is intentionally safe to re-apply after reviewed schema changes.
           psql -d "$MDGSM_TEST_DB" -v ON_ERROR_STOP=1 -f database/operations/identityaccess-runtime-role-grants.sql
