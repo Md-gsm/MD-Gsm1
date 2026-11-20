@@ -349,3 +349,24 @@ The workpaper:
 - Migration, Posting Release, production migration and Go-Live: NOT GRANTED.
 
 This overlay registers the workpaper but does not infer technical owner acceptance, QA PASS or release authorization.
+
+
+## 21. Inventory logical ERD — v3.0.3 aligned — 2026-11-20
+
+| Artifact | Version | Scope | Status |
+|---|---:|---|---|
+| MDG-INVENTORY-LOGICAL-ERD-001 | 0.2 | Inventory logical entities, ownership, relationships, stable references, integrity invariants, equation mapping and traceability to INV-T-001..102 | INTEGRATED LOGICAL DESIGN — OWNER/INDEPENDENT REVIEW PENDING |
+
+Path: `docs/modules/inventory/MDG-INVENTORY-LOGICAL-ERD-001_v0.2.md`.
+
+This v0.2 supersedes INVENTORY-ERD-DATA-DICTIONARY-001 v0.1 as the current ERD proposal; v0.1 remains historical. It aligns with sole accepted baseline MDG-ARCH-MASTER-001 v3.0.3 and Stage 05 v0.1. It explicitly:
+- separates Inventory-owned facts from Organization, Catalog, Sales, Purchasing, RepairOperations, Persons, Accounting, Treasury and AuditSecurity ownership;
+- defines StockMovement/Line as the sole physical quantity source and StockPosition as a rebuildable projection;
+- models Reservation, Allocation, Pick, Custody, Transfer and Stocktake observations as distinct aggregates/facts;
+- binds each CountObservation to its own committed ledger watermark and preserves recount lineage;
+- maps quantity/valuation equations to authoritative facts and derived projections;
+- defines 25 logical integrity invariants and traceability groups for INV-T-001..102;
+- corrects the prior ATP proposal: ATP = Sellable − EffectiveReserved, with unreceived purchase and transfer quantities excluded;
+- preserves FE-31 R2, negative-stock feature OFF, Sales TTL OPEN/configurable, no Repair TTL and all accounting/Posting ownership boundaries.
+
+The document is logical design only. No physical schema, DDL, EF mapping, migration, API/runtime, PostgreSQL test PASS, O-35 closure, Posting Release or Go-Live is claimed or authorized. All inventory runtime tests remain NOT_RUN unless separately evidenced on an exact SHA.
