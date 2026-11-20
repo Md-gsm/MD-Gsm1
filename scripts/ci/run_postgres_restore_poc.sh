@@ -85,18 +85,18 @@ security_catalog_dump() {
   psql -d "$db" -At -v ON_ERROR_STOP=1 -c "
     SELECT item::text
     FROM (
-      SELECT jsonb_build_array('namespace', n.nspname, pg_get_userbyid(n.nspowner), COALESCE(n.nspacl::text,'')) AS item
+      SELECT jsonb_build_array('namespace', n.nspname, pg_get_userbyid(n.nspowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(n.nspacl, acldefault('n', n.nspowner))) x WHERE NOT (x.grantee= n.nspowner AND x.grantor= n.nspowner)), '')) AS item
       FROM pg_namespace n WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
       UNION ALL
-      SELECT jsonb_build_array('relation', n.nspname, c.relname, c.relkind, pg_get_userbyid(c.relowner), COALESCE(c.relacl::text,'')) AS item
+      SELECT jsonb_build_array('relation', n.nspname, c.relname, c.relkind, pg_get_userbyid(c.relowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(c.relacl, acldefault(CASE WHEN c.relkind='S' THEN 's'::\"char\" ELSE 'r'::\"char\" END, c.relowner))) x WHERE NOT (x.grantee= c.relowner AND x.grantor= c.relowner)), '')) AS item
       FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
       WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
       UNION ALL
-      SELECT jsonb_build_array('routine', n.nspname, p.proname, pg_get_userbyid(p.proowner), COALESCE(p.proacl::text,'')) AS item
+      SELECT jsonb_build_array('routine', n.nspname, p.proname, pg_get_userbyid(p.proowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) x WHERE NOT (x.grantee= p.proowner AND x.grantor= p.proowner)), '')) AS item
       FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
       WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
       UNION ALL
-      SELECT jsonb_build_array('type', n.nspname, t.typname, pg_get_userbyid(t.typowner), COALESCE(t.typacl::text,'')) AS item
+      SELECT jsonb_build_array('type', n.nspname, t.typname, pg_get_userbyid(t.typowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(t.typacl, acldefault('T', t.typowner))) x WHERE NOT (x.grantee= t.typowner AND x.grantor= t.typowner)), '')) AS item
       FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
       WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
       UNION ALL
@@ -121,18 +121,18 @@ security_catalog_fingerprint() {
   psql -d "$db" -At -v ON_ERROR_STOP=1 -c "
     SELECT md5(COALESCE(jsonb_agg(item ORDER BY item::text)::text, '[]'))
     FROM (
-      SELECT jsonb_build_array('namespace', n.nspname, pg_get_userbyid(n.nspowner), COALESCE(n.nspacl::text,'')) AS item
+      SELECT jsonb_build_array('namespace', n.nspname, pg_get_userbyid(n.nspowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(n.nspacl, acldefault('n', n.nspowner))) x WHERE NOT (x.grantee= n.nspowner AND x.grantor= n.nspowner)), '')) AS item
       FROM pg_namespace n WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
       UNION ALL
-      SELECT jsonb_build_array('relation', n.nspname, c.relname, c.relkind, pg_get_userbyid(c.relowner), COALESCE(c.relacl::text,'')) AS item
+      SELECT jsonb_build_array('relation', n.nspname, c.relname, c.relkind, pg_get_userbyid(c.relowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(c.relacl, acldefault(CASE WHEN c.relkind='S' THEN 's'::\"char\" ELSE 'r'::\"char\" END, c.relowner))) x WHERE NOT (x.grantee= c.relowner AND x.grantor= c.relowner)), '')) AS item
       FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
       WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
       UNION ALL
-      SELECT jsonb_build_array('routine', n.nspname, p.proname, pg_get_userbyid(p.proowner), COALESCE(p.proacl::text,'')) AS item
+      SELECT jsonb_build_array('routine', n.nspname, p.proname, pg_get_userbyid(p.proowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) x WHERE NOT (x.grantee= p.proowner AND x.grantor= p.proowner)), '')) AS item
       FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
       WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
       UNION ALL
-      SELECT jsonb_build_array('type', n.nspname, t.typname, pg_get_userbyid(t.typowner), COALESCE(t.typacl::text,'')) AS item
+      SELECT jsonb_build_array('type', n.nspname, t.typname, pg_get_userbyid(t.typowner), COALESCE((SELECT string_agg(format('%s:%s:%s:%s', x.grantee, x.privilege_type, x.is_grantable, x.grantor), ',' ORDER BY x.grantee, x.privilege_type, x.is_grantable, x.grantor) FROM aclexplode(COALESCE(t.typacl, acldefault('T', t.typowner))) x WHERE NOT (x.grantee= t.typowner AND x.grantor= t.typowner)), '')) AS item
       FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
       WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
       UNION ALL
