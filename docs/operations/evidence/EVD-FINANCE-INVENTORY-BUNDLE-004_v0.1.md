@@ -3,9 +3,9 @@
 | Field | Value |
 |---|---|
 | Evidence ID | EVD-FINANCE-INVENTORY-BUNDLE-004 |
-| Version | 0.2 |
+| Version | 0.3 |
 | Evidence snapshot | 2026-11-20 |
-| Recorded at | 2026-11-20; amended after exact-head document-control inspection |
+| Recorded at | 2026-11-20 13:52 UTC |
 | Governing architecture | MDG-ARCH-MASTER-001 v3.0.3 |
 | Repository | Md-gsm/MD-Gsm1 |
 | Evidence branch | `evidence/finance-inventory-bundle-004-20261120` |
@@ -74,7 +74,7 @@ After branch realignment, the manifest was rebuilt from the #72 baseline and rec
 | Project Charter Owner Gate | 44746080812 | SUCCESS |
 | Windows Preview Installer | 44746080878 | SUCCESS |
 | CodeQL | 44746080814 | SUCCESS |
-| Full Persons Module Gates workflow | 44746080861 | IN PROGRESS at snapshot; Windows PostgreSQL migration job had not completed |
+| Full Persons Module Gates workflow | 44746080861 | **SUCCESS — all 13 jobs completed successfully**, including Linux and Windows PostgreSQL migration jobs and commit-bound CI evidence |
 
 ### PR #73 — `107ba63ebcdaf10dcce604f197e4c8e73f778c99`
 
@@ -85,9 +85,9 @@ After branch realignment, the manifest was rebuilt from the #72 baseline and rec
 | Project Charter Owner Gate | 44746277501 | SUCCESS |
 | Windows Preview Installer | 44746277369 | SUCCESS |
 | CodeQL | 44746277365 | SUCCESS |
-| Full Persons Module Gates workflow | 44746278646 | IN PROGRESS at snapshot; Windows PostgreSQL migration job had not completed |
+| Full Persons Module Gates workflow | 44746278646 | **SUCCESS — all 13 jobs completed successfully**, including Linux and Windows PostgreSQL migration jobs and commit-bound CI evidence |
 
-The two checksum job logs explicitly report successful two-way validation of tracked files against the manifest. They supersede the earlier checksum failure reports for these exact heads only. They do not certify other or later revisions.
+The two checksum job logs explicitly report successful two-way validation of tracked files against the manifest. The complete Persons Module Gates runs then completed successfully on both exact heads, with all 13 jobs green, including Linux and Windows PostgreSQL migration jobs and commit-bound CI evidence generation. These outcomes supersede the earlier checksum failure and in-progress snapshots for these exact heads only. They do not certify other or later revisions.
 
 ## 5. Independent review status
 
@@ -104,8 +104,8 @@ The two checksum job logs explicitly report successful two-way validation of tra
 | #73 checksum integrity | PASS | persons-spec-lint exact-head log; 366 tracked files |
 | Finance 7B/7C/7D structural validation | PASS | runs 44746080871 and 44746277343; structure only |
 | Installer / CodeQL / Charter for #72 and #73 | PASS | run IDs in section 4 |
-| Full Persons CI on #72 | OPEN / IN PROGRESS | Windows PostgreSQL migration job pending at snapshot |
-| Full Persons CI on #73 | OPEN / IN PROGRESS | Windows PostgreSQL migration job pending at snapshot |
+| Full Persons CI on #72 | PASS | Run 44746080861; all 13 jobs SUCCESS, including Linux/Windows PostgreSQL migrations and CI evidence generation |
+| Full Persons CI on #73 | PASS | Run 44746278646; all 13 jobs SUCCESS, including Linux/Windows PostgreSQL migrations and CI evidence generation |
 | Detailed independent review #72 | PENDING | requested on exact head |
 | Detailed independent review #73 | PENDING | requested on exact head |
 | Accounting/Inventory runtime validation | NOT RUN / NOT VERIFIED | design documents and structural checks do not prove runtime |
@@ -138,8 +138,8 @@ These are documentary control findings, not permission to infer missing canonica
 
 ## 8. Decision
 
-**EVD-FINANCE-INVENTORY-BUNDLE-004 v0.2 is the current amended evidence snapshot for the observed exact revisions and CI outcomes above. Package 4 is not accepted as fully closed.**
+**EVD-FINANCE-INVENTORY-BUNDLE-004 v0.3 is the current amended evidence snapshot for the observed exact revisions and CI outcomes above. Package 4 is not accepted as fully closed.**
 
 Checksum repair and finance structural validation are PASS for PR #72 and #73 heads listed in this document. Full Persons CI and independent reviews remain OPEN. Any subsequent change to a source branch requires fresh exact-head evidence and a new EVD revision or amendment.
 
-**END — EVD-FINANCE-INVENTORY-BUNDLE-004 v0.2**
+**END — EVD-FINANCE-INVENTORY-BUNDLE-004 v0.3**
