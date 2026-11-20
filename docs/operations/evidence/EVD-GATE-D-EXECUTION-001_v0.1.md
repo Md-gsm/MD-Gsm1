@@ -11,15 +11,15 @@
 
 ## 1. Exact tested source and workflow identities
 
-The primary executed source head was:
+The first complete execution source head was `f8efacd9b3d7808a0cccb5c7a73af02438774ed8`. The final evidence-register PR was then re-run on this exact head:
 
-- PR head SHA: `f8efacd9b3d7808a0cccb5c7a73af02438774ed8`
-- GitHub pull-request merge SHA used by the runner: `81b2504a542386b667ab525bf61b7d320b547a40`
+- Final PR head SHA: `2da420c41c2502bd659353104069cc063965241a`
+- GitHub pull-request merge SHA used by the final Restore runner: `62f692a8775f9cf8356ea4b146225942c13635ba`
 - Base SHA: `feba9f82a81e196bdbfea369214af7f496bbc85b`
-- Restore/Integration workflow run: [44712225233](https://github.com/Md-gsm/MD-Gsm1/actions/runs/44712225233)
-- Windows installer workflow run: [44712225234](https://github.com/Md-gsm/MD-Gsm1/actions/runs/44712225234)
+- Final Restore/Integration workflow run: [44712917686](https://github.com/Md-gsm/MD-Gsm1/actions/runs/44712917686)
+- Initial Windows installer/five-runner workflow run: [44712225234](https://github.com/Md-gsm/MD-Gsm1/actions/runs/44712225234)
 
-The evidence JSON's `commit` field contains the pull-request merge SHA because GitHub sets `GITHUB_SHA` to the merge ref for `pull_request` workflows. The PR head SHA above is the exact source branch revision under test; both identifiers are retained to avoid conflating them.
+The evidence JSON's `commit` field contains the pull-request merge SHA because GitHub sets `GITHUB_SHA` to the merge ref for `pull_request` workflows. The PR head SHA is the exact source branch revision under test; both identifiers are retained to avoid conflating them. The final PR head differs from the first tested head only by checksum-manifest and evidence-register changes; the restore, capacity and installer test logic is unchanged.
 
 A follow-up checksum-only source revision is `5277672012a4946293d45a62b9f49132f24b5d60`. It corrects the manifest to the exact Linux checkout hash for the restore PoC script; the source test/workflow logic is unchanged. Its CI rerun is tracked separately in PR #77.
 
@@ -37,7 +37,10 @@ A follow-up checksum-only source revision is `5277672012a4946293d45a62b9f49132f2
 - Source DB: `mdgsm_ci_disposable_44712225233_1`, marked `MDGSM_DISPOSABLE_TEST_DB`
 - Snapshot: `11|1|0|0|0|8|8` (11 IdentityAccess tables, one system-settings row, zero accounts/sessions/audit rows, eight migration-history rows)
 - Restore script SHA-256: `4db0702b4aeb209d15782f273efe4b8794de6403743345a0144c9fc0dd2be287`
-- Full custom dump SHA-256: `d481bdf8e65b0e773b0c232632bd47deebf37f68e5ee1c48b6aaa09446622c26`
+- Full custom dump SHA-256 (first run): `d481bdf8e65b0e773b0c232632bd47deebf37f68e5ee1c48b6aaa09446622c26`
+- Final exact-head rerun: [44712917686](https://github.com/Md-gsm/MD-Gsm1/actions/runs/44712917686), artifact ID `14618077507`, artifact digest `sha256:56104295817f2f38d904f7e379ec6c9e0e3b74026dead875cadc7d495742a2fd`
+- Final run PR head: `2da420c41c2502bd659353104069cc063965241a`; merge SHA in JSON: `62f692a8775f9cf8356ea4b146225942c13635ba`
+- Final full custom dump SHA-256: `38c6cf26c93d4ad09b6b595a70ec62dc1d026da39996cf51751203002bb773bb`
 
 | EVD/Test ID | Executed scenario | Result |
 |---|---|---|
@@ -56,7 +59,7 @@ A follow-up checksum-only source revision is `5277672012a4946293d45a62b9f49132f2
 
 <badge color="success">PASS — PostgreSQL integration</badge>
 
-- Run: [44712225233](https://github.com/Md-gsm/MD-Gsm1/actions/runs/44712225233)
+- Final exact-head run: [44712917686](https://github.com/Md-gsm/MD-Gsm1/actions/runs/44712917686)
 - Job: `persons-postgres-migrations` — SUCCESS
 - Integration result: 36 passed, 0 failed, 0 skipped.
 - The PostgreSQL-backed capacity test launched eight distinct-account login commands concurrently with `MaxActiveUsers=5`.
@@ -98,14 +101,9 @@ This is five isolated hosted Windows VMs using the same hosted image family. It 
 
 The first execution run `44712225233` completed the restore and PostgreSQL integration job successfully, but its overall Persons workflow was not green because `SHA256SUMS.txt` still contained the prior restore-script digest. The exact Linux checkout digest was read from the CI verifier and registered.
 
-PR #77 contains the checksum-corrected revision:
+The checksum-corrected revision was then verified in [PR #77](https://github.com/Md-gsm/MD-Gsm1/pull/77), head `5277672012a4946293d45a62b9f49132f24b5d60`: its checksum-verification job, Foundation build/test and PostgreSQL migration/restore/integration job passed. PR #77 was closed as superseded by the consolidated evidence PR #78.
 
-- [PR #77](https://github.com/Md-gsm/MD-Gsm1/pull/77)
-- Head SHA: `5277672012a4946293d45a62b9f49132f24b5d60`
-- The `persons-spec-lint` checksum-verification job on that head passed.
-- Remaining workflow jobs must finish successfully on this exact head before CI is declared green.
-
-The initial run's checksum failure is not concealed or reclassified as PASS.
+On final evidence PR #78, head `2da420c41c2502bd659353104069cc063965241a`, the checksum-verification, Foundation build/test, PostgreSQL migration/restore/integration and other completed Persons gate jobs passed. At the time this register was updated, the Windows PostgreSQL migration rehearsal, Windows installer rerun and CodeQL workflow were still in progress; overall CI is therefore not declared green. The initial checksum failure is not concealed or reclassified as PASS.
 
 ## 4. Gate D requirements still NOT RUN / BLOCKED
 
