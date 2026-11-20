@@ -518,7 +518,7 @@ Open controls:
 - Scope: owner decision supplement, verified v3.0.3 candidate package provenance, CR-ARCH-INV-OWNER-FOLLOWUP-001 v0.2, PDS v0.4, Logical ERD v0.3, cross-module contract v1.1, test specification v1.1, source-event proposal v0.3, O-register v1.3, Document Register v1.8, existing role-grant matrix and supporting checksum manifest.
 - Reviewer requested: `mrdeljoe4`. Review is still required on the final head.
 - Previous branch head `4570d8e1bd362a30410b2173aee7e247240885c2` had all five required workflows SUCCESS. That head is superseded by this successor package; all workflows must be rerun against the final head.
-- SHA256SUMS.txt will include the candidate-provenance successor records; exact entry count and hashes are validated on the final PR head. The owner-supplied ZIP package's own internal manifest was separately verified 11/11.
+- SHA256SUMS.txt contains 394 entries in bytewise path order with no duplicate paths; the new CR/OIR/Document Register successor records are included. The owner-supplied ZIP package's own internal manifest was separately verified 11/11.
 - All test specifications remain NOT_RUN. PR merge is intentionally not performed pending exact-head CI, independent review and cross-owner acceptance.
 
 ## 18. Remaining boundaries and acceptance sequence
