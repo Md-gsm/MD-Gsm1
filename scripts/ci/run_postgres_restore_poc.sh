@@ -165,6 +165,14 @@ security_catalog_fingerprint() {
 
 source_schema_fingerprint="$(schema_fingerprint "$MDGSM_TEST_DB")"
 source_security_fingerprint="$(security_catalog_fingerprint "$MDGSM_TEST_DB")"
+check_equal() {
+  local label="$1" expected="$2" actual="$3"
+  if [[ "$expected" != "$actual" ]]; then
+    echo "FAIL $label expected=$expected actual=$actual" >&2
+    return 1
+  fi
+  echo "PASS $label"
+}
 source_version="$(psql -d "$MDGSM_TEST_DB" -At -v ON_ERROR_STOP=1 -c 'SHOW server_version;')"
 drills=()
 
@@ -204,27 +212,27 @@ record() {
 pg_dump --format=custom --file "$tmp/full.custom" "$MDGSM_TEST_DB"
 db="$(new_target dr01)"
 pg_restore --exit-on-error --dbname "$db" "$tmp/full.custom"
-[[ "$(snapshot "$db")" == "$source_snapshot" ]]
-[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
-[[ "$(security_catalog_fingerprint "$db")" == "$source_security_fingerprint" ]]
+check_equal "snapshot $db" "$source_snapshot" "$(snapshot "$db")"
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
+check_equal "security catalog $db" "$source_security_fingerprint" "$(security_catalog_fingerprint "$db")"
 record DR-01 "$db" "custom-format full database restore; schema/data snapshot matches"
 
 # DR-02: Plain SQL full backup and restore.
 pg_dump --format=plain --file "$tmp/full.sql" "$MDGSM_TEST_DB"
 db="$(new_target dr02)"
 psql -d "$db" -v ON_ERROR_STOP=1 -f "$tmp/full.sql" >/dev/null
-[[ "$(snapshot "$db")" == "$source_snapshot" ]]
-[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
-[[ "$(security_catalog_fingerprint "$db")" == "$source_security_fingerprint" ]]
+check_equal "snapshot $db" "$source_snapshot" "$(snapshot "$db")"
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
+check_equal "security catalog $db" "$source_security_fingerprint" "$(security_catalog_fingerprint "$db")"
 record DR-02 "$db" "plain SQL full database restore; schema/data snapshot matches"
 
 # DR-03: Directory archive with parallel dump and restore.
 pg_dump --format=directory --jobs=2 --file "$tmp/full.directory" "$MDGSM_TEST_DB"
 db="$(new_target dr03)"
 pg_restore --jobs=2 --exit-on-error --dbname "$db" "$tmp/full.directory"
-[[ "$(snapshot "$db")" == "$source_snapshot" ]]
-[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
-[[ "$(security_catalog_fingerprint "$db")" == "$source_security_fingerprint" ]]
+check_equal "snapshot $db" "$source_snapshot" "$(snapshot "$db")"
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
+check_equal "security catalog $db" "$source_security_fingerprint" "$(security_catalog_fingerprint "$db")"
 record DR-03 "$db" "directory archive parallel restore; schema/data snapshot matches"
 
 # DR-04: Schema-only restore creates the same IdentityAccess table set without row data.
@@ -234,8 +242,8 @@ pg_restore --exit-on-error --dbname "$db" "$tmp/schema.custom"
 schema_tables="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='identity' AND table_type='BASE TABLE';")"
 settings_rows="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c 'SELECT count(*) FROM identity.system_settings;')"
 [[ "$schema_tables" == "11" && "$settings_rows" == "0" ]]
-[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
-[[ "$(security_catalog_fingerprint "$db")" == "$source_security_fingerprint" ]]
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
+check_equal "security catalog $db" "$source_security_fingerprint" "$(security_catalog_fingerprint "$db")"
 record DR-04 "$db" "schema-only restore; 11 IdentityAccess tables present and data absent"
 
 # DR-05: Data-only restore into a schema-only target.
@@ -243,9 +251,9 @@ pg_dump --data-only --format=custom --file "$tmp/data.custom" "$MDGSM_TEST_DB"
 db="$(new_target dr05)"
 pg_restore --exit-on-error --dbname "$db" "$tmp/schema.custom"
 pg_restore --data-only --exit-on-error --dbname "$db" "$tmp/data.custom"
-[[ "$(snapshot "$db")" == "$source_snapshot" ]]
-[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
-[[ "$(security_catalog_fingerprint "$db")" == "$source_security_fingerprint" ]]
+check_equal "snapshot $db" "$source_snapshot" "$(snapshot "$db")"
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
+check_equal "security catalog $db" "$source_security_fingerprint" "$(security_catalog_fingerprint "$db")"
 record DR-05 "$db" "data-only restore after schema restore; schema/data snapshot matches"
 
 # DR-06: Selective restore of the session policy table into a schema-only target.
@@ -255,15 +263,15 @@ echo "START DR-06 selective system settings restore"
 pg_restore --data-only --schema=identity --table=system_settings --exit-on-error --dbname "$db" "$tmp/data.custom"
 settings="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c "SELECT max_active_users::text || '|' || heartbeat_interval_seconds::text || '|' || session_lease_seconds::text FROM identity.system_settings WHERE settings_id=1;")"
 [[ "$settings" == "5|30|180" ]]
-[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
 record DR-06 "$db" "selective system settings restore; session policy values preserved"
 
 # DR-07: Restore without source ownership/ACL dependencies.
 db="$(new_target dr07)"
 pg_restore --no-owner --no-privileges --exit-on-error --dbname "$db" "$tmp/full.custom"
-[[ "$(snapshot "$db")" == "$source_snapshot" ]]
+check_equal "snapshot $db" "$source_snapshot" "$(snapshot "$db")"
 # DR-07 intentionally omits owner/ACL; structural schema must still match.
-[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
+check_equal "schema catalog $db" "$source_schema_fingerprint" "$(schema_fingerprint "$db")"
 record DR-07 "$db" "ownership-independent restore into a fresh target; schema/data snapshot matches"
 
 # DR-08: Corrupt archive must fail closed and must not be accepted as a successful restore.
