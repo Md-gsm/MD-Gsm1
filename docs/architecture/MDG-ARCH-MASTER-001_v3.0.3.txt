@@ -112,9 +112,21 @@ Unified Architecture & Accounting Blueprint — Version 3.0.3
 ‫ وضعیت‬2026: OWNER-ACCEPTED MASTER BASELINE — v3.0.3 ACCEPTED BY EXPLICIT OWNER DIRECTIVE ON 2026-11-20;
 PRIOR VERSIONS ARE HISTORICAL REFERENCES ONLY. IMPLEMENTATION, INDEPENDENT TECHNICAL REVIEW, TEST, RELEASE AND GO-LIVE GATES REMAIN SEPARATE;
 
+DOCUMENT CONTROL — AUTHORITATIVE STATUS (2026-11-20)
+
+This control block supersedes all contradictory status statements in the historical cover/control text and all earlier references in this document that v2.5 remains the latest accepted baseline or that v3.0.3 is awaiting owner acceptance.
+
+1. OWNER ACCEPTANCE — ACCEPTED. The owner explicitly accepted MDG-ARCH-MASTER-001 v3.0.3 on 2026-11-20 as the sole current architecture and accounting-policy baseline. v2.5, v2.6, v3.0 and v3.0.1 are historical references only; they are not current baselines.
+2. INDEPENDENT TECHNICAL REVIEW — PENDING. Review must be performed against the exact final commit SHA. Owner acceptance is not independent review and must not be represented as such.
+3. REPOSITORY REGISTRATION — PENDING. The document is on the open PR #72 branch. It is not registered in main until the relevant PR is successfully merged. A PR, approval, passing check or branch commit alone is not registration in main.
+4. IMPLEMENTATION / TEST / EVIDENCE / LEGAL / RELEASE — SEPARATE. Owner acceptance does not imply design completion, implementation, test PASS, evidence acceptance, legal clearance, Gate C or Gate D PASS, Posting Release, production migration or Go-Live. Each retains its own criteria and status.
+5. REVISION DATE — 2026-11-20. Dates elsewhere remain the dates of their underlying decisions, source records or test evidence; they do not override this document revision date.
+
+
+
  ADR-0018 ACCOUNTING FOUNDATION SCOPE IMPLEMENTED; DATABASE DDL /
 
-PRODUCTION MIGRATION / POSTING RELEASE / GO-LIVE NOT AUTHORIZED. ‫مبنای معماری‬: v2.5 ‫آخرین خط‌مبنای‬
+PRODUCTION MIGRATION / POSTING RELEASE / GO-LIVE NOT AUTHORIZED. ‫مرجع معماری جاری‬: MDG-ARCH-MASTER-001 v3.0.3 — OWNER-ACCEPTED ON 2026-11-20؛ v2.5 و v2.6 صرفاً سوابق تاریخی‌اند.
 
 ‫ پذیرفته‌شده؛‬v2.6 ‫ اصالحیه کنترل‌شده‬O-01 .‫ نه خط‌مبنای مستقل پذیرفته‌شده‬،‫با معیار جایگزین مورد تأیید مالک‬
 ‫منابع تکمیلی جاری‬: ADR-0017، ADR-0018، OWN-FE-01-02-001 v1.0، OWN-INV-018 v1.0، ‫رجیستری مالکیت‬
