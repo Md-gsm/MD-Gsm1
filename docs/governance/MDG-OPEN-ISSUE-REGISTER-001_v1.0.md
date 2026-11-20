@@ -97,7 +97,7 @@ Status columns are ordered Decision / Design / Implementation / Test / Evidence 
 | O-32 | Supplemental Source Register and provenance | Architecture Governance | C1 | Gate A | ACCEPTED control rule | PARTIAL | PARTIAL | Lint/validation incomplete | PARTIAL | OPEN | Every input needs file/version/date/hash/section/authority/supersedes and registry lint. |
 | O-33 | API/CT registry, error catalog and paging contracts | Application + API Owners | C1 | B-final | ACCEPTED contract direction | PARTIAL | PARTIAL | Contract tests NOT VERIFIED | PARTIAL | OPEN | Versioned commands/queries, deterministic paging, stable error catalog and contract tests for all endpoints. |
 | O-34 | Two-layer idempotency retention | Platform + Finance | C1 | Gate C | RESOLVED policy: Request/API TTL only; posting identity/history permanent | PARTIAL | NOT VERIFIED | PoC/tests NOT RUN | PARTIAL | OPEN | Document replay window and operational retention; prove PostingIdentity/PostingRecord uniqueness survives TTL and no duplicate posting after cleanup. |
-| O-35 | Inventory conservation equations and stocktake cutoff/race model | Inventory | C0 | B-final | ACCEPTED principles | DESIGN SPECIFIED in Stage 05 | NOT VERIFIED | PostgreSQL watermark/race/replay/tie-out tests NOT RUN | PARTIAL | OPEN | Complete grain formulas, snapshot+delta, replay/tie-out and concurrent movement tests on PostgreSQL. |
+| O-35 | Inventory conservation equations and stocktake cutoff/race model | Inventory | C0 | B-final | ACCEPTED principles | Stage 05 + PostgreSQL PDS v0.1-v0.3 specified; PD-AUD-01..12 internally CLOSED IN DESIGN | NOT VERIFIED | PD-T-001..039 and O-35 PostgreSQL watermark/race/replay/tie-out tests NOT RUN | PARTIAL | OPEN | Independent exact-SHA review, source-module contract acceptance, PostgreSQL watermark/race/replay/tie-out evidence and reconciliation. |
 | O-36 | Reservation TTL for Sales and Repair lifecycle | Sales + Repair + Inventory | C1 | B-final | PARTIAL: Sales TTL configurable; Repair has no automatic TTL | PARTIAL | NOT VERIFIED | NOT RUN | PARTIAL | OPEN | Configure Sales TTL; preserve Repair without automatic expiry; test consume/release/expire idempotently. |
 | O-37 | Catalog entities, ConditionGrade and group hierarchy | Catalog | C1 | B-final | ACCEPTED direction | PARTIAL | NOT VERIFIED | NOT RUN | PARTIAL | OPEN | Logical ERD, maximum three group levels, cycle prevention, history preservation and grade-sensitive pricing tests. |
 | O-38 | GRNI receive-before-invoice/invoice-before-receipt/sellability | Purchasing + Finance | C0 | B-final | ACCEPTED ownership/account boundaries | DESIGN SPECIFIED in Stage 04 | NOT VERIFIED | Stage 04 cases defined; runtime tests NOT RUN | PARTIAL | OPEN | Ownership truth table, 2103/110805/physical-stock distinction and executable receipt/invoice/sellability cases. |
@@ -138,7 +138,7 @@ This summary is derived from the 65 detailed rows and must not be maintained as 
 - O-27: explicitly deferred; not an R1 blocker and not closed as implemented.
 - O-33/O-50: partially specified; contract completion and tests remain open.
 - O-34: policy clarified; retention PoC and replay/cleanup tests remain open.
-- O-35: Stage 05 design specified; PostgreSQL watermark/race/replay/tie-out tests remain open.
+- O-35: Stage 05 and PostgreSQL PDS v0.1-v0.3 design specified; PD-AUD-01..12 are CLOSED IN DESIGN only after internal re-audits; independent review, PD-T-001..039 runtime proof and PostgreSQL watermark/race/replay/tie-out tests remain open; O-35 remains OPEN.
 - O-36: Sales TTL configurable; Repair has no automatic TTL; implementation/tests remain open.
 - O-38: Stage 04 GRNI/sellability design specified; runtime tests remain open.
 - O-40: Stage 04 lifecycle/return contract specified; runtime tests/evidence remain open.
@@ -178,7 +178,7 @@ This summary is derived from the 65 detailed rows and must not be maintained as 
 - `docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.3.md` — historical cross-audit; not a live status register.
 - `docs/finance/workpapers/p4h/integration/MDG-WP06-STAGE-04-SALES-RETURNS-GRNI-CREDIT-EXPOSURE-TIEOUT-001_v0.1.md` — Stage 04 design contract.
 - `docs/modules/inventory/MDG-INVENTORY-STAGE-05-EQUATIONS-CUSTODY-STOCKTAKE-001_v0.1.md` — Stage 05 design.
-- `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.1.md` and its audit — Stage 07 physical design and review.
+- `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.1.md`, `..._v0.2.md`, `..._v0.3.md`, `MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-AUDIT-001_v0.1.md`, `MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-REAUDIT-002_v0.1.md` and `...REAUDIT-003_v0.1.md` — Inventory PostgreSQL physical design; re-audits are internal design reviews, not independent attestation or runtime proof.
 - Gate D evidence: `docs/operations/evidence/EVD-GATE-D-EXECUTION-001_v0.2.md` exists on separate branch `gate-d-execution-evidence-record` at commit `1b1163eb68c059400a58953b8fb9da7af98c11ff`; it is NOT part of PR #72's current branch tree and must be reconciled against the exact current PR/run SHA before acceptance. It is scoped evidence, not Gate D closure.
 
 ## 7. Explicit non-claims
