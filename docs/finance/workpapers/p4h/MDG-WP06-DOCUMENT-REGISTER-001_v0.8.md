@@ -32,6 +32,8 @@
 | WP06-P4H-7C-COA-RECONCILIATION-001 | v0.4 | 78 identifiers; v1.2 master + v1.5 controlled supplement; canonical attribute gaps OPEN |
 | WP06-P4H-7D-TEST-REGISTRY-001 | v0.2 | 67 Test IDs: 39 FE + 16 COA + 12 shared controls; runtime tests NOT RUN |
 | MDG-ACC-PDS-001 | v0.3 | Accounting PostgreSQL physical design; AuditSecurity sole canonical AuditEvent owner; no SQL/DDL authorization | INDEPENDENT REVIEW PENDING |
+
+Current file: `docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.3.md`. PDS v0.2 is retained as a historical/superseded record. No Accounting DDL, Migration 0009 SQL, COA seed, Posting writer or production grant is authorized.
 | MDG-WP06-7B-7C-7D-INTEGRATED-001 | v0.6 | Integrated crosswalk, now aligned to v3.0.3 and COA v1.5 |
 | MDG-WP06-5-STAGE-EXECUTION-REPORT | v0.2 | Current authority statements corrected to v3.0.3/COA v1.5; execution evidence remains SHA-scoped |
 | MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001 | v0.2 | Current hierarchy: COA v1.2 master + v1.5 controlled supplement; v1.4 historical/superseded |
@@ -97,7 +99,7 @@ Finance Workpaper Structural Validation:
 ### Persistence dependency
 - No Accounting SQL schema/migration, persistent Journal/Subledger repository, transactional Posting writer or public Posting API exists in this slice.
 - PR #70 was merged at b8c672cb70dcb2b274f43f118ac08b2eea8438c5. Migration 0009 is RESERVED in main; no SQL file was created, SQL remains NOT AUTHORIZED, and no database migration was applied.
-- No merge is performed by this work.
+- No merge is performed by this register. Controlled integration into `main` is a separate release action and requires exact-head CI, current independent review/approval and the owner's final acceptance.
 
 ## 7. Gate and release status
 
@@ -115,7 +117,8 @@ Finance Workpaper Structural Validation:
 - PR #66 is MERGED. Its merge is not a Posting Release and does not establish PostgreSQL persistence or runtime posting.
 - The prior PR #71 review on `b165e957ff7bf886616de21933018395d76bbff9` is historical and does not approve revised PDS v0.3. Reviewer `mrdeljoe4` has been requested again on the current exact head; renewed independent review is PENDING.
 - PR #71's six successful runs are historical and apply only to its prior head `b165e957ff7bf886616de21933018395d76bbff9`; all required workflows must pass again on the revised PDS v0.3 head.
-- SHA256SUMS.txt is the integrity manifest for tracked source and workpaper files.
+- SHA256SUMS.txt is the integrity manifest for tracked source and workpaper files. It must be regenerated and verified on the exact final heads after the current authority/PDS corrections.
+- PR #72 and PR #73 previously passed checksum and full Persons Module Gates on their earlier heads; those results are historical and must not be transferred to the revised heads. Fresh exact-head validation is required after the document-control corrections.
 - Owner approval of design is not implementation acceptance, test acceptance or Posting Release.
 
 ## 9. Version history
