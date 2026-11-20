@@ -39,9 +39,62 @@ jobs:
       - name: Build and package self-contained preview installer
         shell: pwsh
         run: .\scripts\Build-Windows-Installer.ps1
+      - name: Install and uninstall preview on the build runner
+        shell: pwsh
+        run: |
+          $installer = Join-Path $PWD 'artifacts/installer/MD-Gsm-Persons-Preview-Setup-v0.2.10.exe'
+          $installDir = Join-Path $env:RUNNER_TEMP 'MDGsm-GateD-CleanInstall'
+          $installLog = Join-Path $env:RUNNER_TEMP 'MDGsm-GateD-Install.log'
+          $install = Start-Process -FilePath $installer -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$installDir","/LOG=$installLog") -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "Installer exit code: $($install.ExitCode)" }
+          foreach ($relative in @('MDGsm.Desktop.exe','appsettings.json','Assets/menu-catalog-fa.json')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $installDir $relative))) { throw "Installed file missing: $relative" }
+          }
+          $uninstaller = Join-Path $installDir 'unins000.exe'
+          if (-not (Test-Path -LiteralPath $uninstaller)) { throw 'Inno Setup uninstaller was not registered.' }
+          $remove = Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -Wait -PassThru
+          if ($remove.ExitCode -ne 0) { throw "Uninstaller exit code: $($remove.ExitCode)" }
+          if (Test-Path -LiteralPath (Join-Path $installDir 'MDGsm.Desktop.exe')) { throw 'Uninstall left the application executable behind.' }
+          Write-Host 'PASS: clean install, payload verification and uninstall.'
+          $signature = Get-AuthenticodeSignature -FilePath $installer
+          Write-Host "Installer Authenticode status: $($signature.Status)"
+          if ($signature.Status -ne 'Valid') { Write-Warning 'Trusted Windows code-signing evidence is still required for Gate D.' }
       - name: Upload Windows installer
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: MD-Gsm-Persons-Preview-Installer-v0.2.10
           path: artifacts/installer/MD-Gsm-Persons-Preview-Setup-v0.2.10.exe*
           if-no-files-found: error
+
+  windows-five-runner-install-compatibility:
+    name: windows-five-runner-install-compatibility
+    needs: windows-preview-installer
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        client-slot: [1, 2, 3, 4, 5]
+    steps:
+      - name: Download the exact-run installer artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: MD-Gsm-Persons-Preview-Installer-v0.2.10
+          path: artifacts/installer
+      - name: Verify isolated Windows clean install and uninstall
+        shell: pwsh
+        run: |
+          $installer = Join-Path $PWD 'artifacts/installer/MD-Gsm-Persons-Preview-Setup-v0.2.10.exe'
+          if (-not (Test-Path -LiteralPath $installer)) { throw 'Exact-run installer artifact is missing.' }
+          $installDir = Join-Path $env:RUNNER_TEMP "MDGsm-GateD-Client-$($env:GITHUB_RUN_ID)-${{ matrix.client-slot }}"
+          $log = Join-Path $env:RUNNER_TEMP "MDGsm-GateD-Client-${{ matrix.client-slot }}.log"
+          $result = Start-Process -FilePath $installer -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$installDir","/LOG=$log") -Wait -PassThru
+          if ($result.ExitCode -ne 0) { throw "Install failed on isolated Windows runner ${{ matrix.client-slot }}: $($result.ExitCode)" }
+          foreach ($relative in @('MDGsm.Desktop.exe','appsettings.json','Assets/menu-catalog-fa.json')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $installDir $relative))) { throw "Runner ${{ matrix.client-slot }} missing $relative" }
+          }
+          $uninstaller = Join-Path $installDir 'unins000.exe'
+          if (-not (Test-Path -LiteralPath $uninstaller)) { throw 'Uninstaller missing.' }
+          $remove = Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -Wait -PassThru
+          if ($remove.ExitCode -ne 0) { throw "Uninstall failed on runner ${{ matrix.client-slot }}." }
+          if (Test-Path -LiteralPath (Join-Path $installDir 'MDGsm.Desktop.exe')) { throw 'Uninstall did not remove executable.' }
+          Write-Host "PASS: isolated Windows runner ${{ matrix.client-slot }} install/uninstall."
