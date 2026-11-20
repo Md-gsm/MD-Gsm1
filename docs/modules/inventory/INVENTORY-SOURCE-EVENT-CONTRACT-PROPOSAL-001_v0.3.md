@@ -6,7 +6,7 @@
 | Version | 0.3 |
 | Status | OWNER-DECISION SUCCESSOR — TECHNICAL OWNER ACCEPTANCE / BASELINE RECONCILIATION REQUIRED |
 | Authority | OWN-INV-018 v1.0 (remaining decisions); OWN-INV-019 v1.0 (follow-up decisions); OWN-FE-01-02-001 v1.0; MDG-ARCH-MASTER-001 v3.0.3 |
-| Supersedes | v0.2 only for the explicit owner-decision amendments in OWN-INV-019; v0.1/v0.2 retained as historical snapshots |
+| Supersedes | v0.2 for the explicit owner-decision amendments in OWN-INV-019 and correction of ATP to the v3.0.3/Stage 05 rule; v0.1/v0.2 retained as historical snapshots |
 
 ## 1. Authority and scope
 
