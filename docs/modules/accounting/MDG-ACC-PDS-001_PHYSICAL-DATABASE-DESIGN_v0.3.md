@@ -18,7 +18,7 @@
 
 این سند مجوز ایجاد SQL، Migration 0009، تغییر DbContext، EF Persistence، DbSet، API، Journal persistence، Posting writer/runtime، Seed حساب‌ها، import داده COA یا استقرار نیست. Migration 0009 همچنان RESERVED — SQL NOT AUTHORIZED است. ساخت schema واقعی فقط پس از تأیید ناظر روی SHA نهایی و مجوز صریح جداگانه مالک برای SQL مجاز خواهد بود.
 
-هدف نسخه 0.2 حل مصنوعی AP-08 نیست؛ هدف این است که دیتابیس بتواند منبع خام، شواهد، وضعیت تطبیق و حساب Canonical را از یکدیگر جدا کند تا فقدان منبع یا صفت با مقدار حدسی جایگزین نشود.
+هدف نسخه 0.3 حل مصنوعی AP-08 نیست؛ هدف این است که دیتابیس بتواند منبع خام، شواهد، وضعیت تطبیق و حساب Canonical را از یکدیگر جدا کند تا فقدان منبع یا صفت با مقدار حدسی جایگزین نشود.
 
 ## 2. مبانی قطعی
 
@@ -200,7 +200,7 @@ starts_on <= ends_on و version > 0. هیچ دو بازه‌ای هم‌پوشا
 - requested_by text NOT NULL; approved_by text NULL
 - reason text NOT NULL
 - transitioned_at_utc timestamptz NOT NULL
-- audit_event_id text NOT NULL FK → audit_events ON DELETE RESTRICT
+- audit_event_id text NOT NULL -- opaque AuditSecurity-owned event ID; no cross-module FK
 - هشت attestation مدل PeriodCloseEvidence به صورت boolean nullable برای رویداد Close
 
 Close فقط Open→Closed و هر هشت attestation باید true باشند. Reopen فقط Closed→Open؛ requested_by و approved_by غیرتهی و متفاوت، reason و audit الزامی. رویدادها append-only هستند. TaxReconciled صرفاً attestation دوره است و Tax Engine/Tax Line ایجاد نمی‌کند.
@@ -230,7 +230,7 @@ Hashها 64 رقم hex lowercase. UNIQUE روی اجزای identity با NULLS N
 - reversal_of_journal_id uuid NULL
 - version bigint NOT NULL DEFAULT 1
 
-FK به fiscal_periods، coa_snapshots، posting_idempotency، audit_events و self-FK reversal با RESTRICT. Draft فاقد finalized metadata؛ Finalized دارای metadata کامل است. journal_date در بازه دوره است و هنگام Finalize دوره Open است. Reversal فقط به Journal Finalized اشاره می‌کند و سند مستقل با identity مستقل است. هر Journal به snapshot مشخص bind است.
+FK به fiscal_periods، coa_snapshots، posting_idempotency و self-FK reversal با RESTRICT؛ AuditEvent مشترک فقط با opaque ID متعلق به AuditSecurity ارجاع می‌شود و FK بین‌ماژولی ندارد. Draft فاقد finalized metadata؛ Finalized دارای metadata کامل است. journal_date در بازه دوره است و هنگام Finalize دوره Open است. Reversal فقط به Journal Finalized اشاره می‌کند و سند مستقل با identity مستقل است. هر Journal به snapshot مشخص bind است.
 
 ### 4.13 accounting.journal_lines
 
@@ -365,7 +365,7 @@ FK به journals و FK مرکب (coa_snapshot_id, account_id) به accounts. د�
 - 4107 و 5106 در مجموعه فعلی 78 کد تکرار مستقیم ندارند؛ No-Collision در کل namespace Canonical/رزرو/تاریخی اثبات نشده است.
 - Positive Posting Rules پذیرفته‌شده در 7B برابر صفر است؛ FEها تا تکمیل قرارداد و شواهد مسدودند.
 
-هیچ AccountId، Parent، Level، Nature، NormalBalance، EffectiveDate، Postable یا DirectPostingAllowed جدیدی در نسخه 0.2 تعیین نشده است.
+هیچ AccountId، Parent، Level، Nature، NormalBalance، EffectiveDate، Postable یا DirectPostingAllowed جدیدی در نسخه 0.3 تعیین نشده است.
 
 ### 11.2 سیاست ورود داده
 
