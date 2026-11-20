@@ -385,3 +385,16 @@ The proposal maps ERD v0.2 to PostgreSQL 18-oriented tables and constraints. It 
 It preserves v3.0.3: no TTL default is invented, ATP remains Sellable − EffectiveReserved, FE-31 remains R2, negative-stock feature remains OFF, integer Rial rounding remains at the approved final boundary, and no COA/Posting Rule is inferred.
 
 This is a design proposal only. No SQL/DDL, migration, EF mapping, API/runtime, database grants, PostgreSQL PASS, O-35 closure, Posting Release, production migration or Go-Live is claimed or authorized.
+
+
+## 23. Inventory PostgreSQL physical-design adversarial audit — 2026-11-20
+
+| Artifact | Version | Status |
+|---|---:|---|
+| MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-AUDIT-001 | 0.1 | INTERNAL ADVERSARIAL DESIGN AUDIT — BLOCKING CLARIFICATIONS REQUIRED |
+
+Path: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-AUDIT-001_v0.1.md`.
+
+The internal review compared PostgreSQL physical-design proposal v0.1 with the sole accepted architecture baseline v3.0.3, Stage 05 inventory semantics and logical ERD v0.2. It found four blockers: (1) no complete durable command-idempotency model for both movement and non-movement commands; (2) unresolved atomic durability boundary between Inventory and AuditSecurity while preserving the single canonical AuditEvent owner; (3) committed-ledger immutability is not tied to enforceable PostgreSQL privilege/trigger/procedure controls; and (4) lock ordering is not globally consistent across reservation, stock scope and other mutable aggregates. Three high-priority clarifications concern canonical sequence/watermark scope, executable stocktake snapshot protocol and projection rebuild/cutover concurrency. Additional medium/low findings cover stock-position identity, draft/commit boundary, reservation expiry persistence, audit/outbox states and naming/nullability normalization.
+
+The review is an internal adversarial self-review, not an independent external reviewer attestation. It is a design audit only: no SQL, DDL, migration, PostgreSQL runtime test, implementation, grant, Posting Rule, Posting Release or Go-Live was performed or authorized. Physical-design v0.1 is not ready for DDL/migration freeze until blockers and high findings are closed and an external review is obtained.
