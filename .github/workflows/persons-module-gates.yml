@@ -188,6 +188,16 @@ jobs:
           restored_audit_trigger="$(psql -d "$restore_db" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_trigger WHERE tgname = 'trg_identity_security_audit_no_update_delete' AND NOT tgisinternal;")"
           test "$restored_audit_trigger" = '1'
           echo "PASS: migrations, repeat/idempotence, IdentityAccess schema invariants, least-privilege grants, and backup/restore verification passed."
+      - name: Execute eight PostgreSQL logical restore PoCs on marked disposable database
+        shell: bash
+        run: bash scripts/ci/run_postgres_restore_poc.sh
+      - name: Upload commit-bound Restore PoC evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: gate-d-restore-poc-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/restore-poc-evidence.json
+          if-no-files-found: warn
       - name: Run Persons PostgreSQL end-to-end integration test
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "Category=Integration" --no-restore
   persons-postgres-windows-migrations:
