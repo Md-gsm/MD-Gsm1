@@ -186,7 +186,7 @@
 
 ### 7.1 تفسیر وضعیت
 - تمام رویدادهای OPEN/CONDITIONAL تا تکمیل قرارداد مبدأ و 7C canonical، از ایجاد Journal جدید منع می‌شوند.
-- فیلدهای مشترک از قواعد هنجاری Architecture v2.5 و ADR-0017 پیروی می‌کنند؛ جزئیات رویدادمحور باید در نسخه بعدی همین سند مقداردهی شوند.
+- فیلدهای مشترک از قواعد هنجاری Architecture v3.0.3 و ADR-0017 پیروی می‌کنند؛ جزئیات رویدادمحور باید در نسخه بعدی همین سند مقداردهی شوند.
 - برای FE-08، valuation method طبق WAC در ProductVariant×Warehouse و Specific Identification برای serial item حفظ می‌شود؛ valuation service و source movement هنوز باید قرارداد شوند.
 - برای FE-14، نقش‌های 110401..110404 طبق OWN-7C-004-R1 قطعی‌اند؛ source title/attributes و state transition crosswalk باز است.
 - برای FE-21، خرید و فروش دو سند جدا با TradeInId مشترک است؛ netting ممنوع.
