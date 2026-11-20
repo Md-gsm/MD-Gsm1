@@ -515,10 +515,10 @@ Open controls:
 - State: OPEN / DRAFT; not merged.
 - Base: main at `10c8a8ba8f9aad54c4e2ff05fad49ce12511380f`.
 - Branch: `docs/inventory-cross-module-contracts-20261120`.
-- Scope: owner decision supplement, PDS v0.4, Logical ERD v0.3, cross-module contract v1.1, test specification v1.1, source-event proposal v0.3, O-register v1.2, Document Register v1.6, existing role-grant matrix and supporting checksum manifest.
+- Scope: owner decision supplement, architecture crosswalk CR-ARCH-INV-OWNER-FOLLOWUP-001 v0.1, PDS v0.4, Logical ERD v0.3, cross-module contract v1.1, test specification v1.1, source-event proposal v0.3, O-register v1.2, Document Register v1.7, existing role-grant matrix and supporting checksum manifest.
 - Reviewer requested: `mrdeljoe4`. Review is still required on the final head.
 - Previous branch head `4570d8e1bd362a30410b2173aee7e247240885c2` had all five required workflows SUCCESS. That head is superseded by this successor package; all workflows must be rerun against the final head.
-- SHA256 manifest must include every new controlled document, remain sorted, contain no duplicate paths and be validated against the exact committed contents.
+- SHA256SUMS.txt contains 391 entries in bytewise path order with no duplicate paths. Hashes for the 10 controlled successor/crosswalk documents were recalculated against their exact branch contents.
 - All test specifications remain NOT_RUN. PR merge is intentionally not performed pending exact-head CI, independent review and cross-owner acceptance.
 
 ## 18. Remaining boundaries and acceptance sequence
