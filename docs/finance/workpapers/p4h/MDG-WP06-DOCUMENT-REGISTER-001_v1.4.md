@@ -470,3 +470,16 @@ This v1.4 register is now integrated in `main` through PR #71 at merge commit `8
 Accounting PDS v0.4 supersedes v0.3 for the explicit Journal/JournalLine/Reversal snapshot invariants. Each JournalLine is constrained to the same COA snapshot as its Journal header by a composite FK. A reversal is an independent Journal in its own posting identity and fiscal period/date, but retains the original finalized Journal's immutable COA snapshot; it cannot rebind copied account identifiers/codes to a different snapshot. The Domain reversal factory enforces this by copying the original aggregate's `CoaSnapshotId`, and the physical design requires a composite self-FK for database enforcement.
 
 This is a design/domain consistency correction only. It creates no SQL, DDL, EF mapping, Migration 0009, COA seed, Posting writer, Posting Release, production migration or Go-Live authorization.
+
+## 28. PR #73 post-#71 Inventory integration record — 2026-11-20
+
+PR #73 is the controlled Inventory physical-design extension following the PR #71 merge and PR #72 superseded closure.
+
+- Base: `main` at PR #71 merge commit `8f89653e25e6a599387128e0209f5009d9dd59cd`.
+- The rebuilt PR #73 delta contains only four Inventory physical-design/re-audit documents, this current v1.4 register update, the canonical O-register O-35 traceability update, and SHA256 manifest changes. Superseded finance-register v0.7/v0.8 revisions are not reintroduced.
+- The Inventory design additions are v0.2, v0.3, re-audit 002 and re-audit 003. The internal re-audits close PD-AUD-01..12 in design only; they are not independent reviewer attestations or implementation evidence.
+- OperationContractVersion is included consistently in the command-receipt uniqueness and idempotency lock scope. Projection cutover is constrained to a bounded locked tail after background catch-up.
+- O-35 remains OPEN. PD-T-001..039 remain NOT RUN. AuditSecurity, Catalog and Platform contracts, independent exact-SHA review and PostgreSQL watermark/race/replay/tie-out evidence remain outstanding.
+- PR #73 remains OPEN / NOT MERGED until exact-head CI and independent review are accepted. No SQL, DDL, EF mapping, migration, grants, API/runtime, Posting Release, production migration or Go-Live is authorized.
+
+This dated integration record is historical evidence of the PR's scope and boundaries; GitHub PR metadata is authoritative for the final head SHA, current review state and workflow run results.
