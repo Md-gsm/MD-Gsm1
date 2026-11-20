@@ -354,3 +354,5 @@ ac6b08d0457147affed028e1203b37a63d6bc87631ec905be45856efdd5b60af  docs/modules/i
 
 6f0c3396846c141ef74f9481bb646d148b6fa21c84c9c7f4d7547928c543c4c4  docs/architecture/MDG-ARCH-MASTER-001_v3.0.md
 7cf76f79f4370ee4de4ffcbdef5fbcf573f35e9cb1532a96175ad548f33a8e23  docs/architecture/MDG-ARCH-MASTER-001_v3.0.3.txt
+
+96904a2230d23cf839d02e1b0aa69b59c85aa18f24eca2ef98bac8a2be9460a3  docs/finance/workpapers/p4h/integration/MDG-WP06-STAGE-04-SALES-RETURNS-GRNI-CREDIT-EXPOSURE-TIEOUT-001_v0.1.md
