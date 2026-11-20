@@ -60,7 +60,7 @@
 
 
 
-                                       ‫‪ 1‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 1‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 2 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -133,7 +133,7 @@ PRODUCTION MIGRATION / POSTING RELEASE / GO-LIVE NOT AUTHORIZED. ‫مرجع م�
 
 
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬2
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬2
 <PARSED TEXT FOR PAGE: 3 / 251>
                                                                       ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -176,7 +176,7 @@ PRODUCTION MIGRATION / POSTING RELEASE / GO-LIVE NOT AUTHORIZED. ‫مرجع م�
 ‫هستند؛ امضای مجدد حسابدار پیش‌شرط سیاست یا ‪ ACCOUNTING_POLICY_FINAL‬در محدوده پذیرفته‌شده‬
 ‫‪.‬عملیات روزمره نیست‬
 
-                                     ‫‪ 3‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 3‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 4 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -231,7 +231,7 @@ PRODUCTION MIGRATION / POSTING RELEASE / GO-LIVE NOT AUTHORIZED. ‫مرجع م�
 
 ‫‪.‬بندهای جاری این سند که به تصمیم معتبر متصل‌اند‬
 
-                                       ‫‪ 4‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 4‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 5 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -276,7 +276,7 @@ PRODUCTION MIGRATION / POSTING RELEASE / GO-LIVE NOT AUTHORIZED. ‫مرجع م�
 
 
 
-                                        ‫‪ 5‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 5‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 6 / 251>
                                                                      MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -322,7 +322,7 @@ NOT_STARTED, BLOCKED, PASS, FAIL, NOT_APPLICABLE
 
 
 
-                                    ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬6
+                                    ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬6
 <PARSED TEXT FOR PAGE: 7 / 251>
                                                                              ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -375,7 +375,7 @@ NOT_STARTED, BLOCKED, PASS, FAIL, NOT_APPLICABLE
 
 ‫‪: PostgreSQL 18.‬پایگاه داده‬
 
-                                            ‫‪ 7‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                            ‫‪ 7‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 8 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -429,7 +429,7 @@ NOT_STARTED, BLOCKED, PASS, FAIL, NOT_APPLICABLE
 ‫نهایی‌سازی آفالین اسناد مالی یا موجودی؛‬
 ‫؛‪ Microservices‬معماری‬
 
-                                         ‫‪ 8‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                         ‫‪ 8‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 9 / 251>
                                                                            ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -484,7 +484,7 @@ NOT_STARTED, BLOCKED, PASS, FAIL, NOT_APPLICABLE
 
 
 
-                                          ‫‪ 9‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                          ‫‪ 9‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 10 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -544,7 +544,7 @@ NOT_STARTED, BLOCKED, PASS, FAIL, NOT_APPLICABLE
 
 
 
-                                        ‫‪ 10‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 10‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 11 / 251>
                                                                      MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -576,7 +576,7 @@ CONCURRENCY_CONFLICT ‫ مقدار پیش‌فرض ساختگی یا پیام �
 
 
 
-                                   ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬11
+                                   ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬11
 <PARSED TEXT FOR PAGE: 12 / 251>
                                                                        MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -603,7 +603,7 @@ Organization
 
 
 
-                                     ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬12
+                                     ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬12
 <PARSED TEXT FOR PAGE: 13 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -666,7 +666,7 @@ DocumentFile
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬13
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬13
 <PARSED TEXT FOR PAGE: 14 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -727,7 +727,7 @@ DocumentFile
 ‫و تراکنش محلی اجرا ‪ Unit of Work‬هماهنگ‌کننده‪ ،‬قراردادها را در همان ‪ Application‬موازی نیست‪ .‬ماژول منبع و‬
 ‫باشد؛ روش و ‪ Tie-out‬قابل ‪ As-of‬در همان ‪ GL‬می‌کنند؛ آثار مالی اصلی هم‌زمان و اتمیک‌اند‪ .‬مانده تفصیلی باید با‬
 
-                                       ‫‪ 14‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 14‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 15 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -784,7 +784,7 @@ DocumentFile
 
 
 
-                                       ‫‪ 15‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 15‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 16 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -841,7 +841,7 @@ DocumentFile
 
 
 
-                                       ‫‪ 16‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 16‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 17 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -894,7 +894,7 @@ DocumentFile
 
 
 
-                                        ‫‪ 17‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 17‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 18 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -948,7 +948,7 @@ DocumentFile
 
 
 
-                                      ‫‪ 18‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 18‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 19 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1002,7 +1002,7 @@ DocumentFile
 ‫اگر مدیر حد منفی را به مقداری کمتر از کسری جاری کاهش دهد‪ ،‬فروش جدید آن کاال تا بازگشت مانده به‬
 ‫محدوده حد جدید مسدود می‌شود‪ .‬سامانه باید مقدار الزم برای بازگشت به محدوده را نمایش دهد؛ تعدیل یا‬
 
-                                       ‫‪ 19‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 19‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 20 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1052,7 +1052,7 @@ DocumentFile
 
 
 
-                                     ‫‪ 20‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 20‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 21 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1105,7 +1105,7 @@ DocumentFile
 ‫پنجره ‪ AverageDailyConsumption،‬شامل ‪ Formula Register‬در ‪ Reorder‬نگهداری می‌شوند‪ .‬فرمول ‪ Audit‬در‬
 ‫گذشته است؛ هیچ‌یک از پنجره‌ها‪ ،‬از ‪ ETA‬و ‪، LeadTime، SafetyStock، QualifiedInbound‬انتخابی ‪ ۳۰/۶۰/۹۰‬روز‬
 
-                                       ‫‪ 21‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 21‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 22 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1155,7 +1155,7 @@ DocumentFile
 
 
 
-                                      ‫‪ 22‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 22‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 23 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1207,7 +1207,7 @@ DocumentFile
 
 
 
-                                      ‫‪ 23‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 23‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 24 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1259,7 +1259,7 @@ DocumentFile
 
 
 
-                                      ‫‪ 24‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 24‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 25 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1309,7 +1309,7 @@ DocumentFile
 
 
 
-                                      ‫‪ 25‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 25‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 26 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1362,7 +1362,7 @@ DocumentFile
 
 ‫یک‌بار ‪ AwayFromZero‬با ‪ P‬جمع جبری دقیق همه ردیف‌های همان مبنای پولی سند به دست می‌آید‪ .‬استخر مثبت‬
 
-                                       ‫‪ 26‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 26‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 27 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1416,7 +1416,7 @@ DocumentFile
 ‫ها محاسبه می‌شود‪ ،‬نه صرفًا مقدار ‪ Movement‬دارد‪ .‬ارزش موجودی از ارزش تجمعی ‪Specific Identification‬‬
 
 
-                                      ‫‪ 27‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 27‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 28 / 251>
                                                                            ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1471,7 +1471,7 @@ DocumentFile
 
 
 
-                                         ‫‪ 28‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                         ‫‪ 28‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 29 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1522,7 +1522,7 @@ DocumentFile
 
 ‫‪.‬مازاد شمارش موجودی در دست بررسی‪ :‬حساب واسط تا احراز ماهیت؛ درآمد خودکار نیست ‪2113‬‬
 
-                                     ‫‪ 29‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 29‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 30 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1582,7 +1582,7 @@ DocumentFile
 ‫دامنه ‪ 78‬شناسه (‪ 76‬کد ‪C‬برابر صفر است‪ Accepted Positive Posting Rules 7 .‬تعیین تکلیف سیاستی است‪ ،‬اما‬
 ‫‪D‬و ‪ 110809‬ممنوع است‪ OPEN/UNVERIFIED 7 .‬حل‌نشده ‪ Canonical‬پایه ‪ )5106 + 2114 +‬دارد؛ صفات‬
 
-                                       ‫‪ 30‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 30‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 31 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1633,7 +1633,7 @@ DocumentFile
 
 
 
-                                      ‫‪ 31‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 31‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 32 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1679,7 +1679,7 @@ DocumentFile
 
 
 
-                                       ‫‪ 32‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 32‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 33 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1733,7 +1733,7 @@ DocumentFile
 
 
 
-                                     ‫‪ 33‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 33‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 34 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1801,7 +1801,7 @@ DocumentFile
 
 
 
-                                      ‫‪ 34‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 34‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 35 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1852,7 +1852,7 @@ DocumentFile
 
 
 
-                                       ‫‪ 35‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 35‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 36 / 251>
                                                                            ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1908,7 +1908,7 @@ DocumentFile
 
 
 
-                                        ‫‪ 36‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 36‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 37 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -1963,7 +1963,7 @@ DocumentFile
 
 
 
-                                       ‫‪ 37‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 37‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 38 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2018,7 +2018,7 @@ DocumentFile
 
 
 
-                                       ‫‪ 38‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 38‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 39 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2068,7 +2068,7 @@ DocumentFile
 
 
 
-                                       ‫‪ 39‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 39‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 40 / 251>
                                                                            ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2117,7 +2117,7 @@ DocumentFile
 
 
 
-                                         ‫‪ 40‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                         ‫‪ 40‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 41 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2162,14 +2162,14 @@ DocumentFile
 
 
 
-                                        ‫‪ 41‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 41‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 42 / 251>
                                   MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬42
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬42
 <PARSED TEXT FOR PAGE: 43 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2204,7 +2204,7 @@ DocumentFile
 
 ‫‪ Inventory asset/Subledge‬بدون ثبت هزینه عادی قبل تحویل؛ تعیین مدل‬
 
-                                      ‫‪ 43‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 43‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 44 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2263,7 +2263,7 @@ DocumentFile
 ‫آستانه مبلغ فروش نیازمند تأیید مالک‬
 
 
-                                        ‫‪ 44‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 44‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 45 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -2326,7 +2326,7 @@ R1/R2 ‫ دقیق‬TradeIn ‫ و‬Fixed Assets
 SCOPE CROSSWALK OPEN
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬45
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬45
 <PARSED TEXT FOR PAGE: 46 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -2388,7 +2388,7 @@ LEGAL/PRIVACY OPEN
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬46
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬46
 <PARSED TEXT FOR PAGE: 47 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2449,7 +2449,7 @@ LEGAL/PRIVACY OPEN
 ‫محدودسازی نرخ و تست حمله‪/‬بازیاب ‪ Token، Device binding،‬تعریف عمر‪/‬چرخش‬
 
 
-                                        ‫‪ 47‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 47‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 48 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2484,14 +2484,14 @@ LEGAL/PRIVACY OPEN
 
 
 
-                                     ‫‪ 48‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 48‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 49 / 251>
                                   MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬49
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬49
 <PARSED TEXT FOR PAGE: 50 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2541,7 +2541,7 @@ LEGAL/PRIVACY OPEN
 ‫بخش ‪6‬‬
 
 
-                                       ‫‪ 50‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 50‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 51 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2602,7 +2602,7 @@ LEGAL/PRIVACY OPEN
 
 ‫بخش ‪16‬‬
 
-                                       ‫‪ 51‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 51‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 52 / 251>
                                                                       ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2656,14 +2656,14 @@ LEGAL/PRIVACY OPEN
 
 
 
-                                    ‫‪ 52‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                    ‫‪ 52‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 53 / 251>
                                   MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬53
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬53
 <PARSED TEXT FOR PAGE: 54 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2708,7 +2708,7 @@ LEGAL/PRIVACY OPEN
 
 
 
-                                      ‫‪ 54‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 54‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 55 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2768,7 +2768,7 @@ LEGAL/PRIVACY OPEN
 
 
 
-                                      ‫‪ 55‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 55‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 56 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2827,7 +2827,7 @@ LEGAL/PRIVACY OPEN
 ‫هزینه‌های عمومی تعهدی؛ پیش‌پرداخت در ‪ 110702‬و تخصیص زمانی‬
 ‫ثبت با رویداد‪ ،‬دوره و مستند‬
 
-                                     ‫‪ 56‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 56‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 57 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2881,7 +2881,7 @@ LEGAL/PRIVACY OPEN
 
 
 
-                                      ‫‪ 57‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 57‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 58 / 251>
                                                 ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2893,7 +2893,7 @@ LEGAL/PRIVACY OPEN
 ‫عنوان‪/‬ماهیت‬
 ‫قید‬
 
-              ‫‪ 58‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+              ‫‪ 58‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 59 / 251>
                                                                     ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -2950,7 +2950,7 @@ LEGAL/PRIVACY OPEN
 
 ‫پرداخت تخصیص‌نیافته‬
 
-                                  ‫‪ 59‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                  ‫‪ 59‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 60 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3005,7 +3005,7 @@ LEGAL/PRIVACY OPEN
 ‫فقط وجه خارج‌شده از مبدأ و نرسیده به مقصد‬
 ‫‪1201‬‬
 
-                                     ‫‪ 60‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 60‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 61 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3036,7 +3036,7 @@ LEGAL/PRIVACY OPEN
 ‫‪ no-expense-before-delivery‬و سیاست ‪ FE-20‬با‬
 
 
-                                      ‫‪ 61‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 61‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 62 / 251>
                                                                       ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3093,7 +3093,7 @@ LEGAL/PRIVACY OPEN
 ‫مازاد شمارش موجودی در دست بررسی‬
 
 
-                                    ‫‪ 62‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                    ‫‪ 62‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 63 / 251>
                                                                       ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3133,7 +3133,7 @@ LEGAL/PRIVACY OPEN
 
 
 
-                                    ‫‪ 63‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                    ‫‪ 63‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 64 / 251>
                                                                     ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3173,7 +3173,7 @@ LEGAL/PRIVACY OPEN
 ‫حساب درآمدی جایگزین ‪6204‬‬
 
 
-                                  ‫‪ 64‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                  ‫‪ 64‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 65 / 251>
                                                      ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3191,7 +3191,7 @@ LEGAL/PRIVACY OPEN
 
 ‫‪5102‬‬
 
-                   ‫‪ 65‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                   ‫‪ 65‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 66 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3253,7 +3253,7 @@ LEGAL/PRIVACY OPEN
 ‫‪ PSP‬کارمزد‬
 
 
-                                       ‫‪ 66‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 66‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 67 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3320,7 +3320,7 @@ LEGAL/PRIVACY OPEN
 
 
 
-                                       ‫‪ 67‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 67‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 68 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3337,14 +3337,14 @@ LEGAL/PRIVACY OPEN
 
 
 
-                                     ‫‪ 68‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 68‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 69 / 251>
                                   MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬69
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬69
 <PARSED TEXT FOR PAGE: 70 / 251>
                                                                       ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3365,7 +3365,7 @@ LEGAL/PRIVACY OPEN
 
 
 
-                                    ‫‪ 70‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                    ‫‪ 70‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 71 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3425,7 +3425,7 @@ LEGAL/PRIVACY OPEN
 
 
 
-                                      ‫‪ 71‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 71‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 72 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3482,7 +3482,7 @@ LEGAL/PRIVACY OPEN
 ‫‪FE-15‬‬
 
 
-                                      ‫‪ 72‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 72‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 73 / 251>
                                                                       ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3539,7 +3539,7 @@ LEGAL/PRIVACY OPEN
 ‫جزئیات الزم‬
 ‫‪FE-23‬‬
 
-                                    ‫‪ 73‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                    ‫‪ 73‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 74 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3598,7 +3598,7 @@ LEGAL/PRIVACY OPEN
 
 
 
-                                       ‫‪ 74‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 74‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 75 / 251>
                                                                              ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3657,7 +3657,7 @@ LEGAL/PRIVACY OPEN
 ‫؛ افتتاحیه و اختتامیه‪3101/3102/3103/3104‬‬
 
 
-                                           ‫‪ 75‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                           ‫‪ 75‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 76 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -3692,7 +3692,7 @@ SUMMARY/PARTIAL
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬76
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬76
 <PARSED TEXT FOR PAGE: 77 / 251>
                                                                         MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -3754,7 +3754,7 @@ COA-TST-001..034
 NOT RUN
 
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬77
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬77
 <PARSED TEXT FOR PAGE: 78 / 251>
                                                                          MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -3792,7 +3792,7 @@ NOT RUN
 
 
 
-                                       ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬78
+                                       ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬78
 <PARSED TEXT FOR PAGE: 79 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3819,7 +3819,7 @@ NOT RUN
 
 
 
-                                     ‫‪ 79‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 79‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 80 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3880,7 +3880,7 @@ NOT RUN
 
 
 
-                                       ‫‪ 80‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 80‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 81 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3911,7 +3911,7 @@ NOT RUN
 ‫‪ Gate‬غیرسریالی؛ صحیح ‪/2-‬اعشاری صفر؛ سریال ممنوع؛ فعال‌سازی مشروط‬
 
 
-                                     ‫‪ 81‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 81‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 82 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -3956,14 +3956,14 @@ NOT RUN
 
 
 
-                                        ‫‪ 82‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 82‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 83 / 251>
                                   MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬83
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬83
 <PARSED TEXT FOR PAGE: 84 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -4004,7 +4004,7 @@ NOT RUN
 
 
 
-                                      ‫‪ 84‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 84‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 85 / 251>
                                                                         MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -4066,7 +4066,7 @@ ATP/Backorder
 POLICY CLOSED; TEST OPEN
 
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬85
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬85
 <PARSED TEXT FOR PAGE: 86 / 251>
                                                                         MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -4128,7 +4128,7 @@ OPEN DESIGN
 C1-19
 
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬86
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬86
 <PARSED TEXT FOR PAGE: 87 / 251>
                                                                          MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -4189,7 +4189,7 @@ C1-26
 
 CalendarDay
 
-                                       ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬87
+                                       ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬87
 <PARSED TEXT FOR PAGE: 88 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -4253,7 +4253,7 @@ Backup retention
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬88
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬88
 <PARSED TEXT FOR PAGE: 89 / 251>
                                                                              MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -4294,7 +4294,7 @@ NFR‫ها‬
 
 ‫ عدد پیشنهادی تا‬Benchmark/‫ تصویب‬Target ‫می‌ماند؛ عملکرد اثبات‌شده نیست‬
 
-                                           ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬89
+                                           ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬89
 <PARSED TEXT FOR PAGE: 90 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -4343,14 +4343,14 @@ ApprovalRequest
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬90
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬90
 <PARSED TEXT FOR PAGE: 91 / 251>
                                   MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬91
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬91
 <PARSED TEXT FOR PAGE: 92 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -4406,7 +4406,7 @@ Purchasing
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬92
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬92
 <PARSED TEXT FOR PAGE: 93 / 251>
                                                                            MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -4466,7 +4466,7 @@ Catalog
 
 ‫قراردادی‬
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬93
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬93
 <PARSED TEXT FOR PAGE: 94 / 251>
                                                                              MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -4528,7 +4528,7 @@ Read contract
 Read Models only
 
 
-                                           ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬94
+                                           ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬94
 <PARSED TEXT FOR PAGE: 95 / 251>
                                                                            MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -4585,7 +4585,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬95
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬95
 <PARSED TEXT FOR PAGE: 96 / 251>
                                                                 MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -4595,7 +4595,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 
 
-                              ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬96
+                              ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬96
 <PARSED TEXT FOR PAGE: 97 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -4647,7 +4647,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 ‫‪Full Backup‬‬
 
 
-                                     ‫‪ 97‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 97‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 98 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -4710,7 +4710,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 
 
-                                      ‫‪ 98‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 98‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 99 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -4757,7 +4757,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 ‫منبع‬
 ‫اعتبار‪/‬محدودیت‬
 
-                                       ‫‪ 99‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 99‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 100 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -4817,7 +4817,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 ‫وجود ‪ Source Register‬در این ‪ RepairDesk‬متعلق به پروژه قدیمی ‪ Artifact‬ممنوعیت منبع‪ :‬هیچ فایل‪ ،‬کد‪ ،‬ساختار یا‬
 ‫‪.‬ندارد و نباید برای این سند بازیابی یا استفاده شود‬
 
-                                       ‫‪ 100‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 100‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 101 / 251>
                                                                      ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -4844,7 +4844,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 
 
-                                  ‫‪ 101‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                  ‫‪ 101‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 102 / 251>
                                                                            ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -4903,7 +4903,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 ‫‪G10‬‬
 
-                                      ‫‪ 102‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 102‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 103 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -4954,7 +4954,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 
 
-                                     ‫‪ 103‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 103‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 104 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -4985,7 +4985,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 
 
-                                    ‫‪ 104‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                    ‫‪ 104‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 105 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5044,7 +5044,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 ‫‪.‬ثبت شده؛ از فرمول حدسی برای سفارش خودکار استفاده نشود ‪ O-13‬فرمول نهایی باز است و در‬
 
 
-                                       ‫‪ 105‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 105‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 106 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5080,7 +5080,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 ‫‪F01‬‬
 
 
-                                    ‫‪ 106‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                    ‫‪ 106‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 107 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5141,7 +5141,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 
 
-                                      ‫‪ 107‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 107‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 108 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5186,7 +5186,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 ‫تضاد نشست مدیر و تأیید دوم‬
 
-                                    ‫‪ 108‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                    ‫‪ 108‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 109 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5241,7 +5241,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 
 
-                                     ‫‪ 109‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 109‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 110 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5287,7 +5287,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 
 
-                                      ‫‪ 110‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 110‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 111 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5323,7 +5323,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 ‫‪ R1‬چاپ تعمیر در‬
 
 
-                                     ‫‪ 111‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 111‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 112 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5385,7 +5385,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 
 
-                                    ‫‪ 112‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                    ‫‪ 112‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 113 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5420,7 +5420,7 @@ Persistence/Repository/Assembly ‫ داخلی‬Purchasing ‫ وابسته ن�
 
 
 
-                                      ‫‪ 113‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 113‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 114 / 251>
                                                                          MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -5460,7 +5460,7 @@ Owner policy
 
 
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬114
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬114
 <PARSED TEXT FOR PAGE: 115 / 251>
                                                                       ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5498,7 +5498,7 @@ Owner policy
 
 
 
-                                   ‫‪ 115‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                   ‫‪ 115‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 116 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5534,7 +5534,7 @@ Owner policy
 ‫‪SRC-03‬‬
 
 
-                                     ‫‪ 116‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 116‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 117 / 251>
                                                                          MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -5594,7 +5594,7 @@ SRC-10
 
 ‫سیاست‌های پذیرفته‌شده؛ در دامنه پذیرفته‌شده قطعی‬/‫پاسخ‬
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬117
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬117
 <PARSED TEXT FOR PAGE: 118 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5642,7 +5642,7 @@ SRC-10
 ‫الزام مستقل ایجاد نمی‌کند‬
 
 
-                                     ‫‪ 118‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 118‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 119 / 251>
                                                                       ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5675,7 +5675,7 @@ SRC-10
 
 
 
-                                   ‫‪ 119‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                   ‫‪ 119‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 120 / 251>
                                                                          MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -5737,7 +5737,7 @@ GATE-
 
 
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬120
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬120
 <PARSED TEXT FOR PAGE: 121 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5777,7 +5777,7 @@ GATE-
 
 
 
-                                     ‫‪ 121‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 121‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 122 / 251>
                                                                        MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -5839,7 +5839,7 @@ DESIGN_BLOCKED
 
 
 
-                                    ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬122
+                                    ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬122
 <PARSED TEXT FOR PAGE: 123 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -5900,7 +5900,7 @@ Owner decision closed; no Posting/Release authorization by this approval alone
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬123
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬123
 <PARSED TEXT FOR PAGE: 124 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -5938,7 +5938,7 @@ Owner decision closed; no Posting/Release authorization by this approval alone
 
 
 
-                                      ‫‪ 124‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 124‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 125 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -5963,7 +5963,7 @@ Primitive types، Result، ID wrappers
 ‫ بدون‬Aggregate ‫تجاری‬
 
 
-                                       ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬125
+                                       ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬125
 <PARSED TEXT FOR PAGE: 126 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -6027,7 +6027,7 @@ SalesDocument/Line، Delivery، SalesReturn، price/discount facts
 Delivery/Sales events
 
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬126
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬126
 <PARSED TEXT FOR PAGE: 127 / 251>
                                                                                MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -6093,7 +6093,7 @@ DocumentRef
 
 
 
-                                            ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬127
+                                            ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬127
 <PARSED TEXT FOR PAGE: 128 / 251>
                                                                                MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -6159,7 +6159,7 @@ ownership boundaries requires ADR and migration impact review.
 
 
 
-                                           ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬128
+                                           ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬128
 <PARSED TEXT FOR PAGE: 129 / 251>
                                                                            MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -6195,7 +6195,7 @@ Binds client context; cannot grant permission
 
 InitiatorReference
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬129
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬129
 <PARSED TEXT FOR PAGE: 130 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -6259,7 +6259,7 @@ Server
 
 
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬130
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬130
 <PARSED TEXT FOR PAGE: 131 / 251>
                                                                               MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -6326,7 +6326,7 @@ ConditionGrade. ‫این فهرست دامنه بازیابی‌شده از م�
 
 
 
-                                           ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬131
+                                           ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬131
 <PARSED TEXT FOR PAGE: 132 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -6375,7 +6375,7 @@ ConditionGrade. ‫این فهرست دامنه بازیابی‌شده از م�
 ‫تعریف معنایی‬
 ‫محدودیت‬
 
-                                      ‫‪ 132‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 132‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 133 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -6437,7 +6437,7 @@ ConditionGrade. ‫این فهرست دامنه بازیابی‌شده از م�
 ‫‪.‬باید نتیجه قابل تطبیق بسازد ‪ Replay‬است؛ ‪ Projection‬فقط ‪StockBalance‬‬
 
 
-                                       ‫‪ 133‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 133‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 134 / 251>
                                                                             ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -6499,7 +6499,7 @@ ConditionGrade. ‫این فهرست دامنه بازیابی‌شده از م�
 
 
 
-                                         ‫‪ 134‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                         ‫‪ 134‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 135 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -6551,7 +6551,7 @@ ConditionGrade. ‫این فهرست دامنه بازیابی‌شده از م�
 
 
 
-                                       ‫‪ 135‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 135‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 136 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -6602,7 +6602,7 @@ ReasonCode, SourceDocumentId, SourceMovementId, CreatedAt, CreatedBy, FiscalPeri
 
 
 
-                                       ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬136
+                                       ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬136
 <PARSED TEXT FOR PAGE: 137 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -6643,7 +6643,7 @@ ReasonCode, SourceDocumentId, SourceMovementId, CreatedAt, CreatedBy, FiscalPeri
 
 
 
-                                       ‫‪ 137‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 137‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 138 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -6685,7 +6685,7 @@ ReasonCode, SourceDocumentId, SourceMovementId, CreatedAt, CreatedBy, FiscalPeri
 
 ‫سیاست بسته؛ آزمون الزم‬
 
-                                       ‫‪ 138‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 138‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 139 / 251>
                                                                       ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -6734,7 +6734,7 @@ ReasonCode, SourceDocumentId, SourceMovementId, CreatedAt, CreatedBy, FiscalPeri
 ‫معتبر ‪ ETA‬بله‪ ،‬تا‬
 
 ‫خیر‬
-                                   ‫‪ 139‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                   ‫‪ 139‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 140 / 251>
                                                                       ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -6786,7 +6786,7 @@ ReasonCode, SourceDocumentId, SourceMovementId, CreatedAt, CreatedBy, FiscalPeri
 ‫خیر برای مقدار دریافت‌شده‬
 ‫طبق مقدار باقی‌مانده درراه‬
 
-                                   ‫‪ 140‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                   ‫‪ 140‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 141 / 251>
                                                                              ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -6846,7 +6846,7 @@ ReasonCode, SourceDocumentId, SourceMovementId, CreatedAt, CreatedBy, FiscalPeri
 ‫‪.‬محاسباتی بدون تصمیم مالک جایگزین نمی‌شود ‪ RiskFactor‬یا ‪Party-only‬‬
 
 
-                                          ‫‪ 141‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                          ‫‪ 141‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 142 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -6883,7 +6883,7 @@ compare and audit tests in O-29 remain open.
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬142
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬142
 <PARSED TEXT FOR PAGE: 143 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -6912,7 +6912,7 @@ compare and audit tests in O-29 remain open.
 ‫‪ Commit‬رخداد دقیق و نقطه‬
 
 
-                                     ‫‪ 143‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 143‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 144 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -6974,7 +6974,7 @@ COA ‫ هر حساب حداقل این فیلدها را دارد‬.‫بای�
 
 
 
-                                       ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬144
+                                       ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬144
 <PARSED TEXT FOR PAGE: 145 / 251>
                                                                              MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -6995,7 +6995,7 @@ OPEN ‫ فقط طبق وضعیت و‬Crosswalk ‫کد باید‬/‫ساخت
                                                                               codes
 ‫کد‬
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬145
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬145
 <PARSED TEXT FOR PAGE: 146 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7054,7 +7054,7 @@ OPEN ‫ فقط طبق وضعیت و‬Crosswalk ‫کد باید‬/‫ساخت
 ‫‪Negative Stock Clearing‬‬
 
 
-                                      ‫‪ 146‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 146‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 147 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7111,7 +7111,7 @@ OPEN ‫ فقط طبق وضعیت و‬Crosswalk ‫کد باید‬/‫ساخت
 ‫‪1109/2109‬‬
 
 
-                                    ‫‪ 147‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                    ‫‪ 147‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 148 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7150,7 +7150,7 @@ OPEN ‫ فقط طبق وضعیت و‬Crosswalk ‫کد باید‬/‫ساخت
 ‫موقت موجودی منفی با بهای معتبر‬
 
 
-                                       ‫‪ 148‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 148‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 149 / 251>
                                                                            ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7208,7 +7208,7 @@ OPEN ‫ فقط طبق وضعیت و‬Crosswalk ‫کد باید‬/‫ساخت
 
 
 
-                                        ‫‪ 149‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 149‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 150 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7253,14 +7253,14 @@ OPEN ‫ فقط طبق وضعیت و‬Crosswalk ‫کد باید‬/‫ساخت
 
 
 
-                                     ‫‪ 150‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 150‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 151 / 251>
                                    MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬151
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬151
 <PARSED TEXT FOR PAGE: 152 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7291,7 +7291,7 @@ OPEN ‫ فقط طبق وضعیت و‬Crosswalk ‫کد باید‬/‫ساخت
 ‫‪FE-03‬‬
 
 
-                                    ‫‪ 152‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                    ‫‪ 152‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 153 / 251>
                                                                          MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -7351,7 +7351,7 @@ SalesReturn ‫ سند مستقل و کاهش درآمد طبق‬Return
 
 
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬153
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬153
 <PARSED TEXT FOR PAGE: 154 / 251>
                                                                         MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -7413,7 +7413,7 @@ Test/settlement OPEN
 
 
 
-                                     ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬154
+                                     ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬154
 <PARSED TEXT FOR PAGE: 155 / 251>
                                                                       ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7473,7 +7473,7 @@ Test/settlement OPEN
 
 
 
-                                   ‫‪ 155‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                   ‫‪ 155‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 156 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -7535,7 +7535,7 @@ R2‫ ؛ مستقل از‬Section transfer
 
 
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬156
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬156
 <PARSED TEXT FOR PAGE: 157 / 251>
                                                                             ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7595,7 +7595,7 @@ R2‫ ؛ مستقل از‬Section transfer
 ‫به کمیسیون فنی‪ ،‬کسورات حقوق‪ ،‬شخصیت حسابداری و ‪ Crosswalk‬باید در ‪. FE-37/38‬یکی نیست ‪Section‬‬
 
 
-                                       ‫‪ 157‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 157‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 158 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7637,7 +7637,7 @@ R2‫ ؛ مستقل از‬Section transfer
 ‫‪ Posting‬عدم‬
 
 
-                                     ‫‪ 158‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 158‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 159 / 251>
                                                                              ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7691,7 +7691,7 @@ R2‫ ؛ مستقل از‬Section transfer
 ‫مرز ‪ PostingRule‬به تفکیک حساب جمع می‌شود‪ .‬اسناد‪/‬رویدادها‪/‬مبانی مالی مستقل با هم مخلوط نمی‌شوند؛‬
 
 
-                                          ‫‪ 159‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                          ‫‪ 159‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 160 / 251>
                                                                               ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7748,7 +7748,7 @@ R2‫ ؛ مستقل از‬Section transfer
 
 
 
-                                         ‫‪ 160‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                         ‫‪ 160‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 161 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7800,7 +7800,7 @@ R2‫ ؛ مستقل از‬Section transfer
 
 
 
-                                       ‫‪ 161‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 161‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 162 / 251>
                                                                          MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -7842,7 +7842,7 @@ DeviceId
 
 
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬162
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬162
 <PARSED TEXT FOR PAGE: 163 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -7893,7 +7893,7 @@ DeviceId
 ‫ممنوع‬
 
 
-                                       ‫‪ 163‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 163‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 164 / 251>
                                                                            MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -7957,7 +7957,7 @@ Key custody، rotation، backup، recovery ‫ و‬revocation‫؛‬
 verification utility ‫ مستقل و‬Runbook‫؛‬
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬164
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬164
 <PARSED TEXT FOR PAGE: 165 / 251>
                                                                                  MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8018,7 +8018,7 @@ PostgreSQL. ‫ توپولوژی فیزیکی‬API/DB/File storage (‫ بای�
 
 
 
-                                              ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬165
+                                              ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬165
 <PARSED TEXT FOR PAGE: 166 / 251>
                                                                               MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8065,7 +8065,7 @@ totals، Trial Balance، Journal-Movement-StockBalance tie-out، recovery secret
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬166
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬166
 <PARSED TEXT FOR PAGE: 167 / 251>
                                                                                 MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8112,7 +8112,7 @@ Owner policy‫ ؛‬enforce/test ‫الزم‬
 50,000 ‫ سند در سال‬100,000 ‫تا‬
 
 
-                                          ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬167
+                                          ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬167
 <PARSED TEXT FOR PAGE: 168 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -8171,7 +8171,7 @@ Owner policy‫ ؛‬enforce/test ‫الزم‬
 ‫‪.‬روشن قابل‌استفاده است‬
 
 
-                                      ‫‪ 168‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 168‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 169 / 251>
                                                                          MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8210,7 +8210,7 @@ NOT RUN / PARTIAL SOURCE
 
 
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬169
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬169
 <PARSED TEXT FOR PAGE: 170 / 251>
                                                                      MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8272,7 +8272,7 @@ NOT RUN / UNMAPPED
 Legacy P4D
 
 
-                                  ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬170
+                                  ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬170
 <PARSED TEXT FOR PAGE: 171 / 251>
                                                                              MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8332,14 +8332,14 @@ EvidenceRef, Reviewer, RunDate, OpenIssueRef.
 
 
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬171
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬171
 <PARSED TEXT FOR PAGE: 172 / 251>
                                    MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬172
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬172
 <PARSED TEXT FOR PAGE: 173 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8383,7 +8383,7 @@ pair movements same warehouse, serial conflict, section NULL rule, all-or-nothin
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬173
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬173
 <PARSED TEXT FOR PAGE: 174 / 251>
                                                                                 MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8447,7 +8447,7 @@ FIN-CHEQUE-24B
 FIN-TAX-ZERO
 
 
-                                          ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬174
+                                          ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬174
 <PARSED TEXT FOR PAGE: 175 / 251>
                                                                                 MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8510,7 +8510,7 @@ menu keyboard focus, Tab/Escape, labels; shell design preserved
 
 
 
-                                          ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬175
+                                          ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬175
 <PARSED TEXT FOR PAGE: 176 / 251>
                                                                                MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8554,7 +8554,7 @@ positive pool 500,001‫ ؛‬derived negative pool 50,001‫ ؛‬allocations s
 ‫؛‬1,500,002 LR source allocations 500,001/500,001/500,000 ‫ بر اساس‬ID. Reordered input must give identical
 output. Pool/document totals conserve exactly; document-vs-rational maximum remains ≤1 IRR. Fault -injected
 
-                                          ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬176
+                                          ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬176
 <PARSED TEXT FOR PAGE: 177 / 251>
                                                                                   MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8620,7 +8620,7 @@ AR, accepted cheque, bounce, allocated/unallocated advance, partial payment
 exposure per Party×Item without duplicate amounts
 
 
-                                             ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬177
+                                             ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬177
 <PARSED TEXT FOR PAGE: 178 / 251>
                                                                                    MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8690,7 +8690,7 @@ posting.
 
 
 
-                                            ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬178
+                                            ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬178
 <PARSED TEXT FOR PAGE: 179 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8723,7 +8723,7 @@ Sales, Purchasing, Receipt/Delivery, Inventory
 
 Yes
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬179
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬179
 <PARSED TEXT FOR PAGE: 180 / 251>
                                                                              MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8787,7 +8787,7 @@ No repair profit
 
 
 
-                                          ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬180
+                                          ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬180
 <PARSED TEXT FOR PAGE: 181 / 251>
                                                                               MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8852,7 +8852,7 @@ TradeIn remains a V1 scope commitment but the exact Release train/Gate still req
 Acquisition of used goods and sale of new goods remain two linked but separate documents with TradeInId; netting
 
 
-                                           ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬181
+                                           ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬181
 <PARSED TEXT FOR PAGE: 182 / 251>
                                                                                  MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -8926,7 +8926,7 @@ condition for already accepted accounting policies.
 
 
 
-                                              ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬182
+                                              ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬182
 <PARSED TEXT FOR PAGE: 183 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -8949,14 +8949,14 @@ condition for already accepted accounting policies.
 
 
 
-                                     ‫‪ 183‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 183‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 184 / 251>
                                    MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬184
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬184
 <PARSED TEXT FOR PAGE: 185 / 251>
                                                                        MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9007,7 +9007,7 @@ O-03
 
 
 
-                                    ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬185
+                                    ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬185
 <PARSED TEXT FOR PAGE: 186 / 251>
                                                                              MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9068,7 +9068,7 @@ Finance
 C1
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬186
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬186
 <PARSED TEXT FOR PAGE: 187 / 251>
                                                                                MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9131,7 +9131,7 @@ Multi-identifier/‫ دو‬IMEI ‫ یک‬StockUnit
 Catalog + Inventory
 
 
-                                            ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬187
+                                            ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬187
 <PARSED TEXT FOR PAGE: 188 / 251>
                                                                                  MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9195,7 +9195,7 @@ O-17
 
 
 
-                                          ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬188
+                                          ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬188
 <PARSED TEXT FOR PAGE: 189 / 251>
                                                                                 MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9258,7 +9258,7 @@ C0
 
 Gate C
 
-                                             ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬189
+                                             ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬189
 <PARSED TEXT FOR PAGE: 190 / 251>
                                                                               MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9322,7 +9322,7 @@ Application + Module Owners
 
 
 
-                                           ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬190
+                                           ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬190
 <PARSED TEXT FOR PAGE: 191 / 251>
                                                                                MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9386,7 +9386,7 @@ O-31
 
 
 
-                                            ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬191
+                                            ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬191
 <PARSED TEXT FOR PAGE: 192 / 251>
                                                                                 MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9455,7 +9455,7 @@ clearing trigger, statement, close blocker; tested | OPEN |
 
 O-42 | Opening/Import source controls and period close checklist | Finance + Platform | C 1 | B-final | source proof ,
 
-                                           ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬192
+                                           ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬192
 <PARSED TEXT FOR PAGE: 193 / 251>
                                                                                   MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9525,7 +9525,7 @@ recognition ‫ منبع و صفات‬،‫ با چارچوب مصوب‬Canoni
 O-57 | ‫ مسیر ورودی مالیات خرید و برگشت جزئی در‬TaxMode=0 | Purchasing + Inventory + Finance/Accounting
 
 
-                                           ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬193
+                                           ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬193
 <PARSED TEXT FOR PAGE: 194 / 251>
                                                                            MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9572,28 +9572,28 @@ C#/DB/Journal ‫ واقعی و‬Evidence‫ ؛ قاعده خالص‬AwayFromZ
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬194
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬194
 <PARSED TEXT FOR PAGE: 195 / 251>
                                    MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬195
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬195
 <PARSED TEXT FOR PAGE: 196 / 251>
                                    MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬196
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬196
 <PARSED TEXT FOR PAGE: 197 / 251>
                                    MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬197
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬197
 <PARSED TEXT FOR PAGE: 198 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -9623,7 +9623,7 @@ C#/DB/Journal ‫ واقعی و‬Evidence‫ ؛ قاعده خالص‬AwayFromZ
 
 
 
-                                     ‫‪ 198‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 198‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 199 / 251>
                                                                               MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9682,7 +9682,7 @@ Dependency DAG ‫ و منع‬Inventory       ↔Purchasing cycle
 
 
 
-                                           ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬199
+                                           ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬199
 <PARSED TEXT FOR PAGE: 200 / 251>
                                                                       MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9744,7 +9744,7 @@ L.1
 
 ‫ ادغام در‬Catalog baseline
 
-                                   ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬200
+                                   ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬200
 <PARSED TEXT FOR PAGE: 201 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9806,7 +9806,7 @@ CHG-024
 
 
 
-                                       ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬201
+                                       ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬201
 <PARSED TEXT FOR PAGE: 202 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9869,7 +9869,7 @@ CHG-031
 Purchasing state machine/ETA/partial receipt/cancel remainder
 
 
-                                       ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬202
+                                       ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬202
 <PARSED TEXT FOR PAGE: 203 / 251>
                                                                                MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9931,7 +9931,7 @@ R1/R2 matrix and FE-09 disabled gate
 11، Q.1
 
 
-                                            ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬203
+                                            ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬203
 <PARSED TEXT FOR PAGE: 204 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -9992,7 +9992,7 @@ Repair report/profit R1/R2 boundaries
 ‫ادغام‬
 
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬204
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬204
 <PARSED TEXT FOR PAGE: 205 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -10052,7 +10052,7 @@ M.10
 
 CHG-053
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬205
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬205
 <PARSED TEXT FOR PAGE: 206 / 251>
                                                                            MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -10114,7 +10114,7 @@ Password hash/lockout 5 attempts/15 min
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬206
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬206
 <PARSED TEXT FOR PAGE: 207 / 251>
                                                                               MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -10176,7 +10176,7 @@ Backup/WAL/PITR/retention/restore drill
 19، O.2
 
 
-                                           ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬207
+                                           ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬207
 <PARSED TEXT FOR PAGE: 208 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -10238,7 +10238,7 @@ Evidence and Gate status
 
 ‫ ادغام؛‬current NOT RUN/Blocked
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬208
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬208
 <PARSED TEXT FOR PAGE: 209 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -10301,7 +10301,7 @@ CHG-081
 CHG-082
 
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬209
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬209
 <PARSED TEXT FOR PAGE: 210 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -10365,7 +10365,7 @@ CHG-089
 
 
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬210
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬210
 <PARSED TEXT FOR PAGE: 211 / 251>
                                                                             ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -10430,7 +10430,7 @@ CHG-089
 
 
 
-                                        ‫‪ 211‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 211‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 212 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -10451,7 +10451,7 @@ CHG-089
 ‫دلیل‬
 
 
-                                       ‫‪ 212‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 212‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 213 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -10513,7 +10513,7 @@ REJECTED
 
 
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬213
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬213
 <PARSED TEXT FOR PAGE: 214 / 251>
                                                                              MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -10576,7 +10576,7 @@ superseded by later owner policy no expense before delivery
 asynchronous core accounting posting from 2.2/2.3
 
 
-                                          ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬214
+                                          ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬214
 <PARSED TEXT FOR PAGE: 215 / 251>
                                                                              ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -10637,7 +10637,7 @@ asynchronous core accounting posting from 2.2/2.3
 
 
 
-                                         ‫‪ 215‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                         ‫‪ 215‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 216 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -10688,7 +10688,7 @@ asynchronous core accounting posting from 2.2/2.3
 
 
 
-                                      ‫‪ 216‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 216‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 217 / 251>
                                                                              MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -10741,7 +10741,7 @@ Account Identity/Provisioning ‫ است و به معنی تکمیل‬Finance-A
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬217
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬217
 <PARSED TEXT FOR PAGE: 218 / 251>
                                                                               ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -10792,7 +10792,7 @@ Account Identity/Provisioning ‫ است و به معنی تکمیل‬Finance-A
 ‫‪ DDL‬به شکل فعلی برای تصویب نهایی پذیرفته نیست‪ :‬پیش از هر ‪ PDS v0.2‬در ‪ accounting.audit_events‬جدول‬
 ‫‪ opaque‬اصالح شود تا یا به تاریخچه دامنه‌ای با نام‪/‬معنای غیرمشترک محدود شود یا فقط شناسه ‪ PDS‬باید در‬
 
-                                           ‫‪ 218‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                           ‫‪ 218‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 219 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -10844,7 +10844,7 @@ Account Identity/Provisioning ‫ است و به معنی تکمیل‬Finance-A
 
 
 
-                                       ‫‪ 219‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 219‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 220 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -10894,7 +10894,7 @@ Account Identity/Provisioning ‫ است و به معنی تکمیل‬Finance-A
 
 
 
-                                     ‫‪ 220‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 220‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 221 / 251>
                                                                            ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -10950,7 +10950,7 @@ Account Identity/Provisioning ‫ است و به معنی تکمیل‬Finance-A
 
 
 
-                                        ‫‪ 221‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 221‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 222 / 251>
                                                                          MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -10970,7 +10970,7 @@ Return/Disposition، Count/Adjustment، Valuation Evidence ‫ و‬Stock Report
 ‫ممنوع‬.
 
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬222
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬222
 <PARSED TEXT FOR PAGE: 223 / 251>
                                                                            MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11038,7 +11038,7 @@ INV-EVT-011
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬223
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬223
 <PARSED TEXT FOR PAGE: 224 / 251>
                                                                              MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11102,7 +11102,7 @@ TTL‫ ؛‬Serial namespace‫ ؛‬landed-cost/True-up allocation ‫ و‬rou
 
 
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬224
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬224
 <PARSED TEXT FOR PAGE: 225 / 251>
                                                                           MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11151,7 +11151,7 @@ COA v1.2 ‫ مرجع اصلی؛‬COA v1.5 ‫ مبتنی بر( مرجع تکم
 ‫ ؛)دستور مالک‬v1.4 ‫ تاریخی و برای آن مورد‬superseded‫ ؛‬v1.3 ‫مرحله میانی و غیرمرجع‬.
 
 
-                                       ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬225
+                                       ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬225
 <PARSED TEXT FOR PAGE: 226 / 251>
                                                                              ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -11206,7 +11206,7 @@ COA v1.2 ‫ مرجع اصلی؛‬COA v1.5 ‫ مبتنی بر( مرجع تکم
 
 
 
-                                         ‫‪ 226‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                         ‫‪ 226‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 227 / 251>
                                                                       ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -11226,7 +11226,7 @@ COA v1.2 ‫ مرجع اصلی؛‬COA v1.5 ‫ مبتنی بر( مرجع تکم
 ‫موضوع‬
 ‫وضعیت واقعی‬
 
-                                   ‫‪ 227‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                   ‫‪ 227‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 228 / 251>
                                                                                 MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11290,7 +11290,7 @@ eligibility، FiscalPeriod، Journal/Line، Finalization/Reversal، PostingIdent
 
 
 
-                                          ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬228
+                                          ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬228
 <PARSED TEXT FOR PAGE: 229 / 251>
                                                                              MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11343,7 +11343,7 @@ NOT AUTHORIZED
 
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬229
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬229
 <PARSED TEXT FOR PAGE: 230 / 251>
                                                                          MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11372,7 +11372,7 @@ Library source: MDGsm_Unified_Architecture_Blueprint_v2.5.docx
 
 
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬230
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬230
 <PARSED TEXT FOR PAGE: 231 / 251>
                                                                              MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11434,7 +11434,7 @@ Owner-approved FE-01/FE-02 policy boundaries; no positive Posting Rules.
 
 e6909cf08dd03a24c3ea9edb3ae5883224204d9a
 
-                                          ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬231
+                                          ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬231
 <PARSED TEXT FOR PAGE: 232 / 251>
                                                                                MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11497,7 +11497,7 @@ MDG-AUDIT-MASTER-001
 
 
 
-                                          ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬232
+                                          ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬232
 <PARSED TEXT FOR PAGE: 233 / 251>
                                                                        MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11522,7 +11522,7 @@ ef3fdac645f2b9772b98f222af70f2b2a36fbdcff8d4cd493fd5babfd4e96527‫ ؛‬PDF:
 
 
 
-                                    ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬233
+                                    ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬233
 <PARSED TEXT FOR PAGE: 234 / 251>
                                                                          MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11549,7 +11549,7 @@ C0-02 Warehouse
 
 
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬234
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬234
 <PARSED TEXT FOR PAGE: 235 / 251>
                                                                             MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11615,7 +11615,7 @@ C1-04 R1/R2
 
 
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬235
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬235
 <PARSED TEXT FOR PAGE: 236 / 251>
                                                                               MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11675,7 +11675,7 @@ Engine/e-invoice ‫ تغییر مالکیت داده بدون‬،‫ قانو�
 ‫ جداسازی مطلق‬.‫ نمی‌کند‬Greenfield ‫ پروژه‬MD-Gsm ‫ از‬RepairDesk ‫حفظ می‌شود‬.
 
 
-                                         ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬236
+                                         ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬236
 <PARSED TEXT FOR PAGE: 237 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -11713,14 +11713,14 @@ Engine/e-invoice ‫ تغییر مالکیت داده بدون‬،‫ قانو�
 
 
 
-                                     ‫‪ 237‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 237‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 238 / 251>
                                    MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
 
 
 
-‫ کنترل‌شده‬- Candidate / ‫ صفحه‬238
+‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬238
 <PARSED TEXT FOR PAGE: 239 / 251>
                                                                             ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -11742,7 +11742,7 @@ Engine/e-invoice ‫ تغییر مالکیت داده بدون‬،‫ قانو�
 ‫وضعیت‪/‬مرجع‬
 
 
-                                         ‫‪ 239‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                         ‫‪ 239‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 240 / 251>
                                                                            ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -11803,7 +11803,7 @@ Engine/e-invoice ‫ تغییر مالکیت داده بدون‬،‫ قانو�
 ‫شوند؛ سناریوهای ‪ Tie-out‬باید ‪ GL‬صریح شد؛ مانده تفصیلی و ‪ Treasury‬و ‪ Finance-AR/AP، Accounting‬مالکیت‬
 ‫‪.‬انجام نشد ‪ Accounting‬اتمیک‪/‬تطبیق به ماتریس تکمیلی سپرده شدند‪ .‬هیچ انتقال مالکیت به‬
 
-                                        ‫‪ 240‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 240‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 241 / 251>
                                                                            MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11865,7 +11865,7 @@ C0 ‫در ممیزی؛ موضوع باز معتبر‬
 OPEN; O-31/O-45/O-46
 
 
-                                        ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬241
+                                        ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬241
 <PARSED TEXT FOR PAGE: 242 / 251>
                                                                          ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -11926,7 +11926,7 @@ OPEN; O-31/O-45/O-46
 
 
 
-                                      ‫‪ 242‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                      ‫‪ 242‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 243 / 251>
                                                                         MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -11988,7 +11988,7 @@ C1
 
 
 
-                                     ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬243
+                                     ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬243
 <PARSED TEXT FOR PAGE: 244 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -12051,7 +12051,7 @@ C1
 
 
 
-                                     ‫‪ 244‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 244‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 245 / 251>
                                                                        ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -12112,7 +12112,7 @@ C1
 
 
 
-                                    ‫‪ 245‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                    ‫‪ 245‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 246 / 251>
                                                                          MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3
 
@@ -12174,7 +12174,7 @@ PG-09
 
 
 
-                                      ‫ کنترل‌شده‬- Candidate / ‫ صفحه‬246
+                                      ‫ کنترل‌شده‬- Owner-accepted / ‫ صفحه‬246
 <PARSED TEXT FOR PAGE: 247 / 251>
                                                                         ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -12228,7 +12228,7 @@ PG-09
 ‫اعمال‬
 ‫حذف کامل عدد پولی مستقل قبلی‬
 
-                                     ‫‪ 247‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                     ‫‪ 247‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 248 / 251>
                                                                            ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -12273,7 +12273,7 @@ PG-09
 
 
 
-                                        ‫‪ 248‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 248‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 249 / 251>
                                                                            ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -12316,7 +12316,7 @@ PG-09
 
 
 
-                                        ‫‪ 249‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                        ‫‪ 249‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 250 / 251>
                                                                              ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -12378,7 +12378,7 @@ PG-09
 ‫‪ O-34 OPEN.‬و اجرای واقعی باز؛ ‪PoC، cleanup/uniqueness/retention tests‬‬
 
 
-                                         ‫‪ 250‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                         ‫‪ 250‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 <PARSED TEXT FOR PAGE: 251 / 251>
                                                                           ‫‪MD-Gsm | MDG-ARCH-MASTER-001 | v3.0.3‬‬
 
@@ -12406,7 +12406,7 @@ PG-09
 
 
 
-                                       ‫‪ 251‬صفحه ‪ - Candidate /‬کنترل‌شده‬
+                                       ‫‪ 251‬صفحه ‪ - Owner-accepted /‬کنترل‌شده‬
 
 
 ===============================================================================
