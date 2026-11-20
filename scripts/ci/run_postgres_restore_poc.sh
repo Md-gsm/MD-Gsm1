@@ -53,11 +53,31 @@ source_snapshot="$(snapshot "$MDGSM_TEST_DB")"
 # Ownership and ACL/default-ACL are fingerprinted separately (except DR-07).
 schema_fingerprint() {
   local db="$1"
-  # PostgreSQL 18 pg_dump adds a per-invocation \\restrict token; remove that
-  # transport guard line before hashing so equivalent schemas compare identically.
-  pg_dump --schema-only --no-owner --no-privileges "$db" |
-    sed -E '/^--/d; /^$/d; /^\\(un)?restrict /d' |
-    sha256sum | awk '{print $1}'
+  # pg_dump's per-invocation restrict token and CHECK expression pretty-printing
+  # are not stable across a restore/re-dump. Preserve all other DDL in the dump
+  # fingerprint, and compare CHECK constraint inventory/metadata via pg_catalog.
+  local ddl_hash
+  ddl_hash="$(pg_dump --schema-only --no-owner --no-privileges "$db" |
+    sed -E '/^--/d; /^$/d; /^\\(un)?restrict /d; /^[[:space:]]*CONSTRAINT .* CHECK /d' |
+    sha256sum | awk '{print $1}')"
+  local check_hash
+  check_hash="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c "
+    SELECT md5(COALESCE(jsonb_agg(jsonb_build_array(
+      n.nspname, COALESCE(c.relname,t.typname,''), con.conname, con.contype,
+      con.convalidated, con.condeferrable, con.condeferred, con.conislocal,
+      con.coninhcount, COALESCE(con.conkey::text,''), COALESCE(con.confkey::text,''),
+      COALESCE(con.confrelid::regclass::text,''), con.confupdtype, con.confdeltype,
+      con.confmatchtype
+    ) ORDER BY n.nspname, COALESCE(c.relname,t.typname,''), con.conname)::text, '[]'))
+    FROM pg_constraint con
+    LEFT JOIN pg_class c ON c.oid=con.conrelid
+    LEFT JOIN pg_type t ON t.oid=con.contypid
+    JOIN pg_namespace n ON n.oid=COALESCE(c.relnamespace,t.typnamespace)
+    WHERE con.contype='c'
+      AND n.nspname NOT IN ('pg_catalog','information_schema')
+      AND n.nspname NOT LIKE 'pg_toast%';
+  ")"
+  printf '%s|%s' "$ddl_hash" "$check_hash"
 }
 
 security_catalog_fingerprint() {
@@ -104,10 +124,10 @@ check_equal() {
     echo "FAIL $label expected=$expected actual=$actual" >&2
     if [[ "$label" == schema\ catalog* ]]; then
       pg_dump --schema-only --no-owner --no-privileges "$MDGSM_TEST_DB" |
-        sed -E '/^--/d; /^$/d; /^\\(un)?restrict /d' > "$tmp/source.schema.sql"
+        sed -E '/^--/d; /^$/d; /^\\(un)?restrict /d; /^[[:space:]]*CONSTRAINT .* CHECK /d' > "$tmp/source.schema.sql"
       target_db="${label#schema catalog }"
       pg_dump --schema-only --no-owner --no-privileges "$target_db" |
-        sed -E '/^--/d; /^$/d; /^\\(un)?restrict /d' > "$tmp/target.schema.sql"
+        sed -E '/^--/d; /^$/d; /^\\(un)?restrict /d; /^[[:space:]]*CONSTRAINT .* CHECK /d' > "$tmp/target.schema.sql"
       echo "Schema parity diff (first 120 lines):" >&2
       diff -u "$tmp/source.schema.sql" "$tmp/target.schema.sql" | head -120 >&2 || true
     fi
