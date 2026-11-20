@@ -107,7 +107,7 @@
 ‫ سند یکپارچه مرجع معماری و حسابداری‬MD-Gsm
 Unified Architecture & Accounting Blueprint — Version 3.0.3
 
-‫شناسه مرجع‬: MDG-ARCH-MASTER-001 3.0.3 :‫ — نسخه‬Accepted Master Architecture Baseline — Owner Accepted v3.0.3; implementation and release gates remain independent ‫ نوامبر‬19 :‫تاریخ‬
+‫شناسه مرجع‬: MDG-ARCH-MASTER-001 3.0.3 :‫ — نسخه‬Accepted Master Architecture Baseline — Owner Accepted v3.0.3; implementation and release gates remain independent ‫ نوامبر‬20 :‫تاریخ‬
 
 ‫ وضعیت‬2026: OWNER-ACCEPTED MASTER BASELINE — v3.0.3 ACCEPTED BY EXPLICIT OWNER DIRECTIVE ON 2026-11-20;
 PRIOR VERSIONS ARE HISTORICAL REFERENCES ONLY. IMPLEMENTATION, INDEPENDENT TECHNICAL REVIEW, TEST, RELEASE AND GO-LIVE GATES REMAIN SEPARATE;
@@ -146,7 +146,7 @@ PRODUCTION MIGRATION / POSTING RELEASE / GO-LIVE NOT AUTHORIZED. ‫مرجع م�
                                                      تاریخچه و تقدم نسخه‌ها: v2.5 و v2.6 مبانی تاریخی بازسازی و Crosswalk هستند. پس از پذیرش صریح مالک در 2026-11-20، v3.0.3 تنها خط‌مبنای جاری و حاکم است. تصمیم‌های متأخر مالک در دامنه خود بر متن‌های تاریخی مقدم‌اند. سوابق ممیزی‌های گروه‌های 1 تا 3 و ممیزی دور دوم گروه دوم مالی مورخ 2026-11-19 فقط در محدوده اعلام‌شده هر گزارش معتبرند.
 
 ‫محور‬
-‫وضعیت معتبر در نسخه ‪2.5‬‬
+‫وضعیت تاریخی مرجع نسخه‌های پیشین‬‬
 ‫مرجع معماری اصلی‬
 ‫‪.‬متن کامل ‪ 2.2‬مبنای بازسازی و حفظ دامنه است؛ خود ‪ 2.2‬پیش‌نویس تصویب‌نشده بود‬
 
