@@ -53,78 +53,11 @@ source_snapshot="$(snapshot "$MDGSM_TEST_DB")"
 # Ownership and ACL/default-ACL are fingerprinted separately (except DR-07).
 schema_fingerprint() {
   local db="$1"
-  psql -d "$db" -At -v ON_ERROR_STOP=1 -c "
-    SELECT md5(COALESCE(jsonb_agg(item ORDER BY item::text)::text, '[]'))
-    FROM (
-      SELECT jsonb_build_array('schema', n.nspname) AS item
-      FROM pg_namespace n
-      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
-      UNION ALL
-      SELECT jsonb_build_array('relation', n.nspname, c.relname, c.relkind, c.relpersistence, c.relispartition, COALESCE(c.reloptions::text,'')) AS item
-      FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
-      UNION ALL
-      SELECT jsonb_build_array('column', n.nspname, c.relname, a.attnum, a.attname,
-        format_type(a.atttypid,a.atttypmod), a.attnotnull, a.attidentity, a.attgenerated,
-        COALESCE(pg_get_expr(d.adbin,d.adrelid),''), COALESCE(coll.collname,'')) AS item
-      FROM pg_attribute a
-      JOIN pg_class c ON c.oid=a.attrelid
-      JOIN pg_namespace n ON n.oid=c.relnamespace
-      LEFT JOIN pg_attrdef d ON d.adrelid=c.oid AND d.adnum=a.attnum
-      LEFT JOIN pg_collation coll ON coll.oid=a.attcollation
-      WHERE a.attnum>0 AND NOT a.attisdropped
-        AND n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
-      UNION ALL
-      SELECT jsonb_build_array('constraint', n.nspname, c.relname, con.conname, con.contype,
-        pg_get_constraintdef(con.oid,true), con.convalidated, con.condeferrable, con.condeferred) AS item
-      FROM pg_constraint con
-      JOIN pg_class c ON c.oid=con.conrelid
-      JOIN pg_namespace n ON n.oid=c.relnamespace
-      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
-      UNION ALL
-      SELECT jsonb_build_array('index', n.nspname, c.relname, i.relname, pg_get_indexdef(i.oid)) AS item
-      FROM pg_index ix
-      JOIN pg_class c ON c.oid=ix.indrelid
-      JOIN pg_class i ON i.oid=ix.indexrelid
-      JOIN pg_namespace n ON n.oid=c.relnamespace
-      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
-      UNION ALL
-      SELECT jsonb_build_array('trigger', n.nspname, c.relname, t.tgname, pg_get_triggerdef(t.oid,true),
-        t.tgenabled, t.tgconstraint) AS item
-      FROM pg_trigger t
-      JOIN pg_class c ON c.oid=t.tgrelid
-      JOIN pg_namespace n ON n.oid=c.relnamespace
-      WHERE NOT t.tgisinternal
-        AND n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
-      UNION ALL
-      SELECT jsonb_build_array('sequence', n.nspname, c.relname, s.seqtypid::regtype::text,
-        s.seqstart, s.seqincrement, s.seqmax, s.seqmin, s.seqcache, s.seqcycle) AS item
-      FROM pg_sequence s
-      JOIN pg_class c ON c.oid=s.seqrelid
-      JOIN pg_namespace n ON n.oid=c.relnamespace
-      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
-      UNION ALL
-      SELECT jsonb_build_array('extension', e.extname, e.extversion, n.nspname) AS item
-      FROM pg_extension e JOIN pg_namespace n ON n.oid=e.extnamespace
-      UNION ALL
-      SELECT jsonb_build_array('routine', n.nspname, p.proname, pg_get_function_identity_arguments(p.oid),
-        l.lanname, pg_get_functiondef(p.oid)) AS item
-      FROM pg_proc p
-      JOIN pg_namespace n ON n.oid=p.pronamespace
-      JOIN pg_language l ON l.oid=p.prolang
-      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
-      UNION ALL
-      SELECT jsonb_build_array('type', n.nspname, t.typname, t.typtype, t.typcategory,
-        COALESCE(t.typbasetype::regtype::text,''), COALESCE(t.typtypmod::text,'')) AS item
-      FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
-      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
-      UNION ALL
-      SELECT jsonb_build_array('enum', n.nspname, t.typname, e.enumlabel, e.enumsortorder) AS item
-      FROM pg_enum e JOIN pg_type t ON t.oid=e.enumtypid
-      JOIN pg_namespace n ON n.oid=t.typnamespace
-      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
-    ) catalog_objects;
-  "
+  # PostgreSQL 18 pg_dump adds a per-invocation \\restrict token; remove that
+  # transport guard line before hashing so equivalent schemas compare identically.
+  pg_dump --schema-only --no-owner --no-privileges "$db" |
+    sed -E '/^--/d; /^$/d; /^\\\\(un)?restrict /d' |
+    sha256sum | awk '{print $1}'
 }
 
 security_catalog_fingerprint() {
