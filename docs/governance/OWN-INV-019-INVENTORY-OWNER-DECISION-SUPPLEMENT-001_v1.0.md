@@ -31,7 +31,7 @@ A single cutover threshold is insufficient. Two independent limits are mandatory
 | Parameter | Meaning | Numeric value |
 |---|---|---|
 | `MAX_CUTOVER_TAIL_COUNT` | Maximum number of unprocessed movement-level Warehouse sequence entries remaining at the final cutover stage | NOT_SET — derive from representative load tests |
-| `MAX_CUTOVER_LOCK_DURATION` | Maximum elapsed duration for which the cutover attempt may hold the required Warehouse counter lock(s), including final Tail processing, reconciliation and Pointer transaction | NOT_SET — derive from representative load tests |
+| `MAX_CUTOVER_LOCK_DURATION` | Maximum elapsed duration from acquisition of the first required Warehouse counter lock until all required locks are finally released after commit or rollback; it includes final Tail processing, reconciliation, Pointer transaction, rollback when required and final lock release | NOT_SET — derive from representative load tests |
 
 Cutover is permitted only when **both** independent limits are satisfied and all three consistency conditions below pass:
 
@@ -39,7 +39,7 @@ Cutover is permitted only when **both** independent limits are satisfied and all
 2. The Inventory quantity difference between the candidate Projection and the authoritative Ledger is exactly zero at that cutover point.
 3. The candidate Projection's applied Warehouse watermark equals the authoritative Ledger watermark exactly for every affected Warehouse; watermark difference is zero.
 
-If either numeric limit is exceeded, or any consistency condition fails, Pointer Swap is prohibited. The attempt must roll back, the prior active Pointer must remain unchanged, the required locks must be released, and background Catch-up must continue. A failed attempt must not partially publish the candidate Projection.
+If either numeric limit is exceeded, or any consistency condition fails, Pointer Swap is prohibited. The attempt must roll back, the prior active Pointer must remain unchanged, the required locks must be released, and background Catch-up must continue. The abort must begin early enough that rollback and final lock release finish within MAX_CUTOVER_LOCK_DURATION; the required abort reserve is measured on target hardware and is not guessed. A rollback/release duration breach preserves the prior Pointer and fails the Cutover Gate. A failed attempt must not partially publish the candidate Projection.
 
 The two numeric values must be derived from representative data volume, real movement distribution, target PostgreSQL version/configuration, target server hardware, Warehouse count, concurrent writer rate, measured catch-up throughput, lock wait, Tail processing, reconciliation and rollback. No guessed or copied number is accepted. The approved values and benchmark envelope must be versioned and audited.
 
