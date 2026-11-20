@@ -56,13 +56,15 @@ Before attempting cutover, the builder performs background contiguous Catch-up o
 3. If the total Tail count exceeds MAX_CUTOVER_TAIL_COUNT, roll back the attempt, preserve the previous active Pointer and resume background Catch-up.
 4. Apply every committed movement sequence through Wc, in contiguous order. No pre-cutover movement may remain unapplied. A sequence for an unrelated Variant is a verified no-op for a narrower projection and advances its Warehouse cursor.
 5. Reconcile the candidate against the authoritative Ledger at Wc. For every affected Warehouse, applied watermark difference must be exactly zero. At every canonical stock grain, quantity difference between candidate Projection and Ledger replay must be exactly zero. Missing source, invalid version, row/digest discrepancy, quantity discrepancy or watermark discrepancy blocks cutover.
-6. Measure elapsed lock duration using a trusted server-side monotonic timer, not the client clock. If the measured duration reaches/exceeds MAX_CUTOVER_LOCK_DURATION before the Pointer transaction can commit, abort and roll back the whole attempt. A cutover attempt may proceed only while both count and duration limits remain satisfied.
+6. Measure elapsed lock duration using a trusted server-side monotonic timer, not the client clock. The controller must begin abort early enough that rollback and release of every required counter lock complete within MAX_CUTOVER_LOCK_DURATION; the required abort reserve is derived from target-hardware rollback measurements, never guessed. If the measured attempt cannot complete within the remaining lock budget, abort and roll back without Pointer Swap. Record the actual interval through final lock release. If rollback/release itself exceeds the limit, record a budget breach, keep the prior Pointer unchanged and fail the Cutover Gate; it is not a successful or acceptable cutover. A cutover attempt may proceed only while both count and duration limits remain satisfied.
 7. Only after all preconditions pass, atomically mark the prior generation RETIRED/ROLLBACK_CANDIDATE, mark the new generation ACTIVE and switch the single active-generation Pointer for ProjectionName + ScopeKey. Commit and release all counter locks.
 8. Readers resolve the active Pointer once per read transaction and never mix generations. A consumer requiring coherent multi-Warehouse data retains the complete WarehouseId→generation/watermark vector.
 
 **Mandatory fail-closed rule:** Pointer Swap is prohibited if either budget is exceeded, any pre-cutover movement remains unprocessed, any quantity difference is non-zero, or any Warehouse watermark difference is non-zero. On every failed precondition, roll back the attempt, leave the prior Pointer unchanged, release locks and continue background Catch-up. The prior generation remains the only reader-visible generation.
 
 Normal writers synchronously update only the active generation. They do not dual-write every shadow generation. The builder/catch-up worker alone writes BUILDING generations.
+
+A movement writer must obtain the relevant Warehouse counter lock before resolving the active-generation Pointer and before selecting the Projection generation to update. It must not read/cache the active Pointer before obtaining the counter lock. A writer that was blocked behind cutover therefore reads the newly committed Pointer after lock release and updates the new active generation; it cannot write to the retired generation. Ledger movement, Warehouse sequence entry and update to the generation resolved after the counter lock remain one atomic transaction.
 
 
 
@@ -255,6 +257,8 @@ All are specifications only and NOT RUN.
 | PD-T-044 | Cutover lock-duration budget | MAX_CUTOVER_LOCK_DURATION is enforced using trusted server-side elapsed time; reaching/exceeding the limit aborts before Pointer commit. | NOT_RUN |
 | PD-T-045 | Pre-cutover movement and zero reconciliation guards | Every pre-cutover movement applied; quantity difference and each Warehouse watermark difference are exactly zero before swap. | NOT_RUN |
 | PD-T-046 | O-64 scoped negative-stock authorization | GENERAL_MANAGER is constrained to owner-approved WarehouseId×VariantId assignments; assignment changes are approved/audited; SYSTEM_MANAGER/Emergency denied; Serial/IMEI remains zero-negative. | NOT_RUN |
+| PD-T-047 | Writer paused before Warehouse counter lock during cutover | Writer resolves active Pointer only after obtaining counter lock; after swap it updates the new active generation and no movement is lost on the retired generation. | NOT_RUN |
+| PD-T-048 | Cutover abort/rollback and lock release | Abort begins with measured reserve; total lock-held interval through rollback/release is within budget; any breach keeps prior Pointer and fails Cutover Gate. | NOT_RUN |
 
 Together with PD-T-001..015 in v0.2, the controlled successor catalogue is PD-T-001..046. All tests are specifications only and none is runtime PASS evidence.
 
@@ -276,7 +280,7 @@ ATP = Sellable − EffectiveReserved. Custody is not Reservation and is excluded
 
 **PD-AUD-01..12: CLOSED IN DESIGN.** The physical design is suitable for independent technical review, but not implementation freeze until dependencies and exact-SHA PostgreSQL evidence are satisfied.
 
-No SQL, DDL, EF mapping, migration, grants, runtime code, PostgreSQL execution, Posting Rule, Posting Release, production migration or Go-Live is authorized. O-35 remains OPEN pending independent review and exact-SHA PostgreSQL evidence. PD-T-001..046 are NOT RUN.
+No SQL, DDL, EF mapping, migration, grants, runtime code, PostgreSQL execution, Posting Rule, Posting Release, production migration or Go-Live is authorized. O-35 remains OPEN pending independent review and exact-SHA PostgreSQL evidence. PD-T-001..048 are NOT RUN.
 
 ## 12. Owner-directed negative-stock authorization scope — O-64
 
