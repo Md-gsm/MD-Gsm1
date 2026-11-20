@@ -56,7 +56,7 @@ schema_fingerprint() {
   # PostgreSQL 18 pg_dump adds a per-invocation \\restrict token; remove that
   # transport guard line before hashing so equivalent schemas compare identically.
   pg_dump --schema-only --no-owner --no-privileges "$db" |
-    sed -E '/^--/d; /^$/d; /^\\\\(un)?restrict /d' |
+    sed -E '/^--/d; /^$/d; /^\\(un)?restrict /d' |
     sha256sum | awk '{print $1}'
 }
 
