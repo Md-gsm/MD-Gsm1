@@ -1,4 +1,4 @@
-# EVD-FINANCE-INVENTORY-BUNDLE-004 — v0.6
+# EVD-FINANCE-INVENTORY-BUNDLE-004 — v0.7
 Date: 2026-11-21 | Repository: Md-gsm/MD-Gsm1
 Architecture: MDG-ARCH-MASTER-001 v3.0.3 — sole owner-accepted and repository-registered Master.
 Status: EXACT-SHA DOCUMENTATION/CI SNAPSHOTS RECONCILED; PACKAGE 5 OWNER ACCEPTANCE AND INDEPENDENT REVIEW PENDING.
@@ -60,4 +60,4 @@ Whole Package 5 owner acceptance: PENDING; architecture v3.0.3 acceptance is a s
 Final PDF/ZIP rebuild and hashes: PENDING.
 
 Conclusion: candidate evidence is reconciled to current main and v3.0.3; Package 5 is not yet an owner-accepted final release.
-**END — EVD-FINANCE-INVENTORY-BUNDLE-004 v0.6**
+**END — EVD-FINANCE-INVENTORY-BUNDLE-004 v0.7**
