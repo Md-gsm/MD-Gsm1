@@ -114,7 +114,7 @@ Finance Workpaper Structural Validation:
 | Gate | Status | Basis |
 |---|---|---|
 | Gate 1 — owner design decisions | CLOSED for recorded decisions | Accepted owner decisions remain controlling |
-| Gate 2 — architecture/design baseline | OWNER-ACCEPTED for v3.0.3 on 2026-11-20; exact-SHA independent review and main registration tracked separately |
+| Gate 2 — architecture/design baseline | v3.0.3 candidate package identified and hash-verified; O-65 owner-approved; independent review/formal Master acceptance pending; v2.5 remains last accepted |
 | Gate 3 — implementation/behavioral verification | OPEN | Persistence and full finance tests remain |
 | Gate 4 — independent evidence acceptance | OPEN | Independent review and end-to-end evidence not accepted |
 | O-01 | OPEN | Owner-approved replacement criterion exists; deliverable/evidence acceptance pending |
@@ -328,7 +328,7 @@ The workpaper uses only v3.0.3, COA v1.2 and v1.5. It does not create missing ac
 This overlay corrects the register's architecture and COA authority references but does not itself accept the Stage 04 workpaper on behalf of Sales, Purchasing, Inventory, Treasury, Accounting, QA or Platform owners.
 
 
-## 20. Controlling v3.0.3 and Stage 05 Inventory overlay — 2026-11-20
+## 20. v3.0.3 Candidate and Stage 05 Inventory overlay — 2026-11-20
 
 The Inventory successor workpapers use the owner-supplied MDG-ARCH-MASTER-001 v3.0.3 as a candidate semantic source, together with Stage 05 and explicit owner decisions. The candidate is not yet the accepted architecture baseline: v2.5 remains last accepted pending independent review and formal acceptance. This overlay does not rewrite historical owner decisions or historical proposal files.
 
