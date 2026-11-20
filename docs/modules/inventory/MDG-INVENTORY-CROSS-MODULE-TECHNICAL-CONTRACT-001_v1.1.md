@@ -100,6 +100,7 @@ Logical transactional counter: WarehouseCommitSequence(WarehouseId, LastCommitte
 6. Future multi-Warehouse transactions lock all Warehouse counters ascending by WarehouseId and commit both sides atomically with shared transfer/cause identity. FE-31 remains R2 / NOT ENABLED.
 7. Counter update, entry, movement, projection, AuditIntent, Outbox and Idempotency result are one transaction. Rollback leaves no committed counter/gap.
 8. Each Warehouse sequence is a contiguous committed prefix; gaps/duplicates are integrity failures.
+9. A movement writer resolves the active Projection generation only after it acquires the Warehouse counter lock. It must not cache the active Pointer before that lock; a writer unblocked after cutover must update the newly active generation. Ledger, sequence and that Projection update commit atomically.
 
 ### 4.4 Projection, stocktake and cutover guard
 
@@ -115,6 +116,7 @@ A projection may be Warehouse×Variant or finer-grained, but its source cursor i
 - Both numeric values are NOT_SET pending representative PostgreSQL 18 and target-hardware load/rollback tests. No guessed default is permitted.
 - Before Pointer Swap, every movement through the cutover watermark must be applied, every affected Warehouse watermark difference must equal zero, and quantity difference at every canonical stock grain between Projection and Ledger replay must equal zero.
 - If either budget is exceeded or any completeness/reconciliation check fails, abort and roll back the attempt, preserve the prior active Pointer, release locks and continue background Catch-up. Pointer Swap is fail-closed.
+- Abort must start early enough for rollback and final lock release to finish within MAX_CUTOVER_LOCK_DURATION. The abort reserve is obtained from target-hardware rollback measurements, not guessed. Record elapsed lock-held time through final lock release. If rollback/release exceeds the limit, preserve the prior Pointer and fail the Cutover Gate; do not record a successful Cutover.
 - Pointer switch is atomic only after both budgets and all reconciliation checks pass. Rollback is allowed only to a generation independently reconciled to the current watermark.
 
 
