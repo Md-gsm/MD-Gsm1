@@ -66,7 +66,6 @@ Normal writers synchronously update only the active generation. They do not dual
 
 A movement writer must obtain the relevant Warehouse counter lock before resolving the active-generation Pointer and before selecting the Projection generation to update. It must not read or cache the active Pointer before obtaining the counter lock. A writer blocked behind cutover therefore resolves the newly committed Pointer after lock release and updates the new active generation; it cannot write to a retired generation. Ledger movement, Warehouse sequence entry and the Projection update remain one atomic transaction.
 
-A movement writer must obtain the relevant Warehouse counter lock before resolving the active-generation Pointer and before selecting the Projection generation to update. It must not read/cache the active Pointer before obtaining the counter lock. A writer that was blocked behind cutover therefore reads the newly committed Pointer after lock release and updates the new active generation; it cannot write to the retired generation. Ledger movement, Warehouse sequence entry and update to the generation resolved after the counter lock remain one atomic transaction.
 
 
 
