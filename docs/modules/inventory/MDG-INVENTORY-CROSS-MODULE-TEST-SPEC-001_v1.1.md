@@ -176,6 +176,8 @@ Record Test ID/version, repo/build SHA, PostgreSQL version/config, fixture, cred
 | CUT-08 | Quantity or watermark difference is non-zero | Pointer Swap prohibited; prior Pointer retained; Catch-up continues. | NOT_RUN |
 | CUT-09 | Multi-Warehouse cutover attempt | Tail count is measured across affected Warehouses; counter locks sorted by WarehouseId; per-Warehouse watermark vector exactly reconciled. | NOT_RUN |
 | CUT-10 | Budget calibration and approval | Both values derived from representative load/rollback tests on target PostgreSQL 18/hardware, versioned, approved and evidence-hashed; guessed values rejected. | NOT_RUN |
+| CUT-11 | Writer is blocked on Warehouse counter while cutover swaps Pointer | After counter lock release, writer resolves the new active generation and commits movement/projection atomically; no write is lost to the retired generation. | NOT_RUN |
+| CUT-12 | Cutover abort/rollback duration | Abort reserve is evidence-based; lock-held interval includes rollback and final release; prior Pointer remains active; any duration breach fails the Cutover Gate. | NOT_RUN |
 
 All tests in v1.0 and v1.1 remain NOT_RUN until executed with the required PostgreSQL credentials, concurrent sessions, target hardware and exact-SHA evidence. Structural CI or document review does not convert any test to PASS.
 
