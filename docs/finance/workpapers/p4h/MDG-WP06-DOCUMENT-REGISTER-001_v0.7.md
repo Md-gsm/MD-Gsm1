@@ -279,3 +279,38 @@ User-confirmed acceptance: the user and Accounting have approved the technical d
 - Integer IRR base = 1 Rial; one-time document-total AwayFromZero; max 1 IRR per document; no per-row monetary threshold.
 - O-65/CHG-100 mixed-sign allocation is owner-approved policy, not Posting/Release approval.
 - Gate C/D and Posting Release remain open/not granted.
+
+
+## 19. Controlling v3.0.3 and Stage 04 register overlay — 2026-11-20
+
+This overlay supersedes any earlier statement in this register that v2.5 is the current accepted architecture or that COA v1.4 is the current supplementary authority. The sole accepted architecture baseline is **MDG-ARCH-MASTER-001 v3.0.3**. COA v1.2 is the master coding/GL authority; COA v1.5 is the controlled supplementary reconstruction/crosswalk. COA v1.4 is historical/superseded for current supplementary authority; v1.3 is intermediate only. The original nine-sheet workbook and Part 4H-6 are not active authorities or prerequisites.
+
+### Stage 04 integrated contract
+
+| Artifact | Version | Scope | Status |
+|---|---:|---|---|
+| MDG-WP06-STAGE-04-SALES-RETURNS-GRNI-CREDIT-EXPOSURE-TIEOUT-001 | 0.1 | Sales, customer returns/refunds, goods GRNI, supplier returns, CreditExposure and financial tie-out | CONTROLLED DESIGN WORKPAPER — integrated; technical owner acceptance and runtime evidence pending |
+
+Path: `docs/finance/workpapers/p4h/integration/MDG-WP06-STAGE-04-SALES-RETURNS-GRNI-CREDIT-EXPOSURE-TIEOUT-001_v0.1.md`.
+
+The Stage 04 workpaper consolidates the v3.0.3 semantics and contracts:
+- Sales commercial snapshots, Inventory-owned committed fulfillment, transfer-of-control/RecognitionTime and FE-01/FE-08 boundaries.
+- Separate customer return entitlement, physical return/inspection/disposition, revenue/tax reversal, refund and COGS/inventory effects; cumulative return allocation follows v3.0.3.
+- Goods-only 2103 GRNI, separate invoiced AP 2101, and separate service-accrual design-only 2114; Purchase Order alone is not a liability or inventory receipt.
+- CreditExposure keyed PartyId × Product/Item, cheque replacement counted once, only explicit allocations reduce exposure, R2 installment scope excluded from R1 unless enabled, aging and overdue review, and O-09 kept independent.
+- Source-to-subledger-to-GL and Treasury external-statement tie-out identities, cutoff, exception register and close blockers.
+- 27 design-level test cases, not represented as executed PASS.
+
+The workpaper uses only v3.0.3, COA v1.2 and v1.5. It does not create missing account mappings, debit/credit pairs, tax rates, tolerances or runtime behavior.
+
+### Stage 04 status
+
+- Owner-policy alignment: COMPLETED in the workpaper.
+- Integrated design contract and tie-out specification: SPECIFIED.
+- Module technical owner acceptance: PENDING.
+- Canonical row-level COA attributes and positive 7B Posting Rules: OPEN/BLOCKED where evidence is incomplete.
+- Runtime schema/API/Posting writer and PostgreSQL tests: NOT IMPLEMENTED / NOT VERIFIED / NOT RUN.
+- B-final, Gate C and Gate D: OPEN.
+- Posting Release, production migration and Go-Live: NOT GRANTED.
+
+This overlay corrects the register's architecture and COA authority references but does not itself accept the Stage 04 workpaper on behalf of Sales, Purchasing, Inventory, Treasury, Accounting, QA or Platform owners.
