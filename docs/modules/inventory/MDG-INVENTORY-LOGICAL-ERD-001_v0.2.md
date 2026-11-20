@@ -237,6 +237,7 @@ The tests below are specifications, not execution results. All INV-T-001..102 re
 | INV-T-003..005, 029..030, 043 | Reservation, ReservationLine, Allocation, Pick; ERD-I-10..12 |
 | INV-T-006..007, 096..097 | StockPosition, VariantRef, negative-stock settlement policy; D-258 and feature-gate invariants |
 | INV-T-008..009, 032, 041..042, 091 | StockUnit, UnitIdentifier, Lot; ERD-I-01..04 |
+| INV-T-066..077 | numeric/UOM precision; Sales TTL/expiry race; serial namespace and IMEI reassignment; landed-cost/TrueUp allocation; per-observation stocktake watermark and delta replay; in-transit quantity/value with Posting blocked absent approval; provisional shortage valuation and TrueUp idempotency; see INV-REV-01..07 in the technical resolution proposal |
 | INV-T-010..012, 044..045, 064, 088 | Transfer, TransferLine, StockMovementLine; ERD-I-16..17 and transfer conservation |
 | INV-T-013..014, 046..047, 098 | status buckets, inspection and StockMovementLine; ERD-I-09 |
 | INV-T-015..016, 048, 078, 089..093 | Stocktake, CountLine, CountObservation, InventoryAdjustment; ERD-I-18..20 |
