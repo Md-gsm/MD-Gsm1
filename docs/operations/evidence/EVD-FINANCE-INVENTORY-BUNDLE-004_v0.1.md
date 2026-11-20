@@ -3,13 +3,13 @@
 | Field | Value |
 |---|---|
 | Evidence ID | EVD-FINANCE-INVENTORY-BUNDLE-004 |
-| Version | 0.1 |
+| Version | 0.2 |
 | Evidence snapshot | 2026-11-20 |
-| Recorded at | 2026-11-20 13:45 UTC |
+| Recorded at | 2026-11-20; amended after exact-head document-control inspection |
 | Governing architecture | MDG-ARCH-MASTER-001 v3.0.3 |
 | Repository | Md-gsm/MD-Gsm1 |
 | Evidence branch | `evidence/finance-inventory-bundle-004-20261120` |
-| Gate result | **PARTIAL — checksum and structural checks PASS; full CI and independent review remain OPEN** |
+| Gate result | **PARTIAL — checksum and structural checks PASS; document-control inconsistencies, full CI and independent review remain OPEN** |
 | Scope | Package 4 evidence for Finance/Inventory design work and the exact PR heads #71–#73 |
 
 ## 1. Purpose and evidential boundary
@@ -122,10 +122,24 @@ The following limitations remain binding and are not closed by this evidence reg
 5. No DDL, SQL, EF mapping, database grants, migration, COA seed or Posting writer is authorized by this register. Migration 0009 remains RESERVED.
 6. No production migration, Posting Release, Gate C/Gate D final acceptance or Go-Live is granted.
 
+## 7A. Document-control inconsistencies found during exact-source audit
+
+The following defects were re-opened as explicit evidence findings. Their existence does not invalidate the checksum or finance-structural CI passes; it does prevent a claim that the entire documentary chain is reconciled:
+
+| Finding | Exact source and observed contradiction | Disposition |
+|---|---|---|
+| EVD-DOC-01 | `WP06-P4H-7D-TEST-REGISTRY-001_v0.2.md` on #72 head still declares Architecture v2.5 in its header; one COA crosswalk row also refers to v1.4. | OPEN — align the header/active source references to v3.0.3 and v1.5 while retaining historical references explicitly. |
+| EVD-DOC-02 | Document Register v0.8 correctly declares v3.0.3 and COA v1.5 in its authority hierarchy/overlay, but its 7C table row still says v1.4 supplement and its Gate 2 table still says closed for v2.5. | OPEN — reconcile the current summary rows and gate table with the controlling overlay; do not erase historical audit trail. |
+| EVD-DOC-03 | Stage Execution Report v0.2 still has a v2.5 “last accepted” header and several current-looking v1.4 authority statements. A later amendment at the end says v3.0.3 and v1.5 supersede them. | OPEN — label the former content as historical or publish a controlled corrected revision, preserving the earlier snapshot. |
+| EVD-DOC-04 | Accounting PDS v0.2 on PR #71 still identifies parent architecture v2.5 and COA v1.4 as supplement; later PDS text also repeats v1.4 as current. | OPEN — update to v3.0.3 and v1.2 + v1.5, without changing the no-DDL/no-Migration-0009 boundary. |
+| EVD-DOC-05 | PR #71 title contains `[Draft]` and its description says it remains Draft, while GitHub PR metadata reports `draft=false`. | OPEN — make title, description and actual GitHub draft state consistent. |
+
+These are documentary control findings, not permission to infer missing canonical COA attributes, positive Posting Rules, or runtime test results. The EVD does not silently mark them closed.
+
 ## 8. Decision
 
-**EVD-FINANCE-INVENTORY-BUNDLE-004 v0.1 is recorded as a final evidence snapshot for the observed exact revisions and CI outcomes above. Package 4 is not accepted as fully closed.**
+**EVD-FINANCE-INVENTORY-BUNDLE-004 v0.2 is the current amended evidence snapshot for the observed exact revisions and CI outcomes above. Package 4 is not accepted as fully closed.**
 
 Checksum repair and finance structural validation are PASS for PR #72 and #73 heads listed in this document. Full Persons CI and independent reviews remain OPEN. Any subsequent change to a source branch requires fresh exact-head evidence and a new EVD revision or amendment.
 
-**END — EVD-FINANCE-INVENTORY-BUNDLE-004 v0.1**
+**END — EVD-FINANCE-INVENTORY-BUNDLE-004 v0.2**
