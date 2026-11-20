@@ -54,7 +54,7 @@ An O-item may be marked **CLOSED** only when all applicable dimensions have expl
 - COA coding/GL authority: COA v1.2 master; COA v1.5 controlled supplementary reconstruction/crosswalk. COA v1.4 and v1.3 are not current supplementary authority.
 - Finance: current 7B/7C/7D controlled workpapers, Stage 04 workpaper, and the current Finance Document Register; historical audit snapshots remain historical.
 - Inventory: Stage 04 sales/returns/GRNI/CreditExposure design, Stage 05 equations/custody/stocktake, Stage 06 logical ERD, Stage 07 PostgreSQL physical design and Stage 08 security design are design artifacts, not proof of runtime acceptance.
-- Gate D evidence: EVD-GATE-D-EXECUTION-001 v0.2 and associated exact-run artifacts are partial evidence only; Gate D remains open.
+- Gate D evidence: EVD-GATE-D-EXECUTION-001 v0.2 exists on a separate evidence branch and is not integrated into PR #72; it is partial evidence only and must be reconciled against the exact current run/SHA. Gate D remains open.
 - No content, code, schema, migration or artifact from legacy RepairDesk is an authority or source for this register.
 
 ## 2. Canonical O-01..O-65 register
@@ -179,7 +179,7 @@ This summary is derived from the 65 detailed rows and must not be maintained as 
 - `docs/finance/workpapers/p4h/integration/MDG-WP06-STAGE-04-SALES-RETURNS-GRNI-CREDIT-EXPOSURE-TIEOUT-001_v0.1.md` — Stage 04 design contract.
 - `docs/modules/inventory/MDG-INVENTORY-STAGE-05-EQUATIONS-CUSTODY-STOCKTAKE-001_v0.1.md` — Stage 05 design.
 - `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.1.md` and its audit — Stage 07 physical design and review.
-- `docs/operations/evidence/EVD-GATE-D-EXECUTION-001_v0.2.md` — scoped Gate D evidence; not Gate D closure.
+- Gate D evidence: `docs/operations/evidence/EVD-GATE-D-EXECUTION-001_v0.2.md` exists on separate branch `gate-d-execution-evidence-record` at commit `1b1163eb68c059400a58953b8fb9da7af98c11ff`; it is NOT part of PR #72's current branch tree and must be reconciled against the exact current PR/run SHA before acceptance. It is scoped evidence, not Gate D closure.
 
 ## 7. Explicit non-claims
 
