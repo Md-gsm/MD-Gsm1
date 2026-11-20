@@ -172,7 +172,7 @@ This summary is derived from the 65 detailed rows and must not be maintained as 
 
 ## 6. Source documents reviewed for this revision
 
-- Owner-supplied candidate package: `MDG-Gsm-v3.0.3-Registration-Candidate-Package(1).zip`; Master Markdown SHA-256 `731779b815e4200a522ee168f51f6db4becf2034b290b8e5f0d8a4e0406b1fec`. It is not yet present in `main` and is not formally accepted.
+- Owner-supplied candidate package: `MDG-Gsm-v3.0.3-Registration-Candidate-Package(1).zip`; Master Markdown SHA-256 `731779b815e4200a522ee168f51f6db4becf2034b290b8e5f0d8a4e0406b1fec`. It was registered in `main` through PR #71; the explicit owner acceptance dated 2026-11-20 supersedes the intake-time candidate status.
 - `docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.7.md` — finance register and current Stage 04 overlay; historical cover metadata requires the v0.8 update.
 - `docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.2.md` — O-01 bounded closure and unresolved design/test gaps.
 - `docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.3.md` — historical cross-audit; not a live status register.
@@ -228,12 +228,12 @@ Exceeding either budget or failing any consistency check requires rollback, pres
 
 The owner supplied the `MDG-Gsm-v3.0.3-Registration-Candidate-Package(1).zip` package. Its internal SHA256 manifest was verified: all 11 payload files matched their listed hashes. Master Markdown SHA-256 is `731779b815e4200a522ee168f51f6db4becf2034b290b8e5f0d8a4e0406b1fec`; Master DOCX SHA-256 is `c9e7b79bae83935bc7adbe473da5f3263005112abd4e3d74cd671c52a9647df3`; Master PDF SHA-256 is `c29074f7bc0a5b32e2deacd07bc1036f54f28637ace95b982056f4c383ad8998`.
 
-The supplied package's original README/header described v3.0.3 as a candidate. The subsequent explicit owner acceptance dated 2026-11-20 and repository registration through PR #71 supersede that intake-time status. v3.0.3 is now the sole current Master; v2.5 is archived. This OIR therefore records v3.0.3 as a verified candidate source, not as the accepted baseline. The earlier v1.2 wording that labelled v3.0.3 as already accepted is corrected by this v1.4 successor; v1.2 remains a historical snapshot.
+The supplied package's original README/header described v3.0.3 as a candidate. The subsequent explicit owner acceptance dated 2026-11-20 and repository registration through PR #71 supersede that intake-time status. v3.0.3 is now the sole current Master; v2.5 is archived. This OIR records v3.0.3 as the accepted current Master baseline. The earlier v1.2 wording that labelled v3.0.3 as already accepted is corrected by this v1.4 successor; v1.2 remains a historical snapshot.
 
 PR #82's CR-ARCH-INV-OWNER-FOLLOWUP-001 v0.2 records the detailed artifact provenance, archive hash and acceptance boundary. No architecture baseline promotion or implementation/release authorization is implied.
 
 ### Version history
-- v1.4 — corrects Master baseline status based on the owner-supplied candidate package; v2.5 remains last accepted pending formal v3.0.3 acceptance. v1.2 is retained as historical snapshot.
+- v1.4 — records the owner acceptance and repository registration of v3.0.3; v2.5 is archived. v1.2 is retained as historical snapshot.
 
 
 ## 10. Architecture baseline acceptance and archive correction — 2026-11-21
