@@ -6,13 +6,14 @@
 | Document ID | MDG-INVENTORY-CROSS-MODULE-TECHNICAL-CONTRACT-001 |
 | Version / Date | 1.1 / 2026-11-20 |
 | Status | OWNER DECISIONS APPROVED — CONTROLLED DESIGN SUCCESSOR — CROSS-OWNER ACCEPTANCE / BASELINE RECONCILIATION PENDING |
-| Sole accepted architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 |
+| Candidate semantic source (not formally accepted) | MDG-ARCH-MASTER-001 v3.0.3 |
+| Last accepted architecture baseline | MDG-ARCH-MASTER-001 v2.5 |
 | References | OWN-INV-019 v1.0; Inventory Logical ERD v0.3; PostgreSQL Physical Design v0.4; Stage 05 v0.1; owner answer package 2026-11-20 |
 | Execution / tests | NOT IMPLEMENTED / NOT VERIFIED; ALL TESTS NOT RUN |
 
 ## 1. Authority and limits
 
-This v1.1 successor consolidates the owner-directed cross-module decisions and the follow-up decisions recorded in OWN-INV-019 v1.0. It supersedes v1.0 only where the owner-approved WarehouseId watermark, D-15 cutover guard, Sales TTL and O-64 scoped-authority rules require it. It does not silently rewrite MDG-ARCH-MASTER-001 v3.0.3 or the Accounting Posting Matrix. Consumer-owner acceptance, independent review, implementation, test PASS, evidence acceptance, gate closure and release remain separate.
+This v1.1 successor consolidates the owner-directed cross-module decisions and the follow-up decisions recorded in OWN-INV-019 v1.0. It supersedes v1.0 only where the owner-approved WarehouseId watermark, D-15 cutover guard, Sales TTL and O-64 scoped-authority rules require it. It does not silently rewrite or promote the MDG-ARCH-MASTER-001 v3.0.3 candidate or the Accounting Posting Matrix. Consumer-owner acceptance, independent review, implementation, test PASS, evidence acceptance, gate closure and release remain separate.
 
 No SQL, DDL, EF mapping, schema freeze, Migration 0009, new migration, database role creation, GRANT/REVOKE, API/runtime/worker implementation, Inventory activation, negative-stock activation, Journal, Posting Rule, Posting Release, production migration or Go-Live is authorized. Migration 0009 remains RESERVED. Negative-stock Feature Flag remains OFF. O-35 remains OPEN. D-15 policy decision is CLOSED/APPROVED; numeric cutover budgets remain NOT_SET and Cutover remains prohibited until measured and accepted.
 
@@ -30,7 +31,7 @@ No SQL, DDL, EF mapping, schema freeze, Migration 0009, new migration, database 
 
 ### 2.1 D-258 eligibility is not expanded
 
-NEG-STOCK-SCOPE-01 changes aggregation scope only. Until a separate owner amendment to D-258 exists, v3.0.3 remains controlling:
+NEG-STOCK-SCOPE-01 changes aggregation scope only. For this proposal, the candidate's v3.0.3/D-258 eligibility and defaults are preserved as owner-directed design inputs; no negative-stock implementation or activation is authorized:
 
 | Item class | Default limit | Rule |
 |---|---:|---|
@@ -44,13 +45,13 @@ No monetary threshold. Limit is in Variant Base UOM. Check aggregates eligible O
 
 | Topic | Existing controlled wording | New owner direction | Required closure |
 |---|---|---|---|
-| Sales TTL | v3.0.3/Logical ERD v0.2/PDS v0.3: configurable; exact value OPEN | 24h initial configurable default from confirmed reservation | Amend master crosswalk/CHG, ERD/PDS and O-36; preserve existing reservation snapshots |
+| Sales TTL | Candidate v3.0.3/Logical ERD v0.2/PDS v0.3: configurable; exact value OPEN | 24h initial configurable default from confirmed reservation | Amend master crosswalk/CHG, ERD/PDS and O-36; preserve existing reservation snapshots |
 | Watermark | PDS v0.2/v0.3: per Warehouse×Variant | Per WarehouseId, contiguous committed prefix; movement-level entries; per-Warehouse projection/stocktake cursor vector | PDS v0.4 prepared; independent review and PostgreSQL proof required |
 | WAC Pool | FE-08: ProductVariant×Warehouse | BusinessEntity×Variant | Finance/Accounting acceptance and FE-08 update |
 | Threshold authority | Older INV-EVT-012 / OWN-INV-018 wording: System Manager | GENERAL_MANAGER only within owner-approved assigned WarehouseId×VariantId scope; scope change requires owner approval + Audit; SYSTEM_MANAGER/Emergency denied; Serial/IMEI never negative | O-64-SCOPE owner decision recorded in OWN-INV-019; source-event successor and server enforcement/tests required |
 | Retry attention | PDS v0.3: exhausted retries become QUARANTINED | Attention non-terminal; retry continues | Successor separates attention flag from delivery state |
 
-v3.0.3 remains the accepted baseline until its controlled amendment is reviewed and accepted. No executable change follows from this table.
+The supplied v3.0.3 artifact is a Controlled Master Candidate, not a formally accepted baseline; v2.5 remains the last accepted architecture baseline. This contract remains a controlled proposal and does not amend or promote the Master. No executable change follows from this table.
 
 ## 3. Catalog contract
 
