@@ -352,12 +352,12 @@ ac6b08d0457147affed028e1203b37a63d6bc87631ec905be45856efdd5b60af  docs/modules/i
 7cf76f79f4370ee4de4ffcbdef5fbcf573f35e9cb1532a96175ad548f33a8e23  docs/architecture/MDG-ARCH-MASTER-001_v3.0.3.txt
 
 96904a2230d23cf839d02e1b0aa69b59c85aa18f24eca2ef98bac8a2be9460a3  docs/finance/workpapers/p4h/integration/MDG-WP06-STAGE-04-SALES-RETURNS-GRNI-CREDIT-EXPOSURE-TIEOUT-001_v0.1.md
-45e9ffe4aeb1fd3d03567ed579a48d25df6ca8183e8917544a23ed204e986160  docs/modules/inventory/MDG-INVENTORY-STAGE-05-EQUATIONS-CUSTODY-STOCKTAKE-001_v0.1.md
+5730d920ed6ad4a845ef165eb6386a7b8469e2e7098848b8af38aa81431f51e1  docs/modules/inventory/MDG-INVENTORY-STAGE-05-EQUATIONS-CUSTODY-STOCKTAKE-001_v0.1.md
 6f4771d16eb1021cc1200b94279a3804ccfe65a9552ef7e5b9830f90841b66fc  docs/modules/inventory/MDG-INVENTORY-LOGICAL-ERD-001_v0.2.md
-75dd5e6f0978a535f416e163a3f22254280a0fb2241dc8bbea30c761c11f06a3  docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.1.md
+0673e7718565b7853217327122432f83f7e2137d270e0066b65d05f5d9d40afc  docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.1.md
 9cde43933da4acee85bb5de38826b23e317e79313f032c18e766cd7ddaa40f34  docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-AUDIT-001_v0.1.md
-649846d864180dfe3bc772e071abcb7f3a924308997d8567ab5025ad802468cd  docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.2.md
-74adcd1a64ab349eae2b950bcaa49eac014987899664b210dbc4252e7c1ebcd3  docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-REAUDIT-002_v0.1.md
+835ee39d6ca03a3a81a4d813b8fffb2eec2bc0af84e1309f82fbbb0a2ad16c97  docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.2.md
+2e0d8c38f1ad363f77614ade7ee55b3e2b3a6a6a094f5a4c62456ebc17e27bd6  docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-REAUDIT-002_v0.1.md
 
 
 c14fc7ec96f1d5f5f692688aacf8a2fa7fe9d046a50d93e1f56e0995f29ceb4b  docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.3.md
@@ -366,7 +366,7 @@ c14fc7ec96f1d5f5f692688aacf8a2fa7fe9d046a50d93e1f56e0995f29ceb4b  docs/modules/i
 c2988f99bf5593167d9fd5c11f7d0f5ad16df18170f18f02fea9e3e84130b9dc  docs/security/MDG-SECURITY-STAGE-08-DB-SESSION-RECOVERY-HASHCHAIN-001_v0.1.md
 1ecdd64a9f623f49c18d58b46b3ec88fa268b0a0368591cd2649d693806819c6  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v0.1.md
 f00be8a76d3b5edecd849478a0b395c554a0abb99bbc5769fb5a7da220f8492d  docs/security/MDG-SECURITY-STAGE-08-REAUDIT-001_v0.1.md
-18caa842d090539f0dd57a30ac62e7d696a5f424823bdaf09ae852e8179a074a  tests/MDGsm.Domain.Tests/IdentityAccess/IdentityAccessPostgresIntegrationTests.cs
-19aaee84dba485d8c2df8106191687d8d0d233c032659bfe80468f9c25abc7f1  .github/workflows/windows-preview-installer.yml
-f4c07d7bc0ce6d139f202849436e47998f0673a4b7c432249ee2b3497a7961fe  .github/workflows/persons-module-gates.yml
-97a08352933efb8c50642b880dfddfab88230978c75eca60fe13289c9781980f  scripts/ci/run_postgres_restore_poc.sh
+6d70011f5d4c0c5bf270236ab3bf92326acf23dea993179fdb407a057dab2eb1  tests/MDGsm.Domain.Tests/IdentityAccess/IdentityAccessPostgresIntegrationTests.cs
+c93ae92a94d7ba03d8ab1f637080d83abd7b8ff97ca2fa2458d8f763ac9d4ad8  .github/workflows/windows-preview-installer.yml
+bb2d9af85fa2d9ccf5ceaf2fdb60e2e6e2d2e14dbe4ae4eabd33455f6ea0b0a9  .github/workflows/persons-module-gates.yml
+de2d4529264d13b100eecd72a53e1f1d112298619596c94d45264ada0224efd6  scripts/ci/run_postgres_restore_poc.sh
