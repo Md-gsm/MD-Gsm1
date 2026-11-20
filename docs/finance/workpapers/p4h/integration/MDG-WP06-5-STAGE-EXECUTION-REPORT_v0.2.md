@@ -6,15 +6,15 @@
 | Document ID | MDG-WP06-5-STAGE-EXECUTION-REPORT-001 |
 | Version | 0.2 |
 | Classification | CONTROLLED EXECUTION REPORT / 7C EXECUTION ADDENDUM — PARTIAL / BLOCKED |
-| Repository / PR | Md-gsm/MD-Gsm1 / #66 (Draft) |
-| Architecture baseline | MDG-ARCH-MASTER-001 v2.5 — last accepted |
+| Repository / PR | Md-gsm/MD-Gsm1 / #66 is historical implementation origin; current consolidated workpaper package is PR #72 |
+| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 — owner-accepted 2026-11-20 |
 | Owner criterion | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
 | 7B / 7C / 7D | 7B v0.2 / 7C v0.4 / 7D v0.2 |
 | Posting Release | NOT GRANTED |
 
 ## 1. خلاصه اجرایی
 
-پنج مرحله بررسی شدند؛ اما O-01 کامل یا پذیرفته نشده است. متن کامل COA v1.4 در همین گفتگو دریافت و بررسی شده و دیگر مانع «عدم دسترسی به v1.4» معتبر نیست. بااین‌حال v1.4 تمام صفات canonical هر حساب، به‌ویژه AccountId، Parent/Level، NormalBalance، Postable، DirectPostingAllowed، Effective Dates و همه حساب‌های مقابل FEها را تعیین نمی‌کند. در PR #66 نخستین برش اجرایی Accounting در لایه‌های Domain/Application پیاده‌سازی شده است: محاسبات integer-only IRR، شواهد canonical حساب، شواهد پذیرش Posting Rule، FiscalPeriod، Journal متوازن و تغییرناپذیر با Audit و Reversal، PostingIdentity و Preflight فقط‌خواندنی. بااین‌حال persistence، schema/migration مالی، transactional Posting writer و Posting API هنوز وجود ندارد؛ بنابراین تکمیل قواعد مثبت 7B و آزمون رفتاری end-to-end در 7D همچنان مسدود است.
+پنج مرحله بررسی شدند؛ اما O-01 کامل یا پذیرفته نشده است. متن کامل COA v1.5 در همین گفتگو دریافت و بررسی شده و دیگر مانع «عدم دسترسی به v1.4» معتبر نیست. بااین‌حال v1.4 تمام صفات canonical هر حساب، به‌ویژه AccountId، Parent/Level، NormalBalance، Postable، DirectPostingAllowed، Effective Dates و همه حساب‌های مقابل FEها را تعیین نمی‌کند. در PR #66 نخستین برش اجرایی Accounting در لایه‌های Domain/Application پیاده‌سازی شده است: محاسبات integer-only IRR، شواهد canonical حساب، شواهد پذیرش Posting Rule، FiscalPeriod، Journal متوازن و تغییرناپذیر با Audit و Reversal، PostingIdentity و Preflight فقط‌خواندنی. بااین‌حال persistence، schema/migration مالی، transactional Posting writer و Posting API هنوز وجود ندارد؛ بنابراین تکمیل قواعد مثبت 7B و آزمون رفتاری end-to-end در 7D همچنان مسدود است.
 
 این گزارش علاوه بر نتیجه پنج مرحله، الحاقیه اجرایی 7C است و چهار Open Item مفقود 013..016 را به رجیستر 12 موردی 7C v0.4 اضافه می‌کند.
 
@@ -22,7 +22,7 @@
 
 | مرحله | کار انجام‌شده | نتیجه | پذیرش |
 |---|---|---|---|
-| 1. COA reconciliation | COA v1.2 master، COA v1.4 supplementary register و owner overlay بررسی شد | دامنه 78 شناسه تثبیت شد؛ صفات Canonical هر حساب هنوز کامل نیست و مقادیر فاقد منبع صریح باز می‌مانند | PARTIAL — attribute gaps remain |
+| 1. COA reconciliation | COA v1.2 master، COA v1.5 supplementary register و owner overlay بررسی شد | دامنه 78 شناسه تثبیت شد؛ صفات Canonical هر حساب هنوز کامل نیست و مقادیر فاقد منبع صریح باز می‌مانند | PARTIAL — attribute gaps remain |
 | 2. Canonical attributes | AccountId، Parent/Level، Nature، NormalBalance، eligibility، Subledger و Effective Dates بررسی؛ رجیستر شکاف‌ها تکمیل شد | 16 Open Item و 16 COA Gate Test متناظر؛ هیچ مقدار canonical از prefix یا نسخه میانی استنتاج نشد | PARTIAL — NOT ACCEPTED |
 | 3. Positive 7B rules | 39 رویداد FE-01..FE-38 + FE-10b بررسی شد | 39/39 disposition و Test ID دارند؛ 0 positive Posting Rule کامل و قابل‌پذیرش | BLOCKED — no positive journal authorization |
 | 4. 7D assertions | 39 FE + 16 COA + 12 shared controls تطبیق شد | 67 Test ID یکتا؛ positive journal assertions مسدود | DESIGN SPECIFIED — not behaviorally verified |
@@ -32,10 +32,10 @@
 
 سلسله‌مراتب مصوب و بدون ابهام:
 - **COA v1.2 سند مادر و مرجع اصلی کدینگ و قواعد دفترکل است.**
-- **COA v1.4 سند تکمیلی/رجیستر جاری مورد استفاده برای تطبیق حساب‌به‌حساب 7C است و بر پایه v1.2 تنظیم شده است.**
+- **COA v1.5 سند تکمیلی/رجیستر جاری مورد استفاده برای تطبیق حساب‌به‌حساب 7C است و بر پایه v1.2 تنظیم شده است.**
 - COA v1.3 فقط مرحله میانی مشتق‌شده است و مرجع مستقل جاری نیست.
 
-متن کامل COA v1.4 با شناسه `MDG-COA-MASTER-001`، نسخه 1.4، نوع `CONTROLLED RECONSTRUCTION` و وضعیت `FINAL CONTROLLED DESIGN BASELINE` در همین گفتگو در دسترس و بررسی شد. این سند رجیستر 78 شناسه را مشخص می‌کند: 76 کد RECON به‌علاوه 2114 و 5106؛ 110809 در رجیستر ممنوع است و حساب قابل استفاده نیست.
+متن کامل COA v1.5 با شناسه `MDG-COA-MASTER-001`، نسخه 1.4، نوع `CONTROLLED RECONSTRUCTION` و وضعیت `FINAL CONTROLLED DESIGN BASELINE` در همین گفتگو در دسترس و بررسی شد. این سند رجیستر 78 شناسه را مشخص می‌کند: 76 کد RECON به‌علاوه 2114 و 5106؛ 110809 در رجیستر ممنوع است و حساب قابل استفاده نیست.
 
 نتایج تطبیق مستند:
 - نقش‌ها و محدودیت‌های صریح v1.4 و OWN-7C-043 باید برای هر حساب با SourceRef/DecisionRef ثبت شوند.
@@ -63,7 +63,7 @@
 ## 5. یافته‌ها و کنترل‌ها
 
 1. COA v1.2 به‌عنوان مادر، v1.4 به‌عنوان رجیستر تکمیلی و v1.3 به‌عنوان مرحله میانی اعمال شدند.
-2. مبنای فعال تطبیق فقط COA v1.2 master، COA v1.4 supplementary register و تصمیمات پذیرفته‌شده مالک است.
+2. مبنای فعال تطبیق فقط COA v1.2 master، COA v1.5 supplementary register و تصمیمات پذیرفته‌شده مالک است.
 3. 2114 و 5106 owner-added باقی ماندند؛ 110809 ممنوع است؛ 4107/5106 بدون No-Collision سراسری و Posting Rule فعال نمی‌شوند.
 4. چهار شکاف 7C به 16 مورد قبلی افزوده شدند.
 5. 7D شامل 39 FE tests + 16 COA tests + 12 shared controls = 67 Test ID یکتا است.
@@ -87,7 +87,7 @@
 
 ## 8. وضعیت پذیرش
 
-- COA v1.4 availability/content inspection: VERIFIED; row-level canonical attribute reconciliation: PARTIAL / OPEN.
+- COA v1.5 availability/content inspection: VERIFIED; row-level canonical attribute reconciliation: PARTIAL / OPEN.
 - Canonical account attributes: NOT ACCEPTED.
 - Positive 7B rules: NOT COMPLETE; 0 accepted positive rules.
 - 7D: 67 IDs specified; positive journal assertions blocked.
@@ -107,7 +107,7 @@
 
 این اصلاحیه بر هر عبارت قدیمی متعارض در همین گزارش مقدم است:
 
-1. COA v1.2 سند مادر و مرجع اصلی است؛ COA v1.4 رجیستر تکمیلی جاری بر پایه v1.2؛ COA v1.3 مرحله میانی.
+1. COA v1.2 سند مادر و مرجع اصلی است؛ COA v1.5 رجیستر تکمیلی جاری بر پایه v1.2؛ COA v1.3 مرحله میانی.
 2. متن v1.4 در دسترس و بررسی شده است. هر عبارت قبلی که عدم دسترسی به v1.4 یا نیاز به دریافت مجدد منبع را مطرح می‌کرد، superseded است.
 4. مانع واقعی 7C فقط صفات/نگاشت‌هایی است که v1.2، v1.4، تصمیمات مالک و ADRها صریحاً تعیین نکرده‌اند. موارد نامعلوم باید fail-closed بمانند.
 5. 7B همچنان صفر Posting Rule مثبت پذیرفته‌شده دارد؛ زیرا صفات canonical و حساب‌های مقابل/شرایط شناسایی برای رویدادهای باقیمانده مستند نیستند و ساختن آن‌ها با حدس خلاف COA v1.2/v1.4 است.
@@ -155,15 +155,20 @@
 - 7B: صفر positive Posting Rule پذیرفته‌شده؛ هیچ debit/credit از حدس ساخته نمی‌شود.
 - 7C: 78 شناسه در دامنه؛ صفات Canonical فاقد منبع همچنان OPEN/NOT VERIFIED.
 - 7D: 67 Test ID طراحی شده؛ آزمون end-to-end ثبت Journal/GL/Subledger/Tax هنوز اجرا نشده است.
-- Migration 0009 فقط در PR رزرو #70 ثبت شده؛ PR #70 هنوز OPEN/DRAFT است و تا merge آن در main هیچ SQL migration مجاز نیست.
+- PR #70 در main ادغام شده و فقط جایگاه Migration 0009 را RESERVED کرده است؛ هیچ فایل SQL ساخته نشده و SQL/Migration همچنان NOT AUTHORIZED است.
 - PostgreSQL Accounting persistence، transactional Posting writer و Posting API در این برش وجود ندارد.
 
 O-01 و Gate 3/4 باز می‌مانند؛ Evidence پذیرفته نشده و Posting Release صادر نشده است.
 
 ## Controlling status correction — 2026-11-20
 
-This report's earlier architecture and COA authority statements are historical. The current accepted architecture is MDG-ARCH-MASTER-001 v3.0.3. Current COA authority is v1.2 master + v1.5 controlled supplementary reconstruction/crosswalk; v1.4 is historical/superseded for current supplementary authority and v1.3 is intermediate only. Original canonical nine-sheet source and Part 4H-6 remain unrecovered.
+Authority correction applied 2026-11-20: the sole owner-accepted architecture baseline is MDG-ARCH-MASTER-001 v3.0.3. Current COA authority is v1.2 master + v1.5 controlled supplementary reconstruction/crosswalk; v1.4 is historical/superseded for current supplementary authority and v1.3 is intermediate only. Original canonical nine-sheet source and Part 4H-6 remain unrecovered.
 
 The monetary base is 1 IRR; one-time document-total AwayFromZero rounding; maximum absolute rounding difference 1 IRR per document; no independent per-row threshold. O-65 / CHG-100 mixed-sign allocation is owner-approved policy, not a positive Posting Rule. O-09 remains separate.
 
 The current decision/policy layer is reconciled, but the following are not closed: 7B positive Posting Rules (0 accepted), 7C canonical attributes and source/namespace evidence, 7D runtime PostgreSQL Posting/GL/Subledger/Tax tests and exact-head evidence. 39 event dispositions and 67 Test IDs are coverage/traceability, not posting authorization or test PASS. Gate B-final, Gate C and Gate D remain OPEN; Posting Release NOT GRANTED.
+
+
+## 16. کنترل مرجعیت و حدود پذیرش — 2026-11-20
+
+این گزارش با مرجعیت فعلی تطبیق داده شده است: MDG-ARCH-MASTER-001 v3.0.3 و COA v1.2 master + v1.5 supplementary crosswalk. COA v1.4 تاریخی/منسوخ برای مرجعیت تکمیلی جاری است. وضعیت 7B همچنان صفر قاعده مثبت پذیرفته‌شده، 7C دارای شکاف صفات canonical باز و 7D برابر 67 شناسه تعریف‌شده با آزمون‌های مالی رفتاری NOT RUN است. CI ساختاری اسناد و آزمون‌های Domain جایگزین آزمون runtime ثبت مالی نیستند. Migration 0009 RESERVED و SQL NOT AUTHORIZED باقی می‌ماند.
