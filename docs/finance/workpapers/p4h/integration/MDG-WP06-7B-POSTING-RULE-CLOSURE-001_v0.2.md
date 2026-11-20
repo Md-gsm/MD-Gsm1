@@ -6,7 +6,7 @@
 | Document ID | MDG-WP06-7B-POSTING-RULE-CLOSURE-001 |
 | Version | 0.2 |
 | Classification | CONTROLLED RECONSTRUCTION — DISPOSITION / CLOSURE LEDGER |
-| Architecture baseline | MDG-ARCH-MASTER-001 v2.5 |
+| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 |
 | Current inputs | 7B v0.2; 7C v0.4; 7D v0.2; Integrated v0.6 |
 | Owner change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 — OWNER APPROVED |
 | Decision overlays | OWN-7C-043; OWN-7C-004-R1; ADR-0017 |
@@ -18,7 +18,7 @@
 
 ## 1. Purpose and interpretation
 
-This version replaces the stale closure snapshot v0.1 as the current 7B closure ledger. It reconciles the closure work with the current controlled workpapers; it does not rewrite or supersede Architecture v2.5, owner decisions, ADRs, or the primary 7B Posting Matrix.
+This version replaces the stale closure snapshot v0.1 as the current 7B closure ledger. It reconciles the closure work with the current controlled workpapers; it does not rewrite or supersede the owner-accepted Architecture Master v3.0.3, owner decisions, ADRs, or the primary 7B Posting Matrix.
 
 Two independent questions are tracked:
 
@@ -35,7 +35,7 @@ A policy disposition may be closed while the event remains `POSTING_BLOCKED`. No
 - Integrated: `MDG-WP06-7B-7C-7D-INTEGRATED-001 v0.6`.
 - O-01 replacement acceptance criterion: `CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1`, owner-approved. The prior request to obtain a new CR is obsolete; O-01 itself remains open until deliverable/evidence acceptance.
 
-Authority order remains Architecture v2.5, accepted owner decisions/ADRs, COA v1.2 as master coding/GL authority, COA v1.4 as current supplementary account-level register based on v1.2, and v1.3 as intermediate only. No account attribute may be inferred from a code prefix or title.
+Authority order: Architecture v3.0.3; accepted owner decisions/ADRs; COA v1.2 as master coding/GL authority; COA v1.5 as controlled supplementary reconstruction/crosswalk based on v1.2. COA v1.4 is historical/superseded for current supplementary authority; v1.3 is intermediate only. No account attribute may be inferred from a code prefix or title.
 
 ## 3. Event-level closure disposition — 39/39 rows
 
@@ -143,7 +143,7 @@ These are not Debit/Credit approvals. Any runtime path that creates a Journal, i
 5. Complete exact FE↔COA↔Test expected-result mapping in 7D and execute tests when the required runtime exists.
 6. Obtain independent review on the exact final SHA and required professional review before any acceptance/release decision.
 
-The prior v0.1 instruction to seek a new O-01 CR is superseded: the replacement criterion has already been owner-approved. Do not edit Architecture v2.5 in this work.
+The prior v0.1 instruction to seek a new O-01 CR is superseded: the replacement criterion has already been owner-approved. Do not edit the Architecture Master through this closure ledger; v3.0.3 remains the sole accepted baseline.
 
 ## 8. Final status
 
