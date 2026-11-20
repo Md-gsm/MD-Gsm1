@@ -3,7 +3,7 @@
 
 | مشخصه | مقدار |
 |---|---|
-| وضعیت | OWNER-APPROVED DESIGN BASELINE — PERSISTENCE IMPLEMENTATION NOT AUTHORIZED BY THIS DOCUMENT |
+| وضعیت | HISTORICAL / SUPERSEDED BY MDG-ACC-PDS-001 v0.3; not an active implementation or DDL authority |
 | تاریخ | 2026-11-18 |
 | مالک داده | Accounting (ACC-01, ACC-02, FY-01) |
 | معماری والد | MDG-ARCH-MASTER-001 v2.5 |
