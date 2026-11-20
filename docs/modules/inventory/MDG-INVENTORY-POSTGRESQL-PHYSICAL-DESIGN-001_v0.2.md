@@ -57,7 +57,7 @@ Concurrent requests with the same unique key serialize at the unique index. The 
 - same digest: return the stored stable response without reapplying effects;
 - different digest: reject with IDEMPOTENCY_KEY_REUSE_CONFLICT, emit a separate security signal with fresh server correlation identity, and perform no domain effect.
 
-The replay response is the original committed response, not a newly calculated view of mutable current state.
+The replay response is the original committed response, not a newly calculated view of mutable current state. The stored snapshot contains only the minimum response fields needed for deterministic replay; it must never contain passwords, session/access/refresh tokens, recovery material or unnecessary personal data. Sensitive fields are re-derived only through a separately authorized read after command replay, never copied into the receipt snapshot.
 
 ### 3.4 Retention and restore
 
