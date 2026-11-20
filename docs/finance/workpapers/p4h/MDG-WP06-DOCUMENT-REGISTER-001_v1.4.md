@@ -11,7 +11,7 @@
 | Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 owner-accepted 2026-11-20; independent technical review and main registration pending |
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
 | PR status | #66 MERGED; #70 MERGED; #71 OPEN (GitHub draft=false; title aligned; exact-head independent review re-requested); #72 OPEN; #73 OPEN (stacked on #72); #81 OPEN (EVD registration) |
-| Branch | PR #71: docs/accounting-physical-schema-design-20261118 (contains the PR #72 head); PR #73 remains stacked on the PR #72 history and requires controlled integration onto post-#71 main |
+| Branch | PR #71 merged into main at `8f89653e25e6a599387128e0209f5009d9dd59cd`; PR #72 closed as superseded after full-history containment verification; PR #73 branch `docs/inventory-pd-v0.2-blocker-closures` is rebuilt directly on post-#71 main and awaits exact-head validation/review |
 | Current main SHA at register preparation | b8c672cb70dcb2b274f43f118ac08b2eea8438c5 |
 | Exact-head CI for this register/validator commit | PENDING — must run after all changes including this register and integrity manifest |
 
@@ -462,7 +462,7 @@ Current finance boundaries recorded by the canonical register:
 - O-65 owner decision is closed; implementation, O-65-specific tests and evidence remain open.
 - Posting Release is NOT GRANTED; Gate C/Gate D remain OPEN / NOT VERIFIED.
 
-This v1.4 register is carried on PR #71 branch `docs/accounting-physical-schema-design-20261118`; its prior repository path suffix `_v0.8.md` is superseded by the controlled filename suffix `_v1.4.md`. PR #71 contains the complete PR #72 history; after #71 merges, #72 must be closed as superseded rather than merged separately. PR #73 is a separate Inventory extension and must be integrated onto the post-#71 main head. PR #81 is the final evidence-registration PR and is to be completed only after upstream merge SHAs are known. The updated register and checksum manifest require fresh exact-head CI and independent review on the resulting PR #71 SHA before merge.
+This v1.4 register is now integrated in `main` through PR #71 at merge commit `8f89653e25e6a599387128e0209f5009d9dd59cd`; its former repository path suffix `_v0.8.md` is superseded by the controlled filename suffix `_v1.4.md`. PR #72 was closed as superseded after verifying that its complete history is contained in the source history merged through PR #71; it was not independently merged. PR #73 is the separate Inventory physical-design extension and is being rebuilt directly on the post-#71 `main` head, retaining only its incremental Inventory design artifacts and the current controlled-register/manifest updates rather than stale finance-register revisions. Fresh exact-head CI and independent reviewer approval are required on the rebuilt PR #73 head before merge. PR #81 remains the final evidence-registration PR and must be completed only after the upstream merge SHAs are known.
 
 
 ## 27. Accounting Journal snapshot consistency — PDS v0.4 — 2026-11-20
@@ -470,3 +470,16 @@ This v1.4 register is carried on PR #71 branch `docs/accounting-physical-schema-
 Accounting PDS v0.4 supersedes v0.3 for the explicit Journal/JournalLine/Reversal snapshot invariants. Each JournalLine is constrained to the same COA snapshot as its Journal header by a composite FK. A reversal is an independent Journal in its own posting identity and fiscal period/date, but retains the original finalized Journal's immutable COA snapshot; it cannot rebind copied account identifiers/codes to a different snapshot. The Domain reversal factory enforces this by copying the original aggregate's `CoaSnapshotId`, and the physical design requires a composite self-FK for database enforcement.
 
 This is a design/domain consistency correction only. It creates no SQL, DDL, EF mapping, Migration 0009, COA seed, Posting writer, Posting Release, production migration or Go-Live authorization.
+
+## 28. PR #73 post-#71 Inventory integration record — 2026-11-20
+
+PR #73 is the controlled Inventory physical-design extension following the PR #71 merge and PR #72 superseded closure.
+
+- Base: `main` at PR #71 merge commit `8f89653e25e6a599387128e0209f5009d9dd59cd`.
+- The rebuilt PR #73 delta contains only four Inventory physical-design/re-audit documents, this current v1.4 register update, the canonical O-register O-35 traceability update, and SHA256 manifest changes. Superseded finance-register v0.7/v0.8 revisions are not reintroduced.
+- The Inventory design additions are v0.2, v0.3, re-audit 002 and re-audit 003. The internal re-audits close PD-AUD-01..12 in design only; they are not independent reviewer attestations or implementation evidence.
+- OperationContractVersion is included consistently in the command-receipt uniqueness and idempotency lock scope. Projection cutover is constrained to a bounded locked tail after background catch-up.
+- O-35 remains OPEN. PD-T-001..039 remain NOT RUN. AuditSecurity, Catalog and Platform contracts, independent exact-SHA review and PostgreSQL watermark/race/replay/tie-out evidence remain outstanding.
+- PR #73 remains OPEN / NOT MERGED until exact-head CI and independent review are accepted. No SQL, DDL, EF mapping, migration, grants, API/runtime, Posting Release, production migration or Go-Live is authorized.
+
+This dated integration record is historical evidence of the PR's scope and boundaries; GitHub PR metadata is authoritative for the final head SHA, current review state and workflow run results.
