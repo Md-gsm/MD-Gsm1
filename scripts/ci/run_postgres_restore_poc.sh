@@ -57,4 +57,93 @@ write_evidence() {
   [[ "$exit_code" -eq 0 ]] || overall="FAIL"
   local script_hash=""
   local dump_hash=""
-  [[ -f "$0" ]] && 
+  if [[ -f "$0" ]]; then script_hash="$(sha256sum "$0" | awk '{print $1}')"; fi
+  if [[ -f "$tmp/full.custom" ]]; then dump_hash="$(sha256sum "$tmp/full.custom" | awk '{print $1}')"; fi
+  local joined=""
+  if (( ${#drills[@]} > 0 )); then joined="$(IFS=,; echo "${drills[*]}")"; fi
+  printf '{\n  "evidenceVersion": "1.0",\n  "evidenceId": "EVD-GATED-RESTORE-POC",\n  "overallStatus": "%s",\n  "exitCode": %s,\n  "repository": "Md-gsm/MD-Gsm1",\n  "commit": "%s",\n  "workflowRunId": "%s",\n  "workflowRunAttempt": "%s",\n  "postgresServerVersion": "%s",\n  "sourceDatabase": "%s",\n  "sourceDatabaseMarker": "MDGSM_DISPOSABLE_TEST_DB",\n  "sourceSnapshot": "%s",\n  "restoreScriptSha256": "%s",\n  "fullCustomDumpSha256": "%s",\n  "scope": "PostgreSQL logical restore PoC against current IdentityAccess/infrastructure schema only; not full Gate D recovery.",\n  "drills": [\n    %s\n  ]\n}\n' "$overall" "$exit_code" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$source_version" "$MDGSM_TEST_DB" "$source_snapshot" "$script_hash" "$dump_hash" "$joined" > artifacts/restore-poc-evidence.json
+}
+
+finish() {
+  local exit_code="$?"
+  trap - EXIT
+  write_evidence "$exit_code"
+  if [[ "$exit_code" -eq 0 ]]; then
+    echo "PASS: all eight PostgreSQL logical restore PoCs completed on PostgreSQL $source_version."
+  else
+    echo "FAIL: restore PoC stopped after ${#drills[@]} successful scenario(s); partial EVD written."
+  fi
+  exit "$exit_code"
+}
+trap finish EXIT
+
+record() {
+  local id="$1" target="$2" detail="$3"
+  drills+=("{\"id\":\"$id\",\"status\":\"PASS\",\"targetDatabase\":\"$target\",\"detail\":\"$detail\"}")
+  echo "PASS $id — $detail"
+}
+
+# DR-01: PostgreSQL custom-format full logical backup and restore.
+pg_dump --format=custom --file "$tmp/full.custom" "$MDGSM_TEST_DB"
+db="$(new_target dr01)"
+pg_restore --exit-on-error --dbname "$db" "$tmp/full.custom"
+[[ "$(snapshot "$db")" == "$source_snapshot" ]]
+record DR-01 "$db" "custom-format full database restore; schema/data snapshot matches"
+
+# DR-02: Plain SQL full backup and restore.
+pg_dump --format=plain --file "$tmp/full.sql" "$MDGSM_TEST_DB"
+db="$(new_target dr02)"
+psql -d "$db" -v ON_ERROR_STOP=1 -f "$tmp/full.sql" >/dev/null
+[[ "$(snapshot "$db")" == "$source_snapshot" ]]
+record DR-02 "$db" "plain SQL full database restore; schema/data snapshot matches"
+
+# DR-03: Directory archive with parallel dump and restore.
+pg_dump --format=directory --jobs=2 --file "$tmp/full.directory" "$MDGSM_TEST_DB"
+db="$(new_target dr03)"
+pg_restore --jobs=2 --exit-on-error --dbname "$db" "$tmp/full.directory"
+[[ "$(snapshot "$db")" == "$source_snapshot" ]]
+record DR-03 "$db" "directory archive parallel restore; schema/data snapshot matches"
+
+# DR-04: Schema-only restore creates the same IdentityAccess table set without row data.
+pg_dump --schema-only --format=custom --file "$tmp/schema.custom" "$MDGSM_TEST_DB"
+db="$(new_target dr04)"
+pg_restore --exit-on-error --dbname "$db" "$tmp/schema.custom"
+schema_tables="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='identity' AND table_type='BASE TABLE';")"
+settings_rows="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c 'SELECT count(*) FROM identity.system_settings;')"
+[[ "$schema_tables" == "11" && "$settings_rows" == "0" ]]
+record DR-04 "$db" "schema-only restore; 11 IdentityAccess tables present and data absent"
+
+# DR-05: Data-only restore into a schema-only target.
+pg_dump --data-only --format=custom --file "$tmp/data.custom" "$MDGSM_TEST_DB"
+db="$(new_target dr05)"
+pg_restore --exit-on-error --dbname "$db" "$tmp/schema.custom"
+pg_restore --data-only --exit-on-error --dbname "$db" "$tmp/data.custom"
+[[ "$(snapshot "$db")" == "$source_snapshot" ]]
+record DR-05 "$db" "data-only restore after schema restore; schema/data snapshot matches"
+
+# DR-06: Selective restore of the session policy table into a schema-only target.
+db="$(new_target dr06)"
+pg_restore --exit-on-error --dbname "$db" "$tmp/schema.custom"
+echo "START DR-06 selective system settings restore"
+pg_restore --data-only --schema=identity --table=system_settings --exit-on-error --dbname "$db" "$tmp/data.custom"
+settings="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c "SELECT max_active_users::text || '|' || heartbeat_interval_seconds::text || '|' || session_lease_seconds::text FROM identity.system_settings WHERE settings_id=1;")"
+[[ "$settings" == "5|30|180" ]]
+record DR-06 "$db" "selective system settings restore; session policy values preserved"
+
+# DR-07: Restore without source ownership/ACL dependencies.
+db="$(new_target dr07)"
+pg_restore --no-owner --no-privileges --exit-on-error --dbname "$db" "$tmp/full.custom"
+[[ "$(snapshot "$db")" == "$source_snapshot" ]]
+record DR-07 "$db" "ownership-independent restore into a fresh target; schema/data snapshot matches"
+
+# DR-08: Corrupt archive must fail closed and must not be accepted as a successful restore.
+cp "$tmp/full.custom" "$tmp/full.corrupt"
+size="$(stat -c '%s' "$tmp/full.corrupt")"
+if (( size < 256 )); then echo "Archive unexpectedly small." >&2; exit 1; fi
+truncate -s "$((size - 128))" "$tmp/full.corrupt"
+db="$(new_target dr08)"
+if pg_restore --single-transaction --exit-on-error --dbname "$db" "$tmp/full.corrupt" >/dev/null 2>&1; then
+  echo "Corrupted archive was accepted; DR-08 failed." >&2
+  exit 1
+fi
+record DR-08 "$db" "truncated archive rejected by pg_restore; target remains disposable/quarantined"
