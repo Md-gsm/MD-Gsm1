@@ -12,7 +12,7 @@
 | Source branch | docs/inventory-cross-module-contracts-20261120 |
 | Source baseline commit | 10c8a8ba8f9aad54c4e2ff05fad49ce12511380f |
 | Control rule | This register is authoritative for current O-item status. Master Appendix R.2/R.3 and Section 23 are source/history snapshots and must not be treated as a competing live status ledger. |
-| Merge status | PR #73 is merged in main; this v1.2 register revision is proposed on docs/inventory-cross-module-contracts-20261120 in PR #82 and is not yet merged. |
+| Merge status | PR #73 is merged in main; this v1.3 register revision is proposed on docs/inventory-cross-module-contracts-20261120 in PR #82 and is not yet merged. |
 
 ## 1. Purpose and governing rules
 
