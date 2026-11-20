@@ -5,7 +5,8 @@
 | Document ID | MDG-INVENTORY-LOGICAL-ERD-001 |
 | Version | 0.3 |
 | Status | CONTROLLED LOGICAL DESIGN SUCCESSOR — OWNER DECISIONS INCORPORATED — INDEPENDENT REVIEW PENDING |
-| Sole architecture baseline | **MDG-ARCH-MASTER-001 v3.0.3** |
+| Candidate semantic source (not formally accepted) | **MDG-ARCH-MASTER-001 v3.0.3** |
+| Last accepted architecture baseline | **MDG-ARCH-MASTER-001 v2.5** |
 | Governing inventory design | MDG-INVENTORY-STAGE-05-EQUATIONS-CUSTODY-STOCKTAKE-001 v0.1 |
 | Supersedes | INVENTORY-ERD-DATA-DICTIONARY-001 v0.1 as current ERD proposal; historical copy retained |
 | Scope | Logical entities, ownership, relationships, keys, invariants, projection boundaries and test traceability |
@@ -13,9 +14,9 @@
 
 ## 1. Purpose and authority
 
-This document carries forward logical ERD v0.2 and incorporates the owner's controlled follow-up decisions in OWN-INV-019 v1.0. It does not create physical schema or silently rewrite the v3.0.3 baseline; the related baseline crosswalk/reconciliation remains controlled work.
+This document carries forward logical ERD v0.2 and incorporates the owner's controlled follow-up decisions in OWN-INV-019 v1.0. It does not create physical schema or silently rewrite or promote the v3.0.3 candidate. The related crosswalk/reconciliation and formal candidate acceptance remain controlled work; v2.5 remains the last accepted architecture baseline.
 
-The Stage 05 contract controls quantity equations, movement semantics, Custody, Section transfer, stocktake watermark/replay, valuation boundaries, negative-stock behavior and release constraints. Where the older ERD v0.1 or any older proposal differs, v3.0.3 and Stage 05 v0.1 prevail.
+The Stage 05 contract controls quantity equations, movement semantics, Custody, Section transfer, stocktake watermark/replay, valuation boundaries, negative-stock behavior and release constraints. This successor proposal uses the supplied v3.0.3 candidate semantics together with Stage 05 v0.1 as design inputs; it does not promote v3.0.3 above the last formally accepted v2.5 baseline.
 
 This is a logical ERD, not a physical database design. Entity names are conceptual names; exact SQL types, indexes, partitioning, constraints implementation and storage layout remain for a separately authorized technical design.
 
