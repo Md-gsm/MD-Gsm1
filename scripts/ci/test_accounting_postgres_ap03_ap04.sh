@@ -4,6 +4,20 @@ set -euo pipefail
 : "${MDGSM_TEST_DB:?MDGSM_TEST_DB must point to the marked disposable PostgreSQL database}"
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 db="$MDGSM_TEST_DB"
+
+# Refuse to run this fixture against any database not explicitly marked by CI.
+# The marker is set on a run-scoped disposable database before migrations.
+db_name="$(psql -d "$db" -Atq -v ON_ERROR_STOP=1 -c "SELECT current_database();")"
+db_marker="$(psql -d "$db" -Atq -v ON_ERROR_STOP=1 -c "SELECT COALESCE(shobj_description(oid, 'pg_database'), '') FROM pg_database WHERE datname = current_database();")"
+if [[ ! "$db_name" =~ ^mdgsm_ci_disposable_[0-9]+_[0-9]+$ ]]; then
+    echo "Refusing AP-03/AP-04 proof against unrecognized database: $db_name" >&2
+    exit 2
+fi
+if [[ "$db_marker" != MDGSM_DISPOSABLE_TEST_DB* ]]; then
+    echo "Refusing AP-03/AP-04 proof: missing MDGSM disposable database marker." >&2
+    exit 2
+fi
+
 psql -d "$db" -v ON_ERROR_STOP=1 -f "$root/tests/MDGsm.Domain.Tests/Accounting/PostgreSQL/ap03-ap04-proof.sql"
 
 psql -d "$db" -v ON_ERROR_STOP=1 <<'SQL'
