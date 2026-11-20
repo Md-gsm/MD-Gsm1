@@ -370,3 +370,18 @@ This v0.2 supersedes INVENTORY-ERD-DATA-DICTIONARY-001 v0.1 as the current ERD p
 - preserves FE-31 R2, negative-stock feature OFF, Sales TTL OPEN/configurable, no Repair TTL and all accounting/Posting ownership boundaries.
 
 The document is logical design only. No physical schema, DDL, EF mapping, migration, API/runtime, PostgreSQL test PASS, O-35 closure, Posting Release or Go-Live is claimed or authorized. All inventory runtime tests remain NOT_RUN unless separately evidenced on an exact SHA.
+
+
+## 22. Inventory PostgreSQL physical design proposal — 2026-11-20
+
+| Artifact | Version | Scope | Status |
+|---|---:|---|---|
+| MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001 | 0.1 | PostgreSQL table map, keys, exact-type policy, integrity/index strategy, committed-prefix ledger sequencing, transactions, locking, projection/replay, stocktake watermark, outbox/audit, security and test evidence | TECHNICAL DESIGN PROPOSAL — REVIEW REQUIRED — NOT IMPLEMENTATION AUTHORITY |
+
+Path: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.1.md`.
+
+The proposal maps ERD v0.2 to PostgreSQL 18-oriented tables and constraints. It deliberately leaves quantity/valuation precision and UUID generator policy OPEN pending their owning contracts; it rejects floating point for quantity/currency; describes transactional scope sequencing because PostgreSQL sequences are non-transactional; defines atomic movement/projection/outbox/audit boundaries and deterministic lock ordering; and sets required PostgreSQL concurrency, replay, stocktake, valuation and recovery tests.
+
+It preserves v3.0.3: no TTL default is invented, ATP remains Sellable − EffectiveReserved, FE-31 remains R2, negative-stock feature remains OFF, integer Rial rounding remains at the approved final boundary, and no COA/Posting Rule is inferred.
+
+This is a design proposal only. No SQL/DDL, migration, EF mapping, API/runtime, database grants, PostgreSQL PASS, O-35 closure, Posting Release, production migration or Go-Live is claimed or authorized.
