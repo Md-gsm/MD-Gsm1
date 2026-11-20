@@ -10,7 +10,7 @@
 | Supersedes | v1.4; prior versions retained as historical snapshots |
 | Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 owner-accepted 2026-11-20; independent technical review and main registration pending |
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
-| PR status | #66 MERGED; #70 MERGED; #71 MERGED; #72 CLOSED AS SUPERSEDED; #73 MERGED; owner-directed contract package prepared on docs/inventory-cross-module-contracts-20261120; PR registration pending |
+| PR status | #66 MERGED; #70 MERGED; #71 MERGED; #72 CLOSED AS SUPERSEDED; #73 MERGED; #82 OPEN / DRAFT — exact-head CI running; reviewer mrdeljoe4 requested |
 | Branch | Package base: main at `10c8a8ba8f9aad54c4e2ff05fad49ce12511380f`; proposed branch: docs/inventory-cross-module-contracts-20261120 |
 | Current main SHA at register preparation | 10c8a8ba8f9aad54c4e2ff05fad49ce12511380f |
 | Exact-head CI for this package | PENDING — must run on final PR SHA |
@@ -501,3 +501,16 @@ Open controls: O-35 OPEN; O-36 OPEN pending controlled source reconciliation/imp
 
 ### Version history
 - v1.5 — registers the owner-directed cross-module contract, six-role privilege specification, test registry and canonical O-register v1.1. v1.4 is retained as historical snapshot.
+
+
+## 17. PR #82 owner-directed cross-module contract package — 2026-11-20
+
+- PR: https://github.com/Md-gsm/MD-Gsm1/pull/82
+- State at registration: OPEN / DRAFT; not merged.
+- Base: main at 10c8a8ba8f9aad54c4e2ff05fad49ce12511380f.
+- Head at registration: a0e61b1a049032756c7539a9e09fb34630a96553.
+- Changed files: 6 (five controlled documents plus SHA256SUMS.txt); compare reports ahead 6, behind 0.
+- Reviewer requested: mrdeljoe4. No review submission had been received at registration time.
+- Exact-head CI at registration: Finance Workpaper Structural Validation SUCCESS; Project Charter Owner Gate SUCCESS; CodeQL IN_PROGRESS; Persons Module Gates IN_PROGRESS; Windows Persons Preview Installer IN_PROGRESS.
+- Manifest recalculation: all five new document hashes match; 381 entries; zero duplicate paths; sorted.
+- Merge is intentionally not performed. Cross-owner acceptance, baseline reconciliation and exact-head review/CI remain required. All test specifications remain NOT_RUN.
