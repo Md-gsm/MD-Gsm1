@@ -102,7 +102,7 @@ Unified Architecture & Accounting Blueprint — Version 3.0
 شناسه مرجع: MDG-ARCH-MASTER-001
 نسخه: 3.0 — Controlled Integrated Master Candidate (Audit Corrections Integrated)
 تاریخ: 19 نوامبر 2026
-وضعیت: CONTROLLED MASTER CANDIDATE — OWNER-DIRECTED CONSOLIDATION; INDEPENDENT REVIEW AND DOCUMENT ACCEPTANCE PENDING; v2.5 REMAINS LAST ACCEPTED BASELINE UNTIL FORMAL ACCEPTANCE; ADR-0018 ACCOUNTING FOUNDATION SCOPE IMPLEMENTED; DATABASE DDL / PRODUCTION MIGRATION / POSTING RELEASE / GO-LIVE NOT AUTHORIZED.
+وضعیت: ARCHIVED / SUPERSEDED — HISTORICAL MASTER v3.0; SOLE CURRENT MASTER IS OWNER-ACCEPTED MDG-ARCH-MASTER-001 v3.0.3; v2.5 ALSO ARCHIVED; DATABASE DDL / PRODUCTION MIGRATION / POSTING RELEASE / GO-LIVE NOT AUTHORIZED.
 وضعیت مرجع: این فایل نسخه تاریخی و superseded است؛ تنها خط‌مبنای جاری MDG-ARCH-MASTER-001 v3.0.3 است. v2.5 و v2.6 سوابق بایگانی‌شده‌اند.
 منابع تکمیلی جاری: ADR-0017، ADR-0018، OWN-FE-01-02-001 v1.0، OWN-INV-018 v1.0، رجیستری مالکیت داده/وابستگی ماژول‌ها، Workpaperهای 7B/7C/7D، PDS v0.2 در PR #71؛ main تا SHA b8c672cb70dcb2b274f43f118ac08b2eea8438c5.
 
@@ -1047,7 +1047,7 @@ TradeIn مستقل در دامنه V1 حفظ می‌شود؛ برش عملیات
 
 ### ۲۳٫۱ بیانیه نهایی
 
-نسخه 3.0 دامنه و جزئیات پذیرفته‌شده v2.5 را حفظ می‌کند. v2.5 تا پذیرش رسمی v3.0 آخرین Master Baseline پذیرفته‌شده است. تصمیم‌های سیاستی پذیرفته‌شده بازگشایی نمی‌شوند؛ شکاف‌های واقعی 7B/7C/7D، COA، FE-09/FE-20/110807، CreditExposure، Legal Retention و PoCهای امنیت/عملیات با وضعیت OPEN/BLOCKED حفظ می‌شوند. CI موفق PR #71 فقط برای SHA همان PR معتبر است؛ تست‌های کامل Runtime/PostgreSQL Posting و Backup/Restore عملیاتی NOT RUN/NOT VERIFIED هستند. این سند مجوز DDL، Migration 0009، Posting Release یا Go-Live نیست.
+این سند نسخه تاریخی 3.0 است و جایگزین آن Master پذیرفته‌شده MDG-ARCH-MASTER-001 v3.0.3 است. v2.5 نیز صرفاً سابقه بایگانی‌شده است. تصمیم‌های سیاستی پذیرفته‌شده بازگشایی نمی‌شوند؛ شکاف‌های واقعی 7B/7C/7D، COA، FE-09/FE-20/110807، CreditExposure، Legal Retention و PoCهای امنیت/عملیات با وضعیت OPEN/BLOCKED حفظ می‌شوند. CI موفق PR #71 فقط برای SHA همان PR معتبر است؛ تست‌های کامل Runtime/PostgreSQL Posting و Backup/Restore عملیاتی NOT RUN/NOT VERIFIED هستند. این سند مجوز DDL، Migration 0009، Posting Release یا Go-Live نیست.
 
 ## پیوست A — Scope Preservation Matrix نسخه 2.2 به 2.5
 
@@ -2813,7 +2813,7 @@ Shared controls: EventId پایدار و جدا از Request IdempotencyKey؛ Ac
 
 | موضوع | وضعیت واقعی | حدود اعتبار |
 | --- | --- | --- |
-| Architecture v2.5 | آخرین Master Baseline پذیرفته‌شده پیش از پذیرش رسمی v3.0 | v3.0 در این مرحله Candidate است؛ independent review/acceptance لازم دارد. |
+| Architecture v2.5 | نسخه تاریخی بایگانی‌شده؛ مرجع جاری v3.0.3 است | v3.0 منسوخ و بایگانی‌شده است؛ v3.0.3 مرجع جاری پذیرفته‌شده است. |
 | Architecture v2.6 | Controlled Amendment برای معیار O-01؛ پذیرش مستقل کامل نشده | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 مالک‌تأیید؛ سایر بخش‌ها خط‌مبنای مستقل نیستند. |
 | PR #66 | MERGED؛ merge commit a8b9b6fe2a4b91a1d429a29a53558d7102be293c | Accounting.Contracts/Domain/Application و Controlled workpapers در main؛ نه Posting Release. |
 | PR #70 | MERGED؛ main commit b8c672cb70dcb2b274f43f118ac08b2eea8438c5 | Migration 0009 RESERVED در main؛ SQL file وجود ندارد و SQL NOT AUTHORIZED. |
