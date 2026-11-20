@@ -11,7 +11,7 @@
 | Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 owner-accepted 2026-11-20; independent technical review and main registration pending |
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
 | PR status | #66 MERGED; #70 MERGED; #71 OPEN (GitHub draft=false; title aligned; exact-head independent review re-requested); #72 OPEN; #73 OPEN (stacked on #72); #81 OPEN (EVD registration) |
-| Branch | PR #72: docs/architecture-master-v3.0-20261119; PR #73 stacked on #72 at docs/inventory-pd-v0.2-blocker-closures; neither merged to main at this snapshot |
+| Branch | PR #71: docs/accounting-physical-schema-design-20261118 (contains the PR #72 head); PR #73 remains stacked on the PR #72 history and requires controlled integration onto post-#71 main |
 | Current main SHA at register preparation | b8c672cb70dcb2b274f43f118ac08b2eea8438c5 |
 | Exact-head CI for this register/validator commit | PENDING — must run after all changes including this register and integrity manifest |
 
@@ -462,4 +462,4 @@ Current finance boundaries recorded by the canonical register:
 - O-65 owner decision is closed; implementation, O-65-specific tests and evidence remain open.
 - Posting Release is NOT GRANTED; Gate C/Gate D remain OPEN / NOT VERIFIED.
 
-This v1.4 register is on the open PR #72 branch and is not registered in main until merge. Exact-head CI must be rerun after all package-2 files and manifests are finalized.
+This v1.4 register is carried on PR #71 branch `docs/accounting-physical-schema-design-20261118`; its prior repository path suffix `_v0.8.md` is superseded by the controlled filename suffix `_v1.4.md`. PR #71 contains the complete PR #72 history; after #71 merges, #72 must be closed as superseded rather than merged separately. PR #73 is a separate Inventory extension and must be integrated onto the post-#71 main head. PR #81 is the final evidence-registration PR and is to be completed only after upstream merge SHAs are known. The updated register and checksum manifest require fresh exact-head CI and independent review on the resulting PR #71 SHA before merge.
