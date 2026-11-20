@@ -10,8 +10,8 @@
 | Supersedes | v1.3; prior versions retained as historical snapshots |
 | Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 owner-accepted 2026-11-20; independent technical review and main registration pending |
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
-| PR status | #66 MERGED; #70 MERGED; #71 OPEN (GitHub draft=false; title still contains [Draft]) |
-| Branch | docs/architecture-master-v3.0-20261119; PR #72 open, not merged |
+| PR status | #66 MERGED; #70 MERGED; #71 OPEN (GitHub draft=false; title aligned; exact-head independent review re-requested); #72 OPEN; #73 OPEN (stacked on #72); #81 OPEN (EVD registration) |
+| Branch | PR #72: docs/architecture-master-v3.0-20261119; PR #73 stacked on #72 at docs/inventory-pd-v0.2-blocker-closures; neither merged to main at this snapshot |
 | Current main SHA at register preparation | b8c672cb70dcb2b274f43f118ac08b2eea8438c5 |
 | Exact-head CI for this register/validator commit | PENDING — must run after all changes including this register and integrity manifest |
 
@@ -29,11 +29,12 @@
 |---|---:|---|
 | WP06-P4H-7B-POSTING-MATRIX-001 | v0.2 | 39 event dispositions (38 FE identifiers + FE-10b); 0 accepted positive Posting Rules; unresolved fields BLOCKED |
 | MDG-WP06-7B-POSTING-RULE-CLOSURE-001 | v0.2 | 39/39 policy dispositions reconciled; 7B-CL-014 and 7B-CL-019 closed at policy-only level; positive posting rules remain 0 |
-| WP06-P4H-7C-COA-RECONCILIATION-001 | v0.4 | 78 identifiers; v1.2 master + v1.4 supplement; canonical attribute gaps OPEN |
+| WP06-P4H-7C-COA-RECONCILIATION-001 | v0.4 | 78 identifiers; v1.2 master + v1.5 controlled supplement; canonical attribute gaps OPEN |
 | WP06-P4H-7D-TEST-REGISTRY-001 | v0.2 | 67 Test IDs: 39 FE + 16 COA + 12 shared controls; runtime tests NOT RUN |
-| MDG-WP06-7B-7C-7D-INTEGRATED-001 | v0.6 | Current integrated crosswalk and implementation boundary |
-| MDG-WP06-5-STAGE-EXECUTION-REPORT | v0.2 | Current execution report; test evidence scoped to the SHA recorded in that report |
-| MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001 | v0.2 | Current owner-declared COA hierarchy |
+| MDG-ACC-PDS-001 | v0.3 | Accounting PostgreSQL physical design; AuditSecurity sole canonical AuditEvent owner; no SQL/DDL authorization | INDEPENDENT REVIEW PENDING |
+| MDG-WP06-7B-7C-7D-INTEGRATED-001 | v0.6 | Integrated crosswalk, now aligned to v3.0.3 and COA v1.5 |
+| MDG-WP06-5-STAGE-EXECUTION-REPORT | v0.2 | Current authority statements corrected to v3.0.3/COA v1.5; execution evidence remains SHA-scoped |
+| MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001 | v0.2 | Current hierarchy: COA v1.2 master + v1.5 controlled supplement; v1.4 historical/superseded |
 | MDG-WP06-7B-7C-7D-CROSS-AUDIT-001 | v0.3 | Historical supporting audit; source-authority statements superseded by correction v0.2 |
 | MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001 | v0.2 | Historical audit snapshot; O-01 deliverable acceptance remains open |
 | MDG-WP06-COA-SOURCE-RECOVERY-001 | v0.1 | Historical only; not an active source or acceptance dependency |
@@ -103,7 +104,7 @@ Finance Workpaper Structural Validation:
 | Gate | Status | Basis |
 |---|---|---|
 | Gate 1 — owner design decisions | CLOSED for recorded decisions | Accepted owner decisions remain controlling |
-| Gate 2 — architecture/design baseline | CLOSED for v2.5 | v2.6 remains draft |
+| Gate 2 — architecture/design baseline | OWNER-ACCEPTED for v3.0.3 on 2026-11-20; exact-SHA independent review and main registration tracked separately |
 | Gate 3 — implementation/behavioral verification | OPEN | Persistence and full finance tests remain |
 | Gate 4 — independent evidence acceptance | OPEN | Independent review and end-to-end evidence not accepted |
 | O-01 | OPEN | Owner-approved replacement criterion exists; deliverable/evidence acceptance pending |
@@ -112,8 +113,8 @@ Finance Workpaper Structural Validation:
 ## 8. PR and integrity controls
 
 - PR #66 is MERGED. Its merge is not a Posting Release and does not establish PostgreSQL persistence or runtime posting.
-- PR #71 has reviewer approval by mrdeljoe4 on exact head SHA b165e957ff7bf886616de21933018395d76bbff9; this review is limited to PDS v0.2.
-- PR #71 has six successful workflow runs on exact head SHA b165e957ff7bf886616de21933018395d76bbff9; these runs do not prove SQL, PostgreSQL Posting, production readiness or Master acceptance.
+- The prior PR #71 review on `b165e957ff7bf886616de21933018395d76bbff9` is historical and does not approve revised PDS v0.3. Reviewer `mrdeljoe4` has been requested again on the current exact head; renewed independent review is PENDING.
+- PR #71's six successful runs are historical and apply only to its prior head `b165e957ff7bf886616de21933018395d76bbff9`; all required workflows must pass again on the revised PDS v0.3 head.
 - SHA256SUMS.txt is the integrity manifest for tracked source and workpaper files.
 - Owner approval of design is not implementation acceptance, test acceptance or Posting Release.
 
@@ -267,7 +268,7 @@ User-confirmed acceptance: the user and Accounting have approved the technical d
 
 **Migration 0009 boundary:** PR #70 merge records only a reserved migration slot. It does not create SQL, authorize DDL, permit a disposable or production migration, seed COA, persist journals or enable Posting. Any later SQL requires the separately controlled review/authorization path and applicable architecture gates.
 
-**PDS v0.2 audit note:** the proposed `accounting.audit_events` table conflicts with the single shared AuditEvent owner (AuditSecurity). PDS v0.2 must be revised before design acceptance; no SQL may be created from the current table definition.
+**PDS v0.2 audit finding — corrected in v0.3:** the revised PDS removes `accounting.audit_events`, assigns canonical AuditEvent/SecurityEvent exclusively to AuditSecurity and retains only opaque event IDs without cross-module foreign keys. PDS v0.3 still requires independent exact-SHA review; no SQL may be created.
 
 ## Current authority/status correction — 2026-11-20
 
