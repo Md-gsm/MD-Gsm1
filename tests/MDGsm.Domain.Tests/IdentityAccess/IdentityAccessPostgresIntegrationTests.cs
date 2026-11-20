@@ -78,7 +78,7 @@ public sealed class IdentityAccessPostgresIntegrationTests
 
             if (!await db.IdentityAccounts.AnyAsync(x => x.LoginNameNormalized == "LOCKOUTUSER"))
                 db.IdentityAccounts.Add(CreateAccount("lockoutuser", sharedPasswordHash, clock.GetUtcNow()));
-            for (var i = 1; i <= 4; i++)
+            for (var i = 1; i <= 8; i++)
             {
                 var normalized = $"CAPACITY{i}";
                 if (!await db.IdentityAccounts.AnyAsync(x => x.LoginNameNormalized == normalized))
@@ -149,11 +149,11 @@ public sealed class IdentityAccessPostgresIntegrationTests
         {
             var db = configureCapacity.ServiceProvider.GetRequiredService<MdGsmDbContext>();
             await db.IdentitySystemSettings.Where(x => x.SettingsId == 1)
-                .ExecuteUpdateAsync(s => s.SetProperty(x => x.MaxActiveUsers, 2));
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.MaxActiveUsers, 5));
         }
 
         var outcomes = new ConcurrentBag<(string Username, LoginOutcome Outcome)>();
-        var tasks = Enumerable.Range(1, 4).Select(async i =>
+        var tasks = Enumerable.Range(1, 8).Select(async i =>
         {
             using var scope = provider.CreateScope();
             var handler = scope.ServiceProvider.GetRequiredService<LoginHandler>();
@@ -166,8 +166,8 @@ public sealed class IdentityAccessPostgresIntegrationTests
         });
         await Task.WhenAll(tasks);
 
-        Assert.Equal(2, outcomes.Count(x => x.Outcome.Succeeded));
-        Assert.Equal(2, outcomes.Count(x => x.Outcome.Failure == LoginFailure.SessionCapacityReached));
+        Assert.Equal(5, outcomes.Count(x => x.Outcome.Succeeded));
+        Assert.Equal(3, outcomes.Count(x => x.Outcome.Failure == LoginFailure.SessionCapacityReached));
 
         var activeDistinctAccounts = 0;
         await using (var verifyCapacity = provider.CreateAsyncScope())
@@ -178,7 +178,7 @@ public sealed class IdentityAccessPostgresIntegrationTests
                 .Where(x => x.RevokedAtUtc == null && x.LeaseExpiresAtUtc > now)
                 .Select(x => x.AccountId).Distinct().CountAsync();
         }
-        Assert.Equal(2, activeDistinctAccounts);
+        Assert.Equal(5, activeDistinctAccounts);
 
         var activeUsername = outcomes
             .Where(x => x.Outcome.Succeeded)
@@ -201,7 +201,7 @@ public sealed class IdentityAccessPostgresIntegrationTests
             var now = clock.GetUtcNow();
             var distinct = await db.IdentitySessions.Where(x => x.RevokedAtUtc == null && x.LeaseExpiresAtUtc > now)
                 .Select(x => x.AccountId).Distinct().CountAsync();
-            Assert.Equal(2, distinct);
+            Assert.Equal(5, distinct);
         }
 
         // Keep this shared disposable database deterministic for the other integration tests.
