@@ -48,6 +48,44 @@ snapshot() {
 }
 
 source_snapshot="$(snapshot "$MDGSM_TEST_DB")"
+# Structural parity: normalized pg_dump schema covers columns/types, constraints,
+# indexes, triggers, routines, sequences, extensions and schema-owned objects.
+# Ownership and ACL/default-ACL are fingerprinted separately (except DR-07).
+schema_fingerprint() {
+  local db="$1"
+  pg_dump --schema-only --no-owner --no-privileges "$db" |
+    sed -E '/^--/d; /^$/d' |
+    sha256sum | awk '{print $1}'
+}
+
+security_catalog_fingerprint() {
+  local db="$1"
+  psql -d "$db" -At -v ON_ERROR_STOP=1 -c "
+    SELECT md5(COALESCE(jsonb_agg(item ORDER BY item::text)::text, '[]'))
+    FROM (
+      SELECT jsonb_build_array('namespace', n.nspname, pg_get_userbyid(n.nspowner), COALESCE(n.nspacl::text,'')) AS item
+      FROM pg_namespace n WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('relation', n.nspname, c.relname, c.relkind, pg_get_userbyid(c.relowner), COALESCE(c.relacl::text,'')) AS item
+      FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('routine', n.nspname, p.proname, pg_get_userbyid(p.proowner), COALESCE(p.proacl::text,'')) AS item
+      FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('type', n.nspname, t.typname, pg_get_userbyid(t.typowner), COALESCE(t.typacl::text,'')) AS item
+      FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
+      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('default_acl', COALESCE(n.nspname,''), d.defaclobjtype, pg_get_userbyid(d.defaclrole), COALESCE(d.defaclacl::text,'')) AS item
+      FROM pg_default_acl d LEFT JOIN pg_namespace n ON n.oid=d.defaclnamespace
+    ) objects;
+  "
+}
+
+source_schema_fingerprint="$(schema_fingerprint "$MDGSM_TEST_DB")"
+source_security_fingerprint="$(security_catalog_fingerprint "$MDGSM_TEST_DB")"
 source_version="$(psql -d "$MDGSM_TEST_DB" -At -v ON_ERROR_STOP=1 -c 'SHOW server_version;')"
 drills=()
 
@@ -61,7 +99,7 @@ write_evidence() {
   if [[ -f "$tmp/full.custom" ]]; then dump_hash="$(sha256sum "$tmp/full.custom" | awk '{print $1}')"; fi
   local joined=""
   if (( ${#drills[@]} > 0 )); then joined="$(IFS=,; echo "${drills[*]}")"; fi
-  printf '{\n  "evidenceVersion": "1.0",\n  "evidenceId": "EVD-GATED-RESTORE-POC",\n  "overallStatus": "%s",\n  "exitCode": %s,\n  "repository": "Md-gsm/MD-Gsm1",\n  "commit": "%s",\n  "workflowRunId": "%s",\n  "workflowRunAttempt": "%s",\n  "postgresServerVersion": "%s",\n  "sourceDatabase": "%s",\n  "sourceDatabaseMarker": "MDGSM_DISPOSABLE_TEST_DB",\n  "sourceSnapshot": "%s",\n  "restoreScriptSha256": "%s",\n  "fullCustomDumpSha256": "%s",\n  "scope": "PostgreSQL logical restore PoC against current IdentityAccess/infrastructure schema only; not full Gate D recovery.",\n  "drills": [\n    %s\n  ]\n}\n' "$overall" "$exit_code" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$source_version" "$MDGSM_TEST_DB" "$source_snapshot" "$script_hash" "$dump_hash" "$joined" > artifacts/restore-poc-evidence.json
+  printf '{\n  "evidenceVersion": "1.0",\n  "evidenceId": "EVD-GATED-RESTORE-POC",\n  "overallStatus": "%s",\n  "exitCode": %s,\n  "repository": "Md-gsm/MD-Gsm1",\n  "commit": "%s",\n  "workflowRunId": "%s",\n  "workflowRunAttempt": "%s",\n  "postgresServerVersion": "%s",\n  "sourceDatabase": "%s",\n  "sourceDatabaseMarker": "MDGSM_DISPOSABLE_TEST_DB",\n  "sourceSnapshot": "%s",\n  "sourceSchemaFingerprint": "%s",\n  "sourceSecurityCatalogFingerprint": "%s",\n  "restoreScriptSha256": "%s",\n  "fullCustomDumpSha256": "%s",\n  "scope": "PostgreSQL logical restore PoC against current IdentityAccess/infrastructure schema only; not full Gate D recovery.",\n  "drills": [\n    %s\n  ]\n}\n' "$overall" "$exit_code" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$source_version" "$MDGSM_TEST_DB" "$source_snapshot" "$source_schema_fingerprint" "$source_security_fingerprint" "$script_hash" "$dump_hash" "$joined" > artifacts/restore-poc-evidence.json
 }
 
 finish() {
@@ -88,6 +126,8 @@ pg_dump --format=custom --file "$tmp/full.custom" "$MDGSM_TEST_DB"
 db="$(new_target dr01)"
 pg_restore --exit-on-error --dbname "$db" "$tmp/full.custom"
 [[ "$(snapshot "$db")" == "$source_snapshot" ]]
+[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
+[[ "$(security_catalog_fingerprint "$db")" == "$source_security_fingerprint" ]]
 record DR-01 "$db" "custom-format full database restore; schema/data snapshot matches"
 
 # DR-02: Plain SQL full backup and restore.
@@ -95,6 +135,8 @@ pg_dump --format=plain --file "$tmp/full.sql" "$MDGSM_TEST_DB"
 db="$(new_target dr02)"
 psql -d "$db" -v ON_ERROR_STOP=1 -f "$tmp/full.sql" >/dev/null
 [[ "$(snapshot "$db")" == "$source_snapshot" ]]
+[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
+[[ "$(security_catalog_fingerprint "$db")" == "$source_security_fingerprint" ]]
 record DR-02 "$db" "plain SQL full database restore; schema/data snapshot matches"
 
 # DR-03: Directory archive with parallel dump and restore.
@@ -102,6 +144,8 @@ pg_dump --format=directory --jobs=2 --file "$tmp/full.directory" "$MDGSM_TEST_DB
 db="$(new_target dr03)"
 pg_restore --jobs=2 --exit-on-error --dbname "$db" "$tmp/full.directory"
 [[ "$(snapshot "$db")" == "$source_snapshot" ]]
+[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
+[[ "$(security_catalog_fingerprint "$db")" == "$source_security_fingerprint" ]]
 record DR-03 "$db" "directory archive parallel restore; schema/data snapshot matches"
 
 # DR-04: Schema-only restore creates the same IdentityAccess table set without row data.
@@ -111,6 +155,8 @@ pg_restore --exit-on-error --dbname "$db" "$tmp/schema.custom"
 schema_tables="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='identity' AND table_type='BASE TABLE';")"
 settings_rows="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c 'SELECT count(*) FROM identity.system_settings;')"
 [[ "$schema_tables" == "11" && "$settings_rows" == "0" ]]
+[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
+[[ "$(security_catalog_fingerprint "$db")" == "$source_security_fingerprint" ]]
 record DR-04 "$db" "schema-only restore; 11 IdentityAccess tables present and data absent"
 
 # DR-05: Data-only restore into a schema-only target.
@@ -119,6 +165,8 @@ db="$(new_target dr05)"
 pg_restore --exit-on-error --dbname "$db" "$tmp/schema.custom"
 pg_restore --data-only --exit-on-error --dbname "$db" "$tmp/data.custom"
 [[ "$(snapshot "$db")" == "$source_snapshot" ]]
+[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
+[[ "$(security_catalog_fingerprint "$db")" == "$source_security_fingerprint" ]]
 record DR-05 "$db" "data-only restore after schema restore; schema/data snapshot matches"
 
 # DR-06: Selective restore of the session policy table into a schema-only target.
@@ -128,12 +176,15 @@ echo "START DR-06 selective system settings restore"
 pg_restore --data-only --schema=identity --table=system_settings --exit-on-error --dbname "$db" "$tmp/data.custom"
 settings="$(psql -d "$db" -At -v ON_ERROR_STOP=1 -c "SELECT max_active_users::text || '|' || heartbeat_interval_seconds::text || '|' || session_lease_seconds::text FROM identity.system_settings WHERE settings_id=1;")"
 [[ "$settings" == "5|30|180" ]]
+[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
 record DR-06 "$db" "selective system settings restore; session policy values preserved"
 
 # DR-07: Restore without source ownership/ACL dependencies.
 db="$(new_target dr07)"
 pg_restore --no-owner --no-privileges --exit-on-error --dbname "$db" "$tmp/full.custom"
 [[ "$(snapshot "$db")" == "$source_snapshot" ]]
+# DR-07 intentionally omits owner/ACL; structural schema must still match.
+[[ "$(schema_fingerprint "$db")" == "$source_schema_fingerprint" ]]
 record DR-07 "$db" "ownership-independent restore into a fresh target; schema/data snapshot matches"
 
 # DR-08: Corrupt archive must fail closed and must not be accepted as a successful restore.
