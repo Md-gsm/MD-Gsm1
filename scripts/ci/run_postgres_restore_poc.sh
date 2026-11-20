@@ -80,6 +80,42 @@ schema_fingerprint() {
   printf '%s|%s' "$ddl_hash" "$check_hash"
 }
 
+security_catalog_dump() {
+  local db="$1"
+  psql -d "$db" -At -v ON_ERROR_STOP=1 -c "
+    SELECT item::text
+    FROM (
+      SELECT jsonb_build_array('namespace', n.nspname, pg_get_userbyid(n.nspowner), COALESCE(n.nspacl::text,'')) AS item
+      FROM pg_namespace n WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('relation', n.nspname, c.relname, c.relkind, pg_get_userbyid(c.relowner), COALESCE(c.relacl::text,'')) AS item
+      FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('routine', n.nspname, p.proname, pg_get_userbyid(p.proowner), COALESCE(p.proacl::text,'')) AS item
+      FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('type', n.nspname, t.typname, pg_get_userbyid(t.typowner), COALESCE(t.typacl::text,'')) AS item
+      FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
+      WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+      UNION ALL
+      SELECT jsonb_build_array('default_acl', COALESCE(n.nspname,''), d.defaclobjtype, pg_get_userbyid(d.defaclrole), COALESCE(d.defaclacl::text,'')) AS item
+      FROM pg_default_acl d LEFT JOIN pg_namespace n ON n.oid=d.defaclnamespace
+      UNION ALL
+      SELECT jsonb_build_array('role', r.rolname, r.rolsuper, r.rolinherit, r.rolcreaterole,
+        r.rolcreatedb, r.rolcanlogin, r.rolreplication, r.rolbypassrls, r.rolconnlimit) AS item
+      FROM pg_roles r WHERE r.rolname !~ '^pg_'
+      UNION ALL
+      SELECT jsonb_build_array('role_membership', pg_get_userbyid(m.roleid), pg_get_userbyid(m.member),
+        pg_get_userbyid(m.grantor), m.admin_option) AS item
+      FROM pg_auth_members m JOIN pg_roles member_role ON member_role.oid=m.member
+      WHERE member_role.rolname !~ '^pg_'
+    ) objects
+    ORDER BY item::text;
+  "
+}
+
 security_catalog_fingerprint() {
   local db="$1"
   psql -d "$db" -At -v ON_ERROR_STOP=1 -c "
@@ -130,6 +166,13 @@ check_equal() {
         sed -E '/^--/d; /^$/d; /^\\(un)?restrict /d; /^[[:space:]]*CONSTRAINT .* CHECK /d' > "$tmp/target.schema.sql"
       echo "Schema parity diff (first 120 lines):" >&2
       diff -u "$tmp/source.schema.sql" "$tmp/target.schema.sql" | head -120 >&2 || true
+    fi
+    if [[ "$label" == security\ catalog* ]]; then
+      target_db="${label#security catalog }"
+      security_catalog_dump "$MDGSM_TEST_DB" > "$tmp/source.security.txt"
+      security_catalog_dump "$target_db" > "$tmp/target.security.txt"
+      echo "Security catalog parity diff (first 120 lines):" >&2
+      diff -u "$tmp/source.security.txt" "$tmp/target.security.txt" | head -120 >&2 || true
     fi
     return 1
   fi
