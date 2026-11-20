@@ -67,7 +67,7 @@ No broad table grant is accepted as a shortcut. Each module must document every 
 
 - Login remains username/password only. Email and phone are contact/recovery data, not login identifiers.
 - On successful authentication, generate an opaque bearer token using a CSPRNG with at least 256 bits of entropy.
-- Return the raw token once over validated TLS. Persist only SHA-256(token) as a fixed 32-byte digest with a unique constraint. Never log, cache, persist, include in telemetry or place in crash artifacts the raw token.
+- Return the raw token once over validated TLS. Persist only SHA-256(token) as a fixed 32-byte digest with a unique constraint. The Desktop client may hold the token in process memory only for the open session; persistent local storage is not permitted unless a separate owner-approved secure-resume requirement is introduced. Never log, place in server-side cache, include in telemetry or place in crash artifacts the raw token.
 - A token digest is not a password hash and is not interchangeable with the HMAC privacy digest. Random high-entropy bearer tokens use SHA-256; identifiers/source keys requiring privacy-preserving correlation use the separately managed HMAC-SHA-256 key.
 - Store SessionId, AccountId, token digest, issued time, last-seen time, lease expiry, revocation time/reason, client-instance opaque ID and credential_version_at_issue. No hardware fingerprint is required.
 - Database time in UTC is authoritative. Client time is informational only.
@@ -93,7 +93,7 @@ The accepted ordinary-login policy remains five failed attempts in a 15-minute w
 ### 5.1 Accepted policy
 
 - Email-only recovery is the owner-approved channel for this phase. It is not MFA and does not provide two independent factors.
-- Email OTP lifetime is 600 seconds. Only a cryptographic digest is stored; the raw OTP is delivered once and never logged or persisted.
+- Email OTP lifetime is 600 seconds. Because an OTP may have limited entropy, persist only an HMAC-SHA-256 digest under a dedicated recovery-challenge key held outside PostgreSQL; do not use plain SHA-256 for a short numeric OTP. Store the key version with the challenge, keep this key separate from the IdentityAccess privacy-digest key and bearer-token digest, and never log or persist the raw OTP.
 - A challenge is bound to one account, one purpose and one issuance. It is single-use; expiration, consumption, revocation or replacement makes it unusable.
 - Maximum five failed attempts per challenge; then recovery is locked for 24 hours.
 - Resend cooldown is at least one hour; at most one send in a rolling hour and five sends in a rolling 24 hours. Exceeding the send limit locks recovery/sending for 24 hours.
@@ -106,7 +106,7 @@ The accepted ordinary-login policy remains five failed attempts in a 15-minute w
 2. Eligibility and email proof are checked against server-owned account data. Email ownership verification state must be authoritative; merely having an email string on the account is not proof.
 3. Challenge creation, replacement/revocation, attempt counters, cooldown and rolling send quotas are enforced atomically using PostgreSQL time and concurrency-safe account/challenge locks. A source-only throttle must not let an attacker permanently deny recovery to a victim.
 4. The delivery adapter uses a replaceable transactional-email/SMTP relay configured by Platform. No vendor or secret is invented here. Delivery failure or ambiguous provider outcome is never treated as proof of delivery or successful recovery.
-5. OTP comparison is constant-time over fixed-length digests. Expiry uses `now_utc >= expires_at_utc`; equality is expired. A challenge can be consumed once only using a conditional atomic transition.
+5. OTP comparison is constant-time over fixed-length HMAC digests using the recorded key version. Expiry uses `now_utc >= expires_at_utc`; equality is expired. A challenge can be consumed once only using a conditional atomic transition. Recovery-key rotation must preserve verification of still-live challenges until they expire or be accompanied by an atomic challenge revocation/reissue; no silent fallback key is allowed.
 6. On successful proof, one transaction changes the password hash, increments credential_version, revokes every account session, sets `must_change_password=true`, consumes/revokes the challenge and records the audit intent. Any failure rolls back the entire state transition.
 7. A retry after an unknown commit outcome returns the stable outcome for the same operation and cannot reset the password twice or leave a challenge reusable.
 8. Notifications after recovery do not contain the new password, OTP or token; they report that a security change occurred and provide a safe support path.
@@ -208,7 +208,7 @@ All SEC-T-001..030 are specifications, NOT RUN and NOT PASS.
 
 ## 10. Open dependencies and release gates
 
-1. Platform: approved PostgreSQL role/grant matrix, TLS topology, secret manager, backup encryption, asymmetric signing provider, WORM storage, alert routing and operational ownership.
+1. Platform: approved PostgreSQL role/grant matrix, TLS topology, secret manager, dedicated recovery-challenge HMAC key and versioned rotation, backup encryption, asymmetric signing provider, WORM storage, alert routing and operational ownership.
 2. IdentityAccess: runtime recovery orchestration, verified-email state, SMTP adapter, atomic rate limits, bootstrap provisioning and exact session concurrency proof.
 3. AuditSecurity: canonical event schema, canonical serialization specification/test vectors, stream partitioning, hash/checkpoint verifier, signing and external-anchor operations.
 4. Legal/owner: retention, archival, purge and legal-hold schedule.
