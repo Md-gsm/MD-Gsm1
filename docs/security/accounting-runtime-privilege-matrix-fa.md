@@ -3,7 +3,7 @@
 شناسه: MDG-ACC-SEC-PRIV-001  
 نسخه: 0.1  
 وضعیت: طراحی اجرایی پیشنهادی برای بازبینی؛ هنوز هیچ grant واقعی روی schema دائمی Accounting اعمال نشده است.  
-والد: MDG-ARCH-MASTER-001 v2.5 / MDG-ADR-0018  
+والد: MDG-ARCH-MASTER-001 v3.0.3 / MDG-ADR-0018  
 دامنه: Accounting core persistence
 
 ## 1. اصول
