@@ -294,7 +294,7 @@ User-confirmed acceptance: the user and Accounting have approved the technical d
 - Gate C/D and Posting Release remain open/not granted.
 
 
-## 19. v3.0.3 Candidate and Stage 04 register overlay — 2026-11-20
+## 19. v3.0.3 accepted Master and Stage 04 register overlay — 2026-11-20
 
 This overlay preserves the COA source hierarchy (v1.2 master; v1.5 controlled supplementary reconstruction/crosswalk; v1.4 historical/superseded for current supplementary authority; v1.3 intermediate only). For the architecture Master, v3.0.3 is the sole current owner-accepted and repository-registered Master; v2.5 is archived historical material only. The original nine-sheet workbook and Part 4H-6 are not active authorities or prerequisites.
 
@@ -329,7 +329,7 @@ The workpaper uses only v3.0.3, COA v1.2 and v1.5. It does not create missing ac
 This overlay corrects the register's architecture and COA authority references but does not itself accept the Stage 04 workpaper on behalf of Sales, Purchasing, Inventory, Treasury, Accounting, QA or Platform owners.
 
 
-## 20. v3.0.3 Candidate and Stage 05 Inventory overlay — 2026-11-20
+## 20. v3.0.3 accepted Master and Stage 05 Inventory overlay — 2026-11-20
 
 The Inventory successor workpapers use the accepted Master MDG-ARCH-MASTER-001 v3.0.3 as the governing semantic source, together with Stage 05 and explicit owner decisions. v3.0.3 is the accepted current architecture baseline; v2.5 is archived historical material only. This overlay does not rewrite historical owner decisions or historical proposal files.
 
@@ -453,7 +453,7 @@ The single authoritative live status ledger for all architecture and finance ope
 
 `docs/governance/MDG-OPEN-ISSUE-REGISTER-001_v1.1.md`
 
-It records independent Decision, Design, Implementation, Test, Evidence and Gate statuses for every O-ID. This finance document register is a supporting document inventory and does not create a competing O-status source. Its earlier status statements and snapshots are historical where they conflict with the current v3.0.3 candidate-provenance overlay or the canonical O register.
+It records independent Decision, Design, Implementation, Test, Evidence and Gate statuses for every O-ID. This finance document register is a supporting document inventory and does not create a competing O-status source. Its earlier status statements and snapshots are historical where they conflict with the current v3.0.3 accepted-baseline overlay or the canonical O register.
 
 Current finance boundaries recorded by the canonical register:
 - 39 event dispositions exist; positive accepted Posting Rules remain 0.
@@ -517,7 +517,7 @@ Open controls:
 - State: OPEN / DRAFT; not merged.
 - Base: main at `10c8a8ba8f9aad54c4e2ff05fad49ce12511380f`.
 - Branch: `docs/inventory-cross-module-contracts-20261120`.
-- Scope: owner decision supplement, verified v3.0.3 candidate package provenance, CR-ARCH-INV-OWNER-FOLLOWUP-001 v0.2, PDS v0.4, Logical ERD v0.3, cross-module contract v1.1, test specification v1.1, source-event proposal v0.3, O-register v1.3, Document Register v1.9, existing role-grant matrix and supporting checksum manifest.
+- Scope: owner decision supplement, v3.0.3 accepted Master registration provenance, CR-ARCH-INV-OWNER-FOLLOWUP-001 v0.2, PDS v0.4, Logical ERD v0.3, cross-module contract v1.1, test specification v1.1, source-event proposal v0.3, O-register v1.3, Document Register v1.9, existing role-grant matrix and supporting checksum manifest.
 - Reviewer requested: `mrdeljoe4`. Review is still required on the final head.
 - Previous branch head `234aaf16c6fc92cddfbc168472680d25f42d9c41` had all five required workflows SUCCESS. The document corrections in this v1.9 revision supersede that head, so exact-head CI must be verified against the resulting PR head SHA.
 - SHA256SUMS.txt contains 394 entries in bytewise path order with no duplicate paths; the new CR/OIR/Document Register successor records are included. The owner-supplied ZIP package's own internal manifest was separately verified 11/11.
@@ -550,9 +550,9 @@ CR-ARCH-INV-OWNER-FOLLOWUP-001 v0.2 records detailed provenance and acceptance b
 The CR maps D-15 dual cutover budgets and zero-difference guards, O-35 per-WarehouseId watermark/cursors, O-36 Sales 24h/Repair no TTL, and O-64 owner-assigned GENERAL_MANAGER scope. O-35/O-36/O-64 remain open overall pending their stated independent review, implementation and evidence. Finance FE-08 WAC scope remains BLOCKED and is outside this CR.
 
 ### Version history
-- v1.9 — records the owner-supplied exact v3.0.3 candidate package, corrects formal Master acceptance status, and registers CR/OIR successors; v1.7 retained as historical snapshot.
+- v1.9 — records the owner-supplied exact v3.0.3 registration package, corrects formal Master acceptance status, and registers CR/OIR successors; v1.7 retained as historical snapshot.
 
-## 20. Owner-supplied Master v3.0.3 registration candidate package — 2026-11-20
+## 20. Owner-supplied Master v3.0.3 registration package — 2026-11-20
 
 | Artifact | SHA-256 | Status |
 |---|---|---|
