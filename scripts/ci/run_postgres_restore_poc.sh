@@ -149,6 +149,16 @@ security_catalog_fingerprint() {
       UNION ALL
       SELECT jsonb_build_array('default_acl', COALESCE(n.nspname,''), d.defaclobjtype, pg_get_userbyid(d.defaclrole), COALESCE(d.defaclacl::text,'')) AS item
       FROM pg_default_acl d LEFT JOIN pg_namespace n ON n.oid=d.defaclnamespace
+      UNION ALL
+      SELECT jsonb_build_array('role', r.rolname, r.rolsuper, r.rolinherit, r.rolcreaterole,
+        r.rolcreatedb, r.rolcanlogin, r.rolreplication, r.rolbypassrls, r.rolconnlimit) AS item
+      FROM pg_roles r WHERE r.rolname !~ '^pg_'
+      UNION ALL
+      SELECT jsonb_build_array('role_membership', pg_get_userbyid(m.roleid), pg_get_userbyid(m.member),
+        pg_get_userbyid(m.grantor), m.admin_option) AS item
+      FROM pg_auth_members m
+      JOIN pg_roles member_role ON member_role.oid=m.member
+      WHERE member_role.rolname !~ '^pg_'
     ) objects;
   "
 }
