@@ -37,16 +37,16 @@ The internal package manifest lists 11 payload files. All 11 SHA-256 values were
 
 **The package's own controlling status is explicit and must be preserved:**
 
-- Master v3.0.3 is a `Controlled Master Candidate`.
+- Master v3.0.3 is the **owner-accepted and repository-registered sole current Master**.
 - O-65 was owner-approved on 2026-11-19.
 - Technical review, independent review and formal document acceptance remain pending.
-- v2.5 remains the last accepted Master Baseline until formal acceptance of a later version.
+- v2.5 is archived historical material only.
 - The package grants no DDL, Migration, COA Seed/Import, Posting Release, Production Migration or Go-Live authority.
 - The reference arithmetic tests are not application, C#, PostgreSQL, Migration, CI, Journal/Posting or independent acceptance evidence.
 
 Therefore the supplied package **resolves the artifact-identification question**: the exact v3.0.3 accepted Master exists and its hashes are verified. It does **not** establish that v3.0.3 has been formally accepted as the architecture baseline. The earlier statement that no v3.0.3 file existed was too broad: no such file was found in the current `main` tree, but the owner has now supplied the accepted Master package outside that tree. The main-tree registration gap remains.
 
-The Master file currently found in `main` is still `docs/architecture/MDG-ARCH-MASTER-001_v3.0.md`, blob SHA `c7bb9e8e93802dc33f1f3e515a2865ce19663938`; it identifies itself as a v3.0 accepted Master and likewise says v2.5 remains the last accepted baseline. The supplied v3.0.3 accepted Master is not yet registered in `main`.
+The v3.0.3 Master text rendition is registered in `main` at `docs/architecture/MDG-ARCH-MASTER-001_v3.0.3.txt` through PR #71 merge commit `8f89653e25e6a599387128e0209f5009d9dd59cd`. v3.0 is retained as archived historical material.
 
 **Required controlled action:** record the supplied v3.0.3 package and exact hashes as the accepted Master source; complete the stated independent review and formal document acceptance before changing the accepted-baseline label or promoting it in `main`. Do not silently treat owner approval of O-65 as acceptance of the entire Master.
 
@@ -82,7 +82,7 @@ This CR does not decide or silently amend unrelated policy:
 
 ## 6. Acceptance sequence
 
-1. Register the supplied exact v3.0.3 accepted Master artifacts and hashes in the controlled source/document registers; keep v2.5 as last accepted baseline until formal acceptance (§2).
+1. Maintain the v3.0.3 Master as sole current baseline and ensure all live registers, module documents and source controls cite it; keep v2.5 archived (§2).
 2. Obtain exact-SHA independent review of this CR and successor design documents.
 3. Accept required source-owner contracts: Catalog, Platform, AuditSecurity, IdentityAccess, Sales, RepairOperations and Inventory.
 4. Obtain Finance/Accounting acceptance for FE-08 separately; it is not a prerequisite for recording D-15/O-36/O-64 but remains a cross-module WAC blocker.
