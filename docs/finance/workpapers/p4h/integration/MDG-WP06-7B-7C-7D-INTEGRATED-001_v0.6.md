@@ -10,7 +10,7 @@
 | Project | MD-Gsm1 |
 | Supersedes | MDG-WP06-7B-7C-7D-INTEGRATED-001 v0.5 |
 | Repository | Md-gsm/MD-Gsm1 |
-| Architecture Baseline | MDG-ARCH-MASTER-001 v2.5 |
+| Architecture Baseline | MDG-ARCH-MASTER-001 v3.0.3 |
 | Related Decision | ADR-0017 — Integer-Only IRR |
 | Document Class | Controlled Reconstruction |
 | Status | DRAFT — OWNER CRITERION APPROVED; TECHNICAL CLOSURE PENDING |
@@ -54,7 +54,7 @@ Financial Event → Recognition Rule → Posting Rule → COA → Subledger → 
 
 این سند فقط مرجع طراحی و کنترل اسناد 7B، 7C و 7D در حوزه مالی است. این سند به‌تنهایی مجوز پیاده‌سازی موتور مالی، ایجاد migration، اجرای ثبت واقعی یا فعال‌سازی ماژول Accounting نیست.
 
-این Pull Request بسته مستندات کنترل‌شده 7B/7C/7D را در مسیرهای مستقل و یک سند یکپارچه برای crosswalk و audit ثبت می‌کند. نسخه‌های مستقل در مسیرهای p4h/7b، p4h/7c و p4h/7d نگهداری می‌شوند. COA v1.2 سند مادر و COA v1.4 رجیستر تکمیلی جاری است؛ Architecture v2.5 دست‌نخورده باقی مانده و v2.6 صرفاً پیش‌نویس کنترل‌شده است.
+این Pull Request بسته مستندات کنترل‌شده 7B/7C/7D را در مسیرهای مستقل و یک سند یکپارچه برای crosswalk و audit ثبت می‌کند. نسخه‌های مستقل در مسیرهای p4h/7b، p4h/7c و p4h/7d نگهداری می‌شوند. COA v1.2 سند مادر و COA v1.5 بازسازی تکمیلی/crosswalk کنترل‌شده است؛ COA v1.4 برای مرجعیت تکمیلی جاری تاریخی/منسوخ و v1.3 نسخه میانی است. Architecture v3.0.3 تنها baseline پذیرفته‌شده مالک است.
 
 ## 1.3 وضعیت بازسازی منابع تاریخی و معیار جایگزین O-01
 
@@ -940,7 +940,7 @@ Pull Request باید:
 بازیابی اسناد تاریخی اصلی دیگر شرط الزامی نیست؛ اما نسخه‌های جدید نباید به‌عنوان اصل تاریخی معرفی شوند. CR معیار O-01 را در سطح تصمیم مالک تأیید کرده است، ولی خود O-01 تا پذیرش تحویل‌دادنی‌ها و شواهد OPEN باقی می‌ماند.
 
 انتشار این سند:
-- Architecture v2.5 را به‌صورت مستقیم تغییر نمی‌دهد؛
+- این workpaper، Architecture Master را تغییر نمی‌دهد؛ تنها baseline جاری و پذیرفته‌شده مالک v3.0.3 است؛
 - O-01 را هنوز نمی‌بندد؛
 - Gate 3 یا Gate 4 را نمی‌بندد؛
 - مجوز پیاده‌سازی یا Posting صادر نمی‌کند.
@@ -1012,7 +1012,7 @@ End of Document
 ## 18. مرجعیت قطعی COA و تطبیق 7C — 2026-11-18
 
 1. COA v1.2 سند مادر و مرجع اصلی کدینگ حساب‌ها و قواعد General Ledger است.
-2. COA v1.4 رجیستر تکمیلی جاری برای تطبیق حساب‌به‌حساب 7C و مبتنی بر v1.2 است.
+2. COA v1.5 بازسازی تکمیلی/crosswalk کنترل‌شده جاری برای تطبیق 7C بر پایه v1.2 است؛ v1.4 تاریخی/منسوخ و v1.3 میانی است.
 3. COA v1.3 فقط مرحله میانی مشتق‌شده است.
 4. دامنه فعال 7C شامل 78 شناسه است: 76 کد پایه از COA v1.2 و دو شناسه تکمیلی 2114 و 5106 از v1.4/تصمیمات مالک؛ 110809 ممنوع است.
 5. سه رابطه والد صریح در v1.4 عبارت‌اند از 110302→1103، 610801→6108 و 620201→6202؛ رابطه 620201 غیرفعال می‌ماند. برای بقیه والدها prefix inference ممنوع است.
@@ -1096,3 +1096,8 @@ This overlay supersedes historical statements in this workpaper that v2.5 is the
 5. COA v1.5 hash/source lineage is recorded in v3.0.3 U.1; the hash of a reconstruction does not prove recovery of the original COA source.
 
 **Disposition:** owner-policy and authority conflicts reconciled; design/source/implementation/evidence blockers remain. B-final OPEN; Gate C and Gate D OPEN; Posting Release NOT GRANTED.
+
+
+## 17. کنترل مرجعیت جاری — 2026-11-20
+
+The owner-accepted architecture baseline is MDG-ARCH-MASTER-001 v3.0.3. The active COA authority is v1.2 master plus v1.5 controlled supplementary reconstruction/crosswalk. COA v1.4 is historical/superseded for current supplementary authority; v1.3 is intermediate only. The integrated workpaper is documentary control only: it does not grant a Posting Rule, DDL, migration, Posting Release, production migration or Go-Live.
