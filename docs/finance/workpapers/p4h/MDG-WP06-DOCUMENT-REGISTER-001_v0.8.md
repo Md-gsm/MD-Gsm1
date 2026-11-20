@@ -25,23 +25,31 @@
 
 ## 2. Current controlled workpapers
 
-| Workpaper | Current version | Status |
+| Workpaper / artifact | Current version | Status |
 |---|---:|---|
 | WP06-P4H-7B-POSTING-MATRIX-001 | v0.2 | 39 event dispositions (38 FE identifiers + FE-10b); 0 accepted positive Posting Rules; unresolved fields BLOCKED |
 | MDG-WP06-7B-POSTING-RULE-CLOSURE-001 | v0.2 | 39/39 policy dispositions reconciled; 7B-CL-014 and 7B-CL-019 closed at policy-only level; positive posting rules remain 0 |
 | WP06-P4H-7C-COA-RECONCILIATION-001 | v0.4 | 78 identifiers; v1.2 master + v1.5 controlled supplement; canonical attribute gaps OPEN |
-| WP06-P4H-7D-TEST-REGISTRY-001 | v0.2 | 67 Test IDs: 39 FE + 16 COA + 12 shared controls; runtime tests NOT RUN |
-| MDG-ACC-PDS-001 | v0.3 | Accounting PostgreSQL physical design; AuditSecurity sole canonical AuditEvent owner; no SQL/DDL authorization | INDEPENDENT REVIEW PENDING |
-
-Current file: `docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.3.md`. PDS v0.2 is retained as a historical/superseded record. No Accounting DDL, Migration 0009 SQL, COA seed, Posting writer or production grant is authorized.
-| MDG-WP06-7B-7C-7D-INTEGRATED-001 | v0.6 | Integrated crosswalk, now aligned to v3.0.3 and COA v1.5 |
+| WP06-P4H-7D-TEST-REGISTRY-001 | v0.2 | 67 Test IDs: 39 FE + 16 COA + 12 shared controls; finance runtime tests NOT RUN |
+| MDG-ACC-PDS-001 | v0.3 | Accounting PostgreSQL physical design; AuditSecurity sole canonical AuditEvent owner; exact-head CI PASS; independent review PENDING |
+| MDG-WP06-7B-7C-7D-INTEGRATED-001 | v0.6 | Integrated crosswalk, aligned to v3.0.3 and COA v1.5 |
 | MDG-WP06-5-STAGE-EXECUTION-REPORT | v0.2 | Current authority statements corrected to v3.0.3/COA v1.5; execution evidence remains SHA-scoped |
 | MDG-WP06-COA-SOURCE-AUTHORITY-CORRECTION-001 | v0.2 | Current hierarchy: COA v1.2 master + v1.5 controlled supplement; v1.4 historical/superseded |
 | MDG-WP06-7B-7C-7D-CROSS-AUDIT-001 | v0.3 | Historical supporting audit; source-authority statements superseded by correction v0.2 |
 | MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001 | v0.2 | Historical audit snapshot; O-01 deliverable acceptance remains open |
 | MDG-WP06-COA-SOURCE-RECOVERY-001 | v0.1 | Historical only; not an active source or acceptance dependency |
 | MDG-WP06-7C-ACCOUNT-DISPOSITION-001 | v0.1 | Historical only; not an active source or acceptance dependency |
-| MDG-WP06-7D-TEST-CLOSURE-001 | v0.1 | End-to-end test closure remains NOT RUN / NOT VERIFIED |
+| MDG-WP06-7D-TEST-CLOSURE-001 | v0.1 | End-to-end finance test closure remains NOT RUN / NOT VERIFIED |
+| Stage 04 sales/returns/GRNI/credit-exposure tie-out | v0.1 | Design contract completed; source-to-ledger tie-out is specified, not runtime evidence |
+| Inventory Stage 05 equations/custody/stocktake | v0.1 | Integrated design contract; INV-T-001..102 are test specifications, not runtime PASS |
+| Inventory Logical ERD | v0.2 | Current v3.0.3-aligned logical model; no physical schema/runtime implied |
+| Inventory PostgreSQL Physical Design | v0.3 | PD-AUD-01..12 CLOSED IN DESIGN; independent review and implementation evidence PENDING; PD-T-001..039 NOT RUN |
+| Inventory Physical Design Re-audit 002 | v0.1 | Internal re-audit of v0.2; historical supporting evidence |
+| Inventory Physical Design Re-audit 003 | v0.1 | Internal re-audit of v0.3; all 12 design findings closed internally; not independent attestation |
+
+Current Accounting PDS: `docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.3.md`. PDS v0.1 and v0.2 are retained as historical/superseded records. No Accounting DDL, Migration 0009 SQL, COA seed, Posting writer, production grant or Posting Release is authorized.
+
+Current Inventory PDS: `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.3.md`. The v0.2 and v0.3 proposals are design documents only. PD-T-001..039 remain NOT RUN; O-35 remains OPEN. No DDL, SQL, EF mapping, migration, grant or runtime implementation is authorized by these design records.
 
 ## 3. 7B closure result — carefully bounded
 
@@ -403,6 +411,40 @@ The internal review compared PostgreSQL physical-design proposal v0.1 with the s
 
 The review is an internal adversarial self-review, not an independent external reviewer attestation. It is a design audit only: no SQL, DDL, migration, PostgreSQL runtime test, implementation, grant, Posting Rule, Posting Release or Go-Live was performed or authorized. Physical-design v0.1 is not ready for DDL/migration freeze until blockers and high findings are closed and an external review is obtained.
 
+
+## 24. Inventory PostgreSQL physical-design correction and re-audit — 2026-11-20
+
+| Artifact | Version | Status |
+|---|---:|---|
+| MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001 | 0.2 | Corrected design; PD-AUD-01..06 CLOSED IN DESIGN only |
+| MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-REAUDIT-002 | 0.1 | Internal re-audit; PD-AUD-01..06 CLOSED IN DESIGN; residual findings remained open |
+
+Paths:
+- `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.2.md`
+- `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-REAUDIT-002_v0.1.md`
+
+The v0.2 correction specified durable command receipts for movement and non-movement commands, local transactional audit-intent delivery while AuditSecurity remains sole canonical AuditEvent owner, database-enforced committed-ledger immutability, one global lock hierarchy, Warehouse x Variant committed-prefix sequence and per-observation stocktake watermark. Re-audit 002 closed PD-AUD-01..06 at design level only. Residual PD-AUD-07..12 were still open in that historical snapshot. This did not authorize DDL, migration, grants, runtime, PostgreSQL implementation or O-35 closure.
+
+## 25. Inventory PostgreSQL physical-design residual blocker closure — 2026-11-20
+
+| Artifact | Version | Status |
+|---|---:|---|
+| MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001 | 0.3 | PD-AUD-01..12 CLOSED IN DESIGN; independent review / implementation evidence pending |
+| MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-REAUDIT-003 | 0.1 | Internal re-audit; all 12 design findings closed; NOT DDL FREEZE |
+
+Paths:
+- `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.3.md`
+- `docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-REAUDIT-003_v0.1.md`
+
+The v0.3 supplement closes PD-AUD-07..12 in design: projection generation/rebuild/catch-up/cutover and rollback; complete StockPosition grain and NULL applicability; optimistic Draft version and atomic Header/Line commit completeness; persisted reservation expiry and UTC equality boundary; outbox delivery/lease/retry/quarantine/monitoring/reconciliation; and naming/nullability dictionary. Together with v0.2, PD-AUD-01..12 are closed in design.
+
+The re-audit is internal and by the same workflow that authored the supplement. It is not independent reviewer attestation, code review, PostgreSQL execution or proof of runtime behavior. PD-T-001..039 remain NOT RUN. AuditSecurity, Catalog and Platform contracts remain implementation dependencies. O-35 remains OPEN pending exact-SHA PostgreSQL watermark/race/replay/tie-out evidence. No SQL, DDL, EF mapping, migration, grants, API/runtime, PostgreSQL test PASS, Posting Release, production migration or Go-Live is claimed or authorized.
+
+## 26. Package 5 source/review alignment — 2026-11-20
+
+The exact current source heads and CI run IDs are recorded in the controlled final package evidence register `EVD-PACKAGE-05-FINAL-RELEASE-001`. The earlier review/CI entries in section 19 are explicitly historical and must not be reused as evidence for revised heads.
+
+Owner acceptance of this register/document package is separate from technical owner acceptance by Inventory/AuditSecurity/Catalog/Platform, independent exact-SHA review, runtime test acceptance and any release authorization. None of those separate permissions is inferred from this register.
 
 ## 20. Canonical O-01..O-65 status register — 2026-11-20
 
