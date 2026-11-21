@@ -26,5 +26,4 @@ public interface IRecoveryStore
 {
     Task CreateChallengeAsync(AccountId accountId, byte[] challengeDigest, string channel, DateTimeOffset expiresAt, CancellationToken ct);
     Task<bool> ConsumeChallengeAsync(AccountId accountId, byte[] challengeDigest, string channel, DateTimeOffset now, CancellationToken ct);
-    Task<bool> ConsumeRecoveryCodeAsync(AccountId accountId, byte[] codeDigest, DateTimeOffset now, CancellationToken ct);
 }
