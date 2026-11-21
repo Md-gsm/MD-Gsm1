@@ -1,0 +1,13 @@
+MD-Gsm Package 5 documentation/evidence manifest; version 0.4; date 2026-11-21
+Authoritative format: version-controlled Markdown/text sources + Git history + SHA256SUMS.txt + exact-SHA CI/reviewer/owner evidence.
+PDF and ZIP: OPTIONAL DISTRIBUTION FORMATS ONLY; NOT REQUIRED; NO HASHES REQUIRED.
+Algorithm: SHA-256 over exact UTF-8 content for Markdown/text files.
+
+Current package evidence files:
+- docs/operations/evidence/EVD-FINANCE-INVENTORY-BUNDLE-004_v0.8.md
+- docs/operations/evidence/EVD-PACKAGE-05-FINAL-RELEASE-001_v0.4.md
+- docs/operations/evidence/PACKAGE-05-RELEASE-CANDIDATE-MANIFEST_v0.4.txt
+
+See SHA256SUMS.txt for authoritative checksums of all tracked files.
+Status: documentation candidate; final exact-head CI/checksum, independent reviewer approval, and explicit whole-package owner acceptance remain required.
+Non-authorizations are unchanged: no Posting Release, Finance 7C/7D runtime, Inventory runtime, Migration 0009 SQL/DDL/EF, or Go-Live.
