@@ -148,7 +148,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             Assert.Equal("E186D866975D3549541AFF549D00433BC18299E2D229A934DCD1667A65B06056", vectorDigest);
 
             var head = await ReadHeadAsync(adminConnectionString, schema, streamId);
-            using var keyV1 = RSA.Create(2048);
+            using var keyV1 = RSA.Create(3072);
             var keyV1Public = Convert.ToBase64String(keyV1.ExportSubjectPublicKeyInfo());
             var checkpointV1 = CreateCheckpoint(streamId, head.Sequence, head.Hash, "test-key-v1", keyV1);
             await File.WriteAllTextAsync(tempCheckpoint, JsonSerializer.Serialize(checkpointV1));
@@ -159,13 +159,19 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             // Rotation proof pins trusted public keys out-of-band from the checkpoint.
             using var keyV2 = RSA.Create(2048);
             var keyV2Public = Convert.ToBase64String(keyV2.ExportSubjectPublicKeyInfo());
-            var checkpointV2 = CreateCheckpoint(streamId, head.Sequence, head.Hash, "test-key-v2", keyV2);
+            var checkpointV2 = CreateCheckpoint(streamId, head.Sequence, head.Hash, "test-key-v2", keyV2, ComputeCheckpointReference(checkpointV1));
             Assert.True(VerifyCheckpoint(checkpointV1, "test-key-v1", keyV1Public));
             Assert.True(VerifyCheckpoint(checkpointV2, "test-key-v2", keyV2Public));
             Assert.False(VerifyCheckpoint(checkpointV2, "test-key-v1", keyV1Public));
             Assert.NotEqual(checkpointV1.KeyId, checkpointV2.KeyId);
+            Assert.Equal(3072, keyV1.KeySize);
+            Assert.Equal(3072, keyV2.KeySize);
+            Assert.Equal((short)1, checkpointV2.SchemaVersion);
+            Assert.Equal((short)1, checkpointV2.CanonicalizationVersion);
+            Assert.Equal("SHA-256", checkpointV2.HashAlgorithmCode);
+            Assert.Equal(ComputeCheckpointReference(checkpointV1), checkpointV2.PreviousCheckpointRef);
 
-            var badSignature = checkpointV2 with { Signature = Convert.ToBase64String(new byte[256]) };
+            var badSignature = checkpointV2 with { Signature = Convert.ToBase64String(new byte[384]) };
             Assert.False(VerifyCheckpoint(badSignature, "test-key-v2", keyV2Public));
             Assert.True(await VerifyChainAsync(verifierConnection, schema, streamId,
                 checkpointV2, "test-key-v2", keyV2Public));
@@ -546,41 +552,68 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             VerifyCheckpoint(checkpoint, trustedKeyId, trustedPublicKeyBase64);
     }
     private static CheckpointEnvelope CreateCheckpoint(
-        Guid streamId, long sequence, byte[] headHash, string keyId, RSA signingKey)
+        Guid streamId, long sequence, byte[] headHash, string keyId, RSA signingKey,
+        string? previousCheckpointRef = null)
     {
         var createdAt = NormalizeTimestamp(DateTimeOffset.UtcNow);
-        var bytes = SerializeCheckpoint(streamId, sequence, headHash, keyId, createdAt);
+        const short schemaVersion = 1;
+        const short canonicalizationVersion = 1;
+        const string hashAlgorithm = "SHA-256";
+        var bytes = SerializeCheckpoint(streamId, sequence, headHash, keyId, createdAt,
+            schemaVersion, canonicalizationVersion, hashAlgorithm, previousCheckpointRef);
         var signature = signingKey.SignData(bytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
         return new CheckpointEnvelope(streamId.ToString("N"), sequence, Convert.ToHexString(headHash),
-            keyId, createdAt.ToString("O", CultureInfo.InvariantCulture),
-            Convert.ToBase64String(signature));
+            keyId, createdAt.ToString("O", CultureInfo.InvariantCulture), schemaVersion,
+            canonicalizationVersion, hashAlgorithm, previousCheckpointRef, Convert.ToBase64String(signature));
     }
 
     private static bool VerifyCheckpoint(
         CheckpointEnvelope envelope, string trustedKeyId, string trustedPublicKeyBase64)
     {
-        if (!string.Equals(envelope.KeyId, trustedKeyId, StringComparison.Ordinal))
+        if (!string.Equals(envelope.KeyId, trustedKeyId, StringComparison.Ordinal) ||
+            envelope.SchemaVersion != 1 || envelope.CanonicalizationVersion != 1 ||
+            !string.Equals(envelope.HashAlgorithmCode, "SHA-256", StringComparison.Ordinal))
             return false;
         using var publicKey = RSA.Create();
         publicKey.ImportSubjectPublicKeyInfo(Convert.FromBase64String(trustedPublicKeyBase64), out _);
         var bytes = SerializeCheckpoint(Guid.ParseExact(envelope.StreamId, "N"), envelope.LastSequence,
             Convert.FromHexString(envelope.HeadHash), envelope.KeyId,
-            DateTimeOffset.Parse(envelope.CreatedAtUtc, CultureInfo.InvariantCulture));
+            DateTimeOffset.Parse(envelope.CreatedAtUtc, CultureInfo.InvariantCulture),
+            envelope.SchemaVersion, envelope.CanonicalizationVersion, envelope.HashAlgorithmCode,
+            envelope.PreviousCheckpointRef);
         return publicKey.VerifyData(bytes, Convert.FromBase64String(envelope.Signature),
             HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
     }
 
     private static byte[] SerializeCheckpoint(Guid streamId, long sequence, byte[] headHash,
-        string keyId, DateTimeOffset createdAt)
+        string keyId, DateTimeOffset createdAt, short schemaVersion, short canonicalizationVersion,
+        string hashAlgorithmCode, string? previousCheckpointRef)
     {
         using var stream = new MemoryStream();
         WriteString(stream, "MDGSM-AUDIT-CHECKPOINT-V1");
+        WriteInt32(stream, schemaVersion);
+        WriteInt32(stream, canonicalizationVersion);
+        WriteString(stream, hashAlgorithmCode);
         WriteString(stream, streamId.ToString("N"));
         WriteInt64(stream, sequence);
         WriteBytes(stream, headHash);
         WriteString(stream, keyId);
         WriteString(stream, FormatTimestamp(createdAt));
+        WriteNullableString(stream, previousCheckpointRef);
         return stream.ToArray();
+    }
+
+    private static string ComputeCheckpointReference(CheckpointEnvelope envelope)
+    {
+        using var stream = new MemoryStream();
+        var signedBytes = SerializeCheckpoint(Guid.ParseExact(envelope.StreamId, "N"), envelope.LastSequence,
+            Convert.FromHexString(envelope.HeadHash), envelope.KeyId,
+            DateTimeOffset.Parse(envelope.CreatedAtUtc, CultureInfo.InvariantCulture),
+            envelope.SchemaVersion, envelope.CanonicalizationVersion, envelope.HashAlgorithmCode,
+            envelope.PreviousCheckpointRef);
+        WriteBytes(stream, signedBytes);
+        WriteBytes(stream, Convert.FromBase64String(envelope.Signature));
+        return Convert.ToHexString(SHA256.HashData(stream.ToArray()));
     }
 
     private static EventIntent NewIntent(Guid streamId, string suffix, IDictionary<string, string> metadata) =>
@@ -814,7 +847,8 @@ public sealed class AuditSecurityHashChainPostgresProofTests
     private sealed record AppendResult(long Sequence, string EventHash, bool Duplicate);
     private sealed record CheckpointEnvelope(
         string StreamId, long LastSequence, string HeadHash, string KeyId,
-        string CreatedAtUtc, string Signature);
+        string CreatedAtUtc, short SchemaVersion, short CanonicalizationVersion,
+        string HashAlgorithmCode, string? PreviousCheckpointRef, string Signature);
 
     private sealed class InjectedRollbackException : Exception { }
     private sealed class UnknownCommitOutcomeException : Exception { }
