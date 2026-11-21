@@ -4,7 +4,7 @@ set -euo pipefail
 : "$RUNNER_TEMP"
 [[ "$MDGSM_TEST_DB" =~ ^mdgsm_ci_disposable_[0-9]+_[0-9]+$ ]]
 marker="$(psql -X -d postgres -Atqc \
-  "SELECT shobj_description(oid,'pg_database') FROM pg_database WHERE datname=current_database() AND datname='$MDGSM_TEST_DB'")"
+  "SELECT shobj_description(oid,'pg_database') FROM pg_database WHERE datname='$MDGSM_TEST_DB'")"
 [[ "$marker" == MDGSM_DISPOSABLE_TEST_DB\;* ]] || { echo "O20-G refused: target database is not marked disposable." >&2; exit 1; }
 superuser="$(psql -X -d "$MDGSM_TEST_DB" -Atqc "SELECT rolsuper FROM pg_roles WHERE rolname=current_user")"
 [[ "$superuser" == "t" ]] || { echo "O20-G refused: audit connection is not a catalog-audit superuser." >&2; exit 1; }
