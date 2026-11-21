@@ -534,17 +534,28 @@ public sealed class AuditSecurityHashChainPostgresProofTests
 
     private static EventIntent NewIntent(Guid streamId, string suffix, IDictionary<string, string> metadata) =>
         new(Guid.NewGuid(), streamId, "security.test", DateTimeOffset.UtcNow,
-            "test:independent-writer", "subject:test", new SortedDictionary<string, string>(metadata, StringComparer.Ordinal));
+            "service", Guid.NewGuid(), "entity", Guid.NewGuid(),
+            "IdentityAccess", Guid.NewGuid(), Guid.NewGuid(), null,
+            "succeeded", "SHA-256",
+            new SortedDictionary<string, string>(metadata, StringComparer.Ordinal));
 
-    private static EventIntent Normalize(EventIntent value) =>
-        value with
+    private static EventIntent Normalize(EventIntent value)
+    {
+        if ((value.SubjectTypeCode is null) != (value.SubjectId is null))
+            throw new InvalidOperationException("Subject type and subject ID must both be present or both be null.");
+        return value with
         {
             EventTypeCode = NormalizeText(value.EventTypeCode),
             OccurredAtUtc = NormalizeTimestamp(value.OccurredAtUtc),
-            ActorRef = NormalizeText(value.ActorRef),
-            SubjectRef = value.SubjectRef is null ? null : NormalizeText(value.SubjectRef),
+            ActorTypeCode = NormalizeText(value.ActorTypeCode),
+            SubjectTypeCode = value.SubjectTypeCode is null ? null : NormalizeText(value.SubjectTypeCode),
+            SourceModuleCode = NormalizeText(value.SourceModuleCode),
+            OutcomeCode = NormalizeText(value.OutcomeCode),
+            HashAlgorithmCode = NormalizeText(value.HashAlgorithmCode),
+            RecordedAtUtc = value.RecordedAtUtc is null ? null : NormalizeTimestamp(value.RecordedAtUtc.Value),
             MetadataJson = value.MetadataJson ?? CanonicalMetadata(value.Metadata)
         };
+    }
 
     private static string CanonicalMetadata(IDictionary<string, string> metadata)
     {
@@ -577,6 +588,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             throw new InvalidDataException("Metadata is not in canonical order/encoding.");
         return result;
     }
+
     private static string NormalizeText(string value) => value.Normalize(NormalizationForm.FormC);
 
     private static DateTimeOffset NormalizeTimestamp(DateTimeOffset value)
@@ -596,32 +608,34 @@ public sealed class AuditSecurityHashChainPostgresProofTests
         WriteString(stream, value.StreamId.ToString("N"));
         WriteInt32(stream, value.SchemaVersion);
         WriteInt32(stream, value.CanonicalizationVersion);
+        WriteString(stream, value.HashAlgorithmCode);
         WriteString(stream, value.EventTypeCode);
         WriteString(stream, FormatTimestamp(value.OccurredAtUtc));
-        WriteString(stream, value.ActorRef);
-        WriteNullableString(stream, value.SubjectRef);
-        WriteString(stream, value.MetadataJson);
+        WriteString(stream, value.ActorTypeCode);
+        WriteString(stream, value.ActorId.ToString("N"));
+        WriteNullableString(stream, value.SubjectTypeCode);
+        WriteNullableString(stream, value.SubjectId?.ToString("N"));
+        WriteString(stream, value.SourceModuleCode);
+        WriteString(stream, value.SourceEventId.ToString("N"));
+        WriteString(stream, value.CorrelationId.ToString("N"));
+        WriteNullableString(stream, value.CausationId?.ToString("N"));
+        WriteString(stream, value.OutcomeCode);
+        WriteString(stream, value.MetadataJson!);
         return stream.ToArray();
     }
 
     private static byte[] SerializeEvent(EventIntent value, long sequence, byte[] previousHash)
     {
+        if (value.RecordedAtUtc is null)
+            throw new InvalidOperationException("RecordedAtUtc must come from the database before hashing the event.");
         using var stream = new MemoryStream();
         WriteString(stream, "MDGSM-AUDIT-EVENT-V1");
-        WriteString(stream, value.EventId.ToString("N"));
-        WriteString(stream, value.StreamId.ToString("N"));
+        WriteBytes(stream, SerializeIntent(value));
         WriteInt64(stream, sequence);
-        WriteInt32(stream, value.SchemaVersion);
-        WriteInt32(stream, value.CanonicalizationVersion);
-        WriteString(stream, value.EventTypeCode);
-        WriteString(stream, FormatTimestamp(value.OccurredAtUtc));
-        WriteString(stream, value.ActorRef);
-        WriteNullableString(stream, value.SubjectRef);
-        WriteString(stream, value.MetadataJson);
+        WriteString(stream, FormatTimestamp(value.RecordedAtUtc.Value));
         WriteBytes(stream, previousHash);
         return stream.ToArray();
     }
-
     private static void WriteString(Stream stream, string value) =>
         WriteBytes(stream, Encoding.UTF8.GetBytes(NormalizeText(value)));
 
@@ -740,9 +754,11 @@ public sealed class AuditSecurityHashChainPostgresProofTests
 
     private sealed record EventIntent(
         Guid EventId, Guid StreamId, string EventTypeCode, DateTimeOffset OccurredAtUtc,
-        string ActorRef, string? SubjectRef, IDictionary<string, string> Metadata,
+        string ActorTypeCode, Guid ActorId, string? SubjectTypeCode, Guid? SubjectId,
+        string SourceModuleCode, Guid SourceEventId, Guid CorrelationId, Guid? CausationId,
+        string OutcomeCode, string HashAlgorithmCode, IDictionary<string, string> Metadata,
         short SchemaVersion = 1, short CanonicalizationVersion = 1,
-        string? MetadataJson = null);
+        string? MetadataJson = null, DateTimeOffset? RecordedAtUtc = null);
 
     private sealed record AppendResult(long Sequence, string EventHash, bool Duplicate);
     private sealed record CheckpointEnvelope(
