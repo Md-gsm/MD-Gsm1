@@ -168,6 +168,43 @@ public sealed class AdminResetPasswordHandler(
         }, ct);
 }
 
+
+public sealed class LogoutHandler(
+    IIdentityAccessUnitOfWork unitOfWork,
+    IAccessTokenFactory tokenFactory,
+    ISessionIdentityResolver resolver,
+    ISessionStore sessions,
+    IAuditWriter audit,
+    TimeProvider clock)
+{
+    public Task HandleAsync(string accessToken, string correlationId, CancellationToken ct)
+    {
+        if (!IsOpaqueTokenShape(accessToken)) return Task.CompletedTask;
+        var digest = tokenFactory.ComputeDigest(accessToken);
+        if (digest is not { Length: 32 }) return Task.CompletedTask;
+
+        return unitOfWork.ExecuteAsync(async token =>
+        {
+            var now = clock.GetUtcNow();
+            var identity = await resolver.ResolveAsync(digest, now, token);
+            var revoked = await sessions.RevokeByDigestAsync(digest, now, "logout", token);
+            if (revoked)
+                await audit.AppendAsync("identity.session.logout", identity?.AccountId, identity?.AccountId,
+                    "success", correlationId, token);
+            return true;
+        }, ct);
+    }
+
+    private static bool IsOpaqueTokenShape(string token)
+    {
+        if (string.IsNullOrEmpty(token) || token.Length != 43) return false;
+        foreach (var c in token)
+            if (!(c is >= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '0' and <= '9' or '-' or '_'))
+                return false;
+        return true;
+    }
+}
+
 public sealed class SessionHeartbeatHandler(
     ISystemPolicyStore policies, IAccessTokenFactory tokenFactory, ISessionStore sessions, TimeProvider clock)
 {
