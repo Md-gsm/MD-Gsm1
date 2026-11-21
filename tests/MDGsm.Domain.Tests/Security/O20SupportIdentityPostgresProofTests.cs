@@ -107,6 +107,36 @@ public sealed class O20SupportIdentityPostgresProofTests
                 await AssertDeniedAsync(cs, $"SELECT {Q(schema)}.technical_probe();");
             }
 
+            // Capture the default-ACL and PUBLIC baseline for the exact probe scope.
+            await using (var catalog = new NpgsqlConnection(adminConnectionString))
+            {
+                await catalog.OpenAsync();
+                await using var catalogCommand = new NpgsqlCommand("""
+                    SELECT
+                        (SELECT count(*) FROM pg_default_acl d
+                         WHERE d.defaclrole IN (
+                             SELECT oid FROM pg_roles WHERE rolname = ANY(@roles))),
+                        (SELECT count(*) FROM pg_namespace n,
+                             LATERAL aclexplode(COALESCE(n.nspacl, acldefault('n', n.nspowner))) acl
+                         WHERE n.nspname=@schema AND acl.grantee=0),
+                        (SELECT count(*) FROM pg_class r
+                         JOIN pg_namespace n ON n.oid=r.relnamespace,
+                             LATERAL aclexplode(COALESCE(r.relacl, acldefault('r', r.relowner))) acl
+                         WHERE n.nspname=@schema AND r.relkind IN ('r','p','v','m','S')
+                           AND acl.grantee=0),
+                        (SELECT count(*) FROM pg_proc p
+                         JOIN pg_namespace n ON n.oid=p.pronamespace,
+                             LATERAL aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) acl
+                         WHERE n.nspname=@schema AND acl.grantee=0);
+                    """, catalog);
+                catalogCommand.Parameters.AddWithValue("roles", identities.Append(owner).ToArray());
+                catalogCommand.Parameters.AddWithValue("schema", schema);
+                await using var reader = await catalogCommand.ExecuteReaderAsync();
+                Assert.True(await reader.ReadAsync());
+                for (var i = 0; i < 4; i++)
+                    Assert.Equal(0L, reader.GetInt64(i));
+            }
+
             // The identities must not own any object and must not be members of one another.
             await using var verify = new NpgsqlConnection(adminConnectionString);
             await verify.OpenAsync();
