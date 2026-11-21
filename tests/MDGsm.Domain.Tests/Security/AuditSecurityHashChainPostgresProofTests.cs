@@ -128,8 +128,16 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 Guid.Parse("00000000-0000-7000-8000-000000000002"),
                 "security.test",
                 DateTimeOffset.Parse("2026-11-21T12:34:56.123456Z", CultureInfo.InvariantCulture),
-                "ناظر",
+                "operator",
+                Guid.Parse("00000000-0000-7000-8000-000000000003"),
                 null,
+                null,
+                "IdentityAccess",
+                Guid.Parse("00000000-0000-7000-8000-000000000004"),
+                Guid.Parse("00000000-0000-7000-8000-000000000005"),
+                null,
+                "succeeded",
+                "SHA-256",
                 new SortedDictionary<string, string>(StringComparer.Ordinal)
                 {
                     ["z"] = "ک",
@@ -137,7 +145,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 });
             var normalizedVector = Normalize(vector);
             var vectorDigest = Convert.ToHexString(SHA256.HashData(SerializeIntent(normalizedVector)));
-            Assert.Equal("A29FF7C8936B7926B4BE8D8E5F9E55EA1EF65CF33BAD4BAB354C98D8ABC8A8D0", vectorDigest);
+            Assert.Equal("E186D866975D3549541AFF549D00433BC18299E2D229A934DCD1667A65B06056", vectorDigest);
 
             var head = await ReadHeadAsync(adminConnectionString, schema, streamId);
             using var keyV1 = RSA.Create(2048);
