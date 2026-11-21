@@ -30,7 +30,7 @@ effective_privileges AS (
     ) v(privilege, allowed)
     WHERE v.allowed AND n.nspname <> 'information_schema' AND left(n.nspname, 3) <> 'pg_'
     UNION ALL
-    SELECT p.logical_identity, p.database_role, 'relation,
+    SELECT p.logical_identity, p.database_role, 'relation',
            format('%I.%I', n.nspname, c.relname), v.privilege
     FROM principals p
     JOIN pg_roles r ON r.rolname = p.database_role
@@ -48,7 +48,7 @@ effective_privileges AS (
     WHERE c.relkind IN ('r', 'p', 'v', 'm', 'f') AND v.allowed
       AND n.nspname <> 'information_schema' AND left(n.nspname, 3) <> 'pg_'
     UNION ALL
-    SELECT p.logical_identity, p.database_role, 'sequence,
+    SELECT p.logical_identity, p.database_role, 'sequence',
            format('%I.%I', n.nspname, c.relname), v.privilege
     FROM principals p
     JOIN pg_roles r ON r.rolname = p.database_role
@@ -62,7 +62,7 @@ effective_privileges AS (
     WHERE c.relkind = 'S' AND v.allowed
       AND n.nspname <> 'information_schema' AND left(n.nspname, 3) <> 'pg_'
     UNION ALL
-    SELECT p.logical_identity, p.database_role, 'column,
+    SELECT p.logical_identity, p.database_role, 'column',
            format('%I.%I.%I', n.nspname, c.relname, a.attname), v.privilege
     FROM principals p
     JOIN pg_roles r ON r.rolname = p.database_role
@@ -79,7 +79,7 @@ effective_privileges AS (
       AND c.relkind IN ('r', 'p', 'v', 'f') AND v.allowed
       AND n.nspname <> 'information_schema' AND left(n.nspname, 3) <> 'pg_'
     UNION ALL
-    SELECT p.logical_identity, p.database_role, 'routine,
+    SELECT p.logical_identity, p.database_role, 'routine',
            format('%I.%I(%s)', n.nspname, pr.proname, pg_get_function_identity_arguments(pr.oid)),
            'EXECUTE'
     FROM principals p
@@ -89,7 +89,7 @@ effective_privileges AS (
     WHERE has_function_privilege(r.rolname, pr.oid, 'EXECUTE')
       AND n.nspname <> 'information_schema' AND left(n.nspname, 3) <> 'pg_'
     UNION ALL
-    SELECT p.logical_identity, p.database_role, 'type,
+    SELECT p.logical_identity, p.database_role, 'type',
            format('%I.%I', n.nspname, t.typname), 'USAGE'
     FROM principals p
     JOIN pg_roles r ON r.rolname = p.database_role
