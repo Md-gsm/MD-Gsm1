@@ -267,6 +267,21 @@ public sealed class IdentityAccessHttpEndToEndTests
                 IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_privilege_probe_target') THEN
                     CREATE ROLE runtime_privilege_probe_target NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
                 END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'migration_runner') THEN
+                    CREATE ROLE migration_runner NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'backup_operator') THEN
+                    CREATE ROLE backup_operator NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'reporting_ro') THEN
+                    CREATE ROLE reporting_ro NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'emergency_operator') THEN
+                    CREATE ROLE emergency_operator NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_test_schema_owner') THEN
+                    CREATE ROLE runtime_test_schema_owner NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
             END
             $body$;
             GRANT mdgsm_runtime TO runtime_app;
@@ -294,9 +309,22 @@ public sealed class IdentityAccessHttpEndToEndTests
         await using var runtime = new NpgsqlConnection(runtimeConnectionString);
         await runtime.OpenAsync();
         await using (var identity = new NpgsqlCommand("""
-            SELECT current_user, rolcanlogin, rolsuper, rolcreatedb, rolcreaterole,
-                   rolreplication, rolbypassrls, rolinherit
-            FROM pg_roles WHERE rolname = current_user;
+            SELECT current_user, r.rolcanlogin, r.rolsuper, r.rolcreatedb, r.rolcreaterole,
+                   r.rolreplication, r.rolbypassrls, r.rolinherit,
+                   pg_has_role(current_user, 'mdgsm_runtime', 'MEMBER'),
+                   pg_has_role(current_user, 'migration_runner', 'MEMBER'),
+                   pg_has_role(current_user, 'backup_operator', 'MEMBER'),
+                   pg_has_role(current_user, 'reporting_ro', 'MEMBER'),
+                   pg_has_role(current_user, 'emergency_operator', 'MEMBER'),
+                   pg_has_role(current_user, 'runtime_test_schema_owner', 'MEMBER'),
+                   (SELECT count(*) FROM pg_namespace n WHERE n.nspowner = r.oid),
+                   (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE c.relowner = r.oid AND n.nspname IN ('identity', 'public')),
+                   (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+                    WHERE p.proowner = r.oid AND n.nspname IN ('identity', 'public')),
+                   has_schema_privilege(current_user, 'identity', 'CREATE'),
+                   has_schema_privilege(current_user, 'public', 'CREATE')
+            FROM pg_roles r WHERE r.rolname = current_user;
             """, runtime))
         await using (var reader = await identity.ExecuteReaderAsync())
         {
@@ -309,6 +337,17 @@ public sealed class IdentityAccessHttpEndToEndTests
             Assert.False(reader.GetBoolean(5));
             Assert.False(reader.GetBoolean(6));
             Assert.True(reader.GetBoolean(7));
+            Assert.True(reader.GetBoolean(8));  // the single approved runtime support group
+            Assert.False(reader.GetBoolean(9)); // no migration credential inheritance
+            Assert.False(reader.GetBoolean(10)); // no backup/restore identity inheritance
+            Assert.False(reader.GetBoolean(11)); // no reporting identity inheritance
+            Assert.False(reader.GetBoolean(12)); // no emergency identity inheritance
+            Assert.False(reader.GetBoolean(13)); // no schema-owner membership
+            Assert.Equal(0L, reader.GetInt64(14)); // no schema ownership
+            Assert.Equal(0L, reader.GetInt64(15)); // no table/view/sequence ownership
+            Assert.Equal(0L, reader.GetInt64(16)); // no function/procedure ownership
+            Assert.False(reader.GetBoolean(17)); // no identity schema DDL
+            Assert.False(reader.GetBoolean(18)); // no public schema DDL
         }
 
         // Positive permission checks and deliberately denied escalation/direct writes.
