@@ -4,12 +4,17 @@ set -euo pipefail
 : "$RUNNER_TEMP"
 [[ "$MDGSM_TEST_DB" =~ ^mdgsm_ci_disposable_[0-9]+_[0-9]+$ ]]
 backup_file="$RUNNER_TEMP/mdgsm-o20d-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT.dump"
-restore_db="mdgsm_o20d_restore_\${GITHUB_RUN_ID}_\${GITHUB_RUN_ATTEMPT}"
+restore_db="mdgsm_o20d_restore_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
 [[ "$restore_db" =~ ^mdgsm_o20d_restore_[0-9]+_[0-9]+$ ]]
+role_created=0
+restore_created=0
 cleanup() {
-  psql -X -v ON_ERROR_STOP=1 -d "$MDGSM_TEST_DB" -c "DROP OWNED BY backup_operator;" >/dev/null 2>&1 || true
-  psql -X -v ON_ERROR_STOP=1 -d postgres -c "DROP DATABASE IF EXISTS \"$restore_db\";" >/dev/null 2>&1 || true
-  psql -X -v ON_ERROR_STOP=1 -d postgres -c "DROP ROLE IF EXISTS backup_operator;" >/dev/null 2>&1 || true
+  if [[ "$restore_created" -eq 1 ]]; then psql -X -v ON_ERROR_STOP=1 -d postgres -c "DROP DATABASE IF EXISTS \"$restore_db\";" >/dev/null 2>&1 || true; fi
+  if [[ "$role_created" -eq 1 ]]; then
+    psql -X -v ON_ERROR_STOP=1 -d "$MDGSM_TEST_DB" -c "DROP OWNED BY backup_operator;" >/dev/null 2>&1 || true
+    psql -X -v ON_ERROR_STOP=1 -d postgres -c "DROP OWNED BY backup_operator;" >/dev/null 2>&1 || true
+    psql -X -v ON_ERROR_STOP=1 -d postgres -c "DROP ROLE backup_operator;" >/dev/null 2>&1 || true
+  fi
   rm -f "$backup_file"
 }
 trap cleanup EXIT
@@ -19,6 +24,7 @@ if psql -X -d postgres -Atqc "SELECT 1 FROM pg_roles WHERE rolname='backup_opera
   echo "Refusing to reuse an existing backup_operator principal." >&2; exit 1
 fi
 psql -X -v ON_ERROR_STOP=1 -d postgres -c "CREATE ROLE backup_operator LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;"
+role_created=1
 psql -X -v ON_ERROR_STOP=1 -d postgres -c "GRANT CONNECT ON DATABASE \"$MDGSM_TEST_DB\" TO backup_operator;"
 psql -X -v ON_ERROR_STOP=1 -d "$MDGSM_TEST_DB" <<'SQL'
 DO $grant$
@@ -34,8 +40,8 @@ BEGIN
 END
 $grant$;
 SQL
-role_state="$(psql -X -d "$MDGSM_TEST_DB" -Atqc "SELECT (rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit)::text || '|' || (SELECT count(*) FROM pg_auth_members WHERE member=oid OR roleid=oid)::text FROM pg_roles WHERE rolname='backup_operator'")"
-test "$role_state" = "true|0"
+role_state="$(psql -X -d "$MDGSM_TEST_DB" -Atqc "SELECT (rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit)::text || '|' || (SELECT count(*) FROM pg_auth_members WHERE member=oid OR roleid=oid)::text || '|' || (SELECT count(*) FROM pg_class c JOIN pg_roles rr ON rr.oid=c.relowner WHERE rr.rolname='backup_operator')::text FROM pg_roles WHERE rolname='backup_operator'")"
+test "$role_state" = "true|0|0"
 priv_state="$(psql -X -d "$MDGSM_TEST_DB" -Atqc "SELECT has_database_privilege('backup_operator',current_database(),'CONNECT')::text || '|' || has_database_privilege('backup_operator',current_database(),'CREATE')::text || '|' || has_database_privilege('backup_operator',current_database(),'TEMP')::text || '|' || has_table_privilege('backup_operator','identity.accounts','SELECT')::text || '|' || has_table_privilege('backup_operator','identity.accounts','INSERT')::text || '|' || has_table_privilege('backup_operator','identity.accounts','UPDATE')::text || '|' || has_table_privilege('backup_operator','identity.accounts','DELETE')::text || '|' || has_table_privilege('backup_operator','identity.accounts','TRUNCATE')::text || '|' || has_schema_privilege('backup_operator','identity','CREATE')::text")"
 test "$priv_state" = "true|false|false|true|false|false|false|false|false"
 pg_dump --username=backup_operator --format=custom --no-owner --no-acl --file "$backup_file" "$MDGSM_TEST_DB"
@@ -45,6 +51,7 @@ if psql -X -d postgres -Atqc "SELECT 1 FROM pg_database WHERE datname='$restore_
   echo "Restore target already exists; refusing to reuse it." >&2; exit 1
 fi
 createdb "$restore_db"
+restore_created=1
 psql -X -v ON_ERROR_STOP=1 -d postgres -c "COMMENT ON DATABASE \"$restore_db\" IS 'MDGSM_DISPOSABLE_TEST_DB; O20-D isolated restore';"
 pg_restore --exit-on-error --no-owner --no-acl --dbname "$restore_db" "$backup_file"
 source_state="$(psql -X -d "$MDGSM_TEST_DB" -Atqc "SELECT (SELECT count(*)::text FROM mdgsm_migration_history) || '|' || (SELECT max(migration_version)::text FROM mdgsm_migration_history) || '|' || (SELECT count(*)::text FROM information_schema.tables WHERE table_schema='identity' AND table_type='BASE TABLE') || '|' || (SELECT count(*)::text FROM identity.accounts)")"
