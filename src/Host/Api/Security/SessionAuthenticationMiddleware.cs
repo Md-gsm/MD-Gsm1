@@ -15,12 +15,14 @@ public sealed class SessionAuthenticationMiddleware(RequestDelegate next)
     private const string SessionAuthenticationType = "MDGsm.Session";
     private const string PersonsPrefix = "/api/v2/persons";
     private const string PasswordChangePath = "/api/v1/identity/password/change";
+    private const string HeartbeatPath = "/api/v1/identity/heartbeat";
 
     public async Task InvokeAsync(HttpContext context)
     {
         var isPersonsRequest = context.Request.Path.StartsWithSegments(PersonsPrefix, StringComparison.OrdinalIgnoreCase);
         var isPasswordChangeRequest = string.Equals(context.Request.Path.Value, PasswordChangePath, StringComparison.OrdinalIgnoreCase);
-        if (!isPersonsRequest && !isPasswordChangeRequest)
+        var isHeartbeatRequest = string.Equals(context.Request.Path.Value, HeartbeatPath, StringComparison.OrdinalIgnoreCase);
+        if (!isPersonsRequest && !isPasswordChangeRequest && !isHeartbeatRequest)
         {
             await next(context);
             return;
