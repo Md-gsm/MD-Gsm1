@@ -51,7 +51,6 @@ bbde0966dca2d4327bba1c5a4f4d4cd916367826bbe87dec9f99a6d9968cb991  docs/architect
 6e7677a39e7ab0e15cd0d1ffa4eb9db0b4ac59d0fc31b14fec2dea1f9072ae64  docs/architecture/MDG-ARCH-BASELINE-REGISTRATION-001_v1.0.md
 2eac5d75a7834d0ee796ad72a643eb7e7843697b8367fa4281f534c4a63bbd52  docs/architecture/MDG-ARCH-MASTER-001_v3.0.3.txt
 eff6c2c4c4268d795b51c9886f1427cf52dda296023106daf440bf9b717b1a3e  docs/architecture/MDG-ARCH-MASTER-001_v3.0.md
-59bca674e44c80fe6149224d1f4c00cfba6700ce44429b86361025d96537233f  docs/architecture/MDG-ARCH-N3-ADR-0013-RECONCILIATION-001_v0.1.md
 2d8724573a377f9895c2cc7f3558b9dbc22d1e86ce803376ba80cf96cb510607  docs/architecture/MDG-ARCH-N3-ADR-0013-RECONCILIATION-001_v0.2.md
 0254de07ca2ac9cb0b50b527def87577d02e1a212761a34d534576220a0ac476  docs/architecture/api-contracts.md
 e8003869be18fa921ba63fffc638ea917b3f185d81933d0527ebe8f66ca5641b  docs/architecture/architecture-laws-fa.md
