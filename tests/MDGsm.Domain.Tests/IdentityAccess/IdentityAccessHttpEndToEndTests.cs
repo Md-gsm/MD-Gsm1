@@ -326,7 +326,19 @@ public sealed class IdentityAccessHttpEndToEndTests
         await AssertDeniedAsync(runtime, "ALTER ROLE runtime_app SUPERUSER;");
         await AssertDeniedAsync(runtime, "GRANT SELECT ON identity.accounts TO PUBLIC;");
         await AssertDeniedAsync(runtime, "SET ROLE postgres;");
+        // All currently materialized Persons/Finance/temporary/merge objects are
+        // outside IdentityAccess runtime ownership. The API runtime reaches them only
+        // through an explicitly reviewed module command/function contract.
         await AssertDeniedAsync(runtime, "SELECT * FROM persons LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_contact_points LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_addresses LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_operations LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_access_audit LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_temporary_workflows LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_temporary_workflow_payloads LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_party_merge_records LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM finance_party_accounts LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM mdgsm_schema_version LIMIT 0;");
 
         return runtimeConnectionString;
     }
