@@ -147,6 +147,23 @@ public sealed class IdentityAccessHttpEndToEndTests
         // reusable password or credential enters source control, CI variables or logs.
         var runtimeConnectionString = await PrepareRuntimePrincipalAsync(connectionString);
 
+        // The runtime principal may update an existing account, but it must never
+        // create one. Bootstrap/account provisioning is a separate deployment boundary.
+        var runtimeDbOptions = new DbContextOptionsBuilder<MdGsmDbContext>()
+            .UseNpgsql(runtimeConnectionString).Options;
+        await using (var runtimeDb = new MdGsmDbContext(runtimeDbOptions))
+        {
+            var runtimeStore = new PostgresIdentityAccessStores(runtimeDb);
+            var unprovisioned = new Account(
+                AccountId.New(),
+                Username.Parse("unprovisioned" + Guid.NewGuid().ToString("N")[..8]),
+                "test-only-hash",
+                1);
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                runtimeStore.SaveAsync(unprovisioned, CancellationToken.None));
+            Assert.Contains("cannot provision accounts", exception.Message, StringComparison.Ordinal);
+        }
+
         using var factory = new WebApplicationFactory<global::Program>()
             .WithWebHostBuilder(web =>
             {
