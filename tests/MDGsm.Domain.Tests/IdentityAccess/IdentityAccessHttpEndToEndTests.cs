@@ -275,6 +275,10 @@ public sealed class IdentityAccessHttpEndToEndTests
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => utcNow;
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state,
+            TimeSpan dueTime, TimeSpan period) =>
+            TimeProvider.System.CreateTimer(callback, state, dueTime, period);
     }
 
     private sealed class DisposableDatabase(string adminConnectionString, string databaseName, string connectionString)
