@@ -71,7 +71,7 @@ public sealed class IdentityAccessHttpEndToEndTests
             Assert.True(await db.IdentitySystemSettings.AnyAsync(x => x.SettingsId == 1),
                 "Migration 0003 must seed the required singleton session-policy row.");
 
-            var recoveryStore = new PostgresIdentityAccessStores(db, TimeProvider.System);
+            var recoveryStore = new PostgresIdentityAccessStores(db);
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
                 recoveryStore.CreateChallengeAsync(
                     AccountId.From(Guid.CreateVersion7()), new byte[32], "mobile",
@@ -161,6 +161,10 @@ public sealed class IdentityAccessHttpEndToEndTests
                     services.AddDbContext<MdGsmDbContext>(options => options.UseNpgsql(connectionString));
                     services.RemoveAll<NpgsqlDataSource>();
                     services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
+                    // Deliberately skew the host clock by two days. IdentityAccess
+                    // login/session validation must still use PostgreSQL clock_timestamp().
+                    services.RemoveAll<TimeProvider>();
+                    services.AddSingleton<TimeProvider>(new FixedTimeProvider(DateTimeOffset.UtcNow.AddDays(-2)));
                 });
             });
         using var client = factory.CreateClient();
@@ -168,6 +172,9 @@ public sealed class IdentityAccessHttpEndToEndTests
         var partyUrl = "/api/v2/persons/" + Guid.CreateVersion7().ToString("D");
         var noToken = await client.GetAsync(partyUrl);
         Assert.Equal(HttpStatusCode.Unauthorized, noToken.StatusCode);
+
+        var heartbeatWithoutToken = await client.PostAsync("/api/v1/identity/heartbeat", content: null);
+        Assert.Equal(HttpStatusCode.Unauthorized, heartbeatWithoutToken.StatusCode);
 
         var login = await client.PostAsJsonAsync("/api/v1/identity/login",
             new LoginRequest(username, initialPassword, Guid.CreateVersion7()));
@@ -197,6 +204,9 @@ public sealed class IdentityAccessHttpEndToEndTests
         Assert.False(active!.MustChangePassword);
 
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", active.AccessToken);
+        var heartbeat = await client.PostAsync("/api/v1/identity/heartbeat", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, heartbeat.StatusCode);
+
         var authorizedPersonsRead = await client.GetAsync(partyUrl);
         Assert.Equal(HttpStatusCode.NotFound, authorizedPersonsRead.StatusCode);
 
@@ -233,7 +243,44 @@ public sealed class IdentityAccessHttpEndToEndTests
         var wrongPassword = await client.PostAsJsonAsync("/api/v1/identity/login",
             new LoginRequest(username, "incorrect-password", Guid.CreateVersion7()));
         Assert.Equal(HttpStatusCode.Unauthorized, wrongPassword.StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = null;
+        var secondLogin = await client.PostAsJsonAsync("/api/v1/identity/login",
+            new LoginRequest(username, changedPassword, Guid.CreateVersion7()));
+        Assert.Equal(HttpStatusCode.OK, secondLogin.StatusCode);
+        var secondSession = await secondLogin.Content.ReadFromJsonAsync<LoginResponse>();
+        Assert.NotNull(secondSession);
+        Assert.False(secondSession!.MustChangePassword);
+
+        // Logout must revoke only the presented session, not every session for the account.
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", active.AccessToken);
+        var logout = await client.PostAsync("/api/v1/identity/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+
+        var revokedAfterLogout = await client.GetAsync(partyUrl);
+        Assert.Equal(HttpStatusCode.Unauthorized, revokedAfterLogout.StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", secondSession.AccessToken);
+        var secondSessionStillValid = await client.GetAsync(partyUrl);
+        Assert.Equal(HttpStatusCode.Forbidden, secondSessionStillValid.StatusCode);
+
+        var secondLogout = await client.PostAsync("/api/v1/identity/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, secondLogout.StatusCode);
+        var secondSessionRevoked = await client.GetAsync(partyUrl);
+        Assert.Equal(HttpStatusCode.Unauthorized, secondSessionRevoked.StatusCode);
+
+        var repeatedLogout = await client.PostAsync("/api/v1/identity/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, repeatedLogout.StatusCode);
     }
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state,
+            TimeSpan dueTime, TimeSpan period) =>
+            TimeProvider.System.CreateTimer(callback, state, dueTime, period);
+    }
+
     private sealed class DisposableDatabase(string adminConnectionString, string databaseName, string connectionString)
         : IAsyncDisposable
     {

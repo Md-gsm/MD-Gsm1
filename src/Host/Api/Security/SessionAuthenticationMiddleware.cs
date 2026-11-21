@@ -15,12 +15,14 @@ public sealed class SessionAuthenticationMiddleware(RequestDelegate next)
     private const string SessionAuthenticationType = "MDGsm.Session";
     private const string PersonsPrefix = "/api/v2/persons";
     private const string PasswordChangePath = "/api/v1/identity/password/change";
+    private const string HeartbeatPath = "/api/v1/identity/heartbeat";
 
     public async Task InvokeAsync(HttpContext context)
     {
         var isPersonsRequest = context.Request.Path.StartsWithSegments(PersonsPrefix, StringComparison.OrdinalIgnoreCase);
         var isPasswordChangeRequest = string.Equals(context.Request.Path.Value, PasswordChangePath, StringComparison.OrdinalIgnoreCase);
-        if (!isPersonsRequest && !isPasswordChangeRequest)
+        var isHeartbeatRequest = string.Equals(context.Request.Path.Value, HeartbeatPath, StringComparison.OrdinalIgnoreCase);
+        if (!isPersonsRequest && !isPasswordChangeRequest && !isHeartbeatRequest)
         {
             await next(context);
             return;
@@ -39,14 +41,14 @@ public sealed class SessionAuthenticationMiddleware(RequestDelegate next)
         var resolver = context.RequestServices.GetService<ISessionIdentityResolver>();
         var sessions = context.RequestServices.GetService<ISessionStore>();
         var policies = context.RequestServices.GetService<ISystemPolicyStore>();
-        var clock = context.RequestServices.GetService<TimeProvider>();
-        if (tokenFactory is null || resolver is null || sessions is null || policies is null || clock is null)
+        var databaseClock = context.RequestServices.GetService<IDatabaseClock>();
+        if (tokenFactory is null || resolver is null || sessions is null || policies is null || databaseClock is null)
         {
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             return;
         }
 
-        var now = clock.GetUtcNow();
+        var now = await databaseClock.GetUtcNowAsync(context.RequestAborted);
         var digest = tokenFactory.ComputeDigest(authorization.Parameter!);
         if (digest is not { Length: 32 })
         {
