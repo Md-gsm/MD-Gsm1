@@ -123,7 +123,7 @@ The current workflow candidate is only an IdentityAccess runtime proof against a
 
 This matrix does not authorize production LOGIN creation, credentials, grants, migrations, schema/ownership changes, Recovery/bootstrap, IdentityAccess or Persons activation, Finance Posting, or Go-Live. O-20 remains OPEN until all five identities and all discovered database objects are reconciled against the complete N.6 matrix and independently reviewed on an exact accepted SHA. The runtime_app disposable proof is PASS once on SHA `7ef35cca…`, not closure of the other four identities or the full catalog.
 
-**END — MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001 v0.6**
+**END — MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001 v0.8**
 
 
 ## 7. Owner-approved policy decision — 2026-11-21
