@@ -102,12 +102,6 @@ public sealed class PostgresIdentityAccessStores(MdGsmDbContext db) :
   return await db.IdentityRecoveryChallenges.Where(x=>x.AccountId==accountId.Value&&x.ChallengeDigest==challengeDigest&&x.Channel==channel&&x.ConsumedAtUtc==null&&x.RevokedAtUtc==null&&x.ExpiresAtUtc>now)
    .ExecuteUpdateAsync(s=>s.SetProperty(x=>x.ConsumedAtUtc,now),ct)==1;
  }
- public async Task<bool> ConsumeRecoveryCodeAsync(AccountId accountId,byte[] codeDigest,DateTimeOffset now,CancellationToken ct)
- {
-  if(codeDigest is not {Length:32})return false;
-  return await db.IdentityRecoveryCodes.Where(x=>x.AccountId==accountId.Value&&x.CodeDigest==codeDigest&&x.UsedAtUtc==null&&x.RevokedAtUtc==null)
-   .ExecuteUpdateAsync(s=>s.SetProperty(x=>x.UsedAtUtc,now),ct)==1;
- }
  private static Account Map(IdentityAccountRow row)=>Account.Rehydrate(AccountId.From(row.AccountId),Username.Parse(row.LoginName),row.PasswordHash,row.PasswordHashVersion,row.IsEnabled,row.MustChangePassword,row.CredentialVersion,row.FailedAttemptCount,row.FailureWindowStartedAt,row.LockedUntil);
  private static void RequireDigest(byte[]? digest,string name){if(digest is not {Length:32})throw new ArgumentException("A SHA-256 digest of exactly 32 bytes is required.",name);}
 }
