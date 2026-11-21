@@ -4,7 +4,7 @@
 |---|---|
 | Document ID | MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001 |
 | Version / Date | 1.0 / 2026-11-21 |
-| Baseline | MDG-ARCH-MASTER-001 v3.0.3 N.6; Stage 08; DB Role/Grant Matrix v0.1 |
+| Baseline | MDG-ARCH-MASTER-001 v3.0.3 N.6; Stage 08; owner-approved O-20 Role/Object Matrix v0.8 |
 | Status | O-20 PARTIAL: runtime_app account-provisioning boundary hardened; migration_runner SET ROLE and support-identity catalog candidate added; exact-head PostgreSQL 18 CI pending; backup/RowScope/emergency and full catalog proof open |
 | Execution | No role, credential, membership, grant, revoke, DDL or production DB operation performed |
 
@@ -143,7 +143,7 @@ The disposable-only candidate now checks the runtime login attributes and a broa
 The candidate is **not** the full N.6 proof. See `MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v0.2.md` for the five-identity/object matrix and outstanding catalog evidence. It does not prove production LOGIN provisioning, all five logical identities, every ACL/default ACL, owner isolation, extension privileges, or RowScope. The current grant script still has broad table-level SELECT on IdentityAccess accounts/sessions and recovery-table grants; these require data-scope/ownership review and must not be mistaken for row-level least privilege. The account INSERT/bootstrap mismatch remains intentionally unresolved.
 ## 7.2 Object-level role matrix and materialized DB inventory
 
-The controlled object-by-object inventory and expected role behavior are recorded in `docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v0.1.md`. It enumerates the materialized IdentityAccess, Persons, Finance Party-account, temporary workflow, merge, and migration-metadata tables, and specifies the intended boundary for each of the five canonical N.6 identities.
+The controlled object-by-object inventory and expected role behavior are recorded in `docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v0.8.md`. It enumerates the materialized IdentityAccess, Persons, Finance Party-account, temporary workflow, merge, and migration-metadata tables, and specifies the intended boundary for each of the five canonical N.6 identities.
 
 The runtime_app disposable candidate now includes denied direct SELECT probes for all currently materialized Persons tables, temporary-workflow tables, merge records, Finance Party-account identity and migration metadata, in addition to the IdentityAccess privilege/escalation tests. This is a negative direct-table test only; it does not establish that API-level module operations are positively authorized or prove RowScope.
 
