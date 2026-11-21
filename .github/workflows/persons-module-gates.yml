@@ -202,6 +202,8 @@ jobs:
           echo "PASS: migrations, repeat/idempotence, IdentityAccess schema invariants, least-privilege grants, and backup/restore verification passed."
       - name: Run Persons PostgreSQL end-to-end integration test
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "Category=Integration" --no-restore
+      - name: Run explicit O-20 support identity and catalog proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20SupportIdentityPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run isolated Accounting AP-03/AP-04 PostgreSQL 18 proof
         shell: bash
         run: bash scripts/ci/test_accounting_postgres_ap03_ap04.sh
