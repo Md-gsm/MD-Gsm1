@@ -198,6 +198,9 @@ jobs:
           restored_audit_trigger="$(psql -d "$restore_db" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_trigger WHERE tgname = 'trg_identity_security_audit_no_update_delete' AND NOT tgisinternal;")"
           test "$restored_audit_trigger" = '1'
           echo "PASS: migrations, repeat/idempotence, IdentityAccess schema invariants, least-privilege grants, and backup/restore verification passed."
+      - name: Prove O-20-D logical backup and isolated restore under backup_operator
+        shell: bash
+        run: bash scripts/ci/test_o20_backup_restore.sh
       - name: Run Persons PostgreSQL end-to-end integration test
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "Category=Integration" --no-restore
       - name: Run explicit O-20 support identity and catalog proof
