@@ -5,7 +5,7 @@ dbca3d213767d85b039b61aca8f7f68183c3a33cd260e1c8a3bb841aa79895f3  .github/PULL_R
 543cd33f42ef0dabaab9d6c700376a31636e9600e39e8d47f20b30b54357cd5b  .github/dependabot.yml
 4ebb43f2a7e9e8cf39200f7f1aa96f1be8b22c66f4111b8eb0c33284d2c07624  .github/workflows/codeql.yml
 89d2a2614e7e1377dadca23986bfb23815a4b5e46bed1e329fb610929025713b  .github/workflows/finance-workpaper-validation.yml
-dbeddd1a52881b2e9c2b406e59e43818f93be10357b905d4d876e221c9e90c4f  .github/workflows/persons-module-gates.yml
+8a8d618863da84b7ccd29e4f6e373c8478f8274b003ceac34f3471c935d16f54  .github/workflows/persons-module-gates.yml
 e980ced53e46e04ed9f52d7bb6b356feb75496d805925b496596fa00c64ebbef  .github/workflows/project-charter-owner-gate.yml
 2bba4bda50455bc262fe6a8b48a12f5f71e1193c3b06d10c45057bcf6e5f3547  .github/workflows/windows-preview-installer.yml
 8d9e05f9540c4fb62679d616c6ab97f917175a35eafbe1b9c2cfed5e336a49f5  .gitignore
@@ -80,7 +80,7 @@ fb75775f53e0304353a4c73e2018a316d30ac8c2a02a56e82e0c0a03881f1d6e  docs/attestati
 1815c8ada1a4dfc1a2f2dfcd9c4062de4e75891b5bc4e5ded5281a33b0f0973f  docs/data/MIGRATION_SEQUENCE_REGISTRY_FA.md
 4a4dc0a5fdc0f9637084e9c5cc58ede689894e4016e6501817899370900d0fd2  docs/data/accounting-recovery-runbook-fa.md
 149b33ef06e3669289a22e2a41a67bf60d10139cd291310d9429fa5b130057cc  docs/data/database-change-policy.md
-6f2ab7f93d3128354e9eb1d67863540864cba54632ece218bb9f0102e84b70eb  docs/data/persistence-and-migrations.md
+84b61b1a8ed4d712de347c8c23e93da833a042393b2db093d822a316958c2e9d  docs/data/persistence-and-migrations.md
 51315861c2c3f5681edbf871925893c385ea461cac8ddc817c3f21406a40397b  docs/decisions/0001-clean-start.md
 8753376c2d96c2b47506da00b5db4c7f02d74db891d246d7f6123cf8fd629c68  docs/decisions/0002-postgresql-and-efcore.md
 68eb3713e9ef61044f485331b524d6d41acbaef6561eafffbdce5cf830d82068  docs/decisions/0003-central-database-fiscal-periods.md
@@ -469,6 +469,6 @@ ac1333fd11f54ae41291ee567dac379d7ae8b749fd33c00028e553049c63584b  tools/MDGsm.Db
 770ec5e210fcbc2ceae417069ed0125878b12c44a5f0fa44220b51a2e4f651da  docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v1.0.md
 9a8424faca661c3407ff79cb859f18ed014c46ddde5affa23f0c50e4248a9341  docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v0.8.md
 26000f95777af11270f598c92228f8e7eda3690da3129b30a157e40c4498fde7  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v1.5.md
-595a6fdc57268d98f1f4b3d5d1a018b2dc1565c2b46c8a079418862902a4a219  docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v1.1.md
-83742831929cf20c8ae8443d0879a95c326bcda591ec9ca40df2410f0fa8d18d  docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v0.9.md
+6dc403e27bfcc5b3e8a142ce5722ad344c5c422f62fffd957cb77d79ca47a5a4  docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v1.1.md
+d93a8726ec2489cc77a568d6013504767965473c6c1309fcd73b58315645131f  docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v0.9.md
 628e78ffa4b8015b69674093cdbd3552e1063cde3e16f2b89560a137a158cd97  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v1.6.md
