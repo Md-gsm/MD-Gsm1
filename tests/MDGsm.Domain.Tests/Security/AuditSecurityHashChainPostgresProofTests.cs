@@ -141,20 +141,26 @@ public sealed class AuditSecurityHashChainPostgresProofTests
 
             var head = await ReadHeadAsync(adminConnectionString, schema, streamId);
             using var keyV1 = RSA.Create(2048);
+            var keyV1Public = Convert.ToBase64String(keyV1.ExportSubjectPublicKeyInfo());
             var checkpointV1 = CreateCheckpoint(streamId, head.Sequence, head.Hash, "test-key-v1", keyV1);
             await File.WriteAllTextAsync(tempCheckpoint, JsonSerializer.Serialize(checkpointV1));
-            Assert.True(VerifyCheckpoint(JsonSerializer.Deserialize<CheckpointEnvelope>(
-                await File.ReadAllTextAsync(tempCheckpoint))!));
+            var reloadedCheckpointV1 = JsonSerializer.Deserialize<CheckpointEnvelope>(
+                await File.ReadAllTextAsync(tempCheckpoint))!;
+            Assert.True(VerifyCheckpoint(reloadedCheckpointV1, "test-key-v1", keyV1Public));
 
-            // Key rotation proof is limited to ephemeral test keys: historical signature
-            // remains verifiable under v1 public key; new checkpoint signs under v2.
+            // Rotation proof pins trusted public keys out-of-band from the checkpoint.
             using var keyV2 = RSA.Create(2048);
+            var keyV2Public = Convert.ToBase64String(keyV2.ExportSubjectPublicKeyInfo());
             var checkpointV2 = CreateCheckpoint(streamId, head.Sequence, head.Hash, "test-key-v2", keyV2);
-            Assert.True(VerifyCheckpoint(checkpointV1));
-            Assert.True(VerifyCheckpoint(checkpointV2));
+            Assert.True(VerifyCheckpoint(checkpointV1, "test-key-v1", keyV1Public));
+            Assert.True(VerifyCheckpoint(checkpointV2, "test-key-v2", keyV2Public));
+            Assert.False(VerifyCheckpoint(checkpointV2, "test-key-v1", keyV1Public));
             Assert.NotEqual(checkpointV1.KeyId, checkpointV2.KeyId);
 
-            Assert.True(await VerifyChainAsync(verifierConnection, schema, streamId, checkpointV2));
+            var badSignature = checkpointV2 with { Signature = Convert.ToBase64String(new byte[256]) };
+            Assert.False(VerifyCheckpoint(badSignature, "test-key-v2", keyV2Public));
+            Assert.True(await VerifyChainAsync(verifierConnection, schema, streamId,
+                checkpointV2, "test-key-v2", keyV2Public));
             await AssertDeniedAsync(verifierConnection,
                 $"UPDATE {Q(schema)}.audit_stream_heads SET last_sequence = last_sequence;");
 
@@ -172,7 +178,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 tamper.Parameters.AddWithValue("stream", streamId);
                 await tamper.ExecuteNonQueryAsync();
             }
-            Assert.False(await VerifyChainAsync(verifierConnection, schema, streamId, checkpointV2));
+            Assert.False(await VerifyChainAsync(verifierConnection, schema, streamId, checkpointV2, "test-key-v2", keyV2Public));
         }
         finally
         {
@@ -219,7 +225,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 occurred_at_utc timestamptz NOT NULL,
                 actor_ref text NOT NULL,
                 subject_ref text,
-                metadata_json text NOT NULL,
+                metadata_canonical text NOT NULL,
                 intent_digest bytea NOT NULL CHECK (octet_length(intent_digest) = 32),
                 previous_event_hash bytea NOT NULL CHECK (octet_length(previous_event_hash) = 32),
                 canonical_payload bytea NOT NULL,
@@ -417,7 +423,8 @@ public sealed class AuditSecurityHashChainPostgresProofTests
     }
 
     private static async Task<bool> VerifyChainAsync(
-        string verifierConnectionString, string schema, Guid streamId, CheckpointEnvelope checkpoint)
+        string verifierConnectionString, string schema, Guid streamId, CheckpointEnvelope checkpoint,
+        string trustedKeyId, string trustedPublicKeyBase64)
     {
         await using var connection = new NpgsqlConnection(verifierConnectionString);
         await connection.OpenAsync();
@@ -425,7 +432,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
         var expectedPrevious = GenesisHash;
         await using (var read = new NpgsqlCommand($"""
             SELECT event_id,stream_sequence,schema_version,canonicalization_version,
-                   event_type_code,occurred_at_utc,actor_ref,subject_ref,metadata_json,
+                   event_type_code,occurred_at_utc,actor_ref,subject_ref,metadata_canonical,
                    intent_digest,previous_event_hash,canonical_payload,event_hash
             FROM {Q(schema)}.audit_events
             WHERE stream_id=@stream ORDER BY stream_sequence;
@@ -477,7 +484,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             Convert.FromHexString(checkpoint.HeadHash).AsSpan().SequenceEqual(head.Hash) &&
             head.Sequence == verifiedCount &&
             CryptographicOperations.FixedTimeEquals(expectedPrevious, head.Hash) &&
-            VerifyCheckpoint(checkpoint);
+            VerifyCheckpoint(checkpoint, trustedKeyId, trustedPublicKeyBase64);
     }
 
     private static CheckpointEnvelope CreateCheckpoint(
@@ -488,14 +495,16 @@ public sealed class AuditSecurityHashChainPostgresProofTests
         var signature = signingKey.SignData(bytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
         return new CheckpointEnvelope(streamId.ToString("N"), sequence, Convert.ToHexString(headHash),
             keyId, createdAt.ToString("O", CultureInfo.InvariantCulture),
-            Convert.ToBase64String(signingKey.ExportSubjectPublicKeyInfo()),
             Convert.ToBase64String(signature));
     }
 
-    private static bool VerifyCheckpoint(CheckpointEnvelope envelope)
+    private static bool VerifyCheckpoint(
+        CheckpointEnvelope envelope, string trustedKeyId, string trustedPublicKeyBase64)
     {
+        if (!string.Equals(envelope.KeyId, trustedKeyId, StringComparison.Ordinal))
+            return false;
         using var publicKey = RSA.Create();
-        publicKey.ImportSubjectPublicKeyInfo(Convert.FromBase64String(envelope.PublicKey), out _);
+        publicKey.ImportSubjectPublicKeyInfo(Convert.FromBase64String(trustedPublicKeyBase64), out _);
         var bytes = SerializeCheckpoint(Guid.ParseExact(envelope.StreamId, "N"), envelope.LastSequence,
             Convert.FromHexString(envelope.HeadHash), envelope.KeyId,
             DateTimeOffset.Parse(envelope.CreatedAtUtc, CultureInfo.InvariantCulture));
@@ -691,7 +700,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
     private sealed record AppendResult(long Sequence, string EventHash, bool Duplicate);
     private sealed record CheckpointEnvelope(
         string StreamId, long LastSequence, string HeadHash, string KeyId,
-        string CreatedAtUtc, string PublicKey, string Signature);
+        string CreatedAtUtc, string Signature);
 
     private sealed class InjectedRollbackException : Exception { }
 }
