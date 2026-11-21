@@ -370,8 +370,9 @@ public sealed class AuditSecurityHashChainPostgresProofTests
 
         long priorSequence;
         byte[] priorHash;
+        DateTimeOffset recordedAtUtc;
         await using (var lockHead = new NpgsqlCommand(
-            $"SELECT last_sequence,head_hash FROM {Q(schema)}.lock_stream_head(@stream);",
+            $"SELECT last_sequence,head_hash,recorded_at_utc FROM {Q(schema)}.lock_stream_head(@stream);",
             connection, transaction))
         {
             lockHead.Parameters.AddWithValue("stream", intent.StreamId);
@@ -380,26 +381,41 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 throw new InvalidOperationException("Audit stream head was not provisioned.");
             priorSequence = reader.GetInt64(0);
             priorHash = reader.GetFieldValue<byte[]>(1);
+            recordedAtUtc = NormalizeTimestamp(reader.GetFieldValue<DateTimeOffset>(2));
         }
 
+        var eventIntent = intent with { RecordedAtUtc = recordedAtUtc };
         var sequenceNumber = checked(priorSequence + 1);
-        var payload = SerializeEvent(intent, sequenceNumber, priorHash);
+        var payload = SerializeEvent(eventIntent, sequenceNumber, priorHash);
         var eventHashNew = SHA256.HashData(payload);
         long returnedSequence;
         byte[] returnedHash;
         bool duplicate;
-        await using (var append = new NpgsqlCommand($"SELECT sequence,event_hash,is_duplicate FROM {Q(schema)}.append_event(@event,@stream,@sequence,@schema_version,@canonical_version,@event_type,@occurred,@actor,@subject,@metadata,@intent_digest,@previous,@payload,@hash);", connection, transaction))
+        const string appendSql = "SELECT sequence,event_hash,is_duplicate FROM " +
+            "{SCHEMA}.append_event(@event,@stream,@sequence,@schema_version,@canonical_version,@hash_algorithm," +
+            "@event_type,@occurred,@recorded,@actor_type,@actor_id,@subject_type,@subject_id,@source_module," +
+            "@source_event,@correlation,@causation,@outcome,@metadata,@intent_digest,@previous,@payload,@hash);";
+        await using (var append = new NpgsqlCommand(appendSql.Replace("{SCHEMA}", Q(schema), StringComparison.Ordinal), connection, transaction))
         {
             append.Parameters.AddWithValue("event", intent.EventId);
             append.Parameters.AddWithValue("stream", intent.StreamId);
             append.Parameters.AddWithValue("sequence", sequenceNumber);
             append.Parameters.AddWithValue("schema_version", intent.SchemaVersion);
             append.Parameters.AddWithValue("canonical_version", intent.CanonicalizationVersion);
+            append.Parameters.AddWithValue("hash_algorithm", intent.HashAlgorithmCode);
             append.Parameters.AddWithValue("event_type", intent.EventTypeCode);
             append.Parameters.AddWithValue("occurred", intent.OccurredAtUtc);
-            append.Parameters.AddWithValue("actor", intent.ActorRef);
-            append.Parameters.AddWithValue("subject", (object?)intent.SubjectRef ?? DBNull.Value);
-            append.Parameters.AddWithValue("metadata", intent.MetadataJson);
+            append.Parameters.AddWithValue("recorded", eventIntent.RecordedAtUtc!.Value);
+            append.Parameters.AddWithValue("actor_type", intent.ActorTypeCode);
+            append.Parameters.AddWithValue("actor_id", intent.ActorId);
+            append.Parameters.AddWithValue("subject_type", (object?)intent.SubjectTypeCode ?? DBNull.Value);
+            append.Parameters.AddWithValue("subject_id", (object?)intent.SubjectId ?? DBNull.Value);
+            append.Parameters.AddWithValue("source_module", intent.SourceModuleCode);
+            append.Parameters.AddWithValue("source_event", intent.SourceEventId);
+            append.Parameters.AddWithValue("correlation", intent.CorrelationId);
+            append.Parameters.AddWithValue("causation", (object?)intent.CausationId ?? DBNull.Value);
+            append.Parameters.AddWithValue("outcome", intent.OutcomeCode);
+            append.Parameters.AddWithValue("metadata", intent.MetadataJson!);
             append.Parameters.AddWithValue("intent_digest", intentDigest);
             append.Parameters.AddWithValue("previous", priorHash);
             append.Parameters.AddWithValue("payload", payload);
@@ -435,7 +451,6 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             throw new UnknownCommitOutcomeException();
         return new AppendResult(returnedSequence, Convert.ToHexString(returnedHash), duplicate);
     }
-
     private static async Task<bool> VerifyChainAsync(
         string verifierConnectionString, string schema, Guid streamId, CheckpointEnvelope checkpoint,
         string trustedKeyId, string trustedPublicKeyBase64)
