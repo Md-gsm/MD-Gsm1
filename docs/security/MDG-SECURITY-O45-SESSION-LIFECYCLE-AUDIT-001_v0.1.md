@@ -113,7 +113,7 @@ All identity/account/session state is derived from the validated server-side pri
 | O45-T17 | Manager-specific N.3 policy | Blocked until open N.3 manager-account/session questions are explicitly resolved |
 | O45-T18 | Database clock authority | Session resolve/heartbeat/login/revoke use PostgreSQL `clock_timestamp()`; client/host clock skew cannot extend or shorten a lease |
 
-O45-T01 and the basic O45-T05 flow have been added to `IdentityAccessHttpEndToEndTests.cs` in this PR. They remain NOT RUN / NOT PASS until the exact head SHA CI run reaches a terminal successful result. All other tests above remain specifications only and NOT RUN / NOT PASS.
+O45-T01, the O45-T05 current-session-only/replay flow, and O45-T18 have been added to `IdentityAccessHttpEndToEndTests.cs` in this PR. O45-T18 deliberately skews the host `TimeProvider` by two days and verifies that login/session heartbeat still work using PostgreSQL time. These tests remain NOT RUN / NOT PASS until the exact head SHA CI run reaches a terminal successful result. All other tests above remain specifications only and NOT RUN / NOT PASS.
 
 ## 7. Dependencies
 
