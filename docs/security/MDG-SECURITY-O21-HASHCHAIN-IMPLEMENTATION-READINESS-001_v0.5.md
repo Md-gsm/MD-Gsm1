@@ -3,9 +3,9 @@
 | Field | Value |
 |---|---|
 | Document ID | MDG-SECURITY-O21-HASHCHAIN-IMPLEMENTATION-READINESS-001 |
-| Version / Date | 0.5 / 2026-11-21 |
+| Version / Date | 0.6 / 2026-11-21 |
 | Baseline | MDG-ARCH-MASTER-001 v3.0.3 N.7; Stage 08 Security Design v0.1; Reconciliation Addendum v0.1 |
-| Status | DISPOSABLE POSTGRESQL POC PASSED IN 37/37 INTEGRATION SUITE ON SHA 284ac9db… — PRODUCTION/INDEPENDENT ACCEPTANCE OPEN |
+| Status | OWNER-APPROVED CRYPTOGRAPHIC/WORM POLICY — DISPOSABLE POSTGRESQL POC PASS; PRODUCTION/INDEPENDENT ACCEPTANCE OPEN |
 | Execution | A disposable-only PostgreSQL PoC test source was added to PR #86. It first passed on SHA `8e0b3e10a96e6e605be6513cc22e19673d8c89ac` (workflow `44910227811`), where a separate IdentityAccess test failed. After that unrelated IdentityAccess assertion was corrected, the **same unchanged Hash Chain test source blob** passed again on SHA `7ef35cca3b3c86757ce1893656f9b6f617cdb4d9` in workflow `44912452300`, PostgreSQL job `136871018414`, as part of a complete **37 passed / 0 failed** integration suite. No production schema, migration, key, checkpoint, WORM storage or production configuration was created. |
 
 ## 1. Current implementation finding
@@ -213,3 +213,46 @@ All tests above are specifications only and NOT RUN / NOT PASS.
 O-21 remains **OPEN / disposable PoC integration test PASS in the 37/37 integration suite; production and independent acceptance OPEN**. This v0.2 documents candidate test source only; it does not certify a successful PostgreSQL execution or satisfy the external anchor, platform key-operations, outbox, operational or independent-review requirements. No canonical AuditSecurity schema, DDL, migration, key, checkpoint, WORM bucket, production secret, grant, runtime activation, audit purge, G1 activation, Posting Release or Go-Live is authorized by this document.
 
 **END — MDG-SECURITY-O21-HASHCHAIN-IMPLEMENTATION-READINESS-001 v0.5**
+
+
+## 8. Owner-approved implementation decisions — 2026-11-21
+
+The owner approved the following O-21 policy baseline. These decisions resolve the algorithm and storage-class choices but do not claim that a production provider, key, WORM bucket, AuditSecurity module or operational control has been deployed.
+
+### 8.1 Cryptographic profile
+
+- Hash algorithm: SHA-256, with domain separation and explicit version identifiers as defined by the canonical event contract.
+- Checkpoint signature: RSA-3072 with RSA-PSS and SHA-256.
+- Private signing key: held by a Platform-managed key service outside PostgreSQL, application configuration, installer, source control, CI artifacts/logs and the application backup domain.
+- Prefer non-exportable private key material. Signing authorization must be separated from database administration and independently audited.
+- Public keys, key identifiers, algorithm identifiers and validity/revocation history must be retained so historical checkpoints remain verifiable.
+- Key rotation creates a new key identifier/trust epoch and never rewrites historical events or checkpoints. Revocation blocks new signing under the compromised key; it does not silently erase historical verification evidence.
+
+### 8.2 Independent checkpoint storage
+
+- The accepted storage class is Object Storage with immutable retention / Object Lock in **Compliance mode** (or a provider-neutral implementation proven to provide equivalent non-bypassable retention semantics).
+- The storage account, administrators, credentials and recovery authority must be separate from PostgreSQL database administration and application runtime.
+- The database may retain a convenience copy, but only the independently controlled immutable object is the external trust anchor.
+- A checkpoint object is content-addressed and includes stream ID, committed sequence, head hash, schema/canonicalization/hash versions, checkpoint timestamp, previous checkpoint reference, signing key ID and signature.
+- The system must fail closed for trust/export status if the independent anchor is unavailable, replaced, unverifiable or behind the required checkpoint policy. It must never auto-bless a restored or divergent chain.
+- Provider selection, region, retention duration, checkpoint cadence, legal hold, cost controls and named operational custodians remain deployment decisions; none are invented or hard-coded in this architecture decision.
+
+### 8.3 Independent verifier and recovery
+
+- The verifier is a separately invocable, read-only component. It recomputes canonical bytes and hashes, verifies sequence/predecessor continuity, validates signatures against pinned public-key history and compares the restored head to the latest independently held checkpoint.
+- Any mismatch produces a non-zero result, identifies the first failing stream/sequence, preserves evidence and places the affected stream in quarantine. No repair, truncation, reseeding or automatic continuation is allowed.
+- Restore acceptance requires an explicit comparison against the external checkpoint and a recorded operator decision. Database-only administrators cannot replace the independent anchor.
+- Alerts are required for checkpoint lag, signing/export failures, signature/key errors, chain gaps, tampering, restore divergence and verifier failures.
+
+### 8.4 Implementation gates
+
+1. Define provider-neutral signing and immutable-object interfaces; do not bind the domain to one cloud vendor.
+2. Implement the production AuditSecurity append/verify core and durable source-module Outbox integration; database timestamp assignment and hash construction must occur at a trusted persistence boundary and must not be caller-forgeable.
+3. Implement provider adapters only after deployment selects a compatible key service and Object Lock Compliance store.
+4. Prove key provisioning, signing authorization, rotation, backup/recovery of verification material, revocation and compromise response.
+5. Prove immutable-object retention against a separate administrator identity, plus restore continuity and read-only verification.
+6. Complete alerts, runbook, secret/PII exclusion tests and independent security review.
+
+The current test-only RSA keys and local temporary JSON checkpoint remain PoC fixtures. They are not substitutes for the approved key service or independent immutable storage. O-21 remains OPEN until all implementation gates above pass on an exact accepted SHA and receive independent review.
+
+**END ADDENDUM — OWNER-APPROVED O-21 POLICY BASELINE v0.6**
