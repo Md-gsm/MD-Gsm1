@@ -5,7 +5,7 @@ dbca3d213767d85b039b61aca8f7f68183c3a33cd260e1c8a3bb841aa79895f3  .github/PULL_R
 543cd33f42ef0dabaab9d6c700376a31636e9600e39e8d47f20b30b54357cd5b  .github/dependabot.yml
 4ebb43f2a7e9e8cf39200f7f1aa96f1be8b22c66f4111b8eb0c33284d2c07624  .github/workflows/codeql.yml
 89d2a2614e7e1377dadca23986bfb23815a4b5e46bed1e329fb610929025713b  .github/workflows/finance-workpaper-validation.yml
-dcf575742484d53670f1474ccb382e2f88088b8f8661f247cc7770b70a90e128  .github/workflows/persons-module-gates.yml
+4132675f128a7b1151bfe1ae324fc881662de4b71ca854088a406a2d8f6805fb  .github/workflows/persons-module-gates.yml
 e980ced53e46e04ed9f52d7bb6b356feb75496d805925b496596fa00c64ebbef  .github/workflows/project-charter-owner-gate.yml
 2bba4bda50455bc262fe6a8b48a12f5f71e1193c3b06d10c45057bcf6e5f3547  .github/workflows/windows-preview-installer.yml
 8d9e05f9540c4fb62679d616c6ab97f917175a35eafbe1b9c2cfed5e336a49f5  .gitignore
@@ -475,7 +475,7 @@ d93a8726ec2489cc77a568d6013504767965473c6c1309fcd73b58315645131f  docs/security/
 706a7cc768978a50dcc745792520321e802a8f61d849dff39cabc97b7fc3694e  docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v1.2.md
 cc2b46384715308d668b024a4c834ed06145e573de22fa27189d90fc12937815  docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v1.0.md
 6952cff47061551989b146d2abbfb77a8745c9e86f732f0cc3749d15fb120796  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v1.7.md
-4fe8e8a1b0f03ef0730c51e0b4368d0a89a19b0358b9628206ae370f92360cdc  scripts/ci/test_o20_backup_restore.sh
-cb5081ed2f8643abb6ad0ddbfdc571f3a8ed1a3349f68258cde5a7020e7e8187  docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v1.3.md
-95ddb1981c74605bd73a5e7fe027d19e81f410f7b80dcb52d31741a0e48e11d5  docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v1.1.md
-2a9bd9faeca647e48d13c9445488993b89b25cd7372e3dcf5f49aeb901c10397  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v1.8.md
+f67e5ca0bf0d8d0033c499986f312cb4574f1337d8444cd4f075c878de9b4f67  scripts/ci/test_o20_backup_restore.sh
+367c64c5988a24a7948a076e26d3df44514c7bafdd4468a63a91245c0cabdf6d  docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v1.3.md
+cd01b98fff8cac8a3a08db3dc9cfb630330a470fb3effb7e971fe3a284253209  docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v1.1.md
+363d886be3ef01988b17d6a9bb6cd25fa0ba08fb8f47835b273d47234861a1db  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v1.8.md
