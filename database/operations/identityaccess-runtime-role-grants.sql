@@ -40,9 +40,8 @@ GRANT SELECT, INSERT ON identity.login_attempts TO mdgsm_runtime;
 GRANT SELECT, INSERT ON identity.recovery_challenges TO mdgsm_runtime;
 GRANT UPDATE (consumed_at_utc, revoked_at_utc)
     ON identity.recovery_challenges TO mdgsm_runtime;
-GRANT SELECT ON identity.recovery_codes TO mdgsm_runtime;
-GRANT UPDATE (used_at_utc, revoked_at_utc)
-    ON identity.recovery_codes TO mdgsm_runtime;
+-- Offline recovery-code issuance/consumption is excluded from the owner-approved email-only phase.
+-- The dormant schema table receives no runtime_app privileges in this release.
 
 -- Append-only security evidence.
 GRANT INSERT ON identity.security_audit_events TO mdgsm_runtime;
