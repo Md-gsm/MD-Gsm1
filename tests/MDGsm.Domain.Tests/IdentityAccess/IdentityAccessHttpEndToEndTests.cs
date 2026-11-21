@@ -264,6 +264,9 @@ public sealed class IdentityAccessHttpEndToEndTests
                 IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_app') THEN
                     CREATE ROLE runtime_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT;
                 END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_privilege_probe_target') THEN
+                    CREATE ROLE runtime_privilege_probe_target NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
             END
             $body$;
             GRANT mdgsm_runtime TO runtime_app;
@@ -324,7 +327,21 @@ public sealed class IdentityAccessHttpEndToEndTests
         await AssertDeniedAsync(runtime, "UPDATE identity.security_audit_events SET event_type = event_type;");
         await AssertDeniedAsync(runtime, "CREATE ROLE runtime_privilege_probe LOGIN;");
         await AssertDeniedAsync(runtime, "ALTER ROLE runtime_app SUPERUSER;");
-        await AssertDeniedAsync(runtime, "GRANT SELECT ON identity.accounts TO PUBLIC;");
+
+        // PostgreSQL may report a GRANT without grantable privileges as a warning/no-op,
+        // rather than throwing. Prove the target role's effective privilege remains absent.
+        await using (var attemptedGrant = new NpgsqlCommand(
+            "GRANT SELECT ON identity.accounts TO runtime_privilege_probe_target;", runtime))
+        {
+            await attemptedGrant.ExecuteNonQueryAsync();
+        }
+        await using (var grantResult = new NpgsqlCommand(
+            "SELECT has_table_privilege('runtime_privilege_probe_target', 'identity.accounts', 'SELECT');",
+            runtime))
+        {
+            Assert.False((bool)(await grantResult.ExecuteScalarAsync())!);
+        }
+
         await AssertDeniedAsync(runtime, "SET ROLE postgres;");
         // All currently materialized Persons/Finance/temporary/merge objects are
         // outside IdentityAccess runtime ownership. The API runtime reaches them only
