@@ -71,7 +71,7 @@ public sealed class IdentityAccessHttpEndToEndTests
             Assert.True(await db.IdentitySystemSettings.AnyAsync(x => x.SettingsId == 1),
                 "Migration 0003 must seed the required singleton session-policy row.");
 
-            var recoveryStore = new PostgresIdentityAccessStores(db, TimeProvider.System);
+            var recoveryStore = new PostgresIdentityAccessStores(db);
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
                 recoveryStore.CreateChallengeAsync(
                     AccountId.From(Guid.CreateVersion7()), new byte[32], "mobile",
