@@ -33,7 +33,7 @@ The distinctions below are deliberate:
 3. An assignment is a separate domain fact, not a Role, Permission, Employment, claim, request parameter or client-side filter.
 4. A valid permission is necessary but not sufficient for branch/warehouse row access. The source module must supply the authoritative resource context and Organization must prove the matching explicit assignment.
 5. A Branch assignment cannot be expanded to its Warehouses. Warehouse access requires an AccountWarehouseAssignment for that exact WarehouseId.
-6. For a Warehouse-scoped row, an explicit Warehouse assignment is evaluated against the current active Warehouse and its current valid active Branch relationship. The Account does not also need a Branch assignment merely because the Warehouse belongs to a Branch.
+6. For a Warehouse-scoped row, an explicit Warehouse assignment is mandatory and is evaluated against the current active Warehouse and its current valid active Branch relationship. Whether a matching active Branch assignment is an additional prerequisite is not explicitly settled by owner policy v0.2. The current logical design v0.1 treats the explicit Warehouse assignment plus active Warehouse/Branch masters as sufficient, but that remains a design interpretation, not a separately recorded owner decision. PD-ORG-13 therefore remains OPEN; no runtime may encode either interpretation before confirmation.
 7. Employment status alone never creates, extends, restores or broadens an assignment.
 8. Reporting is a consumer, never the source of master or assignment truth. A read model does not transfer data ownership.
 9. No cross-module private-table access, cross-module write, or unapproved cross-schema foreign key is introduced.
@@ -139,7 +139,7 @@ The shape mirrors AccountBranchAssignment, with warehouse_id replacing branch_id
 
 Required invariant: Warehouse scope is granted only by an explicit active assignment to that exact WarehouseId, while both Warehouse and its current Branch are active and the Warehouse relationship is valid. A Branch assignment is never consulted as a substitute for this row. The local FK references warehouses.warehouse_id. The partial unique rule is one non-revoked assignment per account_id + warehouse_id, while different Warehouses may be simultaneously assigned to the same account.
 
-The system must not require an AccountBranchAssignment to the Warehouse's parent Branch as an additional prerequisite for this Warehouse assignment. That would silently introduce a two-assignment policy not accepted by the owner.
+Owner policy v0.2 explicitly prohibits inferring Warehouse access from Branch assignment and requires an exact Warehouse assignment. It does not expressly state whether the parent Branch assignment is an additional narrowing prerequisite. The logical design v0.1 currently treats it as unnecessary; this is retained as a proposed interpretation only and remains subject to PD-ORG-13 owner confirmation.
 
 ### 3.6 Append-only assignment event history
 
@@ -246,7 +246,7 @@ The effective permission decision is a conjunction of:
 4. authoritative source-row context from the module that owns the reportable business fact;
 5. source-state and other domain predicates required by that owner.
 
-An IdentityAccess role name, Employment record, all permission scope, or caller-supplied BranchId/WarehouseId must not bypass the explicit Organization assignment requirement for branch/warehouse-scoped rows. If IdentityAccess supplies an additional narrowing scope, effective scope is the intersection of that narrowing scope with Organization's assignment set; it must never broaden the Organization set. Exact compatibility with the current IdentityAccess scope model is a G1 review item.
+An IdentityAccess role name, Employment record, all permission scope, or caller-supplied BranchId/WarehouseId must not bypass the explicit Organization assignment requirement for branch/warehouse-scoped rows. If IdentityAccess supplies an additional narrowing scope, it may not broaden Organization's assignment set. The precise composition, including whether a Warehouse-scoped resource also requires the parent Branch assignment, remains subject to PD-ORG-07 and PD-ORG-13 and must be confirmed before implementation.
 
 ### 7.2 Typed resolver result
 
@@ -379,6 +379,7 @@ Required evidence: PostgreSQL 18 disposable integration, multiple independent se
 | PD-ORG-10 | Cross-module transaction/lock order | Assignment/master locks before source aggregate locks | Application/Platform Architecture review and PostgreSQL race proof |
 | PD-ORG-11 | Assignment-history retention and legal hold | Preserve, no deletion; no duration chosen | Owner and legal review |
 | PD-ORG-12 | Full source-module RowScope inventory | Begin with sources that publish authoritative BranchId/WarehouseId contracts; none may be inferred | Inventory all reportable list/search/detail/aggregate/print/export paths and obtain source-owner contracts |
+| PD-ORG-13 | Does Warehouse assignment alone authorize Warehouse-scoped rows, or must the account also hold an active assignment to the Warehouse's current parent Branch? | Current logical design v0.1 says Warehouse assignment plus active Warehouse/Branch master facts is sufficient; policy v0.2 explicitly says Branch assignment alone is insufficient but does not explicitly resolve this additional prerequisite | Explicit owner decision; until then, no runtime authorization rule is finalized |
 
 ## 13. G1 authorization readiness and execution boundary
 
