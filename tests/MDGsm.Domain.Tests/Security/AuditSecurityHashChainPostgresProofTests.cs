@@ -461,8 +461,10 @@ public sealed class AuditSecurityHashChainPostgresProofTests
         var expectedPrevious = GenesisHash;
         await using (var read = new NpgsqlCommand($"""
             SELECT event_id,stream_sequence,schema_version,canonicalization_version,
-                   event_type_code,occurred_at_utc,actor_ref,subject_ref,metadata_canonical,
-                   intent_digest,previous_event_hash,canonical_payload,event_hash
+                   hash_algorithm_code,event_type_code,occurred_at_utc,recorded_at_utc,
+                   actor_type_code,actor_id,subject_type_code,subject_id,
+                   source_module_code,source_event_id,correlation_id,causation_id,outcome_code,
+                   metadata_canonical,intent_digest,previous_event_hash,canonical_payload,event_hash
             FROM {Q(schema)}.audit_events
             WHERE stream_id=@stream ORDER BY stream_sequence;
             """, connection))
@@ -475,18 +477,28 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 var sequence = reader.GetInt64(1);
                 var schemaVersion = reader.GetInt16(2);
                 var canonicalVersion = reader.GetInt16(3);
-                var eventType = reader.GetString(4);
-                var occurred = reader.GetFieldValue<DateTimeOffset>(5);
-                var actor = reader.GetString(6);
-                var subject = reader.IsDBNull(7) ? null : reader.GetString(7);
-                var metadataCanonical = reader.GetString(8);
-                var intentDigest = reader.GetFieldValue<byte[]>(9);
-                var previous = reader.GetFieldValue<byte[]>(10);
-                var canonicalPayload = reader.GetFieldValue<byte[]>(11);
-                var storedHash = reader.GetFieldValue<byte[]>(12);
+                var hashAlgorithm = reader.GetString(4);
+                var eventType = reader.GetString(5);
+                var occurred = reader.GetFieldValue<DateTimeOffset>(6);
+                var recorded = reader.GetFieldValue<DateTimeOffset>(7);
+                var actorType = reader.GetString(8);
+                var actorId = reader.GetGuid(9);
+                var subjectType = reader.IsDBNull(10) ? null : reader.GetString(10);
+                Guid? subjectId = reader.IsDBNull(11) ? null : reader.GetGuid(11);
+                var sourceModule = reader.GetString(12);
+                var sourceEventId = reader.GetGuid(13);
+                var correlationId = reader.GetGuid(14);
+                Guid? causationId = reader.IsDBNull(15) ? null : reader.GetGuid(15);
+                var outcome = reader.GetString(16);
+                var metadataCanonical = reader.GetString(17);
+                var intentDigest = reader.GetFieldValue<byte[]>(18);
+                var previous = reader.GetFieldValue<byte[]>(19);
+                var canonicalPayload = reader.GetFieldValue<byte[]>(20);
+                var storedHash = reader.GetFieldValue<byte[]>(21);
 
                 if (sequence != expectedSequence ||
-                    !CryptographicOperations.FixedTimeEquals(previous, expectedPrevious))
+                    !CryptographicOperations.FixedTimeEquals(previous, expectedPrevious) ||
+                    !string.Equals(hashAlgorithm, "SHA-256", StringComparison.Ordinal))
                     return false;
 
                 SortedDictionary<string, string> metadata;
@@ -499,7 +511,9 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                     return false;
                 }
                 var intent = Normalize(new EventIntent(eventId, streamId, eventType, occurred,
-                    actor, subject, metadata, schemaVersion, canonicalVersion));
+                    actorType, actorId, subjectType, subjectId, sourceModule, sourceEventId,
+                    correlationId, causationId, outcome, hashAlgorithm, metadata,
+                    schemaVersion, canonicalVersion, metadataCanonical, recorded));
                 var recomputedIntent = SHA256.HashData(SerializeIntent(intent));
                 var recomputedPayload = SerializeEvent(intent, sequence, expectedPrevious);
                 var recomputedHash = SHA256.HashData(recomputedPayload);
@@ -523,7 +537,6 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             CryptographicOperations.FixedTimeEquals(expectedPrevious, head.Hash) &&
             VerifyCheckpoint(checkpoint, trustedKeyId, trustedPublicKeyBase64);
     }
-
     private static CheckpointEnvelope CreateCheckpoint(
         Guid streamId, long sequence, byte[] headHash, string keyId, RSA signingKey)
     {
