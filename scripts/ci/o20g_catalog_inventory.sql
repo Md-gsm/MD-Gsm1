@@ -28,7 +28,7 @@ effective_privileges AS (
         ('USAGE',  has_schema_privilege(r.rolname, n.oid, 'USAGE')),
         ('CREATE', has_schema_privilege(r.rolname, n.oid, 'CREATE'))
     ) v(privilege, allowed)
-    WHERE v.allowed AND n.nspname <> 'information_schema' AND n.nspname NOT LIKE 'pg\_%' ESCAPE '\'
+    WHERE v.allowed AND n.nspname <> 'information_schema' AND left(n.nspname, 3) <> 'pg_'
     UNION ALL
     SELECT p.logical_identity, p.database_role, 'relation,
            format('%I.%I', n.nspname, c.relname), v.privilege
@@ -46,7 +46,7 @@ effective_privileges AS (
         ('TRIGGER',    has_table_privilege(r.rolname, c.oid, 'TRIGGER'))
     ) v(privilege, allowed)
     WHERE c.relkind IN ('r', 'p', 'v', 'm', 'f') AND v.allowed
-      AND n.nspname <> 'information_schema' AND n.nspname NOT LIKE 'pg\_%' ESCAPE '\'
+      AND n.nspname <> 'information_schema' AND left(n.nspname, 3) <> 'pg_'
     UNION ALL
     SELECT p.logical_identity, p.database_role, 'sequence,
            format('%I.%I', n.nspname, c.relname), v.privilege
@@ -60,7 +60,7 @@ effective_privileges AS (
         ('UPDATE', has_sequence_privilege(r.rolname, c.oid, 'UPDATE'))
     ) v(privilege, allowed)
     WHERE c.relkind = 'S' AND v.allowed
-      AND n.nspname <> 'information_schema' AND n.nspname NOT LIKE 'pg\_%' ESCAPE '\'
+      AND n.nspname <> 'information_schema' AND left(n.nspname, 3) <> 'pg_'
     UNION ALL
     SELECT p.logical_identity, p.database_role, 'column,
            format('%I.%I.%I', n.nspname, c.relname, a.attname), v.privilege
@@ -77,7 +77,7 @@ effective_privileges AS (
     ) v(privilege, allowed)
     WHERE a.attnum > 0 AND NOT a.attisdropped
       AND c.relkind IN ('r', 'p', 'v', 'f') AND v.allowed
-      AND n.nspname <> 'information_schema' AND n.nspname NOT LIKE 'pg\_%' ESCAPE '\'
+      AND n.nspname <> 'information_schema' AND left(n.nspname, 3) <> 'pg_'
     UNION ALL
     SELECT p.logical_identity, p.database_role, 'routine,
            format('%I.%I(%s)', n.nspname, pr.proname, pg_get_function_identity_arguments(pr.oid)),
@@ -87,7 +87,7 @@ effective_privileges AS (
     CROSS JOIN pg_proc pr
     JOIN pg_namespace n ON n.oid = pr.pronamespace
     WHERE has_function_privilege(r.rolname, pr.oid, 'EXECUTE')
-      AND n.nspname <> 'information_schema' AND n.nspname NOT LIKE 'pg\_%' ESCAPE '\'
+      AND n.nspname <> 'information_schema' AND left(n.nspname, 3) <> 'pg_'
     UNION ALL
     SELECT p.logical_identity, p.database_role, 'type,
            format('%I.%I', n.nspname, t.typname), 'USAGE'
@@ -96,7 +96,7 @@ effective_privileges AS (
     CROSS JOIN pg_type t
     JOIN pg_namespace n ON n.oid = t.typnamespace
     WHERE has_type_privilege(r.rolname, t.oid, 'USAGE')
-      AND n.nspname <> 'information_schema' AND n.nspname NOT LIKE 'pg\_%' ESCAPE '\'
+      AND n.nspname <> 'information_schema' AND left(n.nspname, 3) <> 'pg_'
 )
 SELECT jsonb_build_object(
     'format', 'MDGSM-O20-G-CATALOG-v1',
