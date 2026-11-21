@@ -208,7 +208,7 @@ public sealed class DatabaseMigrationRunner
         }
     }
 
-    private static string QuoteRole(string roleName) => $"\\"{roleName}\\"";
+    private static string QuoteRole(string roleName) => "\"" + roleName + "\"";
 
     private static IReadOnlyList<MigrationArtifact> LoadMigrations()
     {
