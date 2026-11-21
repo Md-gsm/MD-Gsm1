@@ -161,6 +161,10 @@ public sealed class IdentityAccessHttpEndToEndTests
                     services.AddDbContext<MdGsmDbContext>(options => options.UseNpgsql(connectionString));
                     services.RemoveAll<NpgsqlDataSource>();
                     services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
+                    // Deliberately skew the host clock by two days. IdentityAccess
+                    // login/session validation must still use PostgreSQL clock_timestamp().
+                    services.RemoveAll<TimeProvider>();
+                    services.AddSingleton<TimeProvider>(new FixedTimeProvider(DateTimeOffset.UtcNow.AddDays(-2)));
                 });
             });
         using var client = factory.CreateClient();
@@ -268,6 +272,11 @@ public sealed class IdentityAccessHttpEndToEndTests
         var repeatedLogout = await client.PostAsync("/api/v1/identity/logout", content: null);
         Assert.Equal(HttpStatusCode.NoContent, repeatedLogout.StatusCode);
     }
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+    }
+
     private sealed class DisposableDatabase(string adminConnectionString, string databaseName, string connectionString)
         : IAsyncDisposable
     {
