@@ -2,9 +2,9 @@
 
 | Field | Value |
 |---|---|
-| Version / Date | 0.6 / 2026-11-21 |
+| Version / Date | 0.7 / 2026-11-21 |
 | Scope | O-20, master architecture N.6 database identity/privilege contract |
-| Status | SOURCE-INVENTORY + EXPECTED-MATRIX — runtime_app disposable proof including email-only recovery-code denial PASS on SHA 284ac9db… (37/37); four support identities and full catalog/RowScope proof open |
+| Status | OWNER-APPROVED N.6 POLICY BASELINE — runtime_app disposable proof PASS; four support-identity executable proofs and full catalog/RowScope proof OPEN |
 | Authority | Derived from accepted architecture v3.0.3 N.6, current checked-in migrations and runtime grant script |
 | Safety boundary | No production LOGIN, credential, grant, ownership, schema, migration or feature activation was changed |
 
@@ -124,3 +124,45 @@ The current workflow candidate is only an IdentityAccess runtime proof against a
 This matrix does not authorize production LOGIN creation, credentials, grants, migrations, schema/ownership changes, Recovery/bootstrap, IdentityAccess or Persons activation, Finance Posting, or Go-Live. O-20 remains OPEN until all five identities and all discovered database objects are reconciled against the complete N.6 matrix and independently reviewed on an exact accepted SHA. The runtime_app disposable proof is PASS once on SHA `7ef35cca…`, not closure of the other four identities or the full catalog.
 
 **END — MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001 v0.6**
+
+
+## 7. Owner-approved policy decision — 2026-11-21
+
+The owner approved the least-privilege five-identity model proposed for O-20. This section is the accepted policy baseline for implementation and disposable-database tests. It does not authorize production provisioning or claim that the remaining proofs have passed.
+
+### 7.1 Canonical identity mapping
+
+| Canonical identity | Login / execution boundary | Allowed scope | Explicit prohibitions |
+|---|---|---|---|
+| `runtime_app` | Dedicated application LOGIN; inherits only the `mdgsm_runtime` NOLOGIN support group | Approved module command paths and scoped reads/writes | No migration, backup, reporting, emergency, owner, role-management or schema-CREATE membership |
+| `migration_runner` | Dedicated deployment-only LOGIN, unavailable to API/runtime hosts | Versioned, checksum-verified migrations during an approved maintenance/deployment window; may SET ROLE only to the registered NOLOGIN schema-owner role required by the migration manifest | No runtime API use, business posting, superuser, role creation, unmanifested DDL or permanent owner membership |
+| `backup_operator` | Dedicated backup/restore LOGIN isolated from application hosts | First implementation tranche: logical backup through read-only access to approved backup scope and required metadata; restore only into an explicitly designated isolated target under a separately audited restore procedure | No business DML, posting, identity mutation, audit alteration, arbitrary DDL or runtime API use. Physical backup/WAL replication privileges are NOT granted until a separate capability proof demonstrates they are necessary and least-privileged |
+| `reporting_ro` | Dedicated read-only LOGIN | SELECT on approved reporting views/read models only, after server-enforced RowScope is implemented and tested | No base-table access, DML, side-effecting functions, scope bypass or access to unapproved PII |
+| `emergency_operator` | Dedicated, time-bounded LOGIN activated only for an approved incident | EXECUTE on individually allow-listed, audited technical functions; fixed safe `search_path`; explicit expiry and revocation | No general table DML, commercial/financial document creation, posting, stock movement, account/role creation, arbitrary DDL or superuser |
+
+### 7.2 Shared controls and ownership
+
+1. Each canonical identity is distinct. No LOGIN inherits another canonical identity's group or credentials.
+2. Schema and object ownership belongs to registered NOLOGIN owner roles, never to application or support LOGINs.
+3. The migration principal can assume a schema-owner role only for the approved migration operation; the owner role is not granted to `runtime_app`, `backup_operator`, `reporting_ro` or `emergency_operator`.
+4. No identity is SUPERUSER, CREATEDB, CREATEROLE, REPLICATION or BYPASSRLS by default. Any future exception requires a separate architecture decision and proof; the present policy grants none.
+5. PUBLIC privileges and unintended default ACLs are revoked/absent. Role membership, INHERIT and SET ROLE behavior are explicitly tested.
+6. Every object is inventoried from the live disposable PostgreSQL catalog, including tables, partitions, views/materialized views, sequences, functions/procedures, triggers, types, extensions, owners, PUBLIC grants and default ACLs.
+7. Positive and negative operation pairs are required for every granted privilege. Denial tests must assert the effective privilege result and command outcome; PostgreSQL GRANT warnings/no-ops are not treated as denial evidence without checking the target ACL.
+8. RowScope is a mandatory authorization boundary for reporting. Until approved views and positive/negative scope tests exist, `reporting_ro` receives no reporting data grants.
+9. Until allow-listed emergency functions and expiry/revocation tests exist, `emergency_operator` receives no operational data grants.
+10. Production provisioning, credential delivery, role memberships, grants and ownership changes remain DBA/platform operations and are not authorized by this decision record.
+
+### 7.3 Execution order and acceptance evidence
+
+- O20-A: materialize the five disposable LOGINs and their NOLOGIN support/owner roles; assert role attributes, membership closure, owner separation, PUBLIC/default ACLs and absence of privilege escalation.
+- O20-B: prove `runtime_app` positive/negative command matrix and preserve its existing email-only recovery-code denial.
+- O20-C: prove migration-only SET ROLE and manifest/checksum enforcement; prove the API/runtime identity cannot use the migration LOGIN.
+- O20-D: prove backup logical-read/isolated-restore boundary without granting business writes; do not enable physical backup/WAL privileges in this tranche.
+- O20-E: prove reporting views and RowScope after those views exist; otherwise record NOT IMPLEMENTED and verify no grants.
+- O20-F: prove emergency allow-list, independent authorization, expiry, revocation and audit; otherwise record NOT IMPLEMENTED and verify no grants.
+- O20-G: capture catalog snapshot, effective ACL matrix, source SHA, PostgreSQL version, migration/checksum list, run/job identifiers and evidence digest; obtain independent review.
+
+O-20 remains OPEN until all applicable rows have executable positive/negative evidence and independent review. The approved policy baseline is not a PASS for the four support identities.
+
+**END ADDENDUM — OWNER-APPROVED O-20 POLICY BASELINE v0.7**
