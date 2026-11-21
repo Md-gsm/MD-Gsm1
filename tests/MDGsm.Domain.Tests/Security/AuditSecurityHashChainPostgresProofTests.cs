@@ -218,10 +218,19 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 stream_sequence bigint NOT NULL CHECK (stream_sequence > 0),
                 schema_version smallint NOT NULL,
                 canonicalization_version smallint NOT NULL,
+                hash_algorithm_code text NOT NULL,
                 event_type_code text NOT NULL,
                 occurred_at_utc timestamptz NOT NULL,
-                actor_ref text NOT NULL,
-                subject_ref text,
+                recorded_at_utc timestamptz NOT NULL,
+                actor_type_code text NOT NULL,
+                actor_id uuid NOT NULL,
+                subject_type_code text,
+                subject_id uuid,
+                source_module_code text NOT NULL,
+                source_event_id uuid NOT NULL,
+                correlation_id uuid NOT NULL,
+                causation_id uuid,
+                outcome_code text NOT NULL,
                 metadata_canonical text NOT NULL,
                 intent_digest bytea NOT NULL CHECK (octet_length(intent_digest) = 32),
                 previous_event_hash bytea NOT NULL CHECK (octet_length(previous_event_hash) = 32),
@@ -247,10 +256,10 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             REVOKE ALL ON {Q(schema)}.audit_events, {Q(schema)}.audit_stream_heads FROM PUBLIC;
             GRANT USAGE ON SCHEMA {Q(schema)} TO {Q(writerGroup)}, {Q(verifier)};
             CREATE FUNCTION {Q(schema)}.lock_stream_head(p_stream_id uuid)
-            RETURNS TABLE(last_sequence bigint, head_hash bytea)
+            RETURNS TABLE(last_sequence bigint, head_hash bytea, recorded_at_utc timestamptz)
             LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog AS $fn$
             BEGIN
-                RETURN QUERY SELECT h.last_sequence,h.head_hash
+                RETURN QUERY SELECT h.last_sequence,h.head_hash,clock_timestamp()
                 FROM {Q(schema)}.audit_stream_heads AS h
                 WHERE h.stream_id=p_stream_id FOR UPDATE;
                 IF NOT FOUND THEN RAISE EXCEPTION 'Unknown audit stream'; END IF;
@@ -259,8 +268,10 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             CREATE FUNCTION {Q(schema)}.append_event(
                 p_event_id uuid,p_stream_id uuid,p_next_sequence bigint,
                 p_schema_version smallint,p_canonicalization_version smallint,
-                p_event_type text,p_occurred_at timestamptz,p_actor text,p_subject text,
-                p_metadata_canonical text,p_intent_digest bytea,p_previous_hash bytea,
+                p_hash_algorithm text,p_event_type text,p_occurred_at timestamptz,p_recorded_at timestamptz,
+                p_actor_type text,p_actor_id uuid,p_subject_type text,p_subject_id uuid,
+                p_source_module text,p_source_event_id uuid,p_correlation_id uuid,p_causation_id uuid,
+                p_outcome text,p_metadata_canonical text,p_intent_digest bytea,p_previous_hash bytea,
                 p_canonical_payload bytea,p_event_hash bytea)
             RETURNS TABLE(sequence bigint,event_hash bytea,is_duplicate boolean)
             LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog AS $fn$
@@ -288,11 +299,15 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 END IF;
                 INSERT INTO {Q(schema)}.audit_events(
                     event_id,stream_id,stream_sequence,schema_version,canonicalization_version,
-                    event_type_code,occurred_at_utc,actor_ref,subject_ref,metadata_canonical,
-                    intent_digest,previous_event_hash,canonical_payload,event_hash)
+                    hash_algorithm_code,event_type_code,occurred_at_utc,recorded_at_utc,
+                    actor_type_code,actor_id,subject_type_code,subject_id,
+                    source_module_code,source_event_id,correlation_id,causation_id,outcome_code,
+                    metadata_canonical,intent_digest,previous_event_hash,canonical_payload,event_hash)
                 VALUES(p_event_id,p_stream_id,p_next_sequence,p_schema_version,p_canonicalization_version,
-                    p_event_type,p_occurred_at,p_actor,p_subject,p_metadata_canonical,
-                    p_intent_digest,p_previous_hash,p_canonical_payload,p_event_hash);
+                    p_hash_algorithm,p_event_type,p_occurred_at,p_recorded_at,
+                    p_actor_type,p_actor_id,p_subject_type,p_subject_id,
+                    p_source_module,p_source_event_id,p_correlation_id,p_causation_id,p_outcome,
+                    p_metadata_canonical,p_intent_digest,p_previous_hash,p_canonical_payload,p_event_hash);
                 UPDATE {Q(schema)}.audit_stream_heads AS h
                 SET last_sequence=p_next_sequence,head_hash=p_event_hash
                 WHERE h.stream_id=p_stream_id AND h.last_sequence=current_sequence
@@ -303,11 +318,11 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             END;
             $fn$;
             ALTER FUNCTION {Q(schema)}.lock_stream_head(uuid) OWNER TO {Q(owner)};
-            ALTER FUNCTION {Q(schema)}.append_event(uuid,uuid,bigint,smallint,smallint,text,timestamptz,text,text,text,bytea,bytea,bytea,bytea) OWNER TO {Q(owner)};
+            ALTER FUNCTION {Q(schema)}.append_event(uuid,uuid,bigint,smallint,smallint,text,text,timestamptz,timestamptz,text,uuid,text,uuid,text,uuid,uuid,uuid,text,text,bytea,bytea,bytea,bytea) OWNER TO {Q(owner)};
             REVOKE ALL ON FUNCTION {Q(schema)}.lock_stream_head(uuid) FROM PUBLIC;
-            REVOKE ALL ON FUNCTION {Q(schema)}.append_event(uuid,uuid,bigint,smallint,smallint,text,timestamptz,text,text,text,bytea,bytea,bytea,bytea) FROM PUBLIC;
+            REVOKE ALL ON FUNCTION {Q(schema)}.append_event(uuid,uuid,bigint,smallint,smallint,text,text,timestamptz,timestamptz,text,uuid,text,uuid,text,uuid,uuid,uuid,text,text,bytea,bytea,bytea,bytea) FROM PUBLIC;
             GRANT EXECUTE ON FUNCTION {Q(schema)}.lock_stream_head(uuid) TO {Q(writerGroup)};
-            GRANT EXECUTE ON FUNCTION {Q(schema)}.append_event(uuid,uuid,bigint,smallint,smallint,text,timestamptz,text,text,text,bytea,bytea,bytea,bytea) TO {Q(writerGroup)};
+            GRANT EXECUTE ON FUNCTION {Q(schema)}.append_event(uuid,uuid,bigint,smallint,smallint,text,text,timestamptz,timestamptz,text,uuid,text,uuid,text,uuid,uuid,uuid,text,text,bytea,bytea,bytea,bytea) TO {Q(writerGroup)};
             GRANT SELECT ON {Q(schema)}.audit_events, {Q(schema)}.audit_stream_heads TO {Q(verifier)};
             """;
         await using var command = new NpgsqlCommand(sql, connection);
