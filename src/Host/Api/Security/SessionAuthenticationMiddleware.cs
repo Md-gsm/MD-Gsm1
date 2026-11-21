@@ -41,14 +41,14 @@ public sealed class SessionAuthenticationMiddleware(RequestDelegate next)
         var resolver = context.RequestServices.GetService<ISessionIdentityResolver>();
         var sessions = context.RequestServices.GetService<ISessionStore>();
         var policies = context.RequestServices.GetService<ISystemPolicyStore>();
-        var clock = context.RequestServices.GetService<TimeProvider>();
-        if (tokenFactory is null || resolver is null || sessions is null || policies is null || clock is null)
+        var databaseClock = context.RequestServices.GetService<IDatabaseClock>();
+        if (tokenFactory is null || resolver is null || sessions is null || policies is null || databaseClock is null)
         {
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             return;
         }
 
-        var now = clock.GetUtcNow();
+        var now = await databaseClock.GetUtcNowAsync(context.RequestAborted);
         var digest = tokenFactory.ComputeDigest(authorization.Parameter!);
         if (digest is not { Length: 32 })
         {
