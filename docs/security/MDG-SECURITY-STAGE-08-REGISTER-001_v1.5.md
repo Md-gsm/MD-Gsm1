@@ -17,7 +17,7 @@
 | `MDG-SECURITY-STAGE-08-RECONCILIATION-001` | 0.5 | Controlled successor; N.3/O-25 gap and O-20/O-21/O-45/O-46 exact PostgreSQL evidence documented |
 | `MDG-SECURITY-STAGE-08-REAUDIT-001` | 0.2 | Internal consistency review only; not external independent attestation |
 | `MDG-ARCH-N3-ADR-0013-RECONCILIATION-001` | 0.3 | Option D and O-25 owner identity model reconciled; SYSTEM_MANAGER role-to-code mapping blocker recorded; global session enforcement not implemented |
-| `MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001` | 0.9 | runtime_app 16-assertion privilege proof, including offline-code access denial, PASS on SHA 284ac9db…; full N.6 matrix open |
+| `MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001` | 1.0 | runtime_app 16-assertion privilege proof, including offline-code access denial, PASS on SHA 284ac9db…; full N.6 matrix open |
 | `MDG-SECURITY-O21-HASHCHAIN-IMPLEMENTATION-READINESS-001` | 0.6 | Owner-approved RSA-3072/RSA-PSS/SHA-256 and Object Lock Compliance policy; production module, provider proof and independent review open |
 | `MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001` | 0.7 | Owner-approved five-identity least-privilege policy baseline; executable support-identity/catalog/RowScope proof remains open |
 | `MDG-SECURITY-O45-SESSION-LIFECYCLE-AUDIT-001` | 0.2 | Heartbeat/current-session logout and database-clock E2E PASS in 37/37 suite on SHA 284ac9db…; remaining lifecycle open |
@@ -84,7 +84,7 @@ All newly registered documents are on the PR #86 head branch and are not yet par
 
 PR #86 is an open review package (currently non-Draft, not merged and not accepted). No production role, LOGIN credential, membership, grant, revoke, migration, bootstrap credential, OTP, recovery key, SMTP secret, signing key, WORM checkpoint, production listener, feature activation, audit purge, G1 activation, Posting Release or Go-Live is authorized. No Stage 08 item is closed by document registration or CI success alone.
 
-**END — MDG-SECURITY-STAGE-08-REGISTER-001 v1.3**
+**END — MDG-SECURITY-STAGE-08-REGISTER-001 v1.5**
 
 
 ## 4.1 Owner approval recorded — O-20 and O-21 (2026-11-21)
@@ -93,7 +93,7 @@ The owner explicitly approved the proposed decisions:
 - O-20: five distinct canonical identities, least-privilege scopes, NOLOGIN schema/object ownership, no default superuser/role-creation/replication/BYPASSRLS privileges, positive/negative PostgreSQL proofs, and mandatory RowScope before reporting grants.
 - O-21: SHA-256 hash chain; RSA-3072 / RSA-PSS / SHA-256 checkpoint signatures; Platform-managed key service; independent Object Storage with Object Lock Compliance mode (or proven equivalent); read-only verifier; restore comparison and quarantine on mismatch.
 
-The detailed accepted contracts are recorded in O-20 matrix v0.7 and O-21 readiness v0.6. These owner decisions resolve policy choices only. They do not represent implementation, deployment, test PASS, production provisioning or security closure.
+The detailed accepted contracts are recorded in O-20 matrix v0.8 and O-21 readiness v0.6. These owner decisions resolve policy choices only. They do not represent implementation, deployment, test PASS, production provisioning or security closure.
 
 ### Next controlled execution
 - O-20: implement disposable five-identity role/ownership/catalog tests first; then add only those support-identity grants whose owning workflow exists and can be positively and negatively tested. Reporting and emergency roles remain deny-all for data until their view/allow-list contracts exist.
