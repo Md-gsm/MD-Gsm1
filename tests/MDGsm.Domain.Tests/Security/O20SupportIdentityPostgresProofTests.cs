@@ -79,6 +79,8 @@ public sealed class O20SupportIdentityPostgresProofTests
                 await AssertDeniedAsync(cs, $"DELETE FROM {Q(schema)}.scope_probe;");
                 await AssertDeniedAsync(cs, $"TRUNCATE TABLE {Q(schema)}.scope_probe;");
                 await AssertDeniedAsync(cs, $"CREATE TABLE {Q(schema)}.forbidden_ddl(id integer);");
+                await AssertDeniedAsync(cs, $"SET ROLE {Q(owner)};");
+                await AssertDeniedAsync(cs, $"CREATE ROLE {Q("o20_escalation_" + suffix)};");
                 await AssertDeniedAsync(cs, $"SELECT {Q(schema)}.technical_probe();");
             }
 
