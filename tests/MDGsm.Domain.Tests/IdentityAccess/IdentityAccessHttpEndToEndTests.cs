@@ -169,6 +169,9 @@ public sealed class IdentityAccessHttpEndToEndTests
         var noToken = await client.GetAsync(partyUrl);
         Assert.Equal(HttpStatusCode.Unauthorized, noToken.StatusCode);
 
+        var heartbeatWithoutToken = await client.PostAsync("/api/v1/identity/heartbeat", content: null);
+        Assert.Equal(HttpStatusCode.Unauthorized, heartbeatWithoutToken.StatusCode);
+
         var login = await client.PostAsJsonAsync("/api/v1/identity/login",
             new LoginRequest(username, initialPassword, Guid.CreateVersion7()));
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
