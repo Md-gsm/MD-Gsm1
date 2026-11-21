@@ -40,6 +40,10 @@ BEGIN
 END
 $grant$;
 SQL
+# PostgreSQL grants TEMPORARY on databases to PUBLIC by default. Remove that
+# inherited privilege only in this marked disposable CI database so the
+# backup_operator effective privilege is genuinely read-only.
+psql -X -v ON_ERROR_STOP=1 -d "$MDGSM_TEST_DB" -c "REVOKE TEMPORARY ON DATABASE \"$MDGSM_TEST_DB\" FROM PUBLIC;"
 role_state="$(psql -X -d "$MDGSM_TEST_DB" -Atqc "SELECT (rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit)::text || '|' || (SELECT count(*) FROM pg_auth_members WHERE member=oid OR roleid=oid)::text || '|' || (SELECT count(*) FROM pg_class c JOIN pg_roles rr ON rr.oid=c.relowner WHERE rr.rolname='backup_operator')::text FROM pg_roles WHERE rolname='backup_operator'")"
 printf 'O20-D role_state=%s\n' "$role_state"
 test "$role_state" = "true|0|0"
