@@ -111,12 +111,12 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             // Simulate an unknown client outcome: retry the same committed EventId.
             var replayIntent = NewIntent(streamId, "unknown-outcome-replay",
                 new SortedDictionary<string, string> { ["message"] = "retry-safe" });
-            var firstOutcome = await AppendAsync(writerAConnection, schema, replayIntent);
+            var headBeforeUnknownOutcome = await ReadHeadAsync(adminConnectionString, schema, streamId);
+            await Assert.ThrowsAsync<UnknownCommitOutcomeException>(() =>
+                AppendAsync(writerAConnection, schema, replayIntent, simulateUnknownCommitOutcome: true));
             var replay = await AppendAsync(writerBConnection, schema, replayIntent);
-            Assert.False(firstOutcome.Duplicate);
             Assert.True(replay.Duplicate);
-            Assert.Equal(firstOutcome.Sequence, replay.Sequence);
-            Assert.Equal(firstOutcome.EventHash, replay.EventHash);
+            Assert.Equal(headBeforeUnknownOutcome.Sequence + 1, replay.Sequence);
 
             var conflictingReplay = replayIntent with { EventTypeCode = "different-event-type" };
             var replayConflict = await Assert.ThrowsAsync<PostgresException>(() => AppendAsync(writerBConnection, schema, conflictingReplay));
@@ -345,7 +345,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
     private static async Task<AppendResult> AppendAsync(
         string writerConnectionString, string schema, EventIntent incoming,
         bool injectRollbackAfterInsert = false, string? adminConnectionString = null,
-        bool terminateBackendAfterInsert = false)
+        bool terminateBackendAfterInsert = false, bool simulateUnknownCommitOutcome = false)
     {
         var intent = Normalize(incoming);
         var intentDigest = SHA256.HashData(SerializeIntent(intent));
@@ -416,6 +416,8 @@ public sealed class AuditSecurityHashChainPostgresProofTests
         }
 
         await transaction.CommitAsync();
+        if (simulateUnknownCommitOutcome)
+            throw new UnknownCommitOutcomeException();
         return new AppendResult(returnedSequence, Convert.ToHexString(returnedHash), duplicate);
     }
 
@@ -748,4 +750,5 @@ public sealed class AuditSecurityHashChainPostgresProofTests
         string CreatedAtUtc, string Signature);
 
     private sealed class InjectedRollbackException : Exception { }
+    private sealed class UnknownCommitOutcomeException : Exception { }
 }
