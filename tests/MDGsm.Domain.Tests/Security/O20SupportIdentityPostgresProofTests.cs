@@ -4,10 +4,9 @@ using Xunit;
 namespace MDGsm.Domain.Tests.Security;
 
 /// <summary>
-/// Fail-closed catalog proof for the four O-20 support identities.
-/// This proves the current safe baseline (distinct LOGINs, no inherited/owner powers,
-/// and no operational grants); it deliberately does not claim migration, backup,
-/// RowScope, or emergency positive-operation acceptance.
+/// Disposable catalog proof for the four O-20 support identities.
+/// migration_runner may SET ROLE only to its registered NOLOGIN schema owner;
+/// backup, reporting and emergency remain deny-all until their positive contracts exist.
 /// </summary>
 [Collection("IdentityAccessPostgres")]
 public sealed class O20SupportIdentityPostgresProofTests
@@ -55,6 +54,7 @@ public sealed class O20SupportIdentityPostgresProofTests
                     CREATE ROLE {Q(owner)} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
                     {string.Join(Environment.NewLine, identities.Select(name =>
                         $"CREATE ROLE {Q(name)} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;"))}
+                    GRANT {Q(owner)} TO {Q(identities[0])} WITH ADMIN FALSE, INHERIT FALSE, SET TRUE;
                     CREATE SCHEMA {Q(schema)} AUTHORIZATION {Q(owner)};
                     CREATE TABLE {Q(schema)}.scope_probe(id integer PRIMARY KEY, payload text NOT NULL);
                     CREATE FUNCTION {Q(schema)}.technical_probe() RETURNS integer
@@ -79,7 +79,30 @@ public sealed class O20SupportIdentityPostgresProofTests
                 await AssertDeniedAsync(cs, $"DELETE FROM {Q(schema)}.scope_probe;");
                 await AssertDeniedAsync(cs, $"TRUNCATE TABLE {Q(schema)}.scope_probe;");
                 await AssertDeniedAsync(cs, $"CREATE TABLE {Q(schema)}.forbidden_ddl(id integer);");
-                await AssertDeniedAsync(cs, $"SET ROLE {Q(owner)};");
+                if (identity == identities[0])
+                {
+                    await using var migration = new NpgsqlConnection(cs);
+                    await migration.OpenAsync();
+                    await using (var assumeOwner = new NpgsqlCommand($"SET ROLE {Q(owner)};", migration))
+                        await assumeOwner.ExecuteNonQueryAsync();
+                    await using (var identityCheck = new NpgsqlCommand("SELECT current_user, session_user;", migration))
+                    await using (var reader = await identityCheck.ExecuteReaderAsync())
+                    {
+                        Assert.True(await reader.ReadAsync());
+                        Assert.Equal(owner, reader.GetString(0));
+                        Assert.Equal(identity, reader.GetString(1));
+                    }
+                    await using (var createOwnedObject = new NpgsqlCommand(
+                        $"CREATE TABLE {Q(schema)}.migration_created_probe(id integer PRIMARY KEY);", migration))
+                        await createOwnedObject.ExecuteNonQueryAsync();
+                    await using (var reset = new NpgsqlCommand("RESET ROLE;", migration))
+                        await reset.ExecuteNonQueryAsync();
+                    await AssertDeniedAsync(cs, $"SELECT * FROM {Q(schema)}.scope_probe;");
+                }
+                else
+                {
+                    await AssertDeniedAsync(cs, $"SET ROLE {Q(owner)};");
+                }
                 await AssertDeniedAsync(cs, $"CREATE ROLE {Q("o20_escalation_" + suffix)};");
                 await AssertDeniedAsync(cs, $"SELECT {Q(schema)}.technical_probe();");
             }
@@ -95,19 +118,24 @@ public sealed class O20SupportIdentityPostgresProofTests
                         r.rolreplication, r.rolbypassrls, r.rolinherit,
                         (SELECT count(*) FROM pg_auth_members m
                          WHERE m.member=r.oid OR m.roleid=r.oid),
+                        (SELECT count(*) FROM pg_auth_members m
+                         WHERE m.member=r.oid AND m.roleid=(SELECT oid FROM pg_roles WHERE rolname=@owner)
+                           AND NOT m.admin_option AND NOT m.inherit_option AND m.set_option),
                         (SELECT count(*) FROM pg_shdepend d
                          WHERE d.refclassid='pg_authid'::regclass AND d.refobjid=r.oid
                            AND d.deptype='o')
                     FROM pg_roles r WHERE r.rolname=@role;
                     """, verify);
                 command.Parameters.AddWithValue("role", identity);
+                command.Parameters.AddWithValue("owner", owner);
                 await using var reader = await command.ExecuteReaderAsync();
                 Assert.True(await reader.ReadAsync());
                 Assert.True(reader.GetBoolean(0));
                 for (var i = 1; i <= 5; i++) Assert.False(reader.GetBoolean(i));
                 Assert.False(reader.GetBoolean(6));
-                Assert.Equal(0L, reader.GetInt64(7));
-                Assert.Equal(0L, reader.GetInt64(8));
+                Assert.Equal(identity == identities[0] ? 1L : 0L, reader.GetInt64(7));
+                Assert.Equal(identity == identities[0] ? 1L : 0L, reader.GetInt64(8));
+                Assert.Equal(0L, reader.GetInt64(9));
             }
         }
         finally
