@@ -111,7 +111,8 @@ SELECT jsonb_build_object(
                     'privilege', a.privilege_type,
                     'grantable', a.is_grantable
                 ) ORDER BY a.grantee, a.privilege_type, a.grantor)
-                FROM aclexplode(ARRAY(SELECT unnest(COALESCE(d.datacl, acldefault('d', d.datdba))))) a
+                FROM unnest(COALESCE(d.datacl, acldefault('d', d.datdba))) AS acl_entry(item)
+                CROSS JOIN LATERAL aclexplode(ARRAY[acl_entry.item]) a
             ), '[]'::jsonb)
         )
         FROM pg_database d WHERE d.datname = current_database()
@@ -173,7 +174,8 @@ SELECT jsonb_build_object(
                     'privilege', a.privilege_type,
                     'grantable', a.is_grantable
                 ) ORDER BY a.grantee, a.privilege_type, a.grantor)
-                FROM aclexplode(ARRAY(SELECT unnest(COALESCE(n.nspacl, acldefault('n', n.nspowner))))) a
+                FROM unnest(COALESCE(n.nspacl, acldefault('n', n.nspowner))) AS acl_entry(item)
+                CROSS JOIN LATERAL aclexplode(ARRAY[acl_entry.item]) a
             ), '[]'::jsonb)
         ) ORDER BY n.nspname), '[]'::jsonb)
         FROM pg_namespace n
@@ -196,9 +198,10 @@ SELECT jsonb_build_object(
                     'privilege', a.privilege_type,
                     'grantable', a.is_grantable
                 ) ORDER BY a.grantee, a.privilege_type, a.grantor)
-                FROM aclexplode(ARRAY(SELECT unnest(COALESCE(c.relacl,
+                FROM unnest(COALESCE(c.relacl,
                     CASE WHEN c.relkind = 'S' THEN acldefault('S', c.relowner)
-                         ELSE acldefault('r', c.relowner) END)))) a
+                         ELSE acldefault('r', c.relowner) END)) AS acl_entry(item)
+                CROSS JOIN LATERAL aclexplode(ARRAY[acl_entry.item]) a
             ), '[]'::jsonb)
         ) ORDER BY n.nspname, c.relname, c.relkind), '[]'::jsonb)
         FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -216,7 +219,8 @@ SELECT jsonb_build_object(
         FROM pg_attribute a
         JOIN pg_class c ON c.oid = a.attrelid
         JOIN pg_namespace n ON n.oid = c.relnamespace
-        CROSS JOIN LATERAL aclexplode(ARRAY(SELECT unnest(COALESCE(a.attacl, '{}'::aclitem[])))) x
+        CROSS JOIN LATERAL unnest(COALESCE(a.attacl, '{}'::aclitem[])) AS acl_entry(item)
+        CROSS JOIN LATERAL aclexplode(ARRAY[acl_entry.item]) x
         WHERE a.attnum > 0 AND NOT a.attisdropped
     ),
     'routines', (
@@ -236,7 +240,8 @@ SELECT jsonb_build_object(
                     'privilege', a.privilege_type,
                     'grantable', a.is_grantable
                 ) ORDER BY a.grantee, a.privilege_type, a.grantor)
-                FROM aclexplode(ARRAY(SELECT unnest(COALESCE(pr.proacl, acldefault('f', pr.proowner))))) a
+                FROM unnest(COALESCE(pr.proacl, acldefault('f', pr.proowner))) AS acl_entry(item)
+                CROSS JOIN LATERAL aclexplode(ARRAY[acl_entry.item]) a
             ), '[]'::jsonb)
         ) ORDER BY n.nspname, pr.proname, pg_get_function_identity_arguments(pr.oid)), '[]'::jsonb)
         FROM pg_proc pr JOIN pg_namespace n ON n.oid = pr.pronamespace
@@ -254,7 +259,8 @@ SELECT jsonb_build_object(
                     'privilege', a.privilege_type,
                     'grantable', a.is_grantable
                 ) ORDER BY a.grantee, a.privilege_type, a.grantor)
-                FROM aclexplode(ARRAY(SELECT unnest(COALESCE(t.typacl, acldefault('T', t.typowner))))) a
+                FROM unnest(COALESCE(t.typacl, acldefault('T', t.typowner))) AS acl_entry(item)
+                CROSS JOIN LATERAL aclexplode(ARRAY[acl_entry.item]) a
             ), '[]'::jsonb)
         ) ORDER BY n.nspname, t.typname), '[]'::jsonb)
         FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
@@ -271,7 +277,8 @@ SELECT jsonb_build_object(
             'grantable', a.is_grantable
         ) ORDER BY d.defaclrole, d.defaclnamespace, d.defaclobjtype, a.grantee, a.privilege_type), '[]'::jsonb)
         FROM pg_default_acl d
-        CROSS JOIN LATERAL aclexplode(ARRAY(SELECT unnest(COALESCE(d.defaclacl, '{}'::aclitem[])))) a
+        CROSS JOIN LATERAL unnest(COALESCE(d.defaclacl, '{}'::aclitem[])) AS acl_entry(item)
+        CROSS JOIN LATERAL aclexplode(ARRAY[acl_entry.item]) a
     ),
     'extensions', (
         SELECT COALESCE(jsonb_agg(jsonb_build_object(
@@ -301,7 +308,8 @@ SELECT jsonb_build_object(
                     'privilege', a.privilege_type,
                     'grantable', a.is_grantable
                 ) ORDER BY a.grantee, a.privilege_type, a.grantor)
-                FROM aclexplode(ARRAY(SELECT unnest(COALESCE(l.lanacl, '{}'::aclitem[])))) a
+                FROM unnest(COALESCE(l.lanacl, '{}'::aclitem[])) AS acl_entry(item)
+                CROSS JOIN LATERAL aclexplode(ARRAY[acl_entry.item]) a
             ), '[]'::jsonb)
         ) ORDER BY l.lanname), '[]'::jsonb)
         FROM pg_language l
@@ -317,7 +325,8 @@ SELECT jsonb_build_object(
                     'privilege', a.privilege_type,
                     'grantable', a.is_grantable
                 ) ORDER BY a.grantee, a.privilege_type, a.grantor)
-                FROM aclexplode(ARRAY(SELECT unnest(COALESCE(f.fdwacl, '{}'::aclitem[])))) a
+                FROM unnest(COALESCE(f.fdwacl, '{}'::aclitem[])) AS acl_entry(item)
+                CROSS JOIN LATERAL aclexplode(ARRAY[acl_entry.item]) a
             ), '[]'::jsonb)
         ) ORDER BY f.fdwname), '[]'::jsonb)
         FROM pg_foreign_data_wrapper f
@@ -334,7 +343,8 @@ SELECT jsonb_build_object(
                     'privilege', a.privilege_type,
                     'grantable', a.is_grantable
                 ) ORDER BY a.grantee, a.privilege_type, a.grantor)
-                FROM aclexplode(ARRAY(SELECT unnest(COALESCE(s.srvacl, '{}'::aclitem[])))) a
+                FROM unnest(COALESCE(s.srvacl, '{}'::aclitem[])) AS acl_entry(item)
+                CROSS JOIN LATERAL aclexplode(ARRAY[acl_entry.item]) a
             ), '[]'::jsonb)
         ) ORDER BY s.srvname), '[]'::jsonb)
         FROM pg_foreign_server s JOIN pg_foreign_data_wrapper f ON f.oid = s.srvfdw
@@ -350,7 +360,8 @@ SELECT jsonb_build_object(
                     'privilege', a.privilege_type,
                     'grantable', a.is_grantable
                 ) ORDER BY a.grantee, a.privilege_type, a.grantor)
-                FROM aclexplode(ARRAY(SELECT unnest(COALESCE(l.lomacl, '{}'::aclitem[])))) a
+                FROM unnest(COALESCE(l.lomacl, '{}'::aclitem[])) AS acl_entry(item)
+                CROSS JOIN LATERAL aclexplode(ARRAY[acl_entry.item]) a
             ), '[]'::jsonb)
         ) ORDER BY l.oid), '[]'::jsonb)
         FROM pg_largeobject_metadata l
@@ -366,7 +377,8 @@ SELECT jsonb_build_object(
                     'privilege', a.privilege_type,
                     'grantable', a.is_grantable
                 ) ORDER BY a.grantee, a.privilege_type, a.grantor)
-                FROM aclexplode(ARRAY(SELECT unnest(COALESCE(t.spcacl, '{}'::aclitem[])))) a
+                FROM unnest(COALESCE(t.spcacl, '{}'::aclitem[])) AS acl_entry(item)
+                CROSS JOIN LATERAL aclexplode(ARRAY[acl_entry.item]) a
             ), '[]'::jsonb)
         ) ORDER BY t.spcname), '[]'::jsonb)
         FROM pg_tablespace t
