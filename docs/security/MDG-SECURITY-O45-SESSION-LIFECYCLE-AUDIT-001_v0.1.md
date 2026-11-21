@@ -5,8 +5,8 @@
 | Document ID | MDG-SECURITY-O45-SESSION-LIFECYCLE-AUDIT-001 |
 | Version / Date | 0.1 / 2026-11-21 |
 | Baseline | ADR-0013 (2026-11-07 correction), Stage 08, N.3 reconciliation proposal |
-| Status | SOURCE AUDIT COMPLETE — IMPLEMENTATION AND THREAT-MODEL TESTS OPEN |
-| Execution | Documentation/source inspection only; no code, schema, migration or runtime setting changed |
+| Status | SOURCE AUDIT COMPLETE — HEARTBEAT/LOGOUT CANDIDATE IMPLEMENTED IN THIS PR; REMAINING LIFECYCLE OPEN |
+| Execution | Source audit plus limited API/handler/test changes in this PR; no schema, migration, production setting or runtime activation |
 
 ## 1. Current source findings
 
@@ -22,11 +22,11 @@ However, O-45 remains OPEN. The following gaps are present in the reviewed main 
 
 | Gap | Current evidence | Required closure |
 |---|---|---|
-| Explicit heartbeat endpoint | `SessionHeartbeatHandler` exists but is not registered in API DI and has no endpoint. Middleware renews lease only on protected requests. | Register handler, define endpoint and prove idle-client heartbeat behavior. |
-| Logout | `ISessionStore.RevokeByDigestAsync` and PostgreSQL implementation exist, but no endpoint/handler calls it. | Authenticated, idempotent logout that revokes only the current session and rejects replay. |
+| Explicit heartbeat endpoint | This PR adds `POST /api/v1/identity/heartbeat`; the existing PostgreSQL-backed session middleware authenticates it and renews the 180-second lease. It does not use a client-supplied account/session identifier. | Candidate implementation added; E2E CI result pending. Idle-client timing and boundary tests remain required. |
+| Logout | This PR adds `LogoutHandler` and `POST /api/v1/identity/logout`. It hashes the presented opaque token, revokes only the matching current digest, writes secret-free audit evidence on first successful revoke, and returns the same 204 response for unknown/already-revoked tokens. | Candidate implementation and E2E replay test added; CI result pending. |
 | Token rotation | No token-rotation handler, endpoint, persistence operation or test was found. | Owner-approved rotation trigger/grace policy, atomic old/new digest transition, replay and unknown-outcome tests. |
 | Stale-session cleanup | Active-session queries exclude expired leases, but no cleanup worker/job or lifecycle transition for abandoned sessions was found. | Safe stale marking/cleanup with retained evidence; no unapproved purge. |
-| Graceful close / process crash | No logout route exists; crash is only indirectly handled by lease expiry. | Graceful logout and crash/lease-expiry/reconnect scenarios. |
+| Graceful close / process crash | Graceful logout route is added in this PR. Process crash still relies on lease expiry; no stale-session cleanup worker/job exists. | Graceful close candidate added; crash/lease-expiry/reconnect and cleanup scenarios remain open. |
 | Account disablement | Domain primitive exists, but no handler/endpoint atomically disables the account and revokes every session was found. | Server-authorized transactional disable + revoke-all. |
 | Admin reset registration | Handler exists but is not registered in API DI or exposed by a reviewed endpoint. | Register only after permission enforcement and API threat review. |
 | API-wide authentication | Middleware protects Persons and password-change paths; other application routes pass through anonymously. | Default-deny authenticated route policy before any gated application activation; health/liveness and explicitly public routes remain allow-listed. |
@@ -80,12 +80,12 @@ The safe target behavior is:
 
 ## 5. API contract required
 
-The following endpoints are proposed contracts, not currently implemented or authorized for activation:
+The following endpoints are now present as a gated implementation candidate in this PR, except token rotation which remains a proposal. HTTP login remains controlled by its existing disabled-by-default feature flag; no production activation is included:
 
 | Endpoint | Behavior | Authentication |
 |---|---|---|
-| `POST /api/v1/identity/heartbeat` | Validates current bearer token and extends lease by policy; returns new lease expiry only | Current valid session |
-| `POST /api/v1/identity/logout` | Revokes current session only; idempotent and no account ID accepted from client | Current bearer token; repeat logout returns stable non-sensitive result |
+| `POST /api/v1/identity/heartbeat` | Middleware validates the current bearer token against PostgreSQL and extends the lease; returns 204 | Current valid session |
+| `POST /api/v1/identity/logout` | Revokes the session matching the presented token digest; no account/session ID accepted from client; returns stable 204 for repeat/unknown token | Bearer token presented; invalid/expired/revoked input is non-disclosing |
 | `POST /api/v1/identity/token/rotate` | Rotates current session token under the owner-approved rotation policy | Current valid session + approved rotation conditions |
 
 All identity/account/session state is derived from the validated server-side principal and PostgreSQL. Client-supplied AccountId, SessionId, credential version or role is never trusted.
@@ -112,7 +112,7 @@ All identity/account/session state is derived from the validated server-side pri
 | O45-T16 | Secret hygiene | No raw token in logs, telemetry, crash dumps or CI artifacts |
 | O45-T17 | Manager-specific N.3 policy | Blocked until open N.3 manager-account/session questions are explicitly resolved |
 
-All tests above are specifications only and NOT RUN / NOT PASS.
+O45-T01 and the basic O45-T05 flow have been added to `IdentityAccessHttpEndToEndTests.cs` in this PR. They remain NOT RUN / NOT PASS until the exact head SHA CI run reaches a terminal successful result. All other tests above remain specifications only and NOT RUN / NOT PASS.
 
 ## 7. Dependencies
 
@@ -124,6 +124,6 @@ All tests above are specifications only and NOT RUN / NOT PASS.
 
 ## 8. Status and non-authorization
 
-O-45 remains **OPEN / PARTIALLY IMPLEMENTED / NOT VERIFIED**. Existing token storage, lease validation and password-change revocation are partial foundations, not full lifecycle acceptance. No production endpoint activation, token rotation policy, stale-row purge, new DB identity/grant, migration, G1 activation, Posting Release or Go-Live is authorized by this audit.
+O-45 remains **OPEN / PARTIALLY IMPLEMENTED / NOT VERIFIED**. This PR adds a heartbeat route and idempotent logout candidate with an end-to-end test extension, but token rotation, stale-session reconciliation, account disablement/revoke, full API default-deny, crash/reconnect proof and exact-SHA CI acceptance remain open. No production endpoint activation, token rotation policy, stale-row purge, new DB identity/grant, migration, G1 activation, Posting Release or Go-Live is authorized by this audit.
 
 **END — MDG-SECURITY-O45-SESSION-LIFECYCLE-AUDIT-001 v0.1**
