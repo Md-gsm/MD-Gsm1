@@ -170,6 +170,12 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             Assert.Equal((short)1, checkpointV2.CanonicalizationVersion);
             Assert.Equal("SHA-256", checkpointV2.HashAlgorithmCode);
             Assert.Equal(ComputeCheckpointReference(checkpointV1), checkpointV2.PreviousCheckpointRef);
+            Assert.False(VerifyCheckpoint(checkpointV2 with { PreviousCheckpointRef = new string('0', 64) },
+                "test-key-v2", keyV2Public));
+            Assert.False(VerifyCheckpoint(checkpointV2 with { CanonicalizationVersion = 99 },
+                "test-key-v2", keyV2Public));
+            Assert.False(VerifyCheckpoint(checkpointV2 with { HashAlgorithmCode = "SHA-512" },
+                "test-key-v2", keyV2Public));
 
             var badSignature = checkpointV2 with { Signature = Convert.ToBase64String(new byte[384]) };
             Assert.False(VerifyCheckpoint(badSignature, "test-key-v2", keyV2Public));
