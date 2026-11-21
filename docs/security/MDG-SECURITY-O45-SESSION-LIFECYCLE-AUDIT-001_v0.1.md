@@ -22,8 +22,8 @@ However, O-45 remains OPEN. The following gaps are present in the reviewed main 
 
 | Gap | Current evidence | Required closure |
 |---|---|---|
-| Explicit heartbeat endpoint | This PR adds `POST /api/v1/identity/heartbeat`; the existing PostgreSQL-backed session middleware authenticates it and renews the 180-second lease. It does not use a client-supplied account/session identifier. | Candidate implementation added; E2E CI result pending. Idle-client timing and boundary tests remain required. |
-| Logout | This PR adds `LogoutHandler` and `POST /api/v1/identity/logout`. It hashes the presented opaque token, revokes only the matching current digest, writes secret-free audit evidence on first successful revoke, and returns the same 204 response for unknown/already-revoked tokens. | Candidate implementation and E2E replay test added; CI result pending. |
+| Explicit heartbeat endpoint | This PR adds `POST /api/v1/identity/heartbeat`; the PostgreSQL-backed session middleware authenticates it and renews the 180-second lease. A new `IDatabaseClock` port reads `clock_timestamp()` from PostgreSQL; login, session resolution/heartbeat, logout, password-change/reset revocation and audit timestamps use that database clock. It does not use a client-supplied account/session identifier. | Candidate implementation added; E2E CI result pending. Idle-client timing and boundary tests remain required. |
+| Logout | This PR adds `LogoutHandler` and `POST /api/v1/identity/logout`. It hashes the presented opaque token, obtains time from PostgreSQL, revokes only the matching current digest, writes secret-free audit evidence on first successful revoke, and returns the same 204 response for unknown/already-revoked tokens. | Candidate implementation and E2E replay test added; CI result pending. |
 | Token rotation | No token-rotation handler, endpoint, persistence operation or test was found. | Owner-approved rotation trigger/grace policy, atomic old/new digest transition, replay and unknown-outcome tests. |
 | Stale-session cleanup | Active-session queries exclude expired leases, but no cleanup worker/job or lifecycle transition for abandoned sessions was found. | Safe stale marking/cleanup with retained evidence; no unapproved purge. |
 | Graceful close / process crash | Graceful logout route is added in this PR. Process crash still relies on lease expiry; no stale-session cleanup worker/job exists. | Graceful close candidate added; crash/lease-expiry/reconnect and cleanup scenarios remain open. |
@@ -111,6 +111,7 @@ All identity/account/session state is derived from the validated server-side pri
 | O45-T15 | API route coverage | Application routes default-deny except explicit public/health allow-list |
 | O45-T16 | Secret hygiene | No raw token in logs, telemetry, crash dumps or CI artifacts |
 | O45-T17 | Manager-specific N.3 policy | Blocked until open N.3 manager-account/session questions are explicitly resolved |
+| O45-T18 | Database clock authority | Session resolve/heartbeat/login/revoke use PostgreSQL `clock_timestamp()`; client/host clock skew cannot extend or shorten a lease |
 
 O45-T01 and the basic O45-T05 flow have been added to `IdentityAccessHttpEndToEndTests.cs` in this PR. They remain NOT RUN / NOT PASS until the exact head SHA CI run reaches a terminal successful result. All other tests above remain specifications only and NOT RUN / NOT PASS.
 
@@ -124,6 +125,6 @@ O45-T01 and the basic O45-T05 flow have been added to `IdentityAccessHttpEndToEn
 
 ## 8. Status and non-authorization
 
-O-45 remains **OPEN / PARTIALLY IMPLEMENTED / NOT VERIFIED**. This PR adds a heartbeat route and idempotent logout candidate with an end-to-end test extension, but token rotation, stale-session reconciliation, account disablement/revoke, full API default-deny, crash/reconnect proof and exact-SHA CI acceptance remain open. No production endpoint activation, token rotation policy, stale-row purge, new DB identity/grant, migration, G1 activation, Posting Release or Go-Live is authorized by this audit.
+O-45 remains **OPEN / PARTIALLY IMPLEMENTED / NOT VERIFIED**. This PR adds a heartbeat route and idempotent logout candidate with an end-to-end test extension, and switches IdentityAccess session/lockout/audit timestamps to a PostgreSQL-authoritative clock. Token rotation, stale-session reconciliation, account disablement/revoke, full API default-deny, crash/reconnect proof and exact-SHA CI acceptance remain open. No production endpoint activation, token rotation policy, stale-row purge, new DB identity/grant, migration, G1 activation, Posting Release or Go-Live is authorized by this audit.
 
 **END — MDG-SECURITY-O45-SESSION-LIFECYCLE-AUDIT-001 v0.1**
