@@ -93,7 +93,9 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             var rollbackIntent = NewIntent(streamId, "rollback-event", new Dictionary<string, string> { ["reason"] = "injected" });
             await Assert.ThrowsAsync<InjectedRollbackException>(() =>
                 AppendAsync(writerAConnection, schema, rollbackIntent, injectRollbackAfterInsert: true));
-            Assert.Equal(beforeFailure, await ReadHeadAsync(adminConnectionString, schema, streamId));
+            var afterRollback = await ReadHeadAsync(adminConnectionString, schema, streamId);
+            Assert.Equal(beforeFailure.Sequence, afterRollback.Sequence);
+            Assert.Equal(beforeFailure.Hash, afterRollback.Hash);
             Assert.False(await EventExistsAsync(adminConnectionString, schema, rollbackIntent.EventId));
 
             // Kill the PostgreSQL backend after INSERT but before head update/COMMIT.
@@ -101,7 +103,9 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             var crashIntent = NewIntent(streamId, "crash-before-commit", new Dictionary<string, string> { ["reason"] = "backend-termination" });
             await Assert.ThrowsAnyAsync<Exception>(() =>
                 AppendAsync(writerBConnection, schema, crashIntent, adminConnectionString: adminConnectionString, terminateBackendAfterInsert: true));
-            Assert.Equal(beforeFailure, await ReadHeadAsync(adminConnectionString, schema, streamId));
+            var afterCrash = await ReadHeadAsync(adminConnectionString, schema, streamId);
+            Assert.Equal(beforeFailure.Sequence, afterCrash.Sequence);
+            Assert.Equal(beforeFailure.Hash, afterCrash.Hash);
             Assert.False(await EventExistsAsync(adminConnectionString, schema, crashIntent.EventId));
 
             // Simulate an unknown client outcome: retry the same committed EventId.
@@ -115,7 +119,8 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             Assert.Equal(firstOutcome.EventHash, replay.EventHash);
 
             var conflictingReplay = replayIntent with { EventTypeCode = "different-event-type" };
-            await Assert.ThrowsAsync<InvalidOperationException>(() => AppendAsync(writerBConnection, schema, conflictingReplay));
+            var replayConflict = await Assert.ThrowsAsync<PostgresException>(() => AppendAsync(writerBConnection, schema, conflictingReplay));
+            Assert.Equal("P0001", replayConflict.SqlState);
 
             // Fixed canonicalization vector exercises Persian text, NFC, sorted metadata and UTF-8.
             var vector = new EventIntent(
@@ -240,14 +245,14 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             GRANT USAGE ON SCHEMA {Q(schema)} TO {Q(writerGroup)}, {Q(verifier)};
             CREATE FUNCTION {Q(schema)}.lock_stream_head(p_stream_id uuid)
             RETURNS TABLE(last_sequence bigint, head_hash bytea)
-            LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog AS $
+            LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog AS $fn$
             BEGIN
                 RETURN QUERY SELECT h.last_sequence,h.head_hash
                 FROM {Q(schema)}.audit_stream_heads AS h
                 WHERE h.stream_id=p_stream_id FOR UPDATE;
                 IF NOT FOUND THEN RAISE EXCEPTION 'Unknown audit stream'; END IF;
             END;
-            $;
+            $fn$;
             CREATE FUNCTION {Q(schema)}.append_event(
                 p_event_id uuid,p_stream_id uuid,p_next_sequence bigint,
                 p_schema_version smallint,p_canonicalization_version smallint,
@@ -255,7 +260,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 p_metadata_canonical text,p_intent_digest bytea,p_previous_hash bytea,
                 p_canonical_payload bytea,p_event_hash bytea)
             RETURNS TABLE(sequence bigint,event_hash bytea,is_duplicate boolean)
-            LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog AS $
+            LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog AS $fn$
             DECLARE existing_digest bytea; existing_sequence bigint; existing_hash bytea;
                     current_sequence bigint; current_hash bytea; affected integer;
             BEGIN
@@ -293,7 +298,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 IF affected <> 1 THEN RAISE EXCEPTION 'Audit head compare-and-swap failed'; END IF;
                 RETURN QUERY SELECT p_next_sequence,p_event_hash,FALSE;
             END;
-            $;
+            $fn$;
             ALTER FUNCTION {Q(schema)}.lock_stream_head(uuid) OWNER TO {Q(owner)};
             ALTER FUNCTION {Q(schema)}.append_event(uuid,uuid,bigint,smallint,smallint,text,timestamptz,text,text,text,bytea,bytea,bytea,bytea) OWNER TO {Q(owner)};
             REVOKE ALL ON FUNCTION {Q(schema)}.lock_stream_head(uuid) FROM PUBLIC;
