@@ -53,6 +53,7 @@ fi
 createdb "$restore_db"
 restore_created=1
 psql -X -v ON_ERROR_STOP=1 -d postgres -c "COMMENT ON DATABASE \"$restore_db\" IS 'MDGSM_DISPOSABLE_TEST_DB; O20-D isolated restore';"
+psql -X -v ON_ERROR_STOP=1 -d postgres -c "REVOKE CONNECT ON DATABASE \"$restore_db\" FROM PUBLIC;"
 pg_restore --exit-on-error --no-owner --no-acl --dbname "$restore_db" "$backup_file"
 source_state="$(psql -X -d "$MDGSM_TEST_DB" -Atqc "SELECT (SELECT count(*)::text FROM mdgsm_migration_history) || '|' || (SELECT max(migration_version)::text FROM mdgsm_migration_history) || '|' || (SELECT count(*)::text FROM information_schema.tables WHERE table_schema='identity' AND table_type='BASE TABLE') || '|' || (SELECT count(*)::text FROM identity.accounts)")"
 restored_state="$(psql -X -d "$restore_db" -Atqc "SELECT (SELECT count(*)::text FROM mdgsm_migration_history) || '|' || (SELECT max(migration_version)::text FROM mdgsm_migration_history) || '|' || (SELECT count(*)::text FROM information_schema.tables WHERE table_schema='identity' AND table_type='BASE TABLE') || '|' || (SELECT count(*)::text FROM identity.accounts)")"
