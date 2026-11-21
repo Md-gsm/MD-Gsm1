@@ -383,6 +383,8 @@ public sealed class IdentityAccessHttpEndToEndTests
             await allowedRead.ExecuteNonQueryAsync();
         }
         await AssertDeniedAsync(runtime, "CREATE TABLE identity.runtime_privilege_probe(id integer);");
+        await AssertDeniedAsync(runtime, "CREATE TABLE public.runtime_privilege_probe(id integer);");
+        await AssertDeniedAsync(runtime, "CREATE SEQUENCE public.runtime_privilege_probe_seq;");
         await AssertDeniedAsync(runtime, "ALTER TABLE identity.accounts ADD COLUMN runtime_probe text;");
         await AssertDeniedAsync(runtime, "DROP TABLE identity.accounts;");
         await AssertDeniedAsync(runtime, "TRUNCATE TABLE identity.sessions;");
@@ -421,6 +423,9 @@ public sealed class IdentityAccessHttpEndToEndTests
         await AssertDeniedAsync(runtime, "SELECT * FROM persons_party_merge_records LIMIT 0;");
         await AssertDeniedAsync(runtime, "SELECT * FROM finance_party_accounts LIMIT 0;");
         await AssertDeniedAsync(runtime, "SELECT * FROM mdgsm_schema_version LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM mdgsm_migration_history LIMIT 0;");
+        await AssertDeniedAsync(runtime, "INSERT INTO persons DEFAULT VALUES;");
+        await AssertDeniedAsync(runtime, "INSERT INTO finance_party_accounts DEFAULT VALUES;");
 
         return runtimeConnectionString;
     }
