@@ -212,6 +212,7 @@
 74fa15228cacbedd50c3611f84f6f1c8833e00ffba056ad62bb60fe17eb4dfc6  tests/MDGsm.Domain.Tests/IdentityAccess/SensitivePersonsPermissionCatalogTests.cs
 756928d1639cc1b86f4a87a3a9262260743371406d44b64b3e57fa899f8a2411  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v0.3.md
 7668d5076009a07c6866f07fc8d1456083a9d1c220cf0eec421c5b5c0f671d01  docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v1.4.md
+76c0c9c0b35c133617493a1037f39823d003fe721861f40555ea6280f748dc8e  docs/security/MDG-SECURITY-O20E-DATA-OWNERSHIP-001_v0.2.md
 770ec5e210fcbc2ceae417069ed0125878b12c44a5f0fa44220b51a2e4f651da  docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v1.0.md
 7747466b995e08baa90886c10641af14fb26fd5dec499a8a6344fa7a1a30cfe5  src/Modules/Accounting/Application/MDGsm.Accounting.Application.csproj
 7792ad77a10c871425f5cc1b9e96b169c10b12508be829d8a720286c57c430be  src/Host/Desktop/App.xaml
@@ -429,6 +430,7 @@ e0994dfd473a39782748fd2132e5a126589589354a34237464ab8127bbec04f4  src/Host/Deskt
 e2cd9a4f546d5c420f4a63a67ccf9c847de5ff17291e25f8782802ff0c480fdc  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v1.8.md
 e3a85bd355dfc3837bd6a110b01614c1e7b01897acbe6659c4f32382d9ccaefe  docs/architecture/overview.md
 e4e3ef22467897b680b5898990b1ffa8d20a63fd9d36d61ec185e4924bd0f3c4  docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v0.4.md
+e4f7d48e6802d82687cc990f24b52be6ec98a16cbf53810f09e2cf14ba69361a  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v2.3.md
 e51a27cc946e5e85bb0b07d5a04dd09ec626c5333f86d3990b58d9bfb37c72eb  tests/MDGsm.Domain.Tests/Accounting/AccountRegistryValidatorTests.cs
 e537e3fb779d2e84aaa7ae5ed805ab8cb03d33b5e56f3cdf1584d544162bfedd  src/BuildingBlocks/MDGsm.Domain/Persons/PartyContactPoint.cs
 e57e8619cbc18fb293eb74c48b8a8e53a0c8e9cf1ea3a06eb4a53cc7e44baff9  docs/modules/inventory/OWN-INV-018_v1.0.md
