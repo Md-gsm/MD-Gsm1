@@ -24,7 +24,8 @@ public sealed class PostgresIdentityAccessStores(MdGsmDbContext db) :
  {
   ArgumentNullException.ThrowIfNull(account);
   var row=await db.IdentityAccounts.SingleOrDefaultAsync(x=>x.AccountId==account.Id.Value,ct);
-  if(row is null){row=new(){AccountId=account.Id.Value,CreatedAtUtc=await GetUtcNowAsync(ct)};db.IdentityAccounts.Add(row);}
+  if(row is null)
+   throw new InvalidOperationException("IdentityAccess runtime cannot provision accounts; bootstrap and account creation require a separately authorized provisioning boundary.");
   row.LoginName=account.Username.DisplayValue;row.LoginNameNormalized=account.Username.NormalizedValue;
   row.PasswordHash=account.PasswordHash;row.PasswordHashVersion=account.PasswordHashVersion;
   row.MustChangePassword=account.MustChangePassword;row.IsEnabled=account.IsEnabled;row.CredentialVersion=account.CredentialVersion;
