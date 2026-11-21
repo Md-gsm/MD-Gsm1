@@ -166,3 +166,18 @@ The owner approved the least-privilege five-identity model proposed for O-20. Th
 O-20 remains OPEN until all applicable rows have executable positive/negative evidence and independent review. The approved policy baseline is not a PASS for the four support identities.
 
 **END ADDENDUM — OWNER-APPROVED O-20 POLICY BASELINE v0.7**
+
+## 8. Disposable support-identity baseline proof — added 2026-11-21
+
+A new integration test, `tests/MDGsm.Domain.Tests/Security/O20SupportIdentityPostgresProofTests.cs`, materializes four unique disposable LOGINs for `migration_runner`, `backup_operator`, `reporting_ro` and `emergency_operator` inside the marked local disposable PostgreSQL database. It checks:
+
+- LOGIN is enabled; SUPERUSER, CREATEDB, CREATEROLE, REPLICATION and BYPASSRLS are disabled; INHERIT is disabled.
+- No membership edges exist to or from any of the four identities.
+- No identity owns a database object.
+- No schema USAGE/CREATE, table SELECT/INSERT/UPDATE/DELETE/TRUNCATE, function EXECUTE or database CREATE privilege is effective on the disposable probe objects.
+- Direct SELECT, INSERT, UPDATE, DELETE, TRUNCATE, schema DDL and function execution are denied with SQLSTATE 42501.
+- The test creates and removes only uniquely named ephemeral roles/schema in the marked disposable database; it does not provision production principals or credentials.
+
+**Evidence status: source added; exact-head PostgreSQL 18 CI PENDING.** This is a deny-all baseline proof only. It does not yet prove migration manifest execution/temporary SET ROLE, logical backup and isolated restore, reporting views/RowScope, emergency allow-list/expiry/revocation, complete live-catalog/default-ACL inventory, or any positive support-identity operation. Those capabilities remain ungranted and O-20 remains OPEN. The existing `runtime_app` proof is separate and does not convert this partial support-role test into full N.6 acceptance.
+
+**END ADDENDUM — O-20 SUPPORT-IDENTITY BASELINE PROOF v0.1**
