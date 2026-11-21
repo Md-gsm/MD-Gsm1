@@ -210,7 +210,7 @@ The disposable CI model uses:
 - `mdgsm_schema_owner`: NOLOGIN, no elevated role attributes, the sole membership target.
 - Membership: ADMIN FALSE, INHERIT FALSE, SET TRUE.
 - Database and `public` CREATE are granted only to `mdgsm_schema_owner`; the LOGIN must have no effective direct CREATE.
-- The Linux and Windows PostgreSQL 18 migration jobs execute the actual CLI with the LOGIN credentials; Linux additionally runs the O-20 support identity catalog test explicitly.
+- The Linux and Windows PostgreSQL 18 migration jobs execute the actual CLI as the dedicated LOGIN; Linux uses runner-local trust only inside the disposable service, while Windows uses a per-run random password in process environment. Linux additionally runs the O-20 support identity catalog test explicitly.
 
 The single NOLOGIN owner currently owns objects created by the existing migration scripts, including objects still located in `public`. This proves a bounded deployment migration identity, not final per-module schema-owner segregation. Module-specific schemas/owner roles and the complete catalog snapshot remain future O20-G requirements.
 
