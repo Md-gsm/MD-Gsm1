@@ -98,7 +98,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             // PostgreSQL must roll back the open transaction on backend termination.
             var crashIntent = NewIntent(streamId, "crash-before-commit", new Dictionary<string, string> { ["reason"] = "backend-termination" });
             await Assert.ThrowsAnyAsync<Exception>(() =>
-                AppendAsync(writerBConnection, schema, crashIntent, adminConnectionString, terminateBackendAfterInsert: true));
+                AppendAsync(writerBConnection, schema, crashIntent, adminConnectionString: adminConnectionString, terminateBackendAfterInsert: true));
             Assert.Equal(beforeFailure, await ReadHeadAsync(adminConnectionString, schema, streamId));
             Assert.False(await EventExistsAsync(adminConnectionString, schema, crashIntent.EventId));
 
@@ -130,7 +130,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 });
             var normalizedVector = Normalize(vector);
             var vectorDigest = Convert.ToHexString(SHA256.HashData(SerializeIntent(normalizedVector)));
-            Assert.Equal("GOLDEN_VECTOR_TO_BE_FILLED", vectorDigest);
+            Assert.Equal("A29FF7C8936B7926B4BE8D8E5F9E55EA1EF65CF33BAD4BAB354C98D8ABC8A8D0", vectorDigest);
 
             var head = await ReadHeadAsync(adminConnectionString, schema, streamId);
             using var keyV1 = RSA.Create(2048);
@@ -158,7 +158,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 await using var tamper = new NpgsqlCommand($"""
                     ALTER TABLE {Q(schema)}.audit_events DISABLE TRIGGER USER;
                     UPDATE {Q(schema)}.audit_events
-                    SET metadata_json = '{{"tampered":"true"}}'
+                    SET metadata_canonical = 'tampered'
                     WHERE stream_id = @stream AND stream_sequence = 1;
                     ALTER TABLE {Q(schema)}.audit_events ENABLE TRIGGER USER;
                     """, admin);
@@ -407,7 +407,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 var occurred = reader.GetFieldValue<DateTimeOffset>(5);
                 var actor = reader.GetString(6);
                 var subject = reader.IsDBNull(7) ? null : reader.GetString(7);
-                var metadataJson = reader.GetString(8);
+                var metadataCanonical = reader.GetString(8);
                 var intentDigest = reader.GetFieldValue<byte[]>(9);
                 var previous = reader.GetFieldValue<byte[]>(10);
                 var canonicalPayload = reader.GetFieldValue<byte[]>(11);
@@ -417,8 +417,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                     !CryptographicOperations.FixedTimeEquals(previous, expectedPrevious))
                     return false;
 
-                var metadata = JsonSerializer.Deserialize<SortedDictionary<string, string>>(metadataJson)
-                    ?? new SortedDictionary<string, string>(StringComparer.Ordinal);
+                var metadata = ParseCanonicalMetadata(metadataCanonical);
                 var intent = Normalize(new EventIntent(eventId, streamId, eventType, occurred,
                     actor, subject, metadata, schemaVersion, canonicalVersion));
                 var recomputedIntent = SHA256.HashData(SerializeIntent(intent));
@@ -505,9 +504,27 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             if (!sorted.TryAdd(key, value))
                 throw new InvalidOperationException("Metadata keys collide after NFC normalization.");
         }
-        return JsonSerializer.Serialize(sorted);
+        return string.Join(";", sorted.Select(pair =>
+            Convert.ToBase64String(Encoding.UTF8.GetBytes(pair.Key)) + ":" +
+            Convert.ToBase64String(Encoding.UTF8.GetBytes(pair.Value))));
     }
 
+    private static SortedDictionary<string, string> ParseCanonicalMetadata(string canonical)
+    {
+        var result = new SortedDictionary<string, string>(StringComparer.Ordinal);
+        if (canonical.Length == 0) return result;
+        foreach (var pair in canonical.Split(';'))
+        {
+            var separator = pair.IndexOf(':');
+            if (separator <= 0) throw new InvalidDataException("Malformed canonical metadata.");
+            var key = Encoding.UTF8.GetString(Convert.FromBase64String(pair[..separator])).Normalize(NormalizationForm.FormC);
+            var value = Encoding.UTF8.GetString(Convert.FromBase64String(pair[(separator + 1)..])).Normalize(NormalizationForm.FormC);
+            if (!result.TryAdd(key, value)) throw new InvalidDataException("Duplicate canonical metadata key.");
+        }
+        if (!string.Equals(CanonicalMetadata(result), canonical, StringComparison.Ordinal))
+            throw new InvalidDataException("Metadata is not in canonical order/encoding.");
+        return result;
+    }
     private static string NormalizeText(string value) => value.Normalize(NormalizationForm.FormC);
 
     private static DateTimeOffset NormalizeTimestamp(DateTimeOffset value)
@@ -632,7 +649,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
     private sealed record EventIntent(
         Guid EventId, Guid StreamId, string EventTypeCode, DateTimeOffset OccurredAtUtc,
         string ActorRef, string? SubjectRef, IDictionary<string, string> Metadata,
-        short SchemaVersion = SchemaVersion, short CanonicalizationVersion = CanonicalizationVersion,
+        short SchemaVersion = 1, short CanonicalizationVersion = 1,
         string? MetadataJson = null);
 
     private sealed record AppendResult(long Sequence, string EventHash, bool Duplicate);
@@ -640,5 +657,5 @@ public sealed class AuditSecurityHashChainPostgresProofTests
         string StreamId, long LastSequence, string HeadHash, string KeyId,
         string CreatedAtUtc, string PublicKey, string Signature);
 
-    private sealed class InjectedRollbackException : Exception;
+    private sealed class InjectedRollbackException : Exception { }
 }
