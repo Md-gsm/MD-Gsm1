@@ -197,6 +197,9 @@ public sealed class IdentityAccessHttpEndToEndTests
         Assert.False(active!.MustChangePassword);
 
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", active.AccessToken);
+        var heartbeat = await client.PostAsync("/api/v1/identity/heartbeat", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, heartbeat.StatusCode);
+
         var authorizedPersonsRead = await client.GetAsync(partyUrl);
         Assert.Equal(HttpStatusCode.NotFound, authorizedPersonsRead.StatusCode);
 
@@ -233,6 +236,16 @@ public sealed class IdentityAccessHttpEndToEndTests
         var wrongPassword = await client.PostAsJsonAsync("/api/v1/identity/login",
             new LoginRequest(username, "incorrect-password", Guid.CreateVersion7()));
         Assert.Equal(HttpStatusCode.Unauthorized, wrongPassword.StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", active.AccessToken);
+        var logout = await client.PostAsync("/api/v1/identity/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+
+        var revokedAfterLogout = await client.GetAsync(partyUrl);
+        Assert.Equal(HttpStatusCode.Unauthorized, revokedAfterLogout.StatusCode);
+
+        var repeatedLogout = await client.PostAsync("/api/v1/identity/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, repeatedLogout.StatusCode);
     }
     private sealed class DisposableDatabase(string adminConnectionString, string databaseName, string connectionString)
         : IAsyncDisposable
