@@ -76,13 +76,13 @@ All newly registered documents are on the PR #86 head branch and are not yet par
 - O-21 remains OPEN at production level: AuditSecurity production module, transactional outboxes, external WORM anchor, platform key custody/recovery/revocation, restore continuity, alerts, runbook and independent review are not complete.
 - O-45 remains OPEN beyond the tested heartbeat/logout/database-clock path: token rotation, stale-session cleanup, account-disable revoke, full API default-deny and crash/reconnect threat coverage remain.
 - O-46 remains NOT IMPLEMENTED: only offline-code runtime access denial is tested. No Bootstrap credential path, email OTP Recovery handler, verified-email proof, SMTP, HMAC key provider or runtime endpoint has been enabled.
-- Gate D remains OPEN / NOT VERIFIED. PR #86 remains Draft and unmerged.
+- Gate D remains OPEN / NOT VERIFIED. PR #86 is open, non-Draft and unmerged; this status is not operational acceptance.
 - On SHA `284ac9dbb94fbbd05d19de18146ccc27d35d8cbf`, CodeQL (`44914448284`), Windows Preview Installer (`44914448335`) and Project Charter Owner Gate (`44914448279`) completed PASS. The Linux build/tests and PostgreSQL 18 integration job passed; `persons-spec-lint` passed (459 files). The required Windows PostgreSQL migration job `136876940873` was CANCELLED while subsequent controlled documentation/manifest commits were pushed; the `persons-ci-evidence` job consequently failed its required-gate enforcement because that job's result was `cancelled`, not because the Linux PostgreSQL integration suite failed. The final branch head after these evidence successors requires a fresh uninterrupted full workflow run.
 - Independent security reviewer attestation and owner release acceptance remain pending.
 
 ## 5. Non-authorization boundary
 
-PR #86 is a Draft review package. No production role, LOGIN credential, membership, grant, revoke, migration, bootstrap credential, OTP, recovery key, SMTP secret, signing key, WORM checkpoint, production listener, feature activation, audit purge, G1 activation, Posting Release or Go-Live is authorized. No Stage 08 item is closed by document registration or CI success alone.
+PR #86 is an open review package (currently non-Draft, not merged and not accepted). No production role, LOGIN credential, membership, grant, revoke, migration, bootstrap credential, OTP, recovery key, SMTP secret, signing key, WORM checkpoint, production listener, feature activation, audit purge, G1 activation, Posting Release or Go-Live is authorized. No Stage 08 item is closed by document registration or CI success alone.
 
 **END — MDG-SECURITY-STAGE-08-REGISTER-001 v1.3**
 
@@ -101,3 +101,29 @@ The detailed accepted contracts are recorded in O-20 matrix v0.7 and O-21 readin
 - Recompute and validate the complete SHA256SUMS manifest; run the full exact-head CI; request a fresh independent review because this commit changes the reviewed PR head.
 
 The PR remains open and unmerged. O-20 and O-21 remain OPEN pending executable evidence and independent acceptance.
+
+## 4.2 Ordered execution update — O-20 followed by O-21 (2026-11-21)
+
+The owner-approved two-step execution order is recorded as follows.
+
+### Step 1 — O-20 disposable database identity proof
+
+Added `tests/MDGsm.Domain.Tests/Security/O20SupportIdentityPostgresProofTests.cs`. The test creates four unique ephemeral support LOGINs in the marked disposable PostgreSQL database and verifies their role attributes, disabled inheritance, zero membership edges, no object ownership, no effective operational grants and direct denial of representative data/DDL/function commands. The test source is committed; exact-head PostgreSQL 18 execution is PENDING.
+
+This is intentionally a fail-closed baseline, not proof of the approved positive capabilities. Migration-only SET ROLE/manifest execution, backup/isolated restore, reporting RowScope and emergency allow-list lifecycle remain unimplemented and ungranted. The full catalog/default-ACL inventory and independent review are still open. O-20 remains OPEN.
+
+### Step 2 — O-21 Hash Chain PoC hardening
+
+The disposable PoC now uses ephemeral RSA-3072 keys with RSA-PSS/SHA-256. Its signed checkpoint envelope includes schema/canonicalization/hash identifiers, stream/sequence/head, key ID, UTC timestamp and a previous-checkpoint reference. Rotation links a new-key checkpoint to the prior content reference; tampered predecessor reference, unsupported canonicalization version and unsupported hash algorithm are rejected. The prior two-writer, atomicity, idempotency, rollback/crash, canonicalization, read-only verifier and tamper/deletion scenarios remain in the same test.
+
+Exact-head PostgreSQL 18 execution is PENDING. This remains a test-only PoC with ephemeral keys and a local temporary checkpoint file; no external immutable Object Lock anchor, Platform key service, production AuditSecurity/outbox integration, production recovery/alerts/runbook or independent verifier deployment is claimed. O-21 remains OPEN.
+
+### Exact-head acceptance sequence
+
+1. Run the complete PR workflow on the final SHA, including PostgreSQL 18 integration, Windows migration, checksum, CodeQL, installer and required-gate evidence.
+2. Inspect the actual logs for the two changed integration tests and verify cleanup of disposable roles/schema and temporary checkpoint files.
+3. Resolve any failure before proceeding; do not report PASS from source inspection alone.
+4. Request fresh independent review after the final SHA; prior approvals do not transfer across changed commits.
+5. Keep PR #86 unmerged until O-20/O-21 evidence, remaining Stage 08 items, owner acceptance and independent review are all satisfied.
+
+No production roles, credentials, grants, migrations, keys, WORM storage, bootstrap/recovery secrets or feature activation are authorized by these steps.
