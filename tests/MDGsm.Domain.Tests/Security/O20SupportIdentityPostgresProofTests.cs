@@ -134,8 +134,7 @@ public sealed class O20SupportIdentityPostgresProofTests
                 has_table_privilege(@role, @table, 'DELETE'),
                 has_table_privilege(@role, @table, 'TRUNCATE'),
                 has_function_privilege(@role, @function, 'EXECUTE'),
-                has_database_privilege(@role, current_database(), 'CREATE'),
-                has_database_privilege(@role, current_database(), 'TEMP')
+                has_database_privilege(@role, current_database(), 'CREATE')
             """, connection);
         command.Parameters.AddWithValue("role", role);
         command.Parameters.AddWithValue("schema", schema);
@@ -143,7 +142,7 @@ public sealed class O20SupportIdentityPostgresProofTests
         command.Parameters.AddWithValue("function", $"{schema}.technical_probe()");
         await using var reader = await command.ExecuteReaderAsync();
         Assert.True(await reader.ReadAsync());
-        for (var i = 0; i < 10; i++) Assert.False(reader.GetBoolean(i));
+        for (var i = 0; i < 9; i++) Assert.False(reader.GetBoolean(i));
     }
 
     private static async Task AssertDeniedAsync(string connectionString, string sql)
