@@ -40,6 +40,7 @@
 12eeb495c3996efed5279076ae91cdcff1d04c115bd40792cd1a2e940e0c003a  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.3.md
 12f43d474f6b3112fb9faf02938f35d8ded15cda6e3416e677fcb3de169a2ed2  docs/security/MDG-SECURITY-O46-BOOTSTRAP-RECOVERY-AUDIT-001_v0.1.md
 135f65e6861ad8e753d407567e1e2a350914effa1eaf46ec4072e27836a18933  src/BuildingBlocks/MDGsm.Infrastructure/Persons/PostgresPartyRepository.cs
+139ae30a864dba42f61581540e33ba321cce90f336d9d5d22533ab6d66de44a4  docs/architecture/MDG-ORGANIZATION-ASSIGNMENT-SCOPE-PHYSICAL-DESIGN-001_v0.1.md
 149b33ef06e3669289a22e2a41a67bf60d10139cd291310d9429fa5b130057cc  docs/data/database-change-policy.md
 14e60c81b6809a356e4d85df042c0076481df842ef7dfc423bb6663421f33503  CHANGELOG_V0.2.3_FA.md
 1529efc39b02d85756e962205f1c10ff39cea821972adc4d5f697a6762e806ef  docs/modules/inventory/MDG-INVENTORY-CROSS-MODULE-TECHNICAL-CONTRACT-001_v1.1.md
@@ -72,7 +73,6 @@
 266eeb5378fe684485383f416e32fec1932185767a608392eadefb4a964de4ed  docs/modules/inventory/MDG-INVENTORY-LOGICAL-ERD-001_v0.3.md
 288799b2a8f1d2ea5252b6ffec59c00cd009f11a1445611ed612b4f78e554abb  tests/MDGsm.Domain.Tests/Persons/PersonsTemporaryDataRetentionTests.cs
 28e240374aa26b7e7169e34811bc4ecf73d17738848c8beecb4ac599ea7ade55  CHANGELOG_V0.2.5_FA.md
-299b6f6ee0ec958124e479b726ffcde140760ebdcde5dcb02249fa7e9a0922c8  docs/security/MDG-SECURITY-O20E-ROWSCOPE-SOURCE-INVENTORY-001_v0.1.md
 2a6d5b1e0967d3e7911f510ec23ab7a3a123445872634f10a612fdc26218456b  scripts/ci/validate_persons_gates.py
 2ac339b35519f585ee3d33016100369a2413e137efe5068df4674e72a0f0383d  src/Modules/IdentityAccess/Contracts/README.md
 2b3c9ea4c7df7318a62e89e4db4275f5714e92b5adaca6e625d540ab2d805789  docs/operations/evidence/EVD-FINANCE-INVENTORY-BUNDLE-004_v0.6.md
@@ -132,7 +132,6 @@
 48bbe80daed7fdddaf6d51d1319cca61f6eb30e08985436a5660a443560eb87e  scripts/ci/o20g_catalog_assertions.sql
 495ec613bcb4b3c5a6b51bc65cf774b9b449e14da03875331e9fc68ee1c55d16  src/Modules/Accounting/Application/PostingPreflightService.cs
 4a2d632ba88e4069417feaa1548bc39f0e4c7e1c3797f61e37b8e66dfce6c572  database/migrations/0003_identityaccess_core.sql
-4a4d635878b35a6f753ae97535d3014ca23cd1c6cb4b76e3ee35159af550125c  docs/architecture/MDG-ORGANIZATION-ASSIGNMENT-SCOPE-PHYSICAL-DESIGN-001_v0.1.md
 4a4dc0a5fdc0f9637084e9c5cc58ede689894e4016e6501817899370900d0fd2  docs/data/accounting-recovery-runbook-fa.md
 4a562bce58a4eb65ff96f83dbd35a24d50a66eb81610fc851999918bc305781b  scripts/ci/test_o20_catalog_inventory.sh
 4b33d82d158528195d9fc28c88ac97faa4de4efa5ae69afc7170b378522755fb  src/Modules/Accounting/Domain/JournalLine.cs
@@ -225,6 +224,7 @@
 782b2966fe8cf8efc65da93033965f98730be17d2e4833130af47c6aee506677  docs/operations/required-status-checks.md
 79e5327e99adc2dae6ace9b72d02ff1da8b8e3c38210dbfd36cd5257643bf51f  tests/MDGsm.Domain.Tests/Accounting/AccountingPersistenceDesignTests.cs
 7a459e03341252f954ea339315c93a56e988a59079571001bc842000e99c45b8  docs/finance/workpapers/p4h/integration/MDG-WP06-FE01-FE02-SOURCE-CROSSWALK-PROPOSAL-001_v0.2.md
+7aa3128d027d5d9af7d8ff42146ca4b8170827fe5bb0234f2fdd091aa9161024  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v2.6.md
 7b2721e25f5738ad6e92cb0ce2d73e2d90ba63d17f3c274a4460f5570f990bc3  docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v0.3.md
 7b508ba4a1bb2501a1bfe1cb588a7b3c94836284f1437986d17dcd6950401d07  src/Modules/README.md
 7bbc14dff9152eac0a7668309a6682f3243e19ad8f4a8a997877c8d492765a9f  docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v0.9.md
@@ -249,7 +249,6 @@
 8296816da8b86b80ea3abfbe24fcfeafcbe0f07e92262d80b378a85af213267c  docs/attestations/V0.2.10_RECEPTION_PARTNER_UI_STATUS_FA.md
 82b9d91c6f2e736a9704d71fc36fb827e57e0ade7771c8877136e9270b0fbf9b  scripts/ci/write_ci_evidence.py
 83396247595d20a5d86977ea9d2baac96aa2581037ccb9c926081091f48a5b70  src/Modules/IdentityAccess/Domain/README.md
-838c569b2f872e1d3ec9242e5efae4e8d9e5dac8d754a9bffdb8ea072ab00bd4  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v2.6.md
 83d90a872b41ae8581da7cfd2cca2928822b9a258afd0b79cf64cb52596c1a73  docs/architecture/modular-target.md
 84137a492560fc469c7292159f4c150cb6bb0ea379eb966fa39a123bdc1005ce  docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v0.1.md
 84df36fb01d4f8112e43343a2a91087b1a7f0d9ad8954a2bc716ae81b0994537  docs/modules/inventory/INVENTORY-TECHNICAL-RESOLUTION-PROPOSAL-001_v0.1.md
@@ -311,7 +310,6 @@
 9e36965757856acd579a6473a4cbb3b14a2bf9d980a24a89f6c0c4839853efa9  src/BuildingBlocks/MDGsm.Domain/Persons/PartyAcquaintanceSource.cs
 9ecec48ed29666816958c0b067f7f563f192cde054e794770dd8ffffe583ce7b  CHANGELOG_V0.2.0_FA.md
 a0466daca95ee3422e58b70e9ff3f1c0a85511e07f7f97f654c9e0995de523d0  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-INTEGRATED-001_v0.4.md
-a06ec3663c4b0286e65d93315787ac7c2ace11d2b896b40218a2f4110ee79ec4  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v2.5.md
 a11fd2731ff4231e58c4e1c22da4e3e7028a881ef42a58d438aa126c25173eae  tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj
 a1548e2a891ac5c0aafd3b84acf1456ff5f82c49f2f9e3a10767d45f4494192c  docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.1.md
 a1662ef6643ffd00b1bccdfec00fe4ba64a8126eb06b0a22bebb5ce6dfaae5e4  src/Modules/Persons/Application/README.md
@@ -334,6 +332,7 @@ ac1333fd11f54ae41291ee567dac379d7ae8b749fd33c00028e553049c63584b  tools/MDGsm.Db
 ac6b08d0457147affed028e1203b37a63d6bc87631ec905be45856efdd5b60af  docs/modules/inventory/INVENTORY-TECHNICAL-OWNER-REVIEW-001_v0.1.md
 ad2043715aeb8a7facf71ce7123d8db1d01b34335ca645c7a52a54d9c7fa55d3  docs/modules/accounting/MDG-ACC-PDS-001_PHYSICAL-DATABASE-DESIGN_v0.3.md
 adbe4ea8c36c6787abf9dbb29f1323fdb9a2dcd18c6d07db111484687a2f0354  scripts/ci/test_o20_backup_restore.sh
+adc985cde5941c0f9c71cda1b1a315134178569a22db24908a935a832c8371b8  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v2.5.md
 ae2d312001d470cc802d5fd5673eee4f8defa8481246b730f892d20b88f7f917  docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v1.3.md
 ae8125e7dbd14f7782c5292dd72ebb145c2aee42186bb560c3030df9e6d637bb  database/operations/identityaccess-runtime-role-grants.sql
 af11712bb94ba062ddc742e4c9ba6def24ab96ef8e3572cd499e83bc3904cb6c  src/Modules/IdentityAccess/Application/IdentityAccessPorts.cs
@@ -432,6 +431,7 @@ df7de9de307d582586e8c8234a86681e67b097ac55e6a3f5039e4f15b62c2d03  src/BuildingBl
 df847dc5822a8158f445490b0a509fe4166cfcff622b5c4ca2f64777121644a3  docs/attestations/V0.2.0_PREVIEW_PREPARATION_STATUS_FA.md
 df9c3f1f28511be4cd9ab8be3bb76e53cc58e3ad4bfdf0ef738ede7a196f7901  docs/operations/evidence/PACKAGE-05-RELEASE-CANDIDATE-MANIFEST_v0.3.txt
 e0994dfd473a39782748fd2132e5a126589589354a34237464ab8127bbec04f4  src/Host/Desktop/App.xaml.cs
+e1feab747953962201ba29e33635f4668228b31f815499fb3a62824d54a8ef5f  docs/security/MDG-SECURITY-O20E-ROWSCOPE-SOURCE-INVENTORY-001_v0.1.md
 e2cd9a4f546d5c420f4a63a67ccf9c847de5ff17291e25f8782802ff0c480fdc  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v1.8.md
 e3a85bd355dfc3837bd6a110b01614c1e7b01897acbe6659c4f32382d9ccaefe  docs/architecture/overview.md
 e4e3ef22467897b680b5898990b1ffa8d20a63fd9d36d61ec185e4924bd0f3c4  docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v0.4.md
