@@ -256,3 +256,17 @@ The owner approved the following O-21 policy baseline. These decisions resolve t
 The current test-only RSA keys and local temporary JSON checkpoint remain PoC fixtures. They are not substitutes for the approved key service or independent immutable storage. O-21 remains OPEN until all implementation gates above pass on an exact accepted SHA and receive independent review.
 
 **END ADDENDUM — OWNER-APPROVED O-21 POLICY BASELINE v0.6**
+
+## 10. O-21 PoC hardening — checkpoint profile and chain metadata
+
+The disposable PostgreSQL PoC source was extended after owner approval to align the test checkpoint envelope with the approved policy profile:
+
+- Ephemeral signing keys now use RSA-3072; signatures use RSA-PSS with SHA-256.
+- The signed checkpoint bytes now include schema version, canonicalization version, hash algorithm identifier, stream ID, committed sequence, head hash, key ID, UTC checkpoint timestamp and optional previous-checkpoint reference.
+- A content reference is calculated over the canonical signed bytes and signature. The rotation test creates a checkpoint under a new key ID and links it to the prior checkpoint reference without rewriting the earlier checkpoint.
+- The verifier rejects an untrusted key ID, invalid signature, altered previous-checkpoint reference, unsupported canonicalization version and unsupported hash-algorithm identifier.
+- Existing disposable PoC coverage remains for independent concurrent writers, atomic append/head update, rollback and backend termination, unknown commit outcome/idempotent replay, conflicting EventId replay, canonicalization golden vector, read-only verification, chain tamper/deletion detection and checkpoint-to-ledger head comparison.
+
+**Evidence status: source changed; exact-head PostgreSQL 18 CI PENDING.** This is still a test-only simulation: keys are ephemeral process memory and the checkpoint file is local temporary storage. The content reference is not an Object Lock/WORM anchor; the test does not prove platform key custody, key backup/recovery, operational revocation/custodian separation, source-module transactional outbox integration, production append persistence, alerts or runbook. No production AuditSecurity component or provider adapter is implied. O-21 remains OPEN pending CI, production implementation, independent external-anchor/key-service proofs, recovery/restore exercises and independent review.
+
+**END ADDENDUM — O-21 DISPOSABLE CHECKPOINT HARDENING v0.1**
