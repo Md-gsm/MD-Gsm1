@@ -363,7 +363,8 @@ public sealed class IdentityAccessHttpEndToEndTests
                 has_table_privilege(current_user, 'identity.login_attempts', 'INSERT'),
                 NOT has_table_privilege(current_user, 'identity.login_attempts', 'UPDATE'),
                 has_column_privilege(current_user, 'identity.recovery_challenges', 'consumed_at_utc', 'UPDATE'),
-                has_table_privilege(current_user, 'identity.recovery_codes', 'SELECT'),
+                NOT has_table_privilege(current_user, 'identity.recovery_codes', 'SELECT'),
+                NOT has_table_privilege(current_user, 'identity.recovery_codes', 'UPDATE'),
                 has_table_privilege(current_user, 'identity.security_audit_events', 'INSERT'),
                 NOT has_table_privilege(current_user, 'identity.security_audit_events', 'UPDATE'),
                 has_column_privilege(current_user, 'identity.system_settings', 'updated_at_utc', 'UPDATE'),
@@ -372,7 +373,7 @@ public sealed class IdentityAccessHttpEndToEndTests
         await using (var matrixResult = await matrix.ExecuteReaderAsync())
         {
             Assert.True(await matrixResult.ReadAsync());
-            for (var index = 0; index < 15; index++)
+            for (var index = 0; index < 16; index++)
                 Assert.True(matrixResult.GetBoolean(index), $"IdentityAccess privilege matrix assertion {index + 1} failed.");
         }
 
@@ -391,6 +392,8 @@ public sealed class IdentityAccessHttpEndToEndTests
         await AssertDeniedAsync(runtime, "INSERT INTO identity.accounts DEFAULT VALUES;");
         await AssertDeniedAsync(runtime, "DELETE FROM identity.sessions;");
         await AssertDeniedAsync(runtime, "UPDATE identity.accounts SET email = email;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM identity.recovery_codes LIMIT 0;");
+        await AssertDeniedAsync(runtime, "UPDATE identity.recovery_codes SET used_at_utc = clock_timestamp() WHERE false;");
         await AssertDeniedAsync(runtime, "UPDATE identity.security_audit_events SET event_type = event_type;");
         await AssertDeniedAsync(runtime, "CREATE ROLE runtime_privilege_probe LOGIN;");
         await AssertDeniedAsync(runtime, "ALTER ROLE runtime_app SUPERUSER;");
