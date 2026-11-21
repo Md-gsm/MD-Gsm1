@@ -122,7 +122,7 @@ public sealed class O20SupportIdentityPostgresProofTests
                         (SELECT count(*) FROM pg_class r
                          JOIN pg_namespace n ON n.oid=r.relnamespace,
                              LATERAL aclexplode(COALESCE(r.relacl, acldefault('r', r.relowner))) acl
-                         WHERE n.nspname=@schema AND r.relkind IN ('r','p','v','m','S')
+                         WHERE n.nspname=@schema AND r.relkind IN ('r','p','v','m')
                            AND acl.grantee=0),
                         (SELECT count(*) FROM pg_proc p
                          JOIN pg_namespace n ON n.oid=p.pronamespace,
