@@ -291,16 +291,21 @@ public sealed class IdentityAccessHttpEndToEndTests
         await using var runtime = new NpgsqlConnection(runtimeConnectionString);
         await runtime.OpenAsync();
         await using (var identity = new NpgsqlCommand("""
-            SELECT current_user, rolsuper, rolcreatedb, rolcreaterole
+            SELECT current_user, rolcanlogin, rolsuper, rolcreatedb, rolcreaterole,
+                   rolreplication, rolbypassrls, rolinherit
             FROM pg_roles WHERE rolname = current_user;
             """, runtime))
         await using (var reader = await identity.ExecuteReaderAsync())
         {
             Assert.True(await reader.ReadAsync());
             Assert.Equal("runtime_app", reader.GetString(0));
-            Assert.False(reader.GetBoolean(1));
+            Assert.True(reader.GetBoolean(1));
             Assert.False(reader.GetBoolean(2));
             Assert.False(reader.GetBoolean(3));
+            Assert.False(reader.GetBoolean(4));
+            Assert.False(reader.GetBoolean(5));
+            Assert.False(reader.GetBoolean(6));
+            Assert.True(reader.GetBoolean(7));
         }
 
         // Positive permission checks and deliberately denied escalation/direct writes.
@@ -310,10 +315,17 @@ public sealed class IdentityAccessHttpEndToEndTests
             await allowedRead.ExecuteNonQueryAsync();
         }
         await AssertDeniedAsync(runtime, "CREATE TABLE identity.runtime_privilege_probe(id integer);");
+        await AssertDeniedAsync(runtime, "ALTER TABLE identity.accounts ADD COLUMN runtime_probe text;");
+        await AssertDeniedAsync(runtime, "DROP TABLE identity.accounts;");
+        await AssertDeniedAsync(runtime, "TRUNCATE TABLE identity.sessions;");
         await AssertDeniedAsync(runtime, "INSERT INTO identity.accounts DEFAULT VALUES;");
         await AssertDeniedAsync(runtime, "DELETE FROM identity.sessions;");
+        await AssertDeniedAsync(runtime, "UPDATE identity.accounts SET email = email;");
         await AssertDeniedAsync(runtime, "UPDATE identity.security_audit_events SET event_type = event_type;");
         await AssertDeniedAsync(runtime, "CREATE ROLE runtime_privilege_probe LOGIN;");
+        await AssertDeniedAsync(runtime, "ALTER ROLE runtime_app SUPERUSER;");
+        await AssertDeniedAsync(runtime, "GRANT SELECT ON identity.accounts TO PUBLIC;");
+        await AssertDeniedAsync(runtime, "SET ROLE postgres;");
         await AssertDeniedAsync(runtime, "SELECT * FROM persons LIMIT 0;");
 
         return runtimeConnectionString;
