@@ -164,21 +164,18 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             await AssertDeniedAsync(verifierConnection,
                 $"UPDATE {Q(schema)}.audit_stream_heads SET last_sequence = last_sequence;");
 
-            // Tamper under the disposable DB owner only; read-only verifier must detect it.
-            await using (var admin = new NpgsqlConnection(adminConnectionString))
-            {
-                await admin.OpenAsync();
-                await using var tamper = new NpgsqlCommand($"""
-                    ALTER TABLE {Q(schema)}.audit_events DISABLE TRIGGER USER;
-                    UPDATE {Q(schema)}.audit_events
-                    SET metadata_canonical = 'tampered'
-                    WHERE stream_id = @stream AND stream_sequence = 1;
-                    ALTER TABLE {Q(schema)}.audit_events ENABLE TRIGGER USER;
-                    """, admin);
-                tamper.Parameters.AddWithValue("stream", streamId);
-                await tamper.ExecuteNonQueryAsync();
-            }
-            Assert.False(await VerifyChainAsync(verifierConnection, schema, streamId, checkpointV2, "test-key-v2", keyV2Public));
+            // Tamper and a sequence gap are injected only by the disposable DB owner.
+            // The read-only verifier must return a failed result, never repair the ledger.
+            var originalMetadata = await ReadMetadataCanonicalAsync(adminConnectionString, schema, streamId, 1);
+            await MutateFirstEventAsync(adminConnectionString, schema, streamId, originalMetadata, delete: false);
+            Assert.False(await VerifyChainAsync(verifierConnection, schema, streamId,
+                checkpointV2, "test-key-v2", keyV2Public));
+            await MutateFirstEventAsync(adminConnectionString, schema, streamId, originalMetadata, delete: false);
+            Assert.True(await VerifyChainAsync(verifierConnection, schema, streamId,
+                checkpointV2, "test-key-v2", keyV2Public));
+            await MutateFirstEventAsync(adminConnectionString, schema, streamId, originalMetadata, delete: true);
+            Assert.False(await VerifyChainAsync(verifierConnection, schema, streamId,
+                checkpointV2, "test-key-v2", keyV2Public));
         }
         finally
         {
@@ -460,7 +457,15 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                     !CryptographicOperations.FixedTimeEquals(previous, expectedPrevious))
                     return false;
 
-                var metadata = ParseCanonicalMetadata(metadataCanonical);
+                SortedDictionary<string, string> metadata;
+                try
+                {
+                    metadata = ParseCanonicalMetadata(metadataCanonical);
+                }
+                catch (Exception exception) when (exception is FormatException or InvalidDataException or ArgumentException)
+                {
+                    return false;
+                }
                 var intent = Normalize(new EventIntent(eventId, streamId, eventType, occurred,
                     actor, subject, metadata, schemaVersion, canonicalVersion));
                 var recomputedIntent = SHA256.HashData(SerializeIntent(intent));
@@ -657,6 +662,46 @@ public sealed class AuditSecurityHashChainPostgresProofTests
         await using var reader = await command.ExecuteReaderAsync();
         Assert.True(await reader.ReadAsync());
         return (reader.GetInt64(0), reader.GetFieldValue<byte[]>(1));
+    }
+
+    private static async Task<string> ReadMetadataCanonicalAsync(
+        string connectionString, string schema, Guid streamId, long sequence)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(
+            $"SELECT metadata_canonical FROM {Q(schema)}.audit_events WHERE stream_id=@stream AND stream_sequence=@sequence;",
+            connection);
+        command.Parameters.AddWithValue("stream", streamId);
+        command.Parameters.AddWithValue("sequence", sequence);
+        return (string)(await command.ExecuteScalarAsync())!;
+    }
+
+    private static async Task MutateFirstEventAsync(
+        string adminConnectionString, string schema, Guid streamId,
+        string originalMetadata, bool delete)
+    {
+        await using var connection = new NpgsqlConnection(adminConnectionString);
+        await connection.OpenAsync();
+        await using (var disable = new NpgsqlCommand(
+            $"ALTER TABLE {Q(schema)}.audit_events DISABLE TRIGGER USER;", connection))
+            await disable.ExecuteNonQueryAsync();
+        try
+        {
+            var sql = delete
+                ? $"DELETE FROM {Q(schema)}.audit_events WHERE stream_id=@stream AND stream_sequence=1;"
+                : $"UPDATE {Q(schema)}.audit_events SET metadata_canonical=@metadata WHERE stream_id=@stream AND stream_sequence=1;";
+            await using var mutate = new NpgsqlCommand(sql, connection);
+            mutate.Parameters.AddWithValue("stream", streamId);
+            if (!delete) mutate.Parameters.AddWithValue("metadata", originalMetadata == "tampered" ? "changed" : "tampered");
+            await mutate.ExecuteNonQueryAsync();
+        }
+        finally
+        {
+            await using var enable = new NpgsqlCommand(
+                $"ALTER TABLE {Q(schema)}.audit_events ENABLE TRIGGER USER;", connection);
+            await enable.ExecuteNonQueryAsync();
+        }
     }
 
     private static async Task<bool> EventExistsAsync(string connectionString, string schema, Guid eventId)
