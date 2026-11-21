@@ -41,8 +41,10 @@ END
 $grant$;
 SQL
 role_state="$(psql -X -d "$MDGSM_TEST_DB" -Atqc "SELECT (rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit)::text || '|' || (SELECT count(*) FROM pg_auth_members WHERE member=oid OR roleid=oid)::text || '|' || (SELECT count(*) FROM pg_class c JOIN pg_roles rr ON rr.oid=c.relowner WHERE rr.rolname='backup_operator')::text FROM pg_roles WHERE rolname='backup_operator'")"
+printf 'O20-D role_state=%s\n' "$role_state"
 test "$role_state" = "true|0|0"
 priv_state="$(psql -X -d "$MDGSM_TEST_DB" -Atqc "SELECT has_database_privilege('backup_operator',current_database(),'CONNECT')::text || '|' || has_database_privilege('backup_operator',current_database(),'CREATE')::text || '|' || has_database_privilege('backup_operator',current_database(),'TEMP')::text || '|' || has_table_privilege('backup_operator','identity.accounts','SELECT')::text || '|' || has_table_privilege('backup_operator','identity.accounts','INSERT')::text || '|' || has_table_privilege('backup_operator','identity.accounts','UPDATE')::text || '|' || has_table_privilege('backup_operator','identity.accounts','DELETE')::text || '|' || has_table_privilege('backup_operator','identity.accounts','TRUNCATE')::text || '|' || has_schema_privilege('backup_operator','identity','CREATE')::text")"
+printf 'O20-D privilege_state=%s\n' "$priv_state"
 test "$priv_state" = "true|false|false|true|false|false|false|false|false"
 pg_dump --username=backup_operator --format=custom --no-owner --no-acl --file "$backup_file" "$MDGSM_TEST_DB"
 test -s "$backup_file"
