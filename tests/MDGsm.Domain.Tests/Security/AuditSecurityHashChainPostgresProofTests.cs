@@ -157,7 +157,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             Assert.True(VerifyCheckpoint(reloadedCheckpointV1, "test-key-v1", keyV1Public));
 
             // Rotation proof pins trusted public keys out-of-band from the checkpoint.
-            using var keyV2 = RSA.Create(2048);
+            using var keyV2 = RSA.Create(3072);
             var keyV2Public = Convert.ToBase64String(keyV2.ExportSubjectPublicKeyInfo());
             var checkpointV2 = CreateCheckpoint(streamId, head.Sequence, head.Hash, "test-key-v2", keyV2, ComputeCheckpointReference(checkpointV1));
             Assert.True(VerifyCheckpoint(checkpointV1, "test-key-v1", keyV1Public));
