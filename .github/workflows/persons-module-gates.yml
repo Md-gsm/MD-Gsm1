@@ -201,6 +201,17 @@ jobs:
       - name: Prove O-20-D logical backup and isolated restore under backup_operator
         shell: bash
         run: bash scripts/ci/test_o20_backup_restore.sh
+      - name: Prove O-20-G complete catalog inventory and effective privilege digest
+        shell: bash
+        run: bash scripts/ci/test_o20_catalog_inventory.sh
+      - name: Upload O-20-G catalog inventory evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: o20-g-catalog-inventory
+          path: ${{ runner.temp }}/o20-g-catalog-inventory.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Run Persons PostgreSQL end-to-end integration test
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "Category=Integration" --no-restore
       - name: Run explicit O-20 support identity and catalog proof
