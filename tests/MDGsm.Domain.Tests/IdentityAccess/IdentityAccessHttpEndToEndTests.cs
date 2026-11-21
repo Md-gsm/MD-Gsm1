@@ -256,7 +256,7 @@ public sealed class IdentityAccessHttpEndToEndTests
         // Runtime and support roles are disposable test principals. In production,
         // LOGIN creation, secret delivery and membership remain DBA/deployment work.
         await using (var createRoles = new NpgsqlCommand("""
-            DO $
+            DO $body$
             BEGIN
                 IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'mdgsm_runtime') THEN
                     CREATE ROLE mdgsm_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
@@ -265,7 +265,7 @@ public sealed class IdentityAccessHttpEndToEndTests
                     CREATE ROLE runtime_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT;
                 END IF;
             END
-            $;
+            $body$;
             GRANT mdgsm_runtime TO runtime_app;
             """, admin))
         {
