@@ -60,6 +60,8 @@ public sealed class AuditSecurityHashChainPostgresProofTests
                 writerGroup, writerA, writerB, verifierRole);
             await InitializeStreamAsync(adminConnectionString, schema, streamId);
 
+            await AssertDeniedAsync(writerAConnection, $"SELECT * FROM {Q(schema)}.audit_events;");
+            await AssertDeniedAsync(writerAConnection, $"SELECT * FROM {Q(schema)}.audit_stream_heads;");
             await AssertDeniedAsync(writerAConnection, $"UPDATE {Q(schema)}.audit_events SET event_type_code = event_type_code;");
             await AssertDeniedAsync(writerBConnection, $"DELETE FROM {Q(schema)}.audit_events;");
             await AssertDeniedAsync(writerAConnection, $"TRUNCATE TABLE {Q(schema)}.audit_events;");
@@ -234,9 +236,70 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             ALTER TABLE {Q(schema)}.audit_stream_heads OWNER TO {Q(owner)};
             ALTER TABLE {Q(schema)}.audit_events OWNER TO {Q(owner)};
             ALTER FUNCTION {Q(schema)}.reject_audit_mutation() OWNER TO {Q(owner)};
+            REVOKE ALL ON {Q(schema)}.audit_events, {Q(schema)}.audit_stream_heads FROM PUBLIC;
             GRANT USAGE ON SCHEMA {Q(schema)} TO {Q(writerGroup)}, {Q(verifier)};
-            GRANT SELECT, INSERT ON {Q(schema)}.audit_events TO {Q(writerGroup)};
-            GRANT SELECT, UPDATE ON {Q(schema)}.audit_stream_heads TO {Q(writerGroup)};
+            CREATE FUNCTION {Q(schema)}.lock_stream_head(p_stream_id uuid)
+            RETURNS TABLE(last_sequence bigint, head_hash bytea)
+            LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog AS $
+            BEGIN
+                RETURN QUERY SELECT h.last_sequence,h.head_hash
+                FROM {Q(schema)}.audit_stream_heads AS h
+                WHERE h.stream_id=p_stream_id FOR UPDATE;
+                IF NOT FOUND THEN RAISE EXCEPTION 'Unknown audit stream'; END IF;
+            END;
+            $;
+            CREATE FUNCTION {Q(schema)}.append_event(
+                p_event_id uuid,p_stream_id uuid,p_next_sequence bigint,
+                p_schema_version smallint,p_canonicalization_version smallint,
+                p_event_type text,p_occurred_at timestamptz,p_actor text,p_subject text,
+                p_metadata_canonical text,p_intent_digest bytea,p_previous_hash bytea,
+                p_canonical_payload bytea,p_event_hash bytea)
+            RETURNS TABLE(sequence bigint,event_hash bytea,is_duplicate boolean)
+            LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog AS $
+            DECLARE existing_digest bytea; existing_sequence bigint; existing_hash bytea;
+                    current_sequence bigint; current_hash bytea; affected integer;
+            BEGIN
+                PERFORM pg_advisory_xact_lock(hashtextextended(p_event_id::text,0));
+                SELECT e.intent_digest,e.stream_sequence,e.event_hash
+                INTO existing_digest,existing_sequence,existing_hash
+                FROM {Q(schema)}.audit_events AS e WHERE e.event_id=p_event_id;
+                IF FOUND THEN
+                    IF existing_digest <> p_intent_digest THEN
+                        RAISE EXCEPTION 'EventId replay has different canonical intent';
+                    END IF;
+                    RETURN QUERY SELECT existing_sequence,existing_hash,TRUE;
+                    RETURN;
+                END IF;
+                SELECT h.last_sequence,h.head_hash
+                INTO current_sequence,current_hash
+                FROM {Q(schema)}.audit_stream_heads AS h
+                WHERE h.stream_id=p_stream_id FOR UPDATE;
+                IF NOT FOUND THEN RAISE EXCEPTION 'Unknown audit stream'; END IF;
+                IF p_next_sequence <> current_sequence+1 OR p_previous_hash <> current_hash THEN
+                    RAISE EXCEPTION 'Stale or forked audit chain head';
+                END IF;
+                INSERT INTO {Q(schema)}.audit_events(
+                    event_id,stream_id,stream_sequence,schema_version,canonicalization_version,
+                    event_type_code,occurred_at_utc,actor_ref,subject_ref,metadata_canonical,
+                    intent_digest,previous_event_hash,canonical_payload,event_hash)
+                VALUES(p_event_id,p_stream_id,p_next_sequence,p_schema_version,p_canonicalization_version,
+                    p_event_type,p_occurred_at,p_actor,p_subject,p_metadata_canonical,
+                    p_intent_digest,p_previous_hash,p_canonical_payload,p_event_hash);
+                UPDATE {Q(schema)}.audit_stream_heads AS h
+                SET last_sequence=p_next_sequence,head_hash=p_event_hash
+                WHERE h.stream_id=p_stream_id AND h.last_sequence=current_sequence
+                    AND h.head_hash=current_hash;
+                GET DIAGNOSTICS affected = ROW_COUNT;
+                IF affected <> 1 THEN RAISE EXCEPTION 'Audit head compare-and-swap failed'; END IF;
+                RETURN QUERY SELECT p_next_sequence,p_event_hash,FALSE;
+            END;
+            $;
+            ALTER FUNCTION {Q(schema)}.lock_stream_head(uuid) OWNER TO {Q(owner)};
+            ALTER FUNCTION {Q(schema)}.append_event(uuid,uuid,bigint,smallint,smallint,text,timestamptz,text,text,text,bytea,bytea,bytea,bytea) OWNER TO {Q(owner)};
+            REVOKE ALL ON FUNCTION {Q(schema)}.lock_stream_head(uuid) FROM PUBLIC;
+            REVOKE ALL ON FUNCTION {Q(schema)}.append_event(uuid,uuid,bigint,smallint,smallint,text,timestamptz,text,text,text,bytea,bytea,bytea,bytea) FROM PUBLIC;
+            GRANT EXECUTE ON FUNCTION {Q(schema)}.lock_stream_head(uuid) TO {Q(writerGroup)};
+            GRANT EXECUTE ON FUNCTION {Q(schema)}.append_event(uuid,uuid,bigint,smallint,smallint,text,timestamptz,text,text,text,bytea,bytea,bytea,bytea) TO {Q(writerGroup)};
             GRANT SELECT ON {Q(schema)}.audit_events, {Q(schema)}.audit_stream_heads TO {Q(verifier)};
             """;
         await using var command = new NpgsqlCommand(sql, connection);
@@ -285,7 +348,7 @@ public sealed class AuditSecurityHashChainPostgresProofTests
         long priorSequence;
         byte[] priorHash;
         await using (var lockHead = new NpgsqlCommand(
-            $"SELECT last_sequence,head_hash FROM {Q(schema)}.audit_stream_heads WHERE stream_id=@stream FOR UPDATE;",
+            $"SELECT last_sequence,head_hash FROM {Q(schema)}.lock_stream_head(@stream);",
             connection, transaction))
         {
             lockHead.Parameters.AddWithValue("stream", intent.StreamId);
@@ -296,53 +359,33 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             priorHash = reader.GetFieldValue<byte[]>(1);
         }
 
-        await using (var existing = new NpgsqlCommand(
-            $"SELECT intent_digest,stream_sequence,event_hash FROM {Q(schema)}.audit_events WHERE event_id=@event;",
-            connection, transaction))
-        {
-            existing.Parameters.AddWithValue("event", intent.EventId);
-            await using var reader = await existing.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
-            {
-                var existingDigest = reader.GetFieldValue<byte[]>(0);
-                var sequence = reader.GetInt64(1);
-                var eventHash = reader.GetFieldValue<byte[]>(2);
-                if (!CryptographicOperations.FixedTimeEquals(existingDigest, intentDigest))
-                    throw new InvalidOperationException("EventId replay contains a different canonical intent.");
-                await reader.CloseAsync();
-                await transaction.CommitAsync();
-                return new AppendResult(sequence, Convert.ToHexString(eventHash), true);
-            }
-        }
-
         var sequenceNumber = checked(priorSequence + 1);
         var payload = SerializeEvent(intent, sequenceNumber, priorHash);
         var eventHashNew = SHA256.HashData(payload);
-
-        await using (var insert = new NpgsqlCommand($"""
-            INSERT INTO {Q(schema)}.audit_events(
-                event_id,stream_id,stream_sequence,schema_version,canonicalization_version,
-                event_type_code,occurred_at_utc,actor_ref,subject_ref,metadata_json,
-                intent_digest,previous_event_hash,canonical_payload,event_hash)
-            VALUES(@event,@stream,@sequence,@schema_version,@canonical_version,
-                @event_type,@occurred,@actor,@subject,@metadata,@intent_digest,@previous,@payload,@hash);
-            """, connection, transaction))
+        long returnedSequence;
+        byte[] returnedHash;
+        bool duplicate;
+        await using (var append = new NpgsqlCommand($"SELECT sequence,event_hash,is_duplicate FROM {Q(schema)}.append_event(@event,@stream,@sequence,@schema_version,@canonical_version,@event_type,@occurred,@actor,@subject,@metadata,@intent_digest,@previous,@payload,@hash);", connection, transaction))
         {
-            insert.Parameters.AddWithValue("event", intent.EventId);
-            insert.Parameters.AddWithValue("stream", intent.StreamId);
-            insert.Parameters.AddWithValue("sequence", sequenceNumber);
-            insert.Parameters.AddWithValue("schema_version", intent.SchemaVersion);
-            insert.Parameters.AddWithValue("canonical_version", intent.CanonicalizationVersion);
-            insert.Parameters.AddWithValue("event_type", intent.EventTypeCode);
-            insert.Parameters.AddWithValue("occurred", intent.OccurredAtUtc);
-            insert.Parameters.AddWithValue("actor", intent.ActorRef);
-            insert.Parameters.AddWithValue("subject", (object?)intent.SubjectRef ?? DBNull.Value);
-            insert.Parameters.AddWithValue("metadata", intent.MetadataJson);
-            insert.Parameters.AddWithValue("intent_digest", intentDigest);
-            insert.Parameters.AddWithValue("previous", priorHash);
-            insert.Parameters.AddWithValue("payload", payload);
-            insert.Parameters.AddWithValue("hash", eventHashNew);
-            await insert.ExecuteNonQueryAsync();
+            append.Parameters.AddWithValue("event", intent.EventId);
+            append.Parameters.AddWithValue("stream", intent.StreamId);
+            append.Parameters.AddWithValue("sequence", sequenceNumber);
+            append.Parameters.AddWithValue("schema_version", intent.SchemaVersion);
+            append.Parameters.AddWithValue("canonical_version", intent.CanonicalizationVersion);
+            append.Parameters.AddWithValue("event_type", intent.EventTypeCode);
+            append.Parameters.AddWithValue("occurred", intent.OccurredAtUtc);
+            append.Parameters.AddWithValue("actor", intent.ActorRef);
+            append.Parameters.AddWithValue("subject", (object?)intent.SubjectRef ?? DBNull.Value);
+            append.Parameters.AddWithValue("metadata", intent.MetadataJson);
+            append.Parameters.AddWithValue("intent_digest", intentDigest);
+            append.Parameters.AddWithValue("previous", priorHash);
+            append.Parameters.AddWithValue("payload", payload);
+            append.Parameters.AddWithValue("hash", eventHashNew);
+            await using var reader = await append.ExecuteReaderAsync();
+            Assert.True(await reader.ReadAsync());
+            returnedSequence = reader.GetInt64(0);
+            returnedHash = reader.GetFieldValue<byte[]>(1);
+            duplicate = reader.GetBoolean(2);
         }
 
         if (injectRollbackAfterInsert)
@@ -352,8 +395,9 @@ public sealed class AuditSecurityHashChainPostgresProofTests
         {
             if (string.IsNullOrWhiteSpace(adminConnectionString))
                 throw new ArgumentException("Admin connection is required for backend-termination simulation.");
-            var backendPid = Convert.ToInt32(await new NpgsqlCommand(
-                "SELECT pg_backend_pid();", connection, transaction).ExecuteScalarAsync(), CultureInfo.InvariantCulture);
+            int backendPid;
+            await using (var pidCommand = new NpgsqlCommand("SELECT pg_backend_pid();", connection, transaction))
+                backendPid = Convert.ToInt32(await pidCommand.ExecuteScalarAsync(), CultureInfo.InvariantCulture);
             await using var admin = new NpgsqlConnection(adminConnectionString);
             await admin.OpenAsync();
             await using var kill = new NpgsqlCommand("SELECT pg_terminate_backend(@pid);", admin);
@@ -363,21 +407,8 @@ public sealed class AuditSecurityHashChainPostgresProofTests
             throw new InvalidOperationException("PostgreSQL backend termination unexpectedly committed.");
         }
 
-        await using (var advance = new NpgsqlCommand($"""
-            UPDATE {Q(schema)}.audit_stream_heads
-            SET last_sequence=@sequence,head_hash=@hash
-            WHERE stream_id=@stream AND last_sequence=@previous_sequence;
-            """, connection, transaction))
-        {
-            advance.Parameters.AddWithValue("sequence", sequenceNumber);
-            advance.Parameters.AddWithValue("hash", eventHashNew);
-            advance.Parameters.AddWithValue("stream", intent.StreamId);
-            advance.Parameters.AddWithValue("previous_sequence", priorSequence);
-            Assert.Equal(1, await advance.ExecuteNonQueryAsync());
-        }
-
         await transaction.CommitAsync();
-        return new AppendResult(sequenceNumber, Convert.ToHexString(eventHashNew), false);
+        return new AppendResult(returnedSequence, Convert.ToHexString(returnedHash), duplicate);
     }
 
     private static async Task<bool> VerifyChainAsync(
