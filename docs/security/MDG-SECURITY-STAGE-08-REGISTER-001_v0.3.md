@@ -56,7 +56,7 @@ All newly registered documents are on the PR #86 head branch and are not yet par
 
 ### O-45 — Session lifecycle
 - Existing token digest, PostgreSQL session validation, lease, capacity serialization and password-change revoke-all are partial foundations.
-- PR #86 adds a heartbeat endpoint protected by PostgreSQL-backed session middleware and a logout handler/endpoint that revokes only the presented session digest and records secret-free audit on first revoke.
+- PR #86 adds a heartbeat endpoint protected by PostgreSQL-backed session middleware, an idempotent logout handler/endpoint that revokes only the presented session digest, and an `IDatabaseClock` based on PostgreSQL `clock_timestamp()` for session/login/revocation/audit time.
 - An HTTP E2E test is extended to cover heartbeat, current-session logout, non-revocation of a second session for the same account and repeated logout. These tests remain NOT RUN / NOT PASS until exact-head CI completes.
 - Token rotation trigger/overlap/unknown-commit policy, stale-session cleanup, account-disable revoke, full API default-deny and crash/reconnect proof remain open.
 
