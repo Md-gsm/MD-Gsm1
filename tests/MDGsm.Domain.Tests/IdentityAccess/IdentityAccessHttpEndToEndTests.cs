@@ -350,7 +350,33 @@ public sealed class IdentityAccessHttpEndToEndTests
             Assert.False(reader.GetBoolean(18)); // no public schema DDL
         }
 
-        // Positive permission checks and deliberately denied escalation/direct writes.
+        // Verify effective object/column privileges, not merely grant-script text.
+        await using (var matrix = new NpgsqlCommand("""
+            SELECT
+                has_table_privilege(current_user, 'identity.accounts', 'SELECT'),
+                has_column_privilege(current_user, 'identity.accounts', 'password_hash', 'UPDATE'),
+                NOT has_column_privilege(current_user, 'identity.accounts', 'email', 'UPDATE'),
+                NOT has_table_privilege(current_user, 'identity.accounts', 'INSERT'),
+                has_table_privilege(current_user, 'identity.sessions', 'INSERT'),
+                has_column_privilege(current_user, 'identity.sessions', 'last_seen_at_utc', 'UPDATE'),
+                NOT has_column_privilege(current_user, 'identity.sessions', 'created_at_utc', 'UPDATE'),
+                has_table_privilege(current_user, 'identity.login_attempts', 'INSERT'),
+                NOT has_table_privilege(current_user, 'identity.login_attempts', 'UPDATE'),
+                has_column_privilege(current_user, 'identity.recovery_challenges', 'consumed_at_utc', 'UPDATE'),
+                has_table_privilege(current_user, 'identity.recovery_codes', 'SELECT'),
+                has_table_privilege(current_user, 'identity.security_audit_events', 'INSERT'),
+                NOT has_table_privilege(current_user, 'identity.security_audit_events', 'UPDATE'),
+                has_column_privilege(current_user, 'identity.system_settings', 'updated_at_utc', 'UPDATE'),
+                NOT has_column_privilege(current_user, 'identity.system_settings', 'max_active_users', 'UPDATE')
+            """, runtime))
+        await using (var matrixResult = await matrix.ExecuteReaderAsync())
+        {
+            Assert.True(await matrixResult.ReadAsync());
+            for (var index = 0; index < 15; index++)
+                Assert.True(matrixResult.GetBoolean(index), $"IdentityAccess privilege matrix assertion {index + 1} failed.");
+        }
+
+        // Positive SQL reads are executed using the same LOGIN configured into the API host.
         await using (var allowedRead = new NpgsqlCommand(
             "SELECT count(*) FROM identity.accounts; SELECT count(*) FROM identity.sessions;", runtime))
         {
