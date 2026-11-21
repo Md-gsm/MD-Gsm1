@@ -243,6 +243,7 @@ c2988f99bf5593167d9fd5c11f7d0f5ad16df18170f18f02fea9e3e84130b9dc  docs/security/
 8859ef42cfa0546576e3aaae1c7911f6cc79523b44fd82e519639ddfda838f16  docs/security/MDG-SECURITY-STAGE-08-REAUDIT-001_v0.2.md
 c81a1bf52078a494ccb62810f543d6881f534781b646a3935abd2c53fdcdbb1c  docs/security/MDG-SECURITY-STAGE-08-RECONCILIATION-001_v0.1.md
 782a92416687a1c2f3a6f9bc50baa14939de627646f4b75a2185c7f029e2d955  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v0.2.md
+c10292aea3cfa4b13eb10f76f905c55c27d70ded03f65b894347ade66ced3915  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v0.3.md
 7daafa1ac2a6a9a57cd2909d5538fab7c31eb01bff4c6b4efdebffb6f5f710f8  docs/security/persons-audit-privileges.md
 3f95ab567e23533e44280e1685d8c2a44085f421fb17b5dbb8ceb9b71207cf95  docs/security/persons-sensitive-authorizer-integration.md
 8b99d821c7a2a3a70315dee60e5e4df4bb88d7b8f51273ef4fbf5587183c23a9  docs/security/security-model.md
