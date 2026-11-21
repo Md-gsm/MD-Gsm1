@@ -237,12 +237,30 @@ public sealed class IdentityAccessHttpEndToEndTests
             new LoginRequest(username, "incorrect-password", Guid.CreateVersion7()));
         Assert.Equal(HttpStatusCode.Unauthorized, wrongPassword.StatusCode);
 
+        client.DefaultRequestHeaders.Authorization = null;
+        var secondLogin = await client.PostAsJsonAsync("/api/v1/identity/login",
+            new LoginRequest(username, changedPassword, Guid.CreateVersion7()));
+        Assert.Equal(HttpStatusCode.OK, secondLogin.StatusCode);
+        var secondSession = await secondLogin.Content.ReadFromJsonAsync<LoginResponse>();
+        Assert.NotNull(secondSession);
+        Assert.False(secondSession!.MustChangePassword);
+
+        // Logout must revoke only the presented session, not every session for the account.
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", active.AccessToken);
         var logout = await client.PostAsync("/api/v1/identity/logout", content: null);
         Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
 
         var revokedAfterLogout = await client.GetAsync(partyUrl);
         Assert.Equal(HttpStatusCode.Unauthorized, revokedAfterLogout.StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", secondSession.AccessToken);
+        var secondSessionStillValid = await client.GetAsync(partyUrl);
+        Assert.Equal(HttpStatusCode.Forbidden, secondSessionStillValid.StatusCode);
+
+        var secondLogout = await client.PostAsync("/api/v1/identity/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, secondLogout.StatusCode);
+        var secondSessionRevoked = await client.GetAsync(partyUrl);
+        Assert.Equal(HttpStatusCode.Unauthorized, secondSessionRevoked.StatusCode);
 
         var repeatedLogout = await client.PostAsync("/api/v1/identity/logout", content: null);
         Assert.Equal(HttpStatusCode.NoContent, repeatedLogout.StatusCode);
