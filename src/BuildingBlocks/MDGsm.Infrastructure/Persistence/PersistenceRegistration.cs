@@ -1,5 +1,6 @@
 using MDGsm.Application.Persons;
 using MDGsm.IdentityAccess.Application;
+using MDGsm.IdentityAccess.Contracts;
 using MDGsm.Infrastructure.IdentityAccess;
 using MDGsm.Infrastructure.Persons;
 using MDGsm.Persons.Contracts;
@@ -30,6 +31,7 @@ public static class PersistenceRegistration
   services.AddScoped<ILoginAttemptStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<IRolePermissionStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<IRequestAuthorizationStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
+  services.AddScoped<IIdentityAccessAuthorizationContract,IdentityAccessAuthorizationContractAdapter>();
   services.AddScoped<IAuditWriter>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<ISystemPolicyStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<IDatabaseClock>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
