@@ -71,6 +71,12 @@ public sealed class SessionAuthenticationMiddleware(RequestDelegate next)
             return;
         }
 
+        if (identity.SessionId == Guid.Empty || identity.CredentialVersion <= 0)
+        {
+            await Unauthorized(context);
+            return;
+        }
+
         var policy = (await policies.GetSessionPolicyAsync(context.RequestAborted)).Validate();
         var renewed = await sessions.TryHeartbeatAsync(
             digest, identity.CredentialVersion, now, now.Add(policy.LeaseDuration), context.RequestAborted);
@@ -81,12 +87,6 @@ public sealed class SessionAuthenticationMiddleware(RequestDelegate next)
         }
 
         var accountId = identity.AccountId.Value.ToString("D");
-        if (identity.SessionId == Guid.Empty || identity.CredentialVersion <= 0)
-        {
-            await Unauthorized(context);
-            return;
-        }
-
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, accountId),
