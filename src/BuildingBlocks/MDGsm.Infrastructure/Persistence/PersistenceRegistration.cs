@@ -15,7 +15,12 @@ public static class PersistenceRegistration
  public static IServiceCollection AddMdGsmPersistence(this IServiceCollection services,IConfiguration configuration)
  {
   var cs=configuration.GetConnectionString(ConnectionStringName);
-  if(string.IsNullOrWhiteSpace(cs))return services;
+  if(string.IsNullOrWhiteSpace(cs))
+  {
+   services.AddScoped<IRequestAuthorizationStore,UnavailableRequestAuthorizationStore>();
+   services.AddScoped<IIdentityAccessAuthorizationContract,IdentityAccessAuthorizationContractAdapter>();
+   return services;
+  }
   services.AddDbContext<MdGsmDbContext>(o=>o.UseNpgsql(cs,n=>n.EnableRetryOnFailure(maxRetryCount:3)));
   services.AddSingleton(_=>NpgsqlDataSource.Create(cs));
   services.AddScoped<IPartyRepository,PostgresPartyRepository>();
