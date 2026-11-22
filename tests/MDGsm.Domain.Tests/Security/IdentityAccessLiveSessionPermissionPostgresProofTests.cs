@@ -58,8 +58,8 @@ public sealed class IdentityAccessLiveSessionPermissionPostgresProofTests
                 ("permission", permissionId), ("permission_key", permissionKey));
 
             await ExecuteAsync(cs, """
-                INSERT INTO identity.account_roles(account_id,role_id,assignment_reason)
-                VALUES (@account,@role,'disposable integration test');
+                INSERT INTO identity.account_roles(account_id,role_id,assigned_at_utc,assignment_reason)
+                VALUES (@account,@role,clock_timestamp(),'disposable integration test');
                 """,
                 ("account", accountId), ("role", roleId));
             await ExecuteAsync(cs, """
