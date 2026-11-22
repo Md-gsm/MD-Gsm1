@@ -166,7 +166,7 @@ public sealed class O20OrganizationLegalHoldRetentionPostgresProofTests
             var scheduleVersion = 4L;
             var authorization = Guid.NewGuid();
             await ExecuteAsync(cs,
-                $"INSERT INTO {q}.protected_history(record_id,record_class,retention_until_utc) VALUES (@id,'ORG_ASSIGNMENT_HISTORY',clock_timestamp()-interval '2 days');",
+                $"INSERT INTO {q}.protected_history(record_id,record_class,retention_until_utc) VALUES (@id,'ORG_ASSIGNMENT_HISTORY',clock_timestamp()+interval '2 days');",
                 ("id", record));
             await ExecuteAsync(cs,
                 $"INSERT INTO {q}.retention_schedule(record_class,schedule_version,status,retention_period_days,approved_by,approved_at_utc) VALUES ('ORG_ASSIGNMENT_HISTORY',@version,'UNSET',NULL,NULL,NULL);",
