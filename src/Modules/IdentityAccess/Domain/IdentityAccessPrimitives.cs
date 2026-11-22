@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Globalization;
 using System.Text;
 
@@ -174,9 +175,9 @@ public static class RoleCatalog
     public const string Accountant = "accountant";
     public const string Viewer = "viewer";
 
-    public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal)
+    public static IReadOnlySet<string> All { get; } = new[]
     {
         SuperAdmin, Manager, Receptionist, Technician, Warehouse,
         Salesperson, Purchaser, Cashier, Accountant, Viewer
-    };
+    }.ToFrozenSet(StringComparer.Ordinal);
 }
