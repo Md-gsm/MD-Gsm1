@@ -111,6 +111,27 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
             }
             await using var writerTransaction = await writer.BeginTransactionAsync();
 
+            var unknownKey = await adapter.EvaluateCurrentPermissionInTransactionAsync(
+                "identity.owner.override.unapproved", writer, writerTransaction, CancellationToken.None);
+            Assert.Equal(PermissionDecisionStatus.Denied, unknownKey.Status);
+            Assert.Equal("unknown_permission_key", unknownKey.ReasonCode);
+
+            var knownButUnassigned = await adapter.EvaluateCurrentPermissionInTransactionAsync(
+                "reports.export", writer, writerTransaction, CancellationToken.None);
+            Assert.Equal(PermissionDecisionStatus.Denied, knownButUnassigned.Status);
+            Assert.Equal("session_or_permission_not_active", knownButUnassigned.ReasonCode);
+
+            await using (var otherConnection = new NpgsqlConnection(cs))
+            {
+                await otherConnection.OpenAsync();
+                await using var otherTransaction = await otherConnection.BeginTransactionAsync();
+                var mismatch = await adapter.EvaluateCurrentPermissionInTransactionAsync(
+                    permissionKey, writer, otherTransaction, CancellationToken.None);
+                Assert.Equal(PermissionDecisionStatus.Unavailable, mismatch.Status);
+                Assert.Equal("transaction_connection_mismatch", mismatch.ReasonCode);
+                await otherTransaction.RollbackAsync();
+            }
+
             var decision = await adapter.EvaluateCurrentPermissionInTransactionAsync(
                 permissionKey, writer, writerTransaction, CancellationToken.None);
             Assert.Equal(PermissionDecisionStatus.Allowed, decision.Status);
