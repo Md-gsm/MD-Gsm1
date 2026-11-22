@@ -12,7 +12,7 @@ public interface IPasswordHasher { short CurrentVersion { get; } string DummyHas
 public interface IAccessTokenFactory { string CreateOpaqueToken(); byte[] ComputeDigest(string token); }
 public interface ISessionStore { Task<bool> HasActiveSessionAsync(AccountId id,DateTimeOffset now,CancellationToken ct); Task<int> CountDistinctActiveAccountsAsync(DateTimeOffset now,CancellationToken ct); Task CreateAsync(AccountId id,byte[] tokenDigest,long credentialVersion,Guid clientInstanceId,DateTimeOffset createdAt,DateTimeOffset leaseExpiresAt,CancellationToken ct); Task RevokeAllForAccountAsync(AccountId id,DateTimeOffset now,string reason,CancellationToken ct); Task<bool> TryHeartbeatAsync(byte[] tokenDigest,long credentialVersion,DateTimeOffset now,DateTimeOffset newLeaseExpiry,CancellationToken ct); Task<bool> RevokeByDigestAsync(byte[] tokenDigest,DateTimeOffset now,string reason,CancellationToken ct); }
 /// <summary>Identity returned only after the opaque token digest is matched to a live, non-revoked session and current enabled account version.</summary>
-public sealed record ValidatedSessionIdentity(AccountId AccountId, long CredentialVersion, bool MustChangePassword = false);
+public sealed record ValidatedSessionIdentity(AccountId AccountId, long CredentialVersion, bool MustChangePassword = false, Guid SessionId = default);
 public interface ISessionIdentityResolver
 {
     Task<ValidatedSessionIdentity?> ResolveAsync(byte[] tokenDigest, DateTimeOffset now, CancellationToken ct);
@@ -26,4 +26,21 @@ public interface IRecoveryStore
 {
     Task CreateChallengeAsync(AccountId accountId, byte[] challengeDigest, string channel, DateTimeOffset expiresAt, CancellationToken ct);
     Task<bool> ConsumeChallengeAsync(AccountId accountId, byte[] challengeDigest, string channel, DateTimeOffset now, CancellationToken ct);
+}
+
+
+/// <summary>
+/// Evaluates one exact permission in the same database statement that validates the
+/// current session ID, account enabled state, credential version and lease. This is a
+/// request-time authorization decision; mutating consumers still need commit-time
+/// revalidation/linearization in their own accepted unit-of-work contract.
+/// </summary>
+public interface IRequestAuthorizationStore
+{
+    Task<bool> HasPermissionForLiveSessionAsync(
+        AccountId accountId,
+        Guid sessionId,
+        long credentialVersion,
+        string permissionKey,
+        CancellationToken cancellationToken);
 }
