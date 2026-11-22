@@ -103,12 +103,73 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
 
             await using var writer = new NpgsqlConnection(cs);
             await writer.OpenAsync();
-            await using (var tempTable = new NpgsqlCommand(
-                "CREATE TEMP TABLE protected_write_probe (write_id uuid PRIMARY KEY, account_id uuid NOT NULL, created_at_utc timestamptz NOT NULL DEFAULT clock_timestamp());",
-                writer))
+            var branchId = Guid.NewGuid();
+            var warehouseId = Guid.NewGuid();
+            var assignmentId = Guid.NewGuid();
+            var historyEventId = Guid.NewGuid();
+            var outboxEventId = Guid.NewGuid();
+            var outboxHash = SHA256.HashData(Guid.NewGuid().ToByteArray());
+
+            await using (var tempTables = new NpgsqlCommand("""
+                CREATE TEMP TABLE protected_write_probe
+                (
+                    write_id uuid PRIMARY KEY,
+                    account_id uuid NOT NULL,
+                    created_at_utc timestamptz NOT NULL DEFAULT clock_timestamp()
+                );
+                -- Synthetic Organization-owned rows only. These tables exist only for this
+                -- disposable test connection; they are not a production Organization schema.
+                CREATE TEMP TABLE organization_branch_probe
+                (
+                    branch_id uuid PRIMARY KEY,
+                    row_version bigint NOT NULL
+                );
+                CREATE TEMP TABLE organization_warehouse_probe
+                (
+                    warehouse_id uuid PRIMARY KEY,
+                    branch_id uuid NOT NULL,
+                    row_version bigint NOT NULL
+                );
+                CREATE TEMP TABLE organization_assignment_probe
+                (
+                    assignment_id uuid PRIMARY KEY,
+                    account_id uuid NOT NULL,
+                    warehouse_id uuid NOT NULL,
+                    row_version bigint NOT NULL
+                );
+                CREATE TEMP TABLE organization_domain_history_probe
+                (
+                    event_id uuid PRIMARY KEY,
+                    aggregate_id uuid NOT NULL,
+                    aggregate_version bigint NOT NULL,
+                    event_type text NOT NULL
+                );
+                CREATE TEMP TABLE organization_audit_outbox_probe
+                (
+                    event_id uuid PRIMARY KEY,
+                    payload_hash bytea NOT NULL CHECK (octet_length(payload_hash)=32),
+                    state text NOT NULL CHECK (state IN ('PENDING','ACKNOWLEDGED'))
+                );
+                """, writer))
             {
-                await tempTable.ExecuteNonQueryAsync();
+                await tempTables.ExecuteNonQueryAsync();
             }
+
+            await using (var seedOrganization = new NpgsqlCommand("""
+                INSERT INTO organization_branch_probe(branch_id,row_version) VALUES (@branch,1);
+                INSERT INTO organization_warehouse_probe(warehouse_id,branch_id,row_version) VALUES (@warehouse,@branch,1);
+                INSERT INTO organization_assignment_probe(assignment_id,account_id,warehouse_id,row_version)
+                    VALUES (@assignment,@account,@warehouse,1);
+                """, writer))
+            {
+                seedOrganization.Parameters.AddWithValue("branch", branchId);
+                seedOrganization.Parameters.AddWithValue("warehouse", warehouseId);
+                seedOrganization.Parameters.AddWithValue("assignment", assignmentId);
+                seedOrganization.Parameters.AddWithValue("account", accountId);
+                seedOrganization.Parameters.AddWithValue("warehouse", warehouseId);
+                await seedOrganization.ExecuteNonQueryAsync();
+            }
+
             await using var writerTransaction = await writer.BeginTransactionAsync();
 
             var unknownKey = await adapter.EvaluateCurrentPermissionInTransactionAsync(
@@ -140,6 +201,8 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
             Assert.Equal(9L, decision.PrincipalVersion);
             Assert.Equal("live_permission_locked_until_transaction_end", decision.ReasonCode);
 
+            // The real IdentityAccess guard and the synthetic Organization write facts
+            // participate in this exact same PostgreSQL connection/transaction.
             await using (var protectedWrite = new NpgsqlCommand(
                 "INSERT INTO protected_write_probe(write_id,account_id) VALUES (@write,@account);",
                 writer, writerTransaction))
@@ -147,6 +210,27 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
                 protectedWrite.Parameters.AddWithValue("write", Guid.NewGuid());
                 protectedWrite.Parameters.AddWithValue("account", accountId);
                 Assert.Equal(1, await protectedWrite.ExecuteNonQueryAsync());
+            }
+
+            await using (var domainMutation = new NpgsqlCommand("""
+                UPDATE organization_branch_probe SET row_version=row_version+1 WHERE branch_id=@branch;
+                UPDATE organization_warehouse_probe SET row_version=row_version+1 WHERE warehouse_id=@warehouse AND branch_id=@branch;
+                UPDATE organization_assignment_probe SET row_version=row_version+1
+                    WHERE assignment_id=@assignment AND account_id=@account AND warehouse_id=@warehouse;
+                INSERT INTO organization_domain_history_probe(event_id,aggregate_id,aggregate_version,event_type)
+                    VALUES (@history_event,@assignment,2,'ASSIGNMENT_UPDATED');
+                INSERT INTO organization_audit_outbox_probe(event_id,payload_hash,state)
+                    VALUES (@outbox_event,@outbox_hash,'PENDING');
+                """, writer, writerTransaction))
+            {
+                domainMutation.Parameters.AddWithValue("branch", branchId);
+                domainMutation.Parameters.AddWithValue("warehouse", warehouseId);
+                domainMutation.Parameters.AddWithValue("assignment", assignmentId);
+                domainMutation.Parameters.AddWithValue("account", accountId);
+                domainMutation.Parameters.AddWithValue("history_event", historyEventId);
+                domainMutation.Parameters.AddWithValue("outbox_event", outboxEventId);
+                domainMutation.Parameters.AddWithValue("outbox_hash", outboxHash);
+                Assert.Equal(5, await domainMutation.ExecuteNonQueryAsync());
             }
 
             var pidsReady = Enumerable.Range(0, 5)
@@ -189,6 +273,31 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
                 {
                     verifyWrite.Parameters.AddWithValue("account", accountId);
                     Assert.Equal(1L, Convert.ToInt64(await verifyWrite.ExecuteScalarAsync()));
+                }
+
+                await using (var verifyOrganization = new NpgsqlCommand("""
+                    SELECT
+                        (SELECT row_version FROM organization_branch_probe WHERE branch_id=@branch),
+                        (SELECT row_version FROM organization_warehouse_probe WHERE warehouse_id=@warehouse),
+                        (SELECT row_version FROM organization_assignment_probe WHERE assignment_id=@assignment),
+                        (SELECT count(*) FROM organization_domain_history_probe WHERE event_id=@history_event),
+                        (SELECT count(*) FROM organization_audit_outbox_probe
+                         WHERE event_id=@outbox_event AND payload_hash=@outbox_hash AND state='PENDING');
+                    """, writer))
+                {
+                    verifyOrganization.Parameters.AddWithValue("branch", branchId);
+                    verifyOrganization.Parameters.AddWithValue("warehouse", warehouseId);
+                    verifyOrganization.Parameters.AddWithValue("assignment", assignmentId);
+                    verifyOrganization.Parameters.AddWithValue("history_event", historyEventId);
+                    verifyOrganization.Parameters.AddWithValue("outbox_event", outboxEventId);
+                    verifyOrganization.Parameters.AddWithValue("outbox_hash", outboxHash);
+                    await using var reader = await verifyOrganization.ExecuteReaderAsync();
+                    Assert.True(await reader.ReadAsync());
+                    Assert.Equal(2L, reader.GetInt64(0));
+                    Assert.Equal(2L, reader.GetInt64(1));
+                    Assert.Equal(2L, reader.GetInt64(2));
+                    Assert.Equal(1L, reader.GetInt64(3));
+                    Assert.Equal(1L, reader.GetInt64(4));
                 }
 
                 Assert.False(await stores.HasPermissionForLiveSessionAsync(
