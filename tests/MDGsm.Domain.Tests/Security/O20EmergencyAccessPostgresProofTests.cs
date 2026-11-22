@@ -217,6 +217,16 @@ public sealed class O20EmergencyAccessPostgresProofTests
                 Assert.False(reader.GetBoolean(11));
             }
 
+            // An otherwise eligible approver outside the validity window cannot activate an emergency grant.
+            await ExecuteAsync(adminConnectionString,
+                $"UPDATE {qSchema}.authorized_approver SET valid_until_utc=clock_timestamp()-interval '1 second' WHERE principal='approver-b' AND allowed_resource='scope-A';");
+            var expiredApproverGrant = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-A", 60);
+            Assert.False(await ActivateAsync(adminConnectionString, schema, expiredApproverGrant, "approver-a", "approver-b"));
+            Assert.Equal("REQUESTED", await ScalarStringAsync(adminConnectionString,
+                $"SELECT state FROM {qSchema}.emergency_grant WHERE grant_id=@id;", expiredApproverGrant));
+            await ExecuteAsync(adminConnectionString,
+                $"UPDATE {qSchema}.authorized_approver SET valid_until_utc=clock_timestamp()+interval '1 hour' WHERE principal='approver-b' AND allowed_resource='scope-A';");
+
             // Duplicate approver, requester-as-approver and emergency-operator-as-approver all deny.
             var invalid = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-A", 60);
             Assert.Equal(
