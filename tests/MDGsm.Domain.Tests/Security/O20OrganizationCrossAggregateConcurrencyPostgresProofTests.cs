@@ -431,5 +431,5 @@ public sealed class O20OrganizationCrossAggregateConcurrencyPostgresProofTests
         await command.ExecuteNonQueryAsync();
     }
 
-    private static string Q(string s)=>"\""+s.Replace("\"","\\"")+"\"";
+    private static string Q(string s) => "\"" + s.Replace("\"", "\"\"") + "\"";
 }
