@@ -73,6 +73,178 @@ public sealed class O20OrganizationDeterministicLockOrderPostgresProofTests
         }
     }
 
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Candidate_branch_warehouse_assignment_rank_order_avoids_reversed_multi_table_cycle()
+    {
+        var cs = await OpenMarkedDisposableDatabaseAsync();
+        var schema = "o20org_rank_" + Guid.NewGuid().ToString("N")[..10];
+        var q = Q(schema);
+        try
+        {
+            await ExecuteAsync(cs, $"""
+                CREATE SCHEMA {q};
+                CREATE TABLE {q}.branch_probe
+                (
+                    branch_id uuid PRIMARY KEY,
+                    row_version bigint NOT NULL DEFAULT 1
+                );
+                CREATE TABLE {q}.warehouse_probe
+                (
+                    warehouse_id uuid PRIMARY KEY,
+                    branch_id uuid NOT NULL REFERENCES {q}.branch_probe(branch_id),
+                    row_version bigint NOT NULL DEFAULT 1
+                );
+                CREATE TABLE {q}.assignment_probe
+                (
+                    assignment_id uuid PRIMARY KEY,
+                    warehouse_id uuid NOT NULL REFERENCES {q}.warehouse_probe(warehouse_id),
+                    row_version bigint NOT NULL DEFAULT 1
+                );
+                """);
+
+            var branches = new[] { Guid.NewGuid(), Guid.NewGuid() };
+            var warehouses = new[] { Guid.NewGuid(), Guid.NewGuid() };
+            var assignments = new[] { Guid.NewGuid(), Guid.NewGuid() };
+
+            await ExecuteAsync(cs,
+                $"INSERT INTO {q}.branch_probe(branch_id) VALUES (@id1),(@id2);",
+                ("id1", branches[0]), ("id2", branches[1]));
+            await ExecuteAsync(cs,
+                $"INSERT INTO {q}.warehouse_probe(warehouse_id,branch_id) VALUES (@id1,@branch1),(@id2,@branch2);",
+                ("id1", warehouses[0]), ("branch1", branches[0]),
+                ("id2", warehouses[1]), ("branch2", branches[1]));
+            await ExecuteAsync(cs,
+                $"INSERT INTO {q}.assignment_probe(assignment_id,warehouse_id) VALUES (@id1,@warehouse1),(@id2,@warehouse2);",
+                ("id1", assignments[0]), ("warehouse1", warehouses[0]),
+                ("id2", assignments[1]), ("warehouse2", warehouses[1]));
+
+            var expectedOrder = CandidateRankedOrder(branches, warehouses, assignments);
+            var reversedBranches = branches.Reverse().ToArray();
+            var reversedWarehouses = warehouses.Reverse().ToArray();
+            var reversedAssignments = assignments.Reverse().ToArray();
+            Assert.Equal(expectedOrder, CandidateRankedOrder(
+                reversedBranches, reversedWarehouses, reversedAssignments));
+
+            var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var first = Task.Run(async () =>
+            {
+                await start.Task;
+                return await LockRankedRowsAsync(
+                    cs, q, branches, warehouses, assignments, "rank-forward");
+            });
+            var second = Task.Run(async () =>
+            {
+                await start.Task;
+                return await LockRankedRowsAsync(
+                    cs, q, reversedBranches, reversedWarehouses, reversedAssignments, "rank-reverse");
+            });
+            start.SetResult();
+
+            var acquired = await Task.WhenAll(first, second);
+            Assert.Equal(expectedOrder, acquired[0]);
+            Assert.Equal(expectedOrder, acquired[1]);
+
+            Assert.Equal(2L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.branch_probe WHERE row_version=3;"));
+            Assert.Equal(2L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.warehouse_probe WHERE row_version=3;"));
+            Assert.Equal(2L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.assignment_probe WHERE row_version=3;"));
+        }
+        finally
+        {
+            await DropSchemaAsync(cs, q);
+        }
+    }
+
+    private static string[] CandidateRankedOrder(
+        Guid[] branches, Guid[] warehouses, Guid[] assignments) =>
+        branches.OrderBy(x => x.ToString("N"), StringComparer.Ordinal)
+            .Select(x => $"30:branch:{x:N}")
+            .Concat(warehouses.OrderBy(x => x.ToString("N"), StringComparer.Ordinal)
+                .Select(x => $"40:warehouse:{x:N}"))
+            .Concat(assignments.OrderBy(x => x.ToString("N"), StringComparer.Ordinal)
+                .Select(x => $"50:assignment:{x:N}"))
+            .ToArray();
+
+    private static async Task<string[]> LockRankedRowsAsync(
+        string cs,
+        string quotedSchema,
+        Guid[] branches,
+        Guid[] warehouses,
+        Guid[] assignments,
+        string applicationName)
+    {
+        var branchOrder = branches.OrderBy(x => x.ToString("N"), StringComparer.Ordinal).ToArray();
+        var warehouseOrder = warehouses.OrderBy(x => x.ToString("N"), StringComparer.Ordinal).ToArray();
+        var assignmentOrder = assignments.OrderBy(x => x.ToString("N"), StringComparer.Ordinal).ToArray();
+        var acquired = new System.Collections.Generic.List<string>();
+        var builder = new NpgsqlConnectionStringBuilder(cs) { ApplicationName = applicationName };
+
+        await using var connection = new NpgsqlConnection(builder.ConnectionString);
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        await using (var settings = new NpgsqlCommand(
+            "SET LOCAL lock_timeout='5s'; SET LOCAL statement_timeout='15s';",
+            connection, transaction))
+        {
+            await settings.ExecuteNonQueryAsync();
+        }
+
+        foreach (var id in branchOrder)
+        {
+            await LockOneAsync(connection, transaction,
+                $"SELECT branch_id FROM {quotedSchema}.branch_probe WHERE branch_id=@id FOR UPDATE;", id);
+            acquired.Add($"30:branch:{id:N}");
+            if (acquired.Count == 1) await Task.Delay(75);
+        }
+        foreach (var id in warehouseOrder)
+        {
+            await LockOneAsync(connection, transaction,
+                $"SELECT warehouse_id FROM {quotedSchema}.warehouse_probe WHERE warehouse_id=@id FOR UPDATE;", id);
+            acquired.Add($"40:warehouse:{id:N}");
+        }
+        foreach (var id in assignmentOrder)
+        {
+            await LockOneAsync(connection, transaction,
+                $"SELECT assignment_id FROM {quotedSchema}.assignment_probe WHERE assignment_id=@id FOR UPDATE;", id);
+            acquired.Add($"50:assignment:{id:N}");
+        }
+
+        foreach (var id in branchOrder)
+            await IncrementOneAsync(connection, transaction,
+                $"UPDATE {quotedSchema}.branch_probe SET row_version=row_version+1 WHERE branch_id=@id;", id);
+        foreach (var id in warehouseOrder)
+            await IncrementOneAsync(connection, transaction,
+                $"UPDATE {quotedSchema}.warehouse_probe SET row_version=row_version+1 WHERE warehouse_id=@id;", id);
+        foreach (var id in assignmentOrder)
+            await IncrementOneAsync(connection, transaction,
+                $"UPDATE {quotedSchema}.assignment_probe SET row_version=row_version+1 WHERE assignment_id=@id;", id);
+
+        await transaction.CommitAsync();
+        return acquired.ToArray();
+    }
+
+    private static async Task LockOneAsync(
+        NpgsqlConnection connection, NpgsqlTransaction transaction, string sql, Guid id)
+    {
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("id", id);
+        var result = await command.ExecuteScalarAsync();
+        Assert.NotNull(result);
+        Assert.Equal(id, (Guid)result!);
+    }
+
+    private static async Task IncrementOneAsync(
+        NpgsqlConnection connection, NpgsqlTransaction transaction, string sql, Guid id)
+    {
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("id", id);
+        Assert.Equal(1, await command.ExecuteNonQueryAsync());
+    }
+
     private static string[] CanonicalOrder(Guid[] values) =>
         values.Select(x => x.ToString("N"))
             .OrderBy(x => x, StringComparer.Ordinal)
