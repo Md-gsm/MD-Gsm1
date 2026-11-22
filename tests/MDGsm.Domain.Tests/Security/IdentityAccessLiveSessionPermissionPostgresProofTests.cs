@@ -31,7 +31,7 @@ public sealed class IdentityAccessLiveSessionPermissionPostgresProofTests
         var loginName = "o20session" + suffix;
         var loginNormalized = loginName.ToUpperInvariant();
         var roleKey = "o20-session-" + suffix;
-        const string permissionKey = "reports.read";
+        var permissionKey = "o20.permission." + suffix;
 
         try
         {
@@ -58,10 +58,13 @@ public sealed class IdentityAccessLiveSessionPermissionPostgresProofTests
             await ExecuteAsync(cs, """
                 INSERT INTO identity.account_roles(account_id,role_id,assignment_reason)
                 VALUES (@account,@role,'disposable integration test');
+                """,
+                ("account", accountId), ("role", roleId));
+            await ExecuteAsync(cs, """
                 INSERT INTO identity.role_permissions(role_id,permission_id)
                 VALUES (@role,@permission);
                 """,
-                ("account", accountId), ("role", roleId), ("permission", permissionId));
+                ("role", roleId), ("permission", permissionId));
 
             await ExecuteAsync(cs, """
                 INSERT INTO identity.sessions
