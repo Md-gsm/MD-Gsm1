@@ -16,15 +16,9 @@ public sealed class DatabaseMigrationRunner
     public async Task<MigrationRunResult> ApplyPendingAsync(
         string connectionString,
         bool requireDisposableMarker = true,
-        CancellationToken cancellationToken = default,
-        string? migrationLoginRole = null,
-        string? schemaOwnerRole = null)
+        CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
-        if (string.IsNullOrWhiteSpace(migrationLoginRole) != string.IsNullOrWhiteSpace(schemaOwnerRole))
-        {
-            throw new ArgumentException("Migration login and schema-owner roles must be supplied together.");
-        }
         var migrations = LoadMigrations();
         var builder = new NpgsqlConnectionStringBuilder(connectionString)
         {
@@ -47,12 +41,6 @@ public sealed class DatabaseMigrationRunner
                 throw new InvalidOperationException(
                     $"Database '{connection.Database}' is not marked {DisposableMarker}; refusing to migrate it.");
             }
-        }
-
-        if (migrationLoginRole is not null && schemaOwnerRole is not null)
-        {
-            await AssumeRegisteredSchemaOwnerAsync(
-                connection, migrationLoginRole, schemaOwnerRole, cancellationToken);
         }
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
@@ -144,71 +132,6 @@ public sealed class DatabaseMigrationRunner
         await transaction.CommitAsync(cancellationToken);
         return new MigrationRunResult(connection.Database, newlyApplied, applied.Count);
     }
-
-    private static async Task AssumeRegisteredSchemaOwnerAsync(
-        NpgsqlConnection connection,
-        string expectedLoginRole,
-        string schemaOwnerRole,
-        CancellationToken cancellationToken)
-    {
-        ValidateRoleName(expectedLoginRole, nameof(expectedLoginRole));
-        ValidateRoleName(schemaOwnerRole, nameof(schemaOwnerRole));
-
-        await using (var validate = new NpgsqlCommand("""
-            SELECT
-                session_user = @login,
-                login_role.rolcanlogin AND NOT login_role.rolsuper
-                    AND NOT login_role.rolcreatedb AND NOT login_role.rolcreaterole
-                    AND NOT login_role.rolreplication AND NOT login_role.rolbypassrls
-                    AND NOT login_role.rolinherit,
-                NOT owner_role.rolcanlogin AND NOT owner_role.rolsuper
-                    AND NOT owner_role.rolcreatedb AND NOT owner_role.rolcreaterole
-                    AND NOT owner_role.rolreplication AND NOT owner_role.rolbypassrls,
-                (SELECT count(*) FROM pg_auth_members m WHERE m.member=login_role.oid),
-                (SELECT count(*) FROM pg_auth_members m
-                 WHERE m.member=login_role.oid AND m.roleid=owner_role.oid
-                   AND NOT m.admin_option AND NOT m.inherit_option AND m.set_option)
-            FROM pg_roles login_role
-            CROSS JOIN pg_roles owner_role
-            WHERE login_role.rolname=@login AND owner_role.rolname=@owner;
-            """, connection))
-        {
-            validate.Parameters.AddWithValue("login", expectedLoginRole);
-            validate.Parameters.AddWithValue("owner", schemaOwnerRole);
-            await using var reader = await validate.ExecuteReaderAsync(cancellationToken);
-            if (!await reader.ReadAsync(cancellationToken) ||
-                !reader.GetBoolean(0) || !reader.GetBoolean(1) || !reader.GetBoolean(2) ||
-                reader.GetInt64(3) != 1 || reader.GetInt64(4) != 1)
-            {
-                throw new InvalidOperationException(
-                    "Migration identity does not match the registered non-inheriting LOGIN-to-NOLOGIN schema-owner boundary.");
-            }
-        }
-
-        await using (var assume = new NpgsqlCommand($"SET ROLE {QuoteRole(schemaOwnerRole)};", connection))
-        {
-            await assume.ExecuteNonQueryAsync(cancellationToken);
-        }
-
-        await using var verify = new NpgsqlCommand("SELECT session_user, current_user;", connection);
-        await using var identity = await verify.ExecuteReaderAsync(cancellationToken);
-        if (!await identity.ReadAsync(cancellationToken) ||
-            !string.Equals(identity.GetString(0), expectedLoginRole, StringComparison.Ordinal) ||
-            !string.Equals(identity.GetString(1), schemaOwnerRole, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException("PostgreSQL did not enter the registered schema-owner role as expected.");
-        }
-    }
-
-    private static void ValidateRoleName(string roleName, string parameterName)
-    {
-        if (!Regex.IsMatch(roleName, @"^[a-z_][a-z0-9_]{0,62}$", RegexOptions.CultureInvariant))
-        {
-            throw new ArgumentException("PostgreSQL role name is not a permitted canonical identifier.", parameterName);
-        }
-    }
-
-    private static string QuoteRole(string roleName) => "\"" + roleName + "\"";
 
     private static IReadOnlyList<MigrationArtifact> LoadMigrations()
     {

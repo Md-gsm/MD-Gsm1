@@ -3,11 +3,9 @@ using MDGsm.IdentityAccess.Domain;
 using MDGsm.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 namespace MDGsm.Infrastructure.IdentityAccess;
-public sealed class PostgresIdentityAccessStores(MdGsmDbContext db) :
- IAccountStore, ISessionStore, ILoginAttemptStore, IRolePermissionStore, IAuditWriter, ISystemPolicyStore, IRecoveryStore, IDatabaseClock
+public sealed class PostgresIdentityAccessStores(MdGsmDbContext db, TimeProvider clock) :
+ IAccountStore, ISessionStore, ILoginAttemptStore, IRolePermissionStore, IAuditWriter, ISystemPolicyStore, IRecoveryStore
 {
- public Task<DateTimeOffset> GetUtcNowAsync(CancellationToken ct) =>
-  db.Database.SqlQuery<DateTimeOffset>($"SELECT clock_timestamp() AS \"Value\"").SingleAsync(ct);
  public async Task<Account?> FindByNormalizedUsernameAsync(string normalizedUsername,CancellationToken ct)
  {
   await db.Database.ExecuteSqlInterpolatedAsync($"SELECT account_id FROM identity.accounts WHERE login_name_normalized = {normalizedUsername} FOR UPDATE",ct);
@@ -24,13 +22,12 @@ public sealed class PostgresIdentityAccessStores(MdGsmDbContext db) :
  {
   ArgumentNullException.ThrowIfNull(account);
   var row=await db.IdentityAccounts.SingleOrDefaultAsync(x=>x.AccountId==account.Id.Value,ct);
-  if(row is null)
-   throw new InvalidOperationException("IdentityAccess runtime cannot provision accounts; bootstrap and account creation require a separately authorized provisioning boundary.");
+  if(row is null){row=new(){AccountId=account.Id.Value,CreatedAtUtc=clock.GetUtcNow()};db.IdentityAccounts.Add(row);}
   row.LoginName=account.Username.DisplayValue;row.LoginNameNormalized=account.Username.NormalizedValue;
   row.PasswordHash=account.PasswordHash;row.PasswordHashVersion=account.PasswordHashVersion;
   row.MustChangePassword=account.MustChangePassword;row.IsEnabled=account.IsEnabled;row.CredentialVersion=account.CredentialVersion;
   row.FailedAttemptCount=account.FailedAttemptCount;row.FailureWindowStartedAt=account.FailureWindowStartedAt;row.LockedUntil=account.LockedUntil;
-  row.UpdatedAtUtc=await GetUtcNowAsync(ct);await db.SaveChangesAsync(ct);
+  row.UpdatedAtUtc=clock.GetUtcNow();await db.SaveChangesAsync(ct);
  }
  public Task<bool> HasActiveSessionAsync(AccountId id,DateTimeOffset now,CancellationToken ct)=>
   db.IdentitySessions.AnyAsync(x=>x.AccountId==id.Value&&x.RevokedAtUtc==null&&x.LeaseExpiresAtUtc>now,ct);
@@ -80,7 +77,7 @@ public sealed class PostgresIdentityAccessStores(MdGsmDbContext db) :
   (from ar in db.IdentityAccountRoles join role in db.IdentityRoles on ar.RoleId equals role.RoleId where ar.AccountId==id.Value&&role.RoleKey==roleKey select role.RoleId).AnyAsync(ct);
  public async Task AppendAsync(string eventType,AccountId? actor,AccountId? subject,string outcome,string correlationId,CancellationToken ct)
  {
-  db.IdentityAuditEvents.Add(new(){EventId=Guid.CreateVersion7(),OccurredAtUtc=await GetUtcNowAsync(ct),ActorAccountId=actor?.Value,SubjectAccountId=subject?.Value,EventType=eventType,Outcome=outcome,CorrelationId=correlationId});
+  db.IdentityAuditEvents.Add(new(){EventId=Guid.CreateVersion7(),OccurredAtUtc=clock.GetUtcNow(),ActorAccountId=actor?.Value,SubjectAccountId=subject?.Value,EventType=eventType,Outcome=outcome,CorrelationId=correlationId});
   await db.SaveChangesAsync(ct);
  }
  public async Task<SessionPolicy> GetSessionPolicyAsync(CancellationToken ct)
@@ -91,7 +88,7 @@ public sealed class PostgresIdentityAccessStores(MdGsmDbContext db) :
  public async Task CreateChallengeAsync(AccountId accountId,byte[] challengeDigest,string channel,DateTimeOffset expiresAt,CancellationToken ct)
  {
   RequireDigest(challengeDigest,nameof(challengeDigest));if(channel != "email")throw new ArgumentOutOfRangeException(nameof(channel));
-  var now=await GetUtcNowAsync(ct);
+  var now=clock.GetUtcNow();
   await db.IdentityRecoveryChallenges.Where(x=>x.AccountId==accountId.Value&&x.Channel==channel&&x.ConsumedAtUtc==null&&x.RevokedAtUtc==null)
    .ExecuteUpdateAsync(s=>s.SetProperty(x=>x.RevokedAtUtc,now),ct);
   db.IdentityRecoveryChallenges.Add(new(){ChallengeId=Guid.CreateVersion7(),AccountId=accountId.Value,ChallengeDigest=challengeDigest.ToArray(),Channel=channel,CreatedAtUtc=now,ExpiresAtUtc=expiresAt});
@@ -102,6 +99,12 @@ public sealed class PostgresIdentityAccessStores(MdGsmDbContext db) :
   if(challengeDigest is not {Length:32}||channel != "email")return false;
   return await db.IdentityRecoveryChallenges.Where(x=>x.AccountId==accountId.Value&&x.ChallengeDigest==challengeDigest&&x.Channel==channel&&x.ConsumedAtUtc==null&&x.RevokedAtUtc==null&&x.ExpiresAtUtc>now)
    .ExecuteUpdateAsync(s=>s.SetProperty(x=>x.ConsumedAtUtc,now),ct)==1;
+ }
+ public async Task<bool> ConsumeRecoveryCodeAsync(AccountId accountId,byte[] codeDigest,DateTimeOffset now,CancellationToken ct)
+ {
+  if(codeDigest is not {Length:32})return false;
+  return await db.IdentityRecoveryCodes.Where(x=>x.AccountId==accountId.Value&&x.CodeDigest==codeDigest&&x.UsedAtUtc==null&&x.RevokedAtUtc==null)
+   .ExecuteUpdateAsync(s=>s.SetProperty(x=>x.UsedAtUtc,now),ct)==1;
  }
  private static Account Map(IdentityAccountRow row)=>Account.Rehydrate(AccountId.From(row.AccountId),Username.Parse(row.LoginName),row.PasswordHash,row.PasswordHashVersion,row.IsEnabled,row.MustChangePassword,row.CredentialVersion,row.FailedAttemptCount,row.FailureWindowStartedAt,row.LockedUntil);
  private static void RequireDigest(byte[]? digest,string name){if(digest is not {Length:32})throw new ArgumentException("A SHA-256 digest of exactly 32 bytes is required.",name);}

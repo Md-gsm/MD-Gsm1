@@ -21,13 +21,10 @@ if ($databaseName -notmatch '^mdgsm_ci_disposable_[0-9]+_[0-9]+$') { throw 'Disp
 # The EDB installer receives them through a temporary ACL-restricted option file,
 # not command-line arguments. The file is deleted immediately after installation.
 $databasePassword = 'MdGsmDb' + [Guid]::NewGuid().ToString('N')
-$migrationPassword = [Convert]::ToHexString([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32)).ToLowerInvariant()
 $servicePassword = 'MdGsmSvc' + [Guid]::NewGuid().ToString('N')
 $optionFilePath = Join-Path $downloadDirectory 'postgresql-installer-options.txt'
 $previousPgPassword = $env:PGPASSWORD
 $previousConnectionString = $env:ConnectionStrings__MDGsmDatabase
-$previousMigrationLoginRole = $env:MDGSM_MIGRATION_LOGIN_ROLE
-$previousMigrationOwnerRole = $env:MDGSM_MIGRATION_OWNER_ROLE
 $databaseCreated = $false
 $psqlPath = Join-Path $installRoot 'bin\psql.exe'
 $pgIsReadyPath = Join-Path $installRoot 'bin\pg_isready.exe'
@@ -106,27 +103,14 @@ try {
     }
     Write-Host "PostgreSQL server verified: $("$version".Trim())"
 
-    & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d postgres -v ON_ERROR_STOP=1 -c "CREATE ROLE mdgsm_schema_owner NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;"
-    if ($LASTEXITCODE -ne 0) { throw 'Could not create the NOLOGIN migration schema-owner role.' }
-    & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d postgres -v ON_ERROR_STOP=1 -c "CREATE ROLE migration_runner LOGIN PASSWORD '$migrationPassword' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;"
-    if ($LASTEXITCODE -ne 0) { throw 'Could not create the dedicated migration LOGIN.' }
-    & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d postgres -v ON_ERROR_STOP=1 -c "GRANT mdgsm_schema_owner TO migration_runner WITH ADMIN FALSE, INHERIT FALSE, SET TRUE;"
-    if ($LASTEXITCODE -ne 0) { throw 'Could not register the explicit SET ROLE membership.' }
-
     & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE $databaseName;"
     if ($LASTEXITCODE -ne 0) { throw 'Could not create the uniquely named disposable PostgreSQL database.' }
     $databaseCreated = $true
     & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d postgres -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE $databaseName IS 'MDGSM_DISPOSABLE_TEST_DB; PostgreSQL 18 Windows CI';"
     if ($LASTEXITCODE -ne 0) { throw 'Could not apply the disposable database marker.' }
-    & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d $databaseName -v ON_ERROR_STOP=1 -c "GRANT CREATE ON DATABASE $databaseName TO mdgsm_schema_owner;"
-    if ($LASTEXITCODE -ne 0) { throw 'Could not grant database CREATE to the NOLOGIN schema owner.' }
-    & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d $databaseName -v ON_ERROR_STOP=1 -c "GRANT CREATE ON SCHEMA public TO mdgsm_schema_owner;"
-    if ($LASTEXITCODE -ne 0) { throw 'Could not grant public-schema CREATE to the NOLOGIN schema owner.' }
 
-    # The migrator authenticates as the dedicated LOGIN and assumes the registered NOLOGIN owner.
-    $env:ConnectionStrings__MDGsmDatabase = "Host=127.0.0.1;Port=$port;Database=$databaseName;Username=migration_runner;Password=$migrationPassword;Timeout=15;Command Timeout=120"
-    $env:MDGSM_MIGRATION_LOGIN_ROLE = 'migration_runner'
-    $env:MDGSM_MIGRATION_OWNER_ROLE = 'mdgsm_schema_owner'
+    # For application migrations, the connection string is supplied only through process environment.
+    $env:ConnectionStrings__MDGsmDatabase = "Host=127.0.0.1;Port=$port;Database=$databaseName;Username=postgres;Password=$databasePassword;Timeout=15;Command Timeout=120"
     $migratorProject = Join-Path $PSScriptRoot '..\tools\MDGsm.DbMigrator\MDGsm.DbMigrator.csproj'
     if (-not (Test-Path -LiteralPath $migratorProject)) { throw "Application migrator project not found: $migratorProject" }
 
@@ -151,9 +135,6 @@ try {
     $schemaVersion = & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d $databaseName -t -A -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(version)::text FROM mdgsm_schema_version;"
     if ($LASTEXITCODE -ne 0 -or "$schemaVersion".Trim() -ne '1|1') { throw "Infrastructure schema version verification failed: '$schemaVersion'." }
 
-    $roleChecks = & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d $databaseName -t -A -v ON_ERROR_STOP=1 -c "SELECT (r.rolcanlogin AND NOT r.rolsuper AND NOT r.rolcreatedb AND NOT r.rolcreaterole AND NOT r.rolreplication AND NOT r.rolbypassrls AND NOT r.rolinherit)::text || '|' || has_database_privilege('migration_runner',current_database(),'CREATE')::text || '|' || has_schema_privilege('migration_runner','public','CREATE')::text || '|' || (SELECT count(*) FROM pg_auth_members m WHERE m.member=r.oid)::text FROM pg_roles r WHERE r.rolname='migration_runner';"
-    if ($LASTEXITCODE -ne 0 -or "$roleChecks".Trim() -ne 'true|false|false|1') { throw "Migration LOGIN privilege boundary failed: '$roleChecks'." }
-
     Write-Host 'PASS: PostgreSQL 18 on Windows, EDB installer checksum, disposable database marker, app-owned migrations, checksum history and second-run idempotence.' -ForegroundColor Green
 }
 finally {
@@ -161,7 +142,6 @@ finally {
         try {
             & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d postgres -v ON_ERROR_STOP=1 -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$databaseName' AND pid <> pg_backend_pid();" | Out-Null
             & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS $databaseName;" | Out-Null
-            & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d postgres -v ON_ERROR_STOP=1 -c "DROP ROLE IF EXISTS migration_runner; DROP ROLE IF EXISTS mdgsm_schema_owner;" | Out-Null
         } catch {
             Write-Warning 'Disposable PostgreSQL database cleanup did not complete; the hosted runner VM is temporary.'
         }
@@ -171,13 +151,8 @@ finally {
     else { $env:PGPASSWORD = $previousPgPassword }
     if ($null -eq $previousConnectionString) { Remove-Item Env:ConnectionStrings__MDGsmDatabase -ErrorAction SilentlyContinue }
     else { $env:ConnectionStrings__MDGsmDatabase = $previousConnectionString }
-    if ($null -eq $previousMigrationLoginRole) { Remove-Item Env:MDGSM_MIGRATION_LOGIN_ROLE -ErrorAction SilentlyContinue }
-    else { $env:MDGSM_MIGRATION_LOGIN_ROLE = $previousMigrationLoginRole }
-    if ($null -eq $previousMigrationOwnerRole) { Remove-Item Env:MDGSM_MIGRATION_OWNER_ROLE -ErrorAction SilentlyContinue }
-    else { $env:MDGSM_MIGRATION_OWNER_ROLE = $previousMigrationOwnerRole }
     if (Test-Path -LiteralPath $optionFilePath) { Remove-Item -LiteralPath $optionFilePath -Force -ErrorAction SilentlyContinue }
     $databasePassword = $null
-    $migrationPassword = $null
     $servicePassword = $null
     Remove-Item -LiteralPath $downloadDirectory -Recurse -Force -ErrorAction SilentlyContinue
 }

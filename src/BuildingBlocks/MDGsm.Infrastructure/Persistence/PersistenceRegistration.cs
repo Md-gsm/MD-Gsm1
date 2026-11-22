@@ -31,7 +31,6 @@ public static class PersistenceRegistration
   services.AddScoped<IRolePermissionStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<IAuditWriter>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<ISystemPolicyStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
-  services.AddScoped<IDatabaseClock>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<IRecoveryStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<IIdentityAccessUnitOfWork,IdentityAccessUnitOfWork>();
   return services;

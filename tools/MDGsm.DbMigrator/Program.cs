@@ -3,7 +3,7 @@ using MDGsm.Infrastructure.Persistence;
 if (args.Any(argument => argument is "--help" or "-h"))
 {
     Console.WriteLine("MD-Gsm database migrator");
-    Console.WriteLine("Reads ConnectionStrings__MDGsmDatabase, MDGSM_MIGRATION_LOGIN_ROLE and MDGSM_MIGRATION_OWNER_ROLE from the process environment.");
+    Console.WriteLine("Reads ConnectionStrings__MDGsmDatabase from the process environment.");
     Console.WriteLine("By default, the target database must contain the PostgreSQL comment marker MDGSM_DISPOSABLE_TEST_DB.");
     Console.WriteLine("Use --allow-unmarked-database only for an explicitly approved deployment operation.");
     Console.WriteLine("It additionally requires MDGSM_UNMARKED_DB_CONFIRMATION=APPLY-TO-NON-DISPOSABLE-DATABASE in the process environment.");
@@ -24,14 +24,6 @@ if (string.IsNullOrWhiteSpace(connectionString))
     return 2;
 }
 
-var migrationLoginRole = Environment.GetEnvironmentVariable("MDGSM_MIGRATION_LOGIN_ROLE");
-var schemaOwnerRole = Environment.GetEnvironmentVariable("MDGSM_MIGRATION_OWNER_ROLE");
-if (string.IsNullOrWhiteSpace(migrationLoginRole) || string.IsNullOrWhiteSpace(schemaOwnerRole))
-{
-    Console.Error.WriteLine("FAIL: dedicated migration LOGIN and NOLOGIN schema-owner role names must be configured in the process environment.");
-    return 2;
-}
-
 var allowUnmarkedDatabase = args.Contains("--allow-unmarked-database", StringComparer.Ordinal);
 if (allowUnmarkedDatabase && Environment.GetEnvironmentVariable("MDGSM_UNMARKED_DB_CONFIRMATION") != "APPLY-TO-NON-DISPOSABLE-DATABASE")
 {
@@ -42,12 +34,10 @@ try
 {
     var result = await new DatabaseMigrationRunner().ApplyPendingAsync(
         connectionString,
-        requireDisposableMarker: !allowUnmarkedDatabase,
-        migrationLoginRole: migrationLoginRole,
-        schemaOwnerRole: schemaOwnerRole);
+        requireDisposableMarker: !allowUnmarkedDatabase);
 
     Console.WriteLine(
-        $"PASS: migration run completed; database={result.DatabaseName}; sessionLogin={migrationLoginRole}; effectiveOwner={schemaOwnerRole}; " +
+        $"PASS: migration run completed; database={result.DatabaseName}; " +
         $"newlyApplied={result.NewlyAppliedVersions.Count}; previouslyApplied={result.PreviouslyAppliedCount}; " +
         $"versions={string.Join(",", result.NewlyAppliedVersions)}");
     return 0;

@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using MDGsm.Api.Security;
 using MDGsm.Application.Contracts;
 using MDGsm.Application.Persons;
@@ -30,7 +29,6 @@ builder.Services.AddSingleton<IPrivacyDigest>(sp =>
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<LoginHandler>();
 builder.Services.AddScoped<ChangeOwnPasswordHandler>();
-builder.Services.AddScoped<LogoutHandler>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthenticatedActorContext, HttpAuthenticatedActorContext>();
 builder.Services.AddScoped<IFinanceActorContext, AuthenticatedFinanceActorContext>();
@@ -133,25 +131,6 @@ app.MapPost("/api/v1/identity/password/change", async (
     return changed
         ? Results.NoContent()
         : Results.Json(new { error = "invalid_credentials" }, statusCode: StatusCodes.Status401Unauthorized);
-});
-
-app.MapPost("/api/v1/identity/heartbeat", () => Results.NoContent());
-
-app.MapPost("/api/v1/identity/logout", async (
-    HttpContext context,
-    LogoutHandler handler,
-    CancellationToken cancellationToken) =>
-{
-    var header = context.Request.Headers.Authorization.ToString();
-    if (AuthenticationHeaderValue.TryParse(header, out var authorization)
-        && string.Equals(authorization.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase)
-        && authorization.Parameter is not null)
-    {
-        await handler.HandleAsync(authorization.Parameter, context.TraceIdentifier, cancellationToken);
-    }
-
-    // Deliberately return the same response for unknown, expired or already-revoked tokens.
-    return Results.NoContent();
 });
 
 app.MapGet("/api/v2/persons/{partyId}", async (
