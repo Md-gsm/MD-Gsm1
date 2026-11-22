@@ -96,8 +96,8 @@ public sealed class IdentityAccessAuthorizationLinearizationPostgresProofTests
             await writer.OpenAsync();
             await using var writerTx = await writer.BeginTransactionAsync();
 
-            // Lock order for this disposable experiment only:
-            // account -> session -> account_role -> role_permission -> permission.
+            // Exact row set held for this disposable experiment only; this is not the
+            // Platform-wide lock order and it must not be generalized to other modules.
             await using (var guard = new NpgsqlCommand($"""
                 SELECT a.account_id,s.session_id,ar.role_id,rp.permission_id,p.permission_key
                 FROM {q}.account a
@@ -116,7 +116,7 @@ public sealed class IdentityAccessAuthorizationLinearizationPostgresProofTests
                   AND r.active
                   AND p.permission_key='o20.linearization.probe'
                   AND p.active
-                FOR SHARE OF a,s,ar,rp,p;
+                FOR SHARE OF a,s,ar,r,rp,p;
                 """, writer, writerTx))
             {
                 guard.Parameters.AddWithValue("account", accountId);
@@ -136,15 +136,17 @@ public sealed class IdentityAccessAuthorizationLinearizationPostgresProofTests
                 $"INSERT INTO {q}.protected_write(write_id,account_id,session_id,permission_key) VALUES (@id,@account,@session,'o20.linearization.probe');",
                 ("id", assignmentId), ("account", accountId));
 
-            var sessionUpdateStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var grantRemovalStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var sessionUpdateStarted = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var grantRemovalStarted = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var roleDeactivationStarted = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             var revokeSession = Task.Run(async () =>
             {
                 await using var connection = new NpgsqlConnection(cs);
                 await connection.OpenAsync();
                 await using var tx = await connection.BeginTransactionAsync();
-                sessionUpdateStarted.TrySetResult();
+                var pid = Convert.ToInt64(await new NpgsqlCommand("SELECT pg_backend_pid()::bigint;", connection, tx).ExecuteScalarAsync());
+                sessionUpdateStarted.TrySetResult(pid);
                 await ExecuteAsync(connection, tx,
                     $"UPDATE {q}.session SET revoked_at_utc=clock_timestamp() WHERE session_id=@session;",
                     ("session", sessionId));
@@ -156,20 +158,38 @@ public sealed class IdentityAccessAuthorizationLinearizationPostgresProofTests
                 await using var connection = new NpgsqlConnection(cs);
                 await connection.OpenAsync();
                 await using var tx = await connection.BeginTransactionAsync();
-                grantRemovalStarted.TrySetResult();
+                var pid = Convert.ToInt64(await new NpgsqlCommand("SELECT pg_backend_pid()::bigint;", connection, tx).ExecuteScalarAsync());
+                grantRemovalStarted.TrySetResult(pid);
                 await ExecuteAsync(connection, tx,
                     $"DELETE FROM {q}.role_permission WHERE role_id=@role AND permission_id=@permission;",
                     ("role", roleId), ("permission", permissionId));
                 await tx.CommitAsync();
             });
 
-            await Task.WhenAll(sessionUpdateStarted.Task, grantRemovalStarted.Task);
-            await Task.Delay(200);
-            Assert.False(revokeSession.IsCompleted, "Session revocation must wait for the protected transaction.");
-            Assert.False(removeGrant.IsCompleted, "Permission-grant removal must wait for the protected transaction.");
+            var deactivateRole = Task.Run(async () =>
+            {
+                await using var connection = new NpgsqlConnection(cs);
+                await connection.OpenAsync();
+                await using var tx = await connection.BeginTransactionAsync();
+                var pid = Convert.ToInt64(await new NpgsqlCommand("SELECT pg_backend_pid()::bigint;", connection, tx).ExecuteScalarAsync());
+                roleDeactivationStarted.TrySetResult(pid);
+                await ExecuteAsync(connection, tx,
+                    $"UPDATE {q}.role SET active=false WHERE role_id=@role;",
+                    ("role", roleId));
+                await tx.CommitAsync();
+            });
+
+            await Task.WhenAll(sessionUpdateStarted.Task, grantRemovalStarted.Task, roleDeactivationStarted.Task);
+            var competingPids = new[]
+            {
+                await sessionUpdateStarted.Task,
+                await grantRemovalStarted.Task,
+                await roleDeactivationStarted.Task
+            };
+            await WaitForAllBlockedAsync(cs, competingPids);
 
             await writerTx.CommitAsync();
-            await Task.WhenAll(revokeSession, removeGrant);
+            await Task.WhenAll(revokeSession, removeGrant, deactivateRole);
 
             Assert.Equal(1L, await ScalarInt64Async(cs,
                 $"SELECT count(*) FROM {q}.protected_write WHERE write_id=@id;", ("id", assignmentId)));
@@ -179,8 +199,11 @@ public sealed class IdentityAccessAuthorizationLinearizationPostgresProofTests
             Assert.Equal(0L, await ScalarInt64Async(cs,
                 $"SELECT count(*) FROM {q}.role_permission WHERE role_id=@role AND permission_id=@permission;",
                 ("role", roleId), ("permission", permissionId)));
+            Assert.Equal(1L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.role WHERE role_id=@role AND NOT active;",
+                ("role", roleId)));
 
-            // A new decision after both revocations must deny. There is no stale Allow cache.
+            // A new decision after all revocations must deny. There is no stale Allow cache.
             Assert.Equal(0L, await ScalarInt64Async(cs, $"""
                 SELECT count(*)
                 FROM {q}.account a
@@ -246,6 +269,33 @@ public sealed class IdentityAccessAuthorizationLinearizationPostgresProofTests
         await using var command = new NpgsqlCommand(sql, connection);
         foreach (var (name, value) in parameters) command.Parameters.AddWithValue(name, value);
         return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
+    private static async Task WaitForAllBlockedAsync(string cs, long[] backendPids)
+    {
+        Assert.NotEmpty(backendPids);
+        await using var connection = new NpgsqlConnection(cs);
+        await connection.OpenAsync();
+
+        long blocked = 0;
+        for (var attempt = 0; attempt < 100; attempt++)
+        {
+            await using var command = new NpgsqlCommand("""
+                SELECT count(*)
+                FROM unnest(@pids::bigint[]) AS p(pid)
+                WHERE cardinality(pg_blocking_pids(pid::integer)) > 0;
+                """, connection);
+            command.Parameters.AddWithValue("pids", backendPids);
+            blocked = Convert.ToInt64(await command.ExecuteScalarAsync());
+            if (blocked == backendPids.Length)
+            {
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        Assert.Equal((long)backendPids.Length, blocked);
     }
 
     private static async Task DropSchemaAsync(string cs, string quotedSchema)
