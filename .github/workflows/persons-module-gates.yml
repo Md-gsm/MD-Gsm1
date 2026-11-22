@@ -234,6 +234,8 @@ jobs:
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~AuditSecurityHashChainPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit O-20-E deterministic Organization lock-order PostgreSQL proof
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationDeterministicLockOrderPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20 worker least-privilege PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OutboxWorkerLeastPrivilegePostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit IdentityAccess live-session permission PostgreSQL proof
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~IdentityAccessLiveSessionPermissionPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit IdentityAccess authorization linearization PostgreSQL proof
