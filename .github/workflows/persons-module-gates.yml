@@ -238,6 +238,8 @@ jobs:
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~IdentityAccessLiveSessionPermissionPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit IdentityAccess authorization linearization PostgreSQL proof
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~IdentityAccessAuthorizationLinearizationPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit IdentityAccess transaction-scoped authorization guard PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~IdentityAccessTransactionScopedAuthorizationGuardPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run isolated Accounting AP-03/AP-04 PostgreSQL 18 proof
         shell: bash
         run: bash scripts/ci/test_accounting_postgres_ap03_ap04.sh
