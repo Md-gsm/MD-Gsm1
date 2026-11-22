@@ -1,3 +1,4 @@
+using System.Data.Common;
 using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Contracts;
 using MDGsm.IdentityAccess.Domain;
@@ -102,6 +103,117 @@ public sealed class IdentityAccessAuthorizationContractAdapter(
                 PermissionDecisionStatus.Unavailable, permissionKey, accountId, sessionId, credentialVersion,
                 ModuleContractVersion.Current, "authorization_store_unavailable");
         }
+    }
+
+    public async Task<PermissionDecision> EvaluateCurrentPermissionInTransactionAsync(
+        string permissionKey,
+        DbConnection connection,
+        DbTransaction transaction,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(transaction);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (string.IsNullOrWhiteSpace(permissionKey) || !PermissionCatalog.IsKnown(permissionKey))
+        {
+            return new PermissionDecision(
+                PermissionDecisionStatus.Denied, permissionKey ?? string.Empty, null, null, null,
+                ModuleContractVersion.Current, "unknown_permission_key");
+        }
+
+        if (connection.State != System.Data.ConnectionState.Open
+            || !ReferenceEquals(transaction.Connection, connection))
+        {
+            return new PermissionDecision(
+                PermissionDecisionStatus.Unavailable, permissionKey, null, null, null,
+                ModuleContractVersion.Current, "transaction_connection_mismatch");
+        }
+
+        var principal = await ResolveCurrentPrincipalAsync(cancellationToken);
+        if (!principal.IsAuthenticated
+            || principal.AccountId is not { } accountId
+            || principal.SessionId is not { } sessionId
+            || principal.PrincipalVersion is not { } credentialVersion)
+        {
+            var status = principal.Status == PrincipalDecisionStatus.Unavailable
+                ? PermissionDecisionStatus.Unavailable
+                : PermissionDecisionStatus.Denied;
+            return new PermissionDecision(
+                status, permissionKey, principal.AccountId, principal.SessionId, principal.PrincipalVersion,
+                ModuleContractVersion.Current,
+                principal.Status == PrincipalDecisionStatus.Unavailable
+                    ? "principal_resolution_unavailable"
+                    : "no_validated_session");
+        }
+
+        try
+        {
+            await using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = """
+                SELECT a.account_id, s.session_id, ar.role_id, rp.permission_id, p.permission_key
+                FROM identity.accounts AS a
+                JOIN identity.sessions AS s ON s.account_id = a.account_id
+                JOIN identity.account_roles AS ar ON ar.account_id = a.account_id
+                JOIN identity.roles AS r ON r.role_id = ar.role_id
+                JOIN identity.role_permissions AS rp ON rp.role_id = r.role_id
+                JOIN identity.permissions AS p ON p.permission_id = rp.permission_id
+                WHERE a.account_id = @account_id
+                  AND s.session_id = @session_id
+                  AND a.is_enabled
+                  AND a.credential_version = @credential_version
+                  AND s.credential_version_at_issue = @credential_version
+                  AND s.revoked_at_utc IS NULL
+                  AND s.lease_expires_at_utc > clock_timestamp()
+                  AND p.permission_key = @permission_key
+                  AND p.is_active
+                ORDER BY ar.role_id, rp.permission_id
+                FOR SHARE OF a, s, ar, r, rp, p;
+                """;
+
+            AddParameter(command, "@account_id", accountId);
+            AddParameter(command, "@session_id", sessionId);
+            AddParameter(command, "@credential_version", credentialVersion);
+            AddParameter(command, "@permission_key", permissionKey);
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            var allowed = await reader.ReadAsync(cancellationToken);
+            if (allowed
+                && (reader.GetGuid(0) != accountId
+                    || reader.GetGuid(1) != sessionId
+                    || !string.Equals(reader.GetString(4), permissionKey, StringComparison.Ordinal)))
+            {
+                return new PermissionDecision(
+                    PermissionDecisionStatus.Unavailable, permissionKey, accountId, sessionId,
+                    credentialVersion, ModuleContractVersion.Current, "authorization_row_identity_mismatch");
+            }
+
+            return new PermissionDecision(
+                allowed ? PermissionDecisionStatus.Allowed : PermissionDecisionStatus.Denied,
+                permissionKey, accountId, sessionId, credentialVersion, ModuleContractVersion.Current,
+                allowed
+                    ? "live_permission_locked_until_transaction_end"
+                    : "session_or_permission_not_active");
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return new PermissionDecision(
+                PermissionDecisionStatus.Unavailable, permissionKey, accountId, sessionId,
+                credentialVersion, ModuleContractVersion.Current, "transaction_authorization_unavailable");
+        }
+    }
+
+    private static void AddParameter(DbCommand command, string name, object value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value;
+        command.Parameters.Add(parameter);
     }
 
     public Task<ProductOwnerAuthorityDecision> ResolveCurrentProductOwnerAuthorityAsync(
