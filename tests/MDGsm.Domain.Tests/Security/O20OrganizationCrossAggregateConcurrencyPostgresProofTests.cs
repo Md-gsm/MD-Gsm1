@@ -43,15 +43,27 @@ public sealed class O20OrganizationCrossAggregateConcurrencyPostgresProofTests
                 );
                 CREATE FUNCTION {q}.reassign_warehouse(p_warehouse uuid,p_destination uuid)
                 RETURNS void LANGUAGE plpgsql AS $fn$
-                DECLARE w_state text; destination_state text;
+                DECLARE source_branch uuid; current_branch uuid; w_state text; destination_state text;
                 BEGIN
-                    SELECT state INTO w_state FROM {q}.warehouse
+                    SELECT branch_id INTO source_branch FROM {q}.warehouse
+                    WHERE warehouse_id=p_warehouse;
+                    IF NOT FOUND THEN
+                        RAISE EXCEPTION 'Warehouse not found' USING ERRCODE='P0002';
+                    END IF;
+                    -- Candidate same-rank order: lock Branch rows by UUID before Warehouse.
+                    PERFORM branch_id FROM {q}.branch
+                    WHERE branch_id IN (source_branch,p_destination)
+                    ORDER BY branch_id FOR UPDATE;
+                    SELECT branch_id,state INTO current_branch,w_state FROM {q}.warehouse
                     WHERE warehouse_id=p_warehouse FOR UPDATE;
-                    IF NOT FOUND OR w_state<>'INACTIVE' THEN
+                    IF current_branch<>source_branch THEN
+                        RAISE EXCEPTION 'Warehouse Branch changed during lock acquisition; retry by idempotency key' USING ERRCODE='40001';
+                    END IF;
+                    IF w_state<>'INACTIVE' THEN
                         RAISE EXCEPTION 'Warehouse must be inactive' USING ERRCODE='23514';
                     END IF;
                     SELECT state INTO destination_state FROM {q}.branch
-                    WHERE branch_id=p_destination FOR SHARE;
+                    WHERE branch_id=p_destination;
                     IF NOT FOUND OR destination_state<>'ACTIVE' THEN
                         RAISE EXCEPTION 'destination Branch must be active' USING ERRCODE='23514';
                     END IF;
