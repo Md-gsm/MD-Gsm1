@@ -10,7 +10,7 @@
 | Prior all-green baseline | `99f28b63a179a4a54b377bca2a9174a819883c28` |
 | Exact validated source/test head | `5eb769cda992d05a784bc9bebc4fe9e30084f81a` (243/243 .NET tests; 61/61 base PostgreSQL tests; 13/13 primary jobs; CodeQL, Windows Preview and Owner Gate SUCCESS) |
 | PR | #92 Draft / unmerged |
-| Governing readiness | MDG-SECURITY-O20E-G1-READINESS-REVIEW-001 v2.9 |
+| Governing readiness | MDG-SECURITY-O20E-G1-READINESS-REVIEW-001 v3.5 |
 | Related policy | MDG-SECURITY-O20E-DATA-OWNERSHIP-001 v0.5 |
 | Related decision packet | MDG-SECURITY-O20-O21-OWNER-PLATFORM-DECISION-PACKET-001 v0.1 |
 
