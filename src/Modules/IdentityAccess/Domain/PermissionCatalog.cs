@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace MDGsm.IdentityAccess.Domain;
 
 /// <summary>
@@ -29,6 +31,9 @@ public static class PermissionCatalog
         "identity.sessions.revoke", "identity.sessions.settings.manage", "identity.recovery.execute",
         "system.settings.read", "system.settings.manage", "audit.security.read"
     ];
+
+    private static readonly IReadOnlySet<string> EmptyPermissions =
+        Array.Empty<string>().ToFrozenSet(StringComparer.Ordinal);
 
     private static readonly IReadOnlyDictionary<string, IReadOnlySet<string>> Matrix =
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
@@ -98,10 +103,10 @@ public static class PermissionCatalog
                 "persons.read", "repairs.read", "inventory.read", "sales.read",
                 "purchasing.read", "cash.read", "finance.read",
                 "dashboard.read", "dashboard.configure.self", "reports.read", "reports.print")
-        };
+        }.ToFrozenDictionary(StringComparer.Ordinal);
 
     public static IReadOnlySet<string> Catalog { get; } =
-        new HashSet<string>(AllPermissions, StringComparer.Ordinal);
+        AllPermissions.ToFrozenSet(StringComparer.Ordinal);
 
     public static bool IsKnown(string permission) => Catalog.Contains(permission);
 
@@ -111,8 +116,8 @@ public static class PermissionCatalog
     public static IReadOnlySet<string> PermissionsForRole(string role) =>
         Matrix.TryGetValue(role, out var permissions)
             ? permissions
-            : new HashSet<string>(StringComparer.Ordinal);
+            : EmptyPermissions;
 
     private static IReadOnlySet<string> Set(params string[] values) =>
-        new HashSet<string>(values, StringComparer.Ordinal);
+        values.ToFrozenSet(StringComparer.Ordinal);
 }
