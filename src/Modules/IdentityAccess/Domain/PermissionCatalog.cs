@@ -19,6 +19,8 @@ public static class PermissionCatalog
         "purchasing.read", "purchasing.create",
         "cash.read", "cash.receipt.create", "cash.payment.create",
         "finance.read", "finance.voucher.create", "finance.voucher.delete", "finance.period.close",
+        "dashboard.read", "dashboard.configure.self", "dashboard.assign",
+        "reports.read", "reports.export", "reports.print",
         "identity.accounts.read", "identity.accounts.create", "identity.accounts.update",
         "identity.credentials.reset", "identity.roles.assign", "identity.permissions.manage",
         "identity.sessions.revoke", "identity.settings.manage", "identity.recovery.execute",
@@ -36,30 +38,44 @@ public static class PermissionCatalog
                 "inventory.read", "inventory.receipt.create", "inventory.issue.create", "inventory.count.execute",
                 "sales.read", "sales.create", "purchasing.read", "purchasing.create",
                 "cash.read", "cash.receipt.create", "cash.payment.create",
-                "finance.read", "finance.voucher.create", "identity.accounts.read", "system.settings.read"),
+                "finance.read", "finance.voucher.create",
+                "dashboard.read", "dashboard.configure.self",
+                "reports.read", "reports.export", "reports.print",
+                "identity.accounts.read", "system.settings.read"),
             [RoleCatalog.Receptionist] = Set(
                 "persons.read", "persons.create", "persons.update",
-                "repairs.read", "repairs.create", "repairs.update", "repairs.deliver"),
+                "repairs.read", "repairs.create", "repairs.update", "repairs.deliver",
+                "dashboard.read", "dashboard.configure.self", "reports.read", "reports.print"),
             [RoleCatalog.Technician] = Set(
                 "persons.read", "repairs.read", "repairs.complete", "repairs.worklog.write",
-                "repairs.parts.consume", "inventory.read"),
+                "repairs.parts.consume", "inventory.read",
+                "dashboard.read", "dashboard.configure.self", "reports.read", "reports.print"),
             [RoleCatalog.Warehouse] = Set(
                 "persons.read", "inventory.read", "inventory.receipt.create",
-                "inventory.issue.create", "inventory.count.execute", "purchasing.read"),
+                "inventory.issue.create", "inventory.count.execute", "purchasing.read",
+                "dashboard.read", "dashboard.configure.self",
+                "reports.read", "reports.export", "reports.print"),
             [RoleCatalog.Salesperson] = Set(
-                "persons.read", "persons.create", "inventory.read", "sales.read", "sales.create"),
+                "persons.read", "persons.create", "inventory.read", "sales.read", "sales.create",
+                "dashboard.read", "dashboard.configure.self", "reports.read", "reports.print"),
             [RoleCatalog.Purchaser] = Set(
                 "persons.read", "persons.create", "inventory.read", "inventory.receipt.create",
-                "purchasing.read", "purchasing.create"),
+                "purchasing.read", "purchasing.create",
+                "dashboard.read", "dashboard.configure.self",
+                "reports.read", "reports.export", "reports.print"),
             [RoleCatalog.Cashier] = Set(
-                "persons.read", "sales.read", "cash.read", "cash.receipt.create", "cash.payment.create"),
+                "persons.read", "sales.read", "cash.read", "cash.receipt.create", "cash.payment.create",
+                "dashboard.read", "dashboard.configure.self", "reports.read", "reports.print"),
             [RoleCatalog.Accountant] = Set(
                 "persons.read", "persons.create", "persons.update", "repairs.read", "inventory.read",
                 "sales.read", "purchasing.read", "cash.read", "finance.read",
-                "finance.voucher.create", "finance.period.close"),
+                "finance.voucher.create", "finance.period.close",
+                "dashboard.read", "dashboard.configure.self",
+                "reports.read", "reports.export", "reports.print"),
             [RoleCatalog.Viewer] = Set(
                 "persons.read", "repairs.read", "inventory.read", "sales.read",
-                "purchasing.read", "cash.read", "finance.read")
+                "purchasing.read", "cash.read", "finance.read",
+                "dashboard.read", "dashboard.configure.self", "reports.read", "reports.print")
         };
 
     public static IReadOnlySet<string> Catalog { get; } = new HashSet<string>(AllPermissions, StringComparer.Ordinal);
