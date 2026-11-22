@@ -45,11 +45,25 @@ public sealed class O20EmergencyAccessPostgresProofTests
                     CREATE SCHEMA {qSchema} AUTHORIZATION CURRENT_USER;
                     CREATE TABLE {qSchema}.authorized_approver
                     (
-                        principal text PRIMARY KEY,
-                        is_active boolean NOT NULL
+                        principal text NOT NULL,
+                        database_name text NOT NULL,
+                        schema_name text NOT NULL,
+                        allowed_operation text NOT NULL,
+                        allowed_resource text NOT NULL,
+                        is_active boolean NOT NULL,
+                        valid_from_utc timestamptz NOT NULL,
+                        valid_until_utc timestamptz NULL,
+                        PRIMARY KEY(principal,database_name,schema_name,allowed_operation,allowed_resource)
                     );
-                    INSERT INTO {qSchema}.authorized_approver(principal,is_active)
-                    VALUES ('approver-a',true),('approver-b',true),('requester-1',true),({Literal(emergencyRole)},true);
+                    INSERT INTO {qSchema}.authorized_approver
+                        (principal,database_name,schema_name,allowed_operation,allowed_resource,is_active,valid_from_utc,valid_until_utc)
+                    VALUES
+                        ('approver-a',current_database(),{Literal(schema)},'READ','scope-A',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
+                        ('approver-b',current_database(),{Literal(schema)},'READ','scope-A',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
+                        ('approver-a',current_database(),{Literal(schema)},'READ','scope-C',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
+                        ('approver-b',current_database(),{Literal(schema)},'READ','scope-C',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
+                        ('approver-a',current_database(),{Literal(schema)},'READ','scope-D',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
+                        ('approver-b',current_database(),{Literal(schema)},'READ','scope-D',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour');
                     CREATE TABLE {qSchema}.emergency_grant
                     (
                         grant_id uuid PRIMARY KEY,
@@ -57,6 +71,8 @@ public sealed class O20EmergencyAccessPostgresProofTests
                         requester_principal text NOT NULL,
                         allowed_operation text NOT NULL,
                         allowed_resource text NOT NULL,
+                        database_name text NOT NULL,
+                        schema_name text NOT NULL,
                         requested_seconds integer NOT NULL CHECK (requested_seconds BETWEEN 1 AND 1800),
                         state text NOT NULL DEFAULT 'REQUESTED'
                             CHECK (state IN ('REQUESTED','ACTIVE','REVOKED','EXPIRED','CONSUMED')),
@@ -108,9 +124,17 @@ public sealed class O20EmergencyAccessPostgresProofTests
                            OR p_approver_a=g.requester_principal OR p_approver_b=g.requester_principal
                            OR p_approver_a=g.operator_principal OR p_approver_b=g.operator_principal
                            OR NOT EXISTS (SELECT 1 FROM {qSchema}.authorized_approver a
-                                          WHERE a.principal=p_approver_a AND a.is_active)
+                                          WHERE a.principal=p_approver_a AND a.is_active
+                                            AND a.database_name=g.database_name AND a.schema_name=g.schema_name
+                                            AND a.allowed_operation=g.allowed_operation AND a.allowed_resource=g.allowed_resource
+                                            AND a.valid_from_utc<=clock_timestamp()
+                                            AND (a.valid_until_utc IS NULL OR clock_timestamp()<a.valid_until_utc))
                            OR NOT EXISTS (SELECT 1 FROM {qSchema}.authorized_approver b
-                                          WHERE b.principal=p_approver_b AND b.is_active) THEN
+                                          WHERE b.principal=p_approver_b AND b.is_active
+                                            AND b.database_name=g.database_name AND b.schema_name=g.schema_name
+                                            AND b.allowed_operation=g.allowed_operation AND b.allowed_resource=g.allowed_resource
+                                            AND b.valid_from_utc<=clock_timestamp()
+                                            AND (b.valid_until_utc IS NULL OR clock_timestamp()<b.valid_until_utc)) THEN
                             RETURN false;
                         END IF;
                         UPDATE {qSchema}.emergency_grant
@@ -126,7 +150,8 @@ public sealed class O20EmergencyAccessPostgresProofTests
                     $fn$;
 
                     CREATE FUNCTION {qSchema}.emergency_allowed(
-                        p_grant_id uuid, p_principal text, p_operation text, p_resource text)
+                        p_grant_id uuid, p_principal text, p_operation text, p_resource text,
+                        p_database text, p_schema text)
                     RETURNS boolean LANGUAGE sql AS $fn$
                         SELECT EXISTS (
                             SELECT 1 FROM {qSchema}.emergency_grant g
@@ -134,6 +159,10 @@ public sealed class O20EmergencyAccessPostgresProofTests
                               AND g.operator_principal=p_principal
                               AND g.allowed_operation=p_operation
                               AND g.allowed_resource=p_resource
+                              AND g.database_name=current_database()
+                              AND g.database_name=p_database
+                              AND g.schema_name=p_schema
+                              AND to_regnamespace(g.schema_name) IS NOT NULL
                               AND g.expires_at IS NOT NULL
                               AND clock_timestamp() < g.expires_at
                         );
@@ -190,6 +219,11 @@ public sealed class O20EmergencyAccessPostgresProofTests
 
             // Duplicate approver, requester-as-approver and emergency-operator-as-approver all deny.
             var invalid = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-A", 60);
+            Assert.Equal(
+                1L,
+                await ScalarInt64Async(adminConnectionString,
+                    $"SELECT count(*) FROM {qSchema}.emergency_grant WHERE grant_id=@id AND database_name=current_database() AND schema_name={Literal(schema)};",
+                    invalid));
             Assert.False(await ActivateAsync(adminConnectionString, schema, invalid, "approver-a", "approver-a"));
             Assert.False(await ActivateAsync(adminConnectionString, schema, invalid, "requester-1", "approver-b"));
             Assert.False(await ActivateAsync(adminConnectionString, schema, invalid, emergencyRole, "approver-b"));
@@ -199,6 +233,12 @@ public sealed class O20EmergencyAccessPostgresProofTests
             Assert.False(await AllowedAsync(adminConnectionString, schema, invalid, emergencyRole, "WRITE", "scope-A"));
             Assert.False(await AllowedAsync(adminConnectionString, schema, invalid, emergencyRole, "READ", "scope-B"));
             Assert.False(await AllowedAsync(adminConnectionString, schema, invalid, "another-principal", "READ", "scope-A"));
+            Assert.False(await ScalarBoolAsync(adminConnectionString,
+                $"SELECT {qSchema}.emergency_allowed(@id,@principal,@operation,@resource,'wrong_database',{Literal(schema)});",
+                invalid, ("principal", emergencyRole), ("operation", "READ"), ("resource", "scope-A")));
+            Assert.False(await ScalarBoolAsync(adminConnectionString,
+                $"SELECT {qSchema}.emergency_allowed(@id,@principal,@operation,@resource,current_database(),'wrong_schema');",
+                invalid, ("principal", emergencyRole), ("operation", "READ"), ("resource", "scope-A")));
 
             // At now >= expires_at, authorization is denied even though no cleanup ran.
             await ExecuteAsync(adminConnectionString, $"UPDATE {qSchema}.emergency_grant SET expires_at=clock_timestamp() WHERE grant_id=@id;", invalid);
@@ -261,14 +301,16 @@ public sealed class O20EmergencyAccessPostgresProofTests
         await connection.OpenAsync();
         await using var command = new NpgsqlCommand($"""
             INSERT INTO {Q(schema)}.emergency_grant
-                (grant_id,operator_principal,requester_principal,allowed_operation,allowed_resource,requested_seconds)
-            VALUES (gen_random_uuid(),@operator,@requester,@operation,@resource,@seconds)
+                (grant_id,operator_principal,requester_principal,allowed_operation,allowed_resource,
+                 database_name,schema_name,requested_seconds)
+            VALUES (gen_random_uuid(),@operator,@requester,@operation,@resource,current_database(),@schema,@seconds)
             RETURNING grant_id;
             """, connection);
         command.Parameters.AddWithValue("operator", operatorPrincipal);
         command.Parameters.AddWithValue("requester", requester);
         command.Parameters.AddWithValue("operation", operation);
         command.Parameters.AddWithValue("resource", resource);
+        command.Parameters.AddWithValue("schema", schema);
         command.Parameters.AddWithValue("seconds", requestedSeconds);
         return (Guid)(await command.ExecuteScalarAsync())!;
     }
@@ -281,8 +323,8 @@ public sealed class O20EmergencyAccessPostgresProofTests
     private static Task<bool> AllowedAsync(
         string connectionString, string schema, Guid id, string principal, string operation, string resource) =>
         ScalarBoolAsync(connectionString,
-            $"SELECT {Q(schema)}.emergency_allowed(@id,@principal,@operation,@resource);", id,
-            ("principal", principal), ("operation", operation), ("resource", resource));
+            $"SELECT {Q(schema)}.emergency_allowed(@id,@principal,@operation,@resource,current_database(),@schema);", id,
+            ("principal", principal), ("operation", operation), ("resource", resource), ("schema", schema));
 
     private static async Task<bool> ScalarBoolAsync(
         string connectionString, string sql, Guid id, params (string Name, string Value)[] parameters)
