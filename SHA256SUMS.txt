@@ -523,7 +523,7 @@ c654a0f3c4c877e082ead7caa7929eddd095bd5c0c6935d38da3bfda60baa80f  docs/security/
 a12d3cd8b00fa408eb77d27a83280f500019efe4f34a927c3ec5245c436b1968  docs/security/MDG-SECURITY-O20F-EMERGENCY-ACCESS-LIFECYCLE-001_v0.2.md
 898218b9a3ecd06186528af68dc1c9adaaf4cf56c6a16901076297cea14ebaeb  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v3.0.md
 da7b3ae5f6f4ee629a35d0069f625bc7ff522a3b6c5cc2d01bd8f74e4fddf98f  tests/MDGsm.Domain.Tests/Security/O20EmergencyAccessPostgresProofTests.cs
-3d94617d7012e3135ab1b7a18b5f12ef846d435edf67c5005b6e047029fcb30e  .github/workflows/persons-module-gates.yml
+a79cadf6f8840e6bdd34bd7cd39dafd774356f516213d2f5979a4cfe3c6f4469  .github/workflows/persons-module-gates.yml
 357ebefcc8899d2dbd65ee266027a4be79901b673c9d9a00805a44defb61f429  tests/MDGsm.Domain.Tests/Security/O20OrganizationPolicyPostgresProofTests.cs
 c347d38e61411c6e9ffdc8f9ab7241f508e432851f4b56d3798b7894cf9ca9cc  docs/security/MDG-SECURITY-O20E-O20F-OWNER-DECISION-ACCEPTANCE-001_v0.2.md
 f059b6cf35252937a2f59712f7236d1415173eb988d56fed3089a601729e249c  docs/security/MDG-SECURITY-O20E-DATA-OWNERSHIP-001_v0.5.md
@@ -641,3 +641,4 @@ ac40ea74e6a9ebbe4afa271a5615ae3384e59a943b555e441822939dbb823f2a  docs/security/
 ed2f2bbac7464ac4b0b591a3cf10b67736d680511a85394fba1456fdc65c5898  docs/security/MDG-SECURITY-O20E-RECORDS-RETENTION-001_v0.2.md
 8a9f03a25f9a41676ee52784d0a931110f8dac70b4351b3eee6aeeb41b05bcce  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v5.6.md
 52fd1b28646826fb7ac6fc47080bf825338310679d7aadc288008d307f3a6452  docs/security/MDG-SECURITY-O20E-G1-READINESS-REVIEW-001_v2.9.md
+3e945ca507a3293015e54f05121b3be50e7c32d3a24344a7e8832a1ab440053c  tests/MDGsm.Domain.Tests/Security/O20OrganizationCrossAggregateConcurrencyPostgresProofTests.cs
