@@ -1,3 +1,6 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using MDGsm.Api.Security;
 using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Contracts;
@@ -62,7 +65,7 @@ public sealed class IdentityAccessAuthorizationContractAdapterTests
         Assert.Equal(PermissionDecisionStatus.Allowed, decision.Status);
         Assert.Equal(PrincipalId, decision.PrincipalAccountId);
         Assert.Equal("reports.read", store.LastPermission);
-        Assert.Equal(PrincipalId, store.LastAccountId);
+        Assert.Equal(PrincipalId, store.LastAccountId?.Value);
     }
 
     [Fact]
@@ -110,21 +113,16 @@ public sealed class IdentityAccessAuthorizationContractAdapterTests
         public Guid AccountId => resolve();
     }
 
-    private sealed class PermissionStore(bool allowedOrThrow) : IRolePermissionStore
+    private sealed class PermissionStore : IRolePermissionStore
     {
+        private readonly object _outcome;
+
+        public PermissionStore(bool allowed) => _outcome = allowed;
+        public PermissionStore(Exception exception) => _outcome = exception;
+
         public int Calls { get; private set; }
         public string? LastPermission { get; private set; }
         public MDGsm.IdentityAccess.Domain.AccountId? LastAccountId { get; private set; }
-
-        public PermissionStore(bool allowed) : this(allowed ? 1 : 0) { }
-        public PermissionStore(Exception exception) : this(exception) { }
-
-        private PermissionStore(object outcome) : this(outcome is bool value ? value : false)
-        {
-            _outcome = outcome;
-        }
-
-        private readonly object _outcome = allowedOrThrow;
 
         public Task<bool> HasPermissionAsync(MDGsm.IdentityAccess.Domain.AccountId id, string permissionKey, CancellationToken ct)
         {
