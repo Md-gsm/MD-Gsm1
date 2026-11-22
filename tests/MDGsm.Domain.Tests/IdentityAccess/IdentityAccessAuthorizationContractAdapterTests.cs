@@ -11,9 +11,12 @@ namespace MDGsm.Domain.Tests.IdentityAccess;
 public sealed class IdentityAccessAuthorizationContractAdapterTests
 {
     private static readonly Guid PrincipalId = Guid.Parse("60000000-0000-7000-8000-000000000001");
+    private static readonly Guid SessionId = Guid.Parse("60000000-0000-7000-8000-000000000002");
+    private static readonly DateTimeOffset AuthenticatedAt =
+        new(2026, 11, 22, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public async Task Current_principal_is_resolved_only_from_validated_actor_context()
+    public async Task Current_principal_includes_only_server_validated_session_metadata()
     {
         var adapter = Create(actorId: PrincipalId, permissionResult: true);
 
@@ -21,6 +24,11 @@ public sealed class IdentityAccessAuthorizationContractAdapterTests
 
         Assert.Equal(PrincipalDecisionStatus.Authenticated, decision.Status);
         Assert.Equal(PrincipalId, decision.AccountId);
+        Assert.Equal(SessionId, decision.SessionId);
+        Assert.Equal(7L, decision.PrincipalVersion);
+        Assert.Equal("ENABLED", decision.AccountState);
+        Assert.Equal("ACTIVE", decision.SessionState);
+        Assert.Equal(AuthenticatedAt, decision.AuthenticatedAtUtc);
         Assert.Equal(ModuleContractVersion.Current, decision.ContractVersion);
         Assert.True(decision.IsAuthenticated);
     }
@@ -30,7 +38,7 @@ public sealed class IdentityAccessAuthorizationContractAdapterTests
     {
         var adapter = new IdentityAccessAuthorizationContractAdapter(
             new Actor(() => throw new UnauthorizedAccessException()),
-            new PermissionStore(true));
+            new AuthorizationStore(true));
 
         var principal = await adapter.ResolveCurrentPrincipalAsync(default);
         var permission = await adapter.EvaluateCurrentPermissionAsync("persons.read", default);
@@ -42,9 +50,9 @@ public sealed class IdentityAccessAuthorizationContractAdapterTests
     }
 
     [Fact]
-    public async Task Unknown_permission_key_is_denied_without_permission_store_call()
+    public async Task Unknown_permission_key_is_denied_without_authorization_store_call()
     {
-        var store = new PermissionStore(true);
+        var store = new AuthorizationStore(true);
         var adapter = new IdentityAccessAuthorizationContractAdapter(new Actor(() => PrincipalId), store);
 
         var decision = await adapter.EvaluateCurrentPermissionAsync("reporting.branch.read", default);
@@ -55,41 +63,47 @@ public sealed class IdentityAccessAuthorizationContractAdapterTests
     }
 
     [Fact]
-    public async Task Known_permission_is_evaluated_against_current_server_side_grant()
+    public async Task Permission_decision_is_bound_to_account_session_and_credential_version()
     {
-        var store = new PermissionStore(true);
+        var store = new AuthorizationStore(true);
         var adapter = new IdentityAccessAuthorizationContractAdapter(new Actor(() => PrincipalId), store);
 
         var decision = await adapter.EvaluateCurrentPermissionAsync("reports.read", default);
 
         Assert.Equal(PermissionDecisionStatus.Allowed, decision.Status);
         Assert.Equal(PrincipalId, decision.PrincipalAccountId);
+        Assert.Equal(SessionId, decision.PrincipalSessionId);
+        Assert.Equal(7L, decision.PrincipalVersion);
         Assert.Equal("reports.read", store.LastPermission);
         Assert.Equal(PrincipalId, store.LastAccountId?.Value);
+        Assert.Equal(SessionId, store.LastSessionId);
+        Assert.Equal(7L, store.LastCredentialVersion);
     }
 
     [Fact]
-    public async Task Missing_permission_grant_is_denied()
+    public async Task Inactive_or_revoked_session_is_denied_even_when_permission_fixture_is_false()
     {
-        var adapter = Create(actorId: PrincipalId, permissionResult: false);
+        var store = new AuthorizationStore(false);
+        var adapter = new IdentityAccessAuthorizationContractAdapter(new Actor(() => PrincipalId), store);
 
         var decision = await adapter.EvaluateCurrentPermissionAsync("reports.export", default);
 
         Assert.Equal(PermissionDecisionStatus.Denied, decision.Status);
-        Assert.Equal("permission_not_granted", decision.ReasonCode);
+        Assert.Equal("session_or_permission_not_active", decision.ReasonCode);
+        Assert.False(decision.IsAllowed);
     }
 
     [Fact]
-    public async Task Permission_store_failure_returns_unavailable_not_allow()
+    public async Task Authorization_store_failure_returns_unavailable_not_allow()
     {
-        var store = new PermissionStore(new InvalidOperationException("simulated store outage"));
+        var store = new AuthorizationStore(new InvalidOperationException("simulated store outage"));
         var adapter = new IdentityAccessAuthorizationContractAdapter(new Actor(() => PrincipalId), store);
 
         var decision = await adapter.EvaluateCurrentPermissionAsync("reports.read", default);
 
         Assert.Equal(PermissionDecisionStatus.Unavailable, decision.Status);
         Assert.False(decision.IsAllowed);
-        Assert.Equal("permission_store_unavailable", decision.ReasonCode);
+        Assert.Equal("authorization_store_unavailable", decision.ReasonCode);
     }
 
     [Fact]
@@ -106,35 +120,44 @@ public sealed class IdentityAccessAuthorizationContractAdapterTests
     }
 
     private static IdentityAccessAuthorizationContractAdapter Create(Guid actorId, bool permissionResult) =>
-        new(new Actor(() => actorId), new PermissionStore(permissionResult));
+        new(new Actor(() => actorId), new AuthorizationStore(permissionResult));
 
     private sealed class Actor(Func<Guid> resolve) : IAuthenticatedActorContext
     {
         public Guid AccountId => resolve();
+        public Guid SessionId => resolve() == Guid.Empty ? Guid.Empty : IdentityAccessAuthorizationContractAdapterTests.SessionId;
+        public long CredentialVersion => resolve() == Guid.Empty ? 0 : 7;
+        public DateTimeOffset AuthenticatedAtUtc => resolve() == Guid.Empty ? default : AuthenticatedAt;
     }
 
-    private sealed class PermissionStore : IRolePermissionStore
+    private sealed class AuthorizationStore : IRequestAuthorizationStore
     {
         private readonly object _outcome;
 
-        public PermissionStore(bool allowed) => _outcome = allowed;
-        public PermissionStore(Exception exception) => _outcome = exception;
+        public AuthorizationStore(bool allowed) => _outcome = allowed;
+        public AuthorizationStore(Exception exception) => _outcome = exception;
 
         public int Calls { get; private set; }
         public string? LastPermission { get; private set; }
         public MDGsm.IdentityAccess.Domain.AccountId? LastAccountId { get; private set; }
+        public Guid? LastSessionId { get; private set; }
+        public long? LastCredentialVersion { get; private set; }
 
-        public Task<bool> HasPermissionAsync(MDGsm.IdentityAccess.Domain.AccountId id, string permissionKey, CancellationToken ct)
+        public Task<bool> HasPermissionForLiveSessionAsync(
+            MDGsm.IdentityAccess.Domain.AccountId accountId,
+            Guid sessionId,
+            long credentialVersion,
+            string permissionKey,
+            CancellationToken cancellationToken)
         {
-            ct.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
             Calls++;
-            LastAccountId = id;
+            LastAccountId = accountId;
+            LastSessionId = sessionId;
+            LastCredentialVersion = credentialVersion;
             LastPermission = permissionKey;
             if (_outcome is Exception exception) throw exception;
             return Task.FromResult((bool)_outcome);
         }
-
-        public Task<bool> HasRoleAsync(MDGsm.IdentityAccess.Domain.AccountId id, string roleKey, CancellationToken ct) =>
-            Task.FromResult(false);
     }
 }
