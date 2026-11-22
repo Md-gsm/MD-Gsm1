@@ -173,6 +173,154 @@ public sealed class O20OrganizationPolicyPostgresProofTests
         }
     }
 
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Od01_all_pinned_whitespace_control_and_format_scalars_match_postgresql()
+    {
+        var cs = await OpenMarkedDisposableDatabaseAsync();
+        var schema = "o20org_unicode_" + Guid.NewGuid().ToString("N")[..10];
+        var q = Q(schema);
+        try
+        {
+            await ExecuteAsync(cs, $"""
+                CREATE SCHEMA {q};
+                CREATE FUNCTION {q}.canonical_code(p_input text)
+                RETURNS text LANGUAGE plpgsql IMMUTABLE STRICT AS $fn$
+                DECLARE
+                    v text;
+                    ch text;
+                    cp integer;
+                    i integer;
+                    whitespace_chars text := chr(9)||chr(10)||chr(11)||chr(12)||chr(13)||chr(32)||
+                        chr(133)||chr(160)||chr(5760)||chr(8192)||chr(8193)||chr(8194)||
+                        chr(8195)||chr(8196)||chr(8197)||chr(8198)||chr(8199)||chr(8200)||
+                        chr(8201)||chr(8202)||chr(8232)||chr(8233)||chr(8239)||chr(8287)||chr(12288);
+                BEGIN
+                    v := btrim(normalize(p_input, NFC), whitespace_chars);
+                    IF v = '' THEN
+                        RAISE EXCEPTION 'business code is empty' USING ERRCODE='22023';
+                    END IF;
+                    FOR i IN 1..char_length(v) LOOP
+                        ch := substr(v, i, 1);
+                        cp := ascii(ch);
+                        IF cp <= 31 OR cp BETWEEN 127 AND 159 OR
+                           cp IN (173,1564,1807,6158,2274,69821,69837,65279,917505)
+                           OR cp BETWEEN 1536 AND 1541 OR cp BETWEEN 2192 AND 2193
+                           OR cp BETWEEN 8203 AND 8207 OR cp BETWEEN 8234 AND 8238
+                           OR cp BETWEEN 8288 AND 8292 OR cp BETWEEN 8294 AND 8303
+                           OR cp BETWEEN 65529 AND 65531 OR cp BETWEEN 78896 AND 78911
+                           OR cp BETWEEN 113824 AND 113827 OR cp BETWEEN 119155 AND 119162
+                           OR cp BETWEEN 917536 AND 917631
+                           OR position(ch in whitespace_chars) > 0 THEN
+                            RAISE EXCEPTION 'business code contains forbidden scalar U+%', to_hex(cp)
+                                USING ERRCODE='22023';
+                        END IF;
+                    END LOOP;
+                    RETURN v;
+                END;
+                $fn$;
+                """);
+
+            // Derive the exhaustive forbidden scalar corpus from the pinned .NET
+            // White_Space/Cc/Cf ranges, not from the current OS Unicode-category tables.
+            var forbidden = new HashSet<int>();
+            for (var cp = 0; cp <= 0x10FFFF; cp++)
+            {
+                if (!System.Text.Rune.IsValid(cp)) continue;
+                if (IsUnicodeWhiteSpace(cp) || IsUnicodeControl(cp) || IsUnicodeFormat(cp))
+                    forbidden.Add(cp);
+            }
+
+            // U+0000 cannot be represented in PostgreSQL text. It must still be
+            // rejected before a text parameter/query is built by the application layer.
+            Assert.Contains(0, forbidden);
+            Assert.Throws<ArgumentException>(() => CanonicalizeDotNet("A\0B"));
+
+            await using var connection = new NpgsqlConnection(cs);
+            await connection.OpenAsync();
+
+            await using (var invalidCommand = new NpgsqlCommand(
+                $"SELECT {q}.canonical_code(@value);", connection))
+            {
+                var valueParameter = invalidCommand.Parameters.AddWithValue("value", string.Empty);
+                foreach (var cp in forbidden.Where(x => x != 0).OrderBy(x => x))
+                {
+                    var scalar = new System.Text.Rune(cp).ToString();
+                    var input = $"A{scalar}B";
+                    Assert.Throws<ArgumentException>(() => CanonicalizeDotNet(input));
+
+                    valueParameter.Value = input;
+                    var error = await Assert.ThrowsAsync<PostgresException>(
+                        () => invalidCommand.ExecuteScalarAsync());
+                    Assert.Equal("22023", error.SqlState);
+                }
+            }
+
+            // Every pinned White_Space scalar trims only at the two exterior edges.
+            var validInputs = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var cp in forbidden.Where(IsUnicodeWhiteSpace).OrderBy(x => x))
+            {
+                var scalar = new System.Text.Rune(cp).ToString();
+                validInputs.Add($"{scalar}EDGE{scalar}");
+            }
+
+            // Probe the immediate non-forbidden neighbors of every pinned range member.
+            // This detects accidental overbroad/underbroad ranges in either implementation.
+            foreach (var cp in forbidden)
+            {
+                foreach (var neighbor in new[] { cp - 1, cp + 1 })
+                {
+                    if (neighbor <= 0 || !System.Text.Rune.IsValid(neighbor) || forbidden.Contains(neighbor))
+                        continue;
+                    validInputs.Add($"A{new System.Text.Rune(neighbor)}B");
+                }
+            }
+
+            var candidates = validInputs.OrderBy(x => x, StringComparer.Ordinal).ToArray();
+            var expected = candidates.ToDictionary(x => x, CanonicalizeDotNet, StringComparer.Ordinal);
+            await using (var validCommand = new NpgsqlCommand(
+                $"SELECT input, {q}.canonical_code(input) FROM unnest(@values) AS source(input);",
+                connection))
+            {
+                validCommand.Parameters.AddWithValue("values", candidates);
+                await using var reader = await validCommand.ExecuteReaderAsync();
+                var returned = 0;
+                while (await reader.ReadAsync())
+                {
+                    var input = reader.GetString(0);
+                    var actual = reader.GetString(1);
+                    Assert.Equal(expected[input], actual);
+                    Assert.Equal(Encoding.UTF8.GetBytes(expected[input]), Encoding.UTF8.GetBytes(actual));
+                    returned++;
+                }
+                Assert.Equal(candidates.Length, returned);
+            }
+
+            // NFC composition is stable across .NET and PostgreSQL for canonical
+            // combining sequences from Latin, Greek, Arabic and Hangul samples.
+            var normalizationVectors = new[]
+            {
+                ("Cafe\u0301", "Café"),
+                ("Α\u0301", "Ά"),
+                ("ا\u0654", "أ"),
+                ("\u1100\u1161", "가")
+            };
+            foreach (var (decomposed, composed) in normalizationVectors)
+            {
+                Assert.Equal(composed, CanonicalizeDotNet(decomposed));
+                await using var command = new NpgsqlCommand(
+                    $"SELECT {q}.canonical_code(@value);", connection);
+                command.Parameters.AddWithValue("value", decomposed);
+                Assert.Equal(composed, (string)(await command.ExecuteScalarAsync())!);
+            }
+        }
+        finally
+        {
+            await DropSchemaAsync(cs, q);
+        }
+    }
+
     [Fact]
     [Trait("Category", "Integration")]
     public async Task Od02_od03_warehouse_identity_reassignment_and_terminal_archive_are_enforced()
