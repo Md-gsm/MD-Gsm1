@@ -11,6 +11,7 @@ public static class PermissionCatalog
     private static readonly string[] AllPermissions =
     [
         "persons.read", "persons.create", "persons.update", "persons.archive", "persons.merge", "persons.export",
+        "persons.sensitive.read",
         "repairs.read", "repairs.create", "repairs.update", "repairs.assign", "repairs.complete",
         "repairs.worklog.write", "repairs.parts.consume", "repairs.deliver", "repairs.cancel", "repairs.export",
         "inventory.read", "inventory.item.create", "inventory.item.update", "inventory.receipt.create",
