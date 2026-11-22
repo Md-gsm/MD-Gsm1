@@ -104,8 +104,17 @@ public sealed class O20OrganizationPolicyPostgresProofTests
                 "A B",
                 "A\tB",
                 "A\u0001B",
+                "A\u0085B",
                 "A\u200BB",
-                "A\u202EB"
+                "A\u202EB",
+                "A\u061CB",
+                "A\u070FB",
+                "A\u0890B",
+                "A\u08E2B",
+                "A\U0001BCA0B",
+                "A\U0001D173B",
+                "A\U000E0001B",
+                "A\U000E0020B"
             };
             foreach (var input in invalid)
             {
