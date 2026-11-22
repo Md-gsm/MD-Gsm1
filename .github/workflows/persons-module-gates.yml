@@ -230,6 +230,8 @@ jobs:
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationIdempotencyConcurrencyPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit O-21 AuditSecurity hash-chain PostgreSQL proof
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~AuditSecurityHashChainPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20-E deterministic Organization lock-order PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationDeterministicLockOrderPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run isolated Accounting AP-03/AP-04 PostgreSQL 18 proof
         shell: bash
         run: bash scripts/ci/test_accounting_postgres_ap03_ap04.sh
