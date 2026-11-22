@@ -134,6 +134,21 @@ public sealed class O20OrganizationPolicyPostgresProofTests
                     ("id", Guid.NewGuid()), ("value", "Cafe\u0301")));
             Assert.Equal("23505", collision.SqlState);
 
+            var warehouseBranchA = Guid.NewGuid();
+            var warehouseBranchB = Guid.NewGuid();
+            await ExecuteAsync(cs,
+                $"INSERT INTO {q}.warehouse_code_reservation(branch_id,warehouse_id,canonical_code) VALUES (@branch,@warehouse,{q}.canonical_code(@code));",
+                ("branch", warehouseBranchA), ("warehouse", Guid.NewGuid()), ("code", "WH-01"));
+            var warehouseCollision = await Assert.ThrowsAsync<PostgresException>(() =>
+                ExecuteAsync(cs,
+                    $"INSERT INTO {q}.warehouse_code_reservation(branch_id,warehouse_id,canonical_code) VALUES (@branch,@warehouse,{q}.canonical_code(@code));",
+                    ("branch", warehouseBranchA), ("warehouse", Guid.NewGuid()), ("code", "WH-01")));
+            Assert.Equal("23505", warehouseCollision.SqlState);
+            // The same canonical WarehouseCode remains available in another Branch.
+            await ExecuteAsync(cs,
+                $"INSERT INTO {q}.warehouse_code_reservation(branch_id,warehouse_id,canonical_code) VALUES (@branch,@warehouse,{q}.canonical_code(@code));",
+                ("branch", warehouseBranchB), ("warehouse", Guid.NewGuid()), ("code", "WH-01"));
+
             // C collation remains bytewise and case-sensitive; Persian/Arabic digit forms are distinct.
             var distinct = new[]
             {
@@ -200,6 +215,9 @@ public sealed class O20OrganizationPolicyPostgresProofTests
                 CREATE TRIGGER warehouse_archive_terminal
                 BEFORE UPDATE ON {q}.warehouse FOR EACH ROW
                 EXECUTE FUNCTION {q}.deny_archived_reactivation();
+                CREATE TRIGGER branch_archive_terminal
+                BEFORE UPDATE ON {q}.branch FOR EACH ROW
+                EXECUTE FUNCTION {q}.deny_archived_reactivation();
                 CREATE FUNCTION {q}.deny_physical_delete() RETURNS trigger
                 LANGUAGE plpgsql AS $fn$
                 BEGIN
@@ -208,6 +226,9 @@ public sealed class O20OrganizationPolicyPostgresProofTests
                 $fn$;
                 CREATE TRIGGER warehouse_no_delete
                 BEFORE DELETE ON {q}.warehouse FOR EACH ROW
+                EXECUTE FUNCTION {q}.deny_physical_delete();
+                CREATE TRIGGER branch_no_delete
+                BEFORE DELETE ON {q}.branch FOR EACH ROW
                 EXECUTE FUNCTION {q}.deny_physical_delete();
                 CREATE FUNCTION {q}.reassign_warehouse(p_warehouse uuid,p_destination uuid)
                 RETURNS void LANGUAGE plpgsql AS $fn$
@@ -323,6 +344,14 @@ public sealed class O20OrganizationPolicyPostgresProofTests
                 ExecuteAsync(cs, $"DELETE FROM {q}.warehouse WHERE warehouse_id=@warehouse;",
                     ("warehouse", warehouse)));
             Assert.Equal("23514", delete.SqlState);
+
+            await ExecuteAsync(cs, $"UPDATE {q}.branch SET state='ARCHIVED' WHERE branch_id=@branch;", ("branch", sourceBranch));
+            var branchReactivate = await Assert.ThrowsAsync<PostgresException>(() =>
+                ExecuteAsync(cs, $"UPDATE {q}.branch SET state='ACTIVE' WHERE branch_id=@branch;", ("branch", sourceBranch)));
+            Assert.Equal("23514", branchReactivate.SqlState);
+            var branchDelete = await Assert.ThrowsAsync<PostgresException>(() =>
+                ExecuteAsync(cs, $"DELETE FROM {q}.branch WHERE branch_id=@branch;", ("branch", sourceBranch)));
+            Assert.Equal("23514", branchDelete.SqlState);
         }
         finally
         {
