@@ -29,14 +29,14 @@ public sealed class LoginHandler(
     ILoginAttemptStore attempts,
     ISystemPolicyStore policies,
     IAuditWriter audit,
-    TimeProvider timeProvider)
+    IDatabaseClock databaseClock)
 {
     public Task<LoginOutcome> HandleAsync(LoginCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
         return unitOfWork.ExecuteAsync(async ct =>
         {
-            var now = timeProvider.GetUtcNow();
+            var now = await databaseClock.GetUtcNowAsync(ct);
             if (await attempts.IsSourceRateLimitedAsync(command.SourceDigest, now, ct))
                 return LoginOutcome.Fail(LoginFailure.SourceRateLimited);
 
@@ -120,7 +120,7 @@ public sealed class LoginHandler(
 
 public sealed class ChangeOwnPasswordHandler(
     IIdentityAccessUnitOfWork unitOfWork, IAccountStore accounts, IPasswordHasher hasher,
-    ISessionStore sessions, IAuditWriter audit, TimeProvider clock)
+    ISessionStore sessions, IAuditWriter audit, IDatabaseClock databaseClock)
 {
     public Task<bool> HandleAsync(AccountId accountId, string currentPassword, string newPassword,
         string correlationId, CancellationToken ct) =>
@@ -131,7 +131,7 @@ public sealed class ChangeOwnPasswordHandler(
             var hash = hasher.Hash(newPassword);
             account.ChangePassword(hash, hasher.CurrentVersion);
             await accounts.SaveAsync(account, token);
-            await sessions.RevokeAllForAccountAsync(accountId, clock.GetUtcNow(), "password_changed", token);
+            await sessions.RevokeAllForAccountAsync(accountId, await databaseClock.GetUtcNowAsync(token), "password_changed", token);
             await audit.AppendAsync("identity.password.changed", accountId, accountId, "success", correlationId, token);
             return true;
         }, ct);
@@ -139,7 +139,7 @@ public sealed class ChangeOwnPasswordHandler(
 
 public sealed class AdminResetPasswordHandler(
     IIdentityAccessUnitOfWork unitOfWork, IAccountStore accounts, IPasswordHasher hasher,
-    IRolePermissionStore permissions, ISessionStore sessions, IAuditWriter audit, TimeProvider clock)
+    IRolePermissionStore permissions, ISessionStore sessions, IAuditWriter audit, IDatabaseClock databaseClock)
 {
     public Task<bool> HandleAsync(AccountId administratorId, AccountId targetId, string temporaryPassword,
         string correlationId, CancellationToken ct) =>
@@ -162,20 +162,57 @@ public sealed class AdminResetPasswordHandler(
             target.ChangePassword(hasher.Hash(temporaryPassword),
                 hasher.CurrentVersion, mustChangePassword: true);
             await accounts.SaveAsync(target, token);
-            await sessions.RevokeAllForAccountAsync(targetId, clock.GetUtcNow(), "administrator_password_reset", token);
+            await sessions.RevokeAllForAccountAsync(targetId, await databaseClock.GetUtcNowAsync(token), "administrator_password_reset", token);
             await audit.AppendAsync("identity.password.admin_reset", administratorId, targetId, "success", correlationId, token);
             return true;
         }, ct);
 }
 
+
+public sealed class LogoutHandler(
+    IIdentityAccessUnitOfWork unitOfWork,
+    IAccessTokenFactory tokenFactory,
+    ISessionIdentityResolver resolver,
+    ISessionStore sessions,
+    IAuditWriter audit,
+    IDatabaseClock databaseClock)
+{
+    public Task HandleAsync(string accessToken, string correlationId, CancellationToken ct)
+    {
+        if (!IsOpaqueTokenShape(accessToken)) return Task.CompletedTask;
+        var digest = tokenFactory.ComputeDigest(accessToken);
+        if (digest is not { Length: 32 }) return Task.CompletedTask;
+
+        return unitOfWork.ExecuteAsync(async token =>
+        {
+            var now = await databaseClock.GetUtcNowAsync(token);
+            var identity = await resolver.ResolveAsync(digest, now, token);
+            var revoked = await sessions.RevokeByDigestAsync(digest, now, "logout", token);
+            if (revoked)
+                await audit.AppendAsync("identity.session.logout", identity?.AccountId, identity?.AccountId,
+                    "success", correlationId, token);
+            return true;
+        }, ct);
+    }
+
+    private static bool IsOpaqueTokenShape(string token)
+    {
+        if (string.IsNullOrEmpty(token) || token.Length != 43) return false;
+        foreach (var c in token)
+            if (!(c is >= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '0' and <= '9' or '-' or '_'))
+                return false;
+        return true;
+    }
+}
+
 public sealed class SessionHeartbeatHandler(
-    ISystemPolicyStore policies, IAccessTokenFactory tokenFactory, ISessionStore sessions, TimeProvider clock)
+    ISystemPolicyStore policies, IAccessTokenFactory tokenFactory, ISessionStore sessions, IDatabaseClock databaseClock)
 {
     public async Task<bool> HandleAsync(string accessToken, long credentialVersion, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(accessToken)) return false;
         var policy = (await policies.GetSessionPolicyAsync(ct)).Validate();
-        var now = clock.GetUtcNow();
+        var now = await databaseClock.GetUtcNowAsync(ct);
         return await sessions.TryHeartbeatAsync(tokenFactory.ComputeDigest(accessToken), credentialVersion,
             now, now.Add(policy.LeaseDuration), ct);
     }

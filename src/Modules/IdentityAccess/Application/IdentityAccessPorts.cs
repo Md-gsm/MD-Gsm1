@@ -1,5 +1,6 @@
 using MDGsm.IdentityAccess.Domain;
 namespace MDGsm.IdentityAccess.Application;
+public interface IDatabaseClock { Task<DateTimeOffset> GetUtcNowAsync(CancellationToken ct); }
 public interface IAccountStore { Task<Account?> FindByNormalizedUsernameAsync(string normalizedUsername,CancellationToken ct); Task<Account?> FindByIdAsync(AccountId id,CancellationToken ct); Task SaveAsync(Account account,CancellationToken ct); }
 /// <summary>Executes a serializable unit of work and locks the singleton session-policy row before capacity checks.</summary>
 public interface IIdentityAccessUnitOfWork
@@ -25,5 +26,4 @@ public interface IRecoveryStore
 {
     Task CreateChallengeAsync(AccountId accountId, byte[] challengeDigest, string channel, DateTimeOffset expiresAt, CancellationToken ct);
     Task<bool> ConsumeChallengeAsync(AccountId accountId, byte[] challengeDigest, string channel, DateTimeOffset now, CancellationToken ct);
-    Task<bool> ConsumeRecoveryCodeAsync(AccountId accountId, byte[] codeDigest, DateTimeOffset now, CancellationToken ct);
 }

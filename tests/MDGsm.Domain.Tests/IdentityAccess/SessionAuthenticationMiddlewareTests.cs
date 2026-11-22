@@ -91,7 +91,7 @@ public sealed class SessionAuthenticationMiddlewareTests
         services.AddSingleton<ISessionIdentityResolver>(resolver);
         services.AddSingleton<ISessionStore>(sessions);
         services.AddSingleton<ISystemPolicyStore, StubPolicyStore>();
-        services.AddSingleton<TimeProvider>(TimeProvider.System);
+        services.AddSingleton<IDatabaseClock, StubDatabaseClock>();
         return services.BuildServiceProvider();
     }
 
@@ -134,6 +134,11 @@ public sealed class SessionAuthenticationMiddlewareTests
             return Task.FromResult(heartbeatResult);
         }
         public Task<bool> RevokeByDigestAsync(byte[] tokenDigest, DateTimeOffset now, string reason, CancellationToken ct) => Task.FromResult(false);
+    }
+
+    private sealed class StubDatabaseClock : IDatabaseClock
+    {
+        public Task<DateTimeOffset> GetUtcNowAsync(CancellationToken ct) => Task.FromResult(DateTimeOffset.UtcNow);
     }
 
     private sealed class StubPolicyStore : ISystemPolicyStore

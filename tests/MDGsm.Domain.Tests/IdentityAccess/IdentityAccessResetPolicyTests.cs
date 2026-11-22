@@ -15,7 +15,7 @@ public sealed class IdentityAccessResetPolicyTests
         var audit = new Audit();
         var sessions = new Sessions();
         var handler = new AdminResetPasswordHandler(new UnitOfWork(), accounts, new Hasher(), roles,
-            sessions, audit, TimeProvider.System);
+            sessions, audit, new FixedDatabaseClock(DateTimeOffset.UtcNow));
         var result = await handler.HandleAsync(AccountId.New(), target.Id, "temporary-value", "test", CancellationToken.None);
         Assert.False(result);
         Assert.Equal("identity.credentials.reset", roles.PermissionAsked);
@@ -33,7 +33,7 @@ public sealed class IdentityAccessResetPolicyTests
         var roles = new Roles(true, false);
         var sessions = new Sessions();
         var handler = new AdminResetPasswordHandler(new UnitOfWork(), accounts, new Hasher(), roles,
-            sessions, new Audit(), TimeProvider.System);
+            sessions, new Audit(), new FixedDatabaseClock(DateTimeOffset.UtcNow));
         var result = await handler.HandleAsync(AccountId.New(), target.Id, "temporary-value", "test", CancellationToken.None);
         Assert.True(result);
         Assert.Equal(1, sessions.Revocations);
@@ -50,11 +50,13 @@ public sealed class IdentityAccessResetPolicyTests
         var roles = new Roles(false, false);
         var audit = new Audit();
         var handler = new AdminResetPasswordHandler(new UnitOfWork(), accounts, new Hasher(), roles,
-            new Sessions(), audit, TimeProvider.System);
+            new Sessions(), audit, new FixedDatabaseClock(DateTimeOffset.UtcNow));
         Assert.False(await handler.HandleAsync(AccountId.New(), target.Id, "temporary-value", "test", CancellationToken.None));
         Assert.Contains(audit.Outcomes, x => x == "denied_missing_permission");
     }
 
+    private sealed class FixedDatabaseClock(DateTimeOffset now) : IDatabaseClock
+    { public Task<DateTimeOffset> GetUtcNowAsync(CancellationToken ct) => Task.FromResult(now); }
     private sealed class UnitOfWork : IIdentityAccessUnitOfWork
     { public Task<T> ExecuteAsync<T>(Func<CancellationToken, Task<T>> operation, CancellationToken ct) => operation(ct); }
     private sealed class Accounts(Account account) : IAccountStore

@@ -71,7 +71,7 @@ public sealed class IdentityAccessHttpEndToEndTests
             Assert.True(await db.IdentitySystemSettings.AnyAsync(x => x.SettingsId == 1),
                 "Migration 0003 must seed the required singleton session-policy row.");
 
-            var recoveryStore = new PostgresIdentityAccessStores(db, TimeProvider.System);
+            var recoveryStore = new PostgresIdentityAccessStores(db);
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
                 recoveryStore.CreateChallengeAsync(
                     AccountId.From(Guid.CreateVersion7()), new byte[32], "mobile",
@@ -142,13 +142,35 @@ public sealed class IdentityAccessHttpEndToEndTests
             await db.SaveChangesAsync();
         }
 
+        // Provision the canonical N.6 runtime_app LOGIN only inside this marked,
+        // disposable PostgreSQL instance. Authentication is local trust-only; no
+        // reusable password or credential enters source control, CI variables or logs.
+        var runtimeConnectionString = await PrepareRuntimePrincipalAsync(connectionString);
+
+        // The runtime principal may update an existing account, but it must never
+        // create one. Bootstrap/account provisioning is a separate deployment boundary.
+        var runtimeDbOptions = new DbContextOptionsBuilder<MdGsmDbContext>()
+            .UseNpgsql(runtimeConnectionString).Options;
+        await using (var runtimeDb = new MdGsmDbContext(runtimeDbOptions))
+        {
+            var runtimeStore = new PostgresIdentityAccessStores(runtimeDb);
+            var unprovisioned = new Account(
+                AccountId.New(),
+                Username.Parse("unprovisioned" + Guid.NewGuid().ToString("N")[..8]),
+                "test-only-hash",
+                1);
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                runtimeStore.SaveAsync(unprovisioned, CancellationToken.None));
+            Assert.Contains("cannot provision accounts", exception.Message, StringComparison.Ordinal);
+        }
+
         using var factory = new WebApplicationFactory<global::Program>()
             .WithWebHostBuilder(web =>
             {
                 web.ConfigureAppConfiguration((_, config) =>
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
-                        ["ConnectionStrings:MDGsmDatabase"] = connectionString,
+                        ["ConnectionStrings:MDGsmDatabase"] = runtimeConnectionString,
                         ["IdentityAccess:PrivacyHmacKey"] = privacyKey,
                         ["IdentityAccess:HttpLoginEnabled"] = "true"
                     }));
@@ -158,9 +180,13 @@ public sealed class IdentityAccessHttpEndToEndTests
                 {
                     services.RemoveAll<DbContextOptions<MdGsmDbContext>>();
                     services.RemoveAll<MdGsmDbContext>();
-                    services.AddDbContext<MdGsmDbContext>(options => options.UseNpgsql(connectionString));
+                    services.AddDbContext<MdGsmDbContext>(options => options.UseNpgsql(runtimeConnectionString));
                     services.RemoveAll<NpgsqlDataSource>();
-                    services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
+                    services.AddSingleton(_ => NpgsqlDataSource.Create(runtimeConnectionString));
+                    // Deliberately skew the host clock by two days. IdentityAccess
+                    // login/session validation must still use PostgreSQL clock_timestamp().
+                    services.RemoveAll<TimeProvider>();
+                    services.AddSingleton<TimeProvider>(new FixedTimeProvider(DateTimeOffset.UtcNow.AddDays(-2)));
                 });
             });
         using var client = factory.CreateClient();
@@ -168,6 +194,9 @@ public sealed class IdentityAccessHttpEndToEndTests
         var partyUrl = "/api/v2/persons/" + Guid.CreateVersion7().ToString("D");
         var noToken = await client.GetAsync(partyUrl);
         Assert.Equal(HttpStatusCode.Unauthorized, noToken.StatusCode);
+
+        var heartbeatWithoutToken = await client.PostAsync("/api/v1/identity/heartbeat", content: null);
+        Assert.Equal(HttpStatusCode.Unauthorized, heartbeatWithoutToken.StatusCode);
 
         var login = await client.PostAsJsonAsync("/api/v1/identity/login",
             new LoginRequest(username, initialPassword, Guid.CreateVersion7()));
@@ -197,43 +226,263 @@ public sealed class IdentityAccessHttpEndToEndTests
         Assert.False(active!.MustChangePassword);
 
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", active.AccessToken);
-        var authorizedPersonsRead = await client.GetAsync(partyUrl);
-        Assert.Equal(HttpStatusCode.NotFound, authorizedPersonsRead.StatusCode);
+        var heartbeat = await client.PostAsync("/api/v1/identity/heartbeat", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, heartbeat.StatusCode);
 
-        // A broad persons.read grant must not bypass the fail-closed technician
-        // row-scope guard, including when the same account has another role.
-        await using (var db = new MdGsmDbContext(options))
-        {
-            var technicianRoleId = Guid.CreateVersion7();
-            db.IdentityRoles.Add(new IdentityRoleRow
-            {
-                RoleId = technicianRoleId,
-                RoleKey = RoleCatalog.Technician,
-                DisplayName = "Technician",
-                Description = "Technician role for HTTP authorization regression test",
-                IsSystemRole = true,
-                IsAssignable = true,
-                CreatedAtUtc = now,
-                UpdatedAtUtc = now
-            });
-            db.IdentityAccountRoles.Add(new IdentityAccountRoleRow
-            {
-                AccountId = accountId,
-                RoleId = technicianRoleId,
-                AssignedAtUtc = now,
-                AssignmentReason = "technician-scope-http-e2e-test"
-            });
-            await db.SaveChangesAsync();
-        }
-
-        var technicianWithAdditionalRole = await client.GetAsync(partyUrl);
-        Assert.Equal(HttpStatusCode.Forbidden, technicianWithAdditionalRole.StatusCode);
+        // This proof is intentionally scoped to IdentityAccess. Persons/Finance grants
+        // are not inferred from the current IdentityAccess-only runtime grant script.
 
         client.DefaultRequestHeaders.Authorization = null;
         var wrongPassword = await client.PostAsJsonAsync("/api/v1/identity/login",
             new LoginRequest(username, "incorrect-password", Guid.CreateVersion7()));
         Assert.Equal(HttpStatusCode.Unauthorized, wrongPassword.StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = null;
+        var secondLogin = await client.PostAsJsonAsync("/api/v1/identity/login",
+            new LoginRequest(username, changedPassword, Guid.CreateVersion7()));
+        Assert.Equal(HttpStatusCode.OK, secondLogin.StatusCode);
+        var secondSession = await secondLogin.Content.ReadFromJsonAsync<LoginResponse>();
+        Assert.NotNull(secondSession);
+        Assert.False(secondSession!.MustChangePassword);
+
+        // Logout must revoke only the presented session, not every session for the account.
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", active.AccessToken);
+        var logout = await client.PostAsync("/api/v1/identity/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+
+        var revokedAfterLogout = await client.GetAsync(partyUrl);
+        Assert.Equal(HttpStatusCode.Unauthorized, revokedAfterLogout.StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", secondSession.AccessToken);
+        var secondSessionStillValid = await client.PostAsync("/api/v1/identity/heartbeat", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, secondSessionStillValid.StatusCode);
+
+        var secondLogout = await client.PostAsync("/api/v1/identity/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, secondLogout.StatusCode);
+        var secondSessionRevoked = await client.PostAsync("/api/v1/identity/heartbeat", content: null);
+        Assert.Equal(HttpStatusCode.Unauthorized, secondSessionRevoked.StatusCode);
+
+        var repeatedLogout = await client.PostAsync("/api/v1/identity/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, repeatedLogout.StatusCode);
     }
+    private static async Task<string> PrepareRuntimePrincipalAsync(string adminConnectionString)
+    {
+        await using var admin = new NpgsqlConnection(adminConnectionString);
+        await admin.OpenAsync();
+
+        // Runtime and support roles are disposable test principals. In production,
+        // LOGIN creation, secret delivery and membership remain DBA/deployment work.
+        await using (var createRoles = new NpgsqlCommand("""
+            DO $body$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'mdgsm_runtime') THEN
+                    CREATE ROLE mdgsm_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_app') THEN
+                    CREATE ROLE runtime_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_privilege_probe_target') THEN
+                    CREATE ROLE runtime_privilege_probe_target NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'migration_runner') THEN
+                    CREATE ROLE migration_runner NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'backup_operator') THEN
+                    CREATE ROLE backup_operator NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'reporting_ro') THEN
+                    CREATE ROLE reporting_ro NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'emergency_operator') THEN
+                    CREATE ROLE emergency_operator NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_test_schema_owner') THEN
+                    CREATE ROLE runtime_test_schema_owner NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+                END IF;
+            END
+            $body$;
+            GRANT mdgsm_runtime TO runtime_app;
+            """, admin))
+        {
+            await createRoles.ExecuteNonQueryAsync();
+        }
+
+        var root = FindRepositoryRoot();
+        var grantScript = await File.ReadAllTextAsync(Path.Combine(root,
+            "database", "operations", "identityaccess-runtime-role-grants.sql"));
+        await using (var applyGrants = new NpgsqlCommand(grantScript, admin))
+        {
+            await applyGrants.ExecuteNonQueryAsync();
+        }
+
+        var runtimeBuilder = new NpgsqlConnectionStringBuilder(adminConnectionString)
+        {
+            Username = "runtime_app",
+            Password = null,
+            IncludeErrorDetail = false
+        };
+        var runtimeConnectionString = runtimeBuilder.ConnectionString;
+
+        await using var runtime = new NpgsqlConnection(runtimeConnectionString);
+        await runtime.OpenAsync();
+        await using (var identity = new NpgsqlCommand("""
+            SELECT current_user, r.rolcanlogin, r.rolsuper, r.rolcreatedb, r.rolcreaterole,
+                   r.rolreplication, r.rolbypassrls, r.rolinherit,
+                   pg_has_role(current_user, 'mdgsm_runtime', 'MEMBER'),
+                   pg_has_role(current_user, 'migration_runner', 'MEMBER'),
+                   pg_has_role(current_user, 'backup_operator', 'MEMBER'),
+                   pg_has_role(current_user, 'reporting_ro', 'MEMBER'),
+                   pg_has_role(current_user, 'emergency_operator', 'MEMBER'),
+                   pg_has_role(current_user, 'runtime_test_schema_owner', 'MEMBER'),
+                   (SELECT count(*) FROM pg_namespace n WHERE n.nspowner = r.oid),
+                   (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE c.relowner = r.oid AND n.nspname IN ('identity', 'public')),
+                   (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+                    WHERE p.proowner = r.oid AND n.nspname IN ('identity', 'public')),
+                   has_schema_privilege(current_user, 'identity', 'CREATE'),
+                   has_schema_privilege(current_user, 'public', 'CREATE')
+            FROM pg_roles r WHERE r.rolname = current_user;
+            """, runtime))
+        await using (var reader = await identity.ExecuteReaderAsync())
+        {
+            Assert.True(await reader.ReadAsync());
+            Assert.Equal("runtime_app", reader.GetString(0));
+            Assert.True(reader.GetBoolean(1));
+            Assert.False(reader.GetBoolean(2));
+            Assert.False(reader.GetBoolean(3));
+            Assert.False(reader.GetBoolean(4));
+            Assert.False(reader.GetBoolean(5));
+            Assert.False(reader.GetBoolean(6));
+            Assert.True(reader.GetBoolean(7));
+            Assert.True(reader.GetBoolean(8));  // the single approved runtime support group
+            Assert.False(reader.GetBoolean(9)); // no migration credential inheritance
+            Assert.False(reader.GetBoolean(10)); // no backup/restore identity inheritance
+            Assert.False(reader.GetBoolean(11)); // no reporting identity inheritance
+            Assert.False(reader.GetBoolean(12)); // no emergency identity inheritance
+            Assert.False(reader.GetBoolean(13)); // no schema-owner membership
+            Assert.Equal(0L, reader.GetInt64(14)); // no schema ownership
+            Assert.Equal(0L, reader.GetInt64(15)); // no table/view/sequence ownership
+            Assert.Equal(0L, reader.GetInt64(16)); // no function/procedure ownership
+            Assert.False(reader.GetBoolean(17)); // no identity schema DDL
+            Assert.False(reader.GetBoolean(18)); // no public schema DDL
+        }
+
+        // Verify effective object/column privileges, not merely grant-script text.
+        await using (var matrix = new NpgsqlCommand("""
+            SELECT
+                has_table_privilege(current_user, 'identity.accounts', 'SELECT'),
+                has_column_privilege(current_user, 'identity.accounts', 'password_hash', 'UPDATE'),
+                NOT has_column_privilege(current_user, 'identity.accounts', 'email', 'UPDATE'),
+                NOT has_table_privilege(current_user, 'identity.accounts', 'INSERT'),
+                has_table_privilege(current_user, 'identity.sessions', 'INSERT'),
+                has_column_privilege(current_user, 'identity.sessions', 'last_seen_at_utc', 'UPDATE'),
+                NOT has_column_privilege(current_user, 'identity.sessions', 'created_at_utc', 'UPDATE'),
+                has_table_privilege(current_user, 'identity.login_attempts', 'INSERT'),
+                NOT has_table_privilege(current_user, 'identity.login_attempts', 'UPDATE'),
+                has_column_privilege(current_user, 'identity.recovery_challenges', 'consumed_at_utc', 'UPDATE'),
+                NOT has_table_privilege(current_user, 'identity.recovery_codes', 'SELECT'),
+                NOT has_table_privilege(current_user, 'identity.recovery_codes', 'UPDATE'),
+                has_table_privilege(current_user, 'identity.security_audit_events', 'INSERT'),
+                NOT has_table_privilege(current_user, 'identity.security_audit_events', 'UPDATE'),
+                has_column_privilege(current_user, 'identity.system_settings', 'updated_at_utc', 'UPDATE'),
+                NOT has_column_privilege(current_user, 'identity.system_settings', 'max_active_users', 'UPDATE')
+            """, runtime))
+        await using (var matrixResult = await matrix.ExecuteReaderAsync())
+        {
+            Assert.True(await matrixResult.ReadAsync());
+            for (var index = 0; index < 16; index++)
+                Assert.True(matrixResult.GetBoolean(index), $"IdentityAccess privilege matrix assertion {index + 1} failed.");
+        }
+
+        // Positive SQL reads are executed using the same LOGIN configured into the API host.
+        await using (var allowedRead = new NpgsqlCommand(
+            "SELECT count(*) FROM identity.accounts; SELECT count(*) FROM identity.sessions;", runtime))
+        {
+            await allowedRead.ExecuteNonQueryAsync();
+        }
+        await AssertDeniedAsync(runtime, "CREATE TABLE identity.runtime_privilege_probe(id integer);");
+        await AssertDeniedAsync(runtime, "CREATE TABLE public.runtime_privilege_probe(id integer);");
+        await AssertDeniedAsync(runtime, "CREATE SEQUENCE public.runtime_privilege_probe_seq;");
+        await AssertDeniedAsync(runtime, "ALTER TABLE identity.accounts ADD COLUMN runtime_probe text;");
+        await AssertDeniedAsync(runtime, "DROP TABLE identity.accounts;");
+        await AssertDeniedAsync(runtime, "TRUNCATE TABLE identity.sessions;");
+        await AssertDeniedAsync(runtime, "INSERT INTO identity.accounts DEFAULT VALUES;");
+        await AssertDeniedAsync(runtime, "DELETE FROM identity.sessions;");
+        await AssertDeniedAsync(runtime, "UPDATE identity.accounts SET email = email;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM identity.recovery_codes LIMIT 0;");
+        await AssertDeniedAsync(runtime, "UPDATE identity.recovery_codes SET used_at_utc = clock_timestamp() WHERE false;");
+        await AssertDeniedAsync(runtime, "UPDATE identity.security_audit_events SET event_type = event_type;");
+        await AssertDeniedAsync(runtime, "CREATE ROLE runtime_privilege_probe LOGIN;");
+        await AssertDeniedAsync(runtime, "ALTER ROLE runtime_app SUPERUSER;");
+
+        // PostgreSQL may report a GRANT without grantable privileges as a warning/no-op,
+        // rather than throwing. Prove the target role's effective privilege remains absent.
+        await using (var attemptedGrant = new NpgsqlCommand(
+            "GRANT SELECT ON identity.accounts TO runtime_privilege_probe_target;", runtime))
+        {
+            await attemptedGrant.ExecuteNonQueryAsync();
+        }
+        await using (var grantResult = new NpgsqlCommand(
+            "SELECT has_table_privilege('runtime_privilege_probe_target', 'identity.accounts', 'SELECT');",
+            runtime))
+        {
+            Assert.False((bool)(await grantResult.ExecuteScalarAsync())!);
+        }
+
+        await AssertDeniedAsync(runtime, "SET ROLE postgres;");
+        // All currently materialized Persons/Finance/temporary/merge objects are
+        // outside IdentityAccess runtime ownership. The API runtime reaches them only
+        // through an explicitly reviewed module command/function contract.
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_contact_points LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_addresses LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_operations LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_access_audit LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_temporary_workflows LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_temporary_workflow_payloads LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM persons_party_merge_records LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM finance_party_accounts LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM mdgsm_schema_version LIMIT 0;");
+        await AssertDeniedAsync(runtime, "SELECT * FROM mdgsm_migration_history LIMIT 0;");
+        await AssertDeniedAsync(runtime, "INSERT INTO persons DEFAULT VALUES;");
+        await AssertDeniedAsync(runtime, "INSERT INTO finance_party_accounts DEFAULT VALUES;");
+
+        return runtimeConnectionString;
+    }
+
+    private static async Task AssertDeniedAsync(NpgsqlConnection connection, string sql)
+    {
+        var exception = await Assert.ThrowsAsync<PostgresException>(async () =>
+        {
+            await using var command = new NpgsqlCommand(sql, connection);
+            await command.ExecuteNonQueryAsync();
+        });
+        Assert.Equal("42501", exception.SqlState);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
+             directory is not null;
+             directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "MDGsm.sln")))
+                return directory.FullName;
+        }
+
+        throw new DirectoryNotFoundException(
+            "Could not locate repository root from the IdentityAccess integration-test output directory.");
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state,
+            TimeSpan dueTime, TimeSpan period) =>
+            TimeProvider.System.CreateTimer(callback, state, dueTime, period);
+    }
+
     private sealed class DisposableDatabase(string adminConnectionString, string databaseName, string connectionString)
         : IAsyncDisposable
     {

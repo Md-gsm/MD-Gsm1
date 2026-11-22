@@ -144,8 +144,13 @@ jobs:
           set -euo pipefail
           db="mdgsm_ci_disposable_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           [[ "$db" =~ ^mdgsm_ci_disposable_[0-9]+_[0-9]+$ ]]
+          psql -d postgres -v ON_ERROR_STOP=1 -c "CREATE ROLE mdgsm_schema_owner NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;"
+          psql -d postgres -v ON_ERROR_STOP=1 -c "CREATE ROLE migration_runner LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;"
+          psql -d postgres -v ON_ERROR_STOP=1 -c "GRANT mdgsm_schema_owner TO migration_runner WITH ADMIN FALSE, INHERIT FALSE, SET TRUE;"
           psql -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$db\";"
           psql -d postgres -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE \"$db\" IS 'MDGSM_DISPOSABLE_TEST_DB; created by Linux PostgreSQL CI';"
+          psql -d "$db" -v ON_ERROR_STOP=1 -c "GRANT CREATE ON DATABASE \"$db\" TO mdgsm_schema_owner;"
+          psql -d "$db" -v ON_ERROR_STOP=1 -c "GRANT CREATE ON SCHEMA public TO mdgsm_schema_owner;"
           echo "MDGSM_TEST_DB=$db" >> "$GITHUB_ENV"
           echo "ConnectionStrings__MDGsmDatabase=Host=127.0.0.1;Port=5432;Database=$db;Username=postgres;Timeout=15;Command Timeout=120" >> "$GITHUB_ENV"
           identity_db="mdgsm_identityaccess_disposable_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
@@ -157,8 +162,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          export ConnectionStrings__MDGsmDatabase="Host=127.0.0.1;Port=5432;Database=$MDGSM_TEST_DB;Username=migration_runner;Timeout=15;Command Timeout=120"
+          export MDGSM_MIGRATION_LOGIN_ROLE=migration_runner
+          export MDGSM_MIGRATION_OWNER_ROLE=mdgsm_schema_owner
           dotnet run --project tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj --configuration Release --no-restore
           dotnet run --project tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj --configuration Release --no-build
+          role_checks="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT (r.rolcanlogin AND NOT r.rolsuper AND NOT r.rolcreatedb AND NOT r.rolcreaterole AND NOT r.rolreplication AND NOT r.rolbypassrls AND NOT r.rolinherit)::text || '|' || has_database_privilege('migration_runner',current_database(),'CREATE')::text || '|' || has_schema_privilege('migration_runner','public','CREATE')::text || '|' || (SELECT count(*) FROM pg_auth_members m WHERE m.member=r.oid)::text FROM pg_roles r WHERE r.rolname='migration_runner';")"
+          test "$role_checks" = 'true|false|false|1'
           history="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;")"
           test "$history" = '8|8'
           schema_version="$(psql -d "$MDGSM_TEST_DB" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(version)::text FROM mdgsm_schema_version;")"
@@ -188,8 +198,28 @@ jobs:
           restored_audit_trigger="$(psql -d "$restore_db" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_trigger WHERE tgname = 'trg_identity_security_audit_no_update_delete' AND NOT tgisinternal;")"
           test "$restored_audit_trigger" = '1'
           echo "PASS: migrations, repeat/idempotence, IdentityAccess schema invariants, least-privilege grants, and backup/restore verification passed."
+      - name: Prove O-20-D logical backup and isolated restore under backup_operator
+        shell: bash
+        run: bash scripts/ci/test_o20_backup_restore.sh
+      - name: Prove O-20-G complete catalog inventory and effective privilege digest
+        shell: bash
+        run: bash scripts/ci/test_o20_catalog_inventory.sh
+      - name: Upload O-20-G catalog inventory evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: o20-g-catalog-inventory
+          path: ${{ runner.temp }}/o20-g-catalog-inventory.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Run Persons PostgreSQL end-to-end integration test
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "Category=Integration" --no-restore
+      - name: Run explicit O-20 support identity and catalog proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20SupportIdentityPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20-F emergency lifecycle PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20EmergencyAccessPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20-E Organization policy PostgreSQL proofs
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationPolicyPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run isolated Accounting AP-03/AP-04 PostgreSQL 18 proof
         shell: bash
         run: bash scripts/ci/test_accounting_postgres_ap03_ap04.sh
