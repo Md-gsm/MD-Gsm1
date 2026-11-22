@@ -50,7 +50,6 @@ public sealed class IdentityAccessPostgresIntegrationTests
         services.AddMdGsmPersistence(configuration);
         services.AddIdentityAccessSecurity(configuration);
         services.AddSingleton<TimeProvider>(clock);
-        services.AddScoped<IDatabaseClock>(_ => new ManualDatabaseClock(clock));
         services.AddScoped<LoginHandler>();
         services.AddScoped<SessionHeartbeatHandler>();
         services.AddScoped<ChangeOwnPasswordHandler>();
@@ -250,7 +249,6 @@ public sealed class IdentityAccessPostgresIntegrationTests
         services.AddMdGsmPersistence(configuration);
         services.AddIdentityAccessSecurity(configuration);
         services.AddSingleton<TimeProvider>(clock);
-        services.AddScoped<IDatabaseClock>(_ => new ManualDatabaseClock(clock));
         services.AddScoped<LoginHandler>();
         await using var provider = services.BuildServiceProvider(validateScopes: true);
 
@@ -542,11 +540,6 @@ public sealed class IdentityAccessPostgresIntegrationTests
 
     private static string Digest(IPrivacyDigest digest, string value) =>
         Convert.ToHexString(digest.ComputeSha256(value));
-
-    private sealed class ManualDatabaseClock(TimeProvider clock) : IDatabaseClock
-    {
-        public Task<DateTimeOffset> GetUtcNowAsync(CancellationToken ct) => Task.FromResult(clock.GetUtcNow());
-    }
 
     private sealed class ManualTimeProvider(DateTimeOffset initial) : TimeProvider
     {

@@ -18,7 +18,7 @@ public sealed class IdentityAccessHardeningTests
     public async Task Login_always_verifies_one_hash_for_known_and_unknown_states(string name, bool exists, bool locked)
     {
         var now = new DateTimeOffset(2026, 11, 4, 12, 0, 0, TimeSpan.Zero);
-        var clock = new TestDatabaseClock(now);
+        var clock = new TestClock(now);
         var hasher = new SpyHasher();
         var accounts = new MemoryAccounts();
         if (exists)
@@ -56,8 +56,8 @@ public sealed class IdentityAccessHardeningTests
     private static IConfiguration Config(byte[] key) => new ConfigurationBuilder().AddInMemoryCollection(
         new Dictionary<string, string?> { [HmacPrivacyDigest.ConfigurationKey] = Convert.ToBase64String(key) }).Build();
 
-    private sealed class TestDatabaseClock(DateTimeOffset now) : IDatabaseClock
-    { public Task<DateTimeOffset> GetUtcNowAsync(CancellationToken ct) => Task.FromResult(now); }
+    private sealed class TestClock(DateTimeOffset now) : TimeProvider
+    { public override DateTimeOffset GetUtcNow() => now; }
     private sealed class SpyHasher : IPasswordHasher
     {
         public short CurrentVersion => 1;

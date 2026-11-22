@@ -10,8 +10,7 @@
 - The application-owned CLI is `tools/MDGsm.DbMigrator`; SQL migrations are embedded into the Infrastructure assembly.
 - The runner uses a PostgreSQL advisory transaction lock, a migration history table with SHA-256 checksums, checksum/name drift detection, and one PostgreSQL transaction for the migration batch.
 - By default, the runner refuses to operate unless the target database comment contains `MDGSM_DISPOSABLE_TEST_DB`.
-- `MDGsm.DbMigrator` requires `ConnectionStrings__MDGsmDatabase`, `MDGSM_MIGRATION_LOGIN_ROLE` and `MDGSM_MIGRATION_OWNER_ROLE` in the process environment. The CLI verifies the authenticated LOGIN, exact non-inheriting SET-only membership, NOLOGIN owner attributes and effective `current_user` before DDL.
-- `--allow-unmarked-database` additionally requires `MDGSM_UNMARKED_DB_CONFIRMATION=APPLY-TO-NON-DISPOSABLE-DATABASE`; it does not bypass the migration identity checks.
+- `--allow-unmarked-database` additionally requires `MDGSM_UNMARKED_DB_CONFIRMATION=APPLY-TO-NON-DISPOSABLE-DATABASE`; credentials are read only from `ConnectionStrings__MDGsmDatabase` in the process environment.
 - The API never applies migrations on startup. Migration execution is explicit.
 
 ## Migration inventory
@@ -86,19 +85,3 @@ Migration 0002 is physically under database/migrations/persons while others are 
 6. Runtime application credentials must not be database owners and must have least-privilege grants.
 
 A successful migration CI run proves schema application against an isolated PostgreSQL service; it does not provision or migrate staging/production. Only IdentityAccess has a runtime grant template; Persons and Finance grant matrices are absent, so least-privilege coverage is partial.
-
-
-## Migration identity execution boundary (O-20-C)
-
-The CLI must authenticate with a dedicated deployment LOGIN and then explicitly SET ROLE to a separately named NOLOGIN schema-owner role. Both role names are supplied through process environment variables; they are not inferred from the connection string. The runner rejects missing or mismatched role names, LOGIN privilege escalation, owner LOGIN/elevated attributes, extra memberships, ADMIN/INHERIT membership options, and any failure to verify `session_user = migration_runner` and `current_user = mdgsm_schema_owner`.
-
-The expected membership is exactly one edge with ADMIN FALSE, INHERIT FALSE, SET TRUE. The NOLOGIN owner receives only the DDL privileges required by the registered migration scope. The LOGIN itself must not inherit those privileges. Linux CI uses local trust only within its disposable runner-local PostgreSQL service; Windows CI generates a random per-run password and supplies it only through process environment. Neither credential is committed or uploaded as an artifact. The Windows migration test applies the same model to a temporary local PostgreSQL 18 instance.
-
-The current proof uses one disposable schema-owner role for the existing migration set, because several existing migrations still create objects in `public`. This is not a claim of separate owner roles for every module. Production credentials, role provisioning and grant execution remain deployment/DBA-controlled and separately authorized.
-
-
-## O20-C exact-head CI evidence
-
-On SHA `c29d22f02a413885d9d68ee36151a84ca7769b17`, the Linux PostgreSQL 18 and Windows PostgreSQL 18 migration jobs both passed. The actual DbMigrator process authenticated as `migration_runner`, switched to `mdgsm_schema_owner`, applied eight ordered migrations, and completed a second idempotent execution with zero new migrations. Linux also passed the explicit O-20 support identity/catalog test. Run `44924828632`; Linux job `136908626163`; Windows job `136908626115`.
-
-This evidence is limited to disposable CI. Production provisioning and module-specific owner segregation remain separate.
