@@ -28,14 +28,20 @@ $previousPgPassword = $env:PGPASSWORD
 $previousConnectionString = $env:ConnectionStrings__MDGsmDatabase
 $previousMigrationLoginRole = $env:MDGSM_MIGRATION_LOGIN_ROLE
 $previousMigrationOwnerRole = $env:MDGSM_MIGRATION_OWNER_ROLE
+$previousProgressPreference = $ProgressPreference
+$installerProcess = $null
 $databaseCreated = $false
 $psqlPath = Join-Path $installRoot 'bin\psql.exe'
 $pgIsReadyPath = Join-Path $installRoot 'bin\pg_isready.exe'
 
 try {
     New-Item -ItemType Directory -Path $downloadDirectory -Force | Out-Null
-    Write-Host 'Downloading the pinned PostgreSQL 18.6-5 Windows installer...'
-    Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
+    Write-Host 'Downloading the pinned PostgreSQL 18.6-5 Windows installer (four-minute network timeout)...'
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing -TimeoutSec 240
+    if (-not (Test-Path -LiteralPath $installerPath) -or (Get-Item -LiteralPath $installerPath).Length -lt 100MB) {
+        throw 'PostgreSQL installer download is missing or unexpectedly small.'
+    }
     $actualSha256 = (Get-FileHash -LiteralPath $installerPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actualSha256 -ne $expectedSha256) {
         throw "PostgreSQL installer SHA-256 mismatch. Expected $expectedSha256; received $actualSha256."
@@ -77,13 +83,22 @@ try {
     [System.IO.File]::WriteAllLines($optionFilePath, $installerOptions, [System.Text.Encoding]::ASCII)
 
     Write-Host 'Installing the verified PostgreSQL 18 server and command-line tools using a protected option file...'
-    $installerProcess = Start-Process -FilePath $installerPath -ArgumentList @('--mode', 'unattended', '--unattendedmodeui', 'none', '--optionfile', $optionFilePath) -Wait -PassThru -NoNewWindow
+    $installerProcess = Start-Process -FilePath $installerPath -ArgumentList @('--mode', 'unattended', '--unattendedmodeui', 'none', '--optionfile', $optionFilePath) -PassThru -NoNewWindow
+    # Do not allow a child installer to occupy the whole workflow job indefinitely.
+    # The job timeout is 25 minutes; the installer itself gets at most 15 minutes.
+    if (-not $installerProcess.WaitForExit(900000)) {
+        try { $installerProcess.Kill($true) } catch { }
+        throw 'PostgreSQL Windows installer exceeded its 15-minute process deadline.'
+    }
+    $installerProcess.Refresh()
     if (Test-Path -LiteralPath $optionFilePath) {
         Remove-Item -LiteralPath $optionFilePath -Force
     }
     if ($installerProcess.ExitCode -ne 0) {
         throw "PostgreSQL installer exited with code $($installerProcess.ExitCode)."
     }
+    $installerProcess.Dispose()
+    $installerProcess = $null
 
     $service = Get-Service -Name $serviceName -ErrorAction Stop
     if ($service.Status -ne 'Running') { Start-Service -Name $serviceName }
@@ -157,6 +172,12 @@ try {
     Write-Host 'PASS: PostgreSQL 18 on Windows, EDB installer checksum, disposable database marker, app-owned migrations, checksum history and second-run idempotence.' -ForegroundColor Green
 }
 finally {
+    if ($null -ne $installerProcess) {
+        try {
+            if (-not $installerProcess.HasExited) { $installerProcess.Kill($true) }
+        } catch { }
+        try { $installerProcess.Dispose() } catch { }
+    }
     if ($databaseCreated -and (Test-Path -LiteralPath $psqlPath) -and $databaseName -match '^mdgsm_ci_disposable_[0-9]+_[0-9]+$') {
         try {
             & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d postgres -v ON_ERROR_STOP=1 -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$databaseName' AND pid <> pg_backend_pid();" | Out-Null
@@ -175,6 +196,8 @@ finally {
     else { $env:MDGSM_MIGRATION_LOGIN_ROLE = $previousMigrationLoginRole }
     if ($null -eq $previousMigrationOwnerRole) { Remove-Item Env:MDGSM_MIGRATION_OWNER_ROLE -ErrorAction SilentlyContinue }
     else { $env:MDGSM_MIGRATION_OWNER_ROLE = $previousMigrationOwnerRole }
+    if ($null -eq $previousProgressPreference) { Remove-Variable ProgressPreference -ErrorAction SilentlyContinue }
+    else { $ProgressPreference = $previousProgressPreference }
     if (Test-Path -LiteralPath $optionFilePath) { Remove-Item -LiteralPath $optionFilePath -Force -ErrorAction SilentlyContinue }
     $databasePassword = $null
     $migrationPassword = $null
