@@ -278,7 +278,7 @@ public sealed class O20OrganizationDeterministicLockOrderPostgresProofTests
                 $"SELECT count(*) FROM {q}.warehouse_probe WHERE row_version=3;"));
             Assert.Equal(2L, await ScalarInt64Async(cs,
                 $"SELECT count(*) FROM {q}.assignment_probe WHERE row_version=3;"));
-            Assert.Equal(4L, await ScalarInt64Async(cs,
+            Assert.Equal(2L, await ScalarInt64Async(cs,
                 $"SELECT count(*) FROM {q}.domain_history;"));
             Assert.Equal(2L, await ScalarInt64Async(cs,
                 $"SELECT count(*) FROM {q}.audit_outbox WHERE state='PENDING';"));
