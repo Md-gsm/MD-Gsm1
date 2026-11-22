@@ -240,6 +240,12 @@ public sealed class O20EmergencyAccessPostgresProofTests
                 $"SELECT {qSchema}.emergency_allowed(@id,@principal,@operation,@resource,current_database(),'wrong_schema');",
                 invalid, ("principal", emergencyRole), ("operation", "READ"), ("resource", "scope-A")));
 
+            // An approver who is valid for the same principal but not for this exact resource scope is not authorized.
+            var unlistedScope = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-B", 60);
+            Assert.False(await ActivateAsync(adminConnectionString, schema, unlistedScope, "approver-a", "approver-b"));
+            Assert.Equal("REQUESTED", await ScalarStringAsync(adminConnectionString,
+                $"SELECT state FROM {qSchema}.emergency_grant WHERE grant_id=@id;", unlistedScope));
+
             // At now >= expires_at, authorization is denied even though no cleanup ran.
             await ExecuteAsync(adminConnectionString, $"UPDATE {qSchema}.emergency_grant SET expires_at=clock_timestamp() WHERE grant_id=@id;", invalid);
             Assert.False(await AllowedAsync(adminConnectionString, schema, invalid, emergencyRole, "READ", "scope-A"));
