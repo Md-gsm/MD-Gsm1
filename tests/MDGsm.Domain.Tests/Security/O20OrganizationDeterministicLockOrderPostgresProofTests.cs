@@ -159,6 +159,246 @@ public sealed class O20OrganizationDeterministicLockOrderPostgresProofTests
         }
     }
 
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Candidate_transaction_order_persists_receipt_approval_aggregates_history_and_outbox_atomically()
+    {
+        var cs = await OpenMarkedDisposableDatabaseAsync();
+        var schema = "o20org_totalorder_" + Guid.NewGuid().ToString("N")[..10];
+        var q = Q(schema);
+        try
+        {
+            await ExecuteAsync(cs, $"""
+                CREATE SCHEMA {q};
+                CREATE TABLE {q}.command_receipt
+                (
+                    receipt_id uuid PRIMARY KEY,
+                    request_fingerprint bytea NOT NULL,
+                    row_version bigint NOT NULL DEFAULT 1
+                );
+                CREATE TABLE {q}.approval_request
+                (
+                    request_id uuid PRIMARY KEY,
+                    request_fingerprint bytea NOT NULL,
+                    row_version bigint NOT NULL DEFAULT 1
+                );
+                CREATE TABLE {q}.branch_probe
+                (
+                    branch_id uuid PRIMARY KEY,
+                    row_version bigint NOT NULL DEFAULT 1
+                );
+                CREATE TABLE {q}.warehouse_probe
+                (
+                    warehouse_id uuid PRIMARY KEY,
+                    branch_id uuid NOT NULL REFERENCES {q}.branch_probe(branch_id),
+                    row_version bigint NOT NULL DEFAULT 1
+                );
+                CREATE TABLE {q}.assignment_probe
+                (
+                    assignment_id uuid PRIMARY KEY,
+                    warehouse_id uuid NOT NULL REFERENCES {q}.warehouse_probe(warehouse_id),
+                    row_version bigint NOT NULL DEFAULT 1
+                );
+                CREATE TABLE {q}.domain_history
+                (
+                    event_id uuid PRIMARY KEY,
+                    aggregate_id uuid NOT NULL,
+                    aggregate_version bigint NOT NULL,
+                    event_type text NOT NULL
+                );
+                CREATE TABLE {q}.audit_outbox
+                (
+                    event_id uuid PRIMARY KEY,
+                    payload_hash bytea NOT NULL CHECK (octet_length(payload_hash)=32),
+                    state text NOT NULL CHECK (state='PENDING')
+                );
+                """);
+
+            var branches = new[] { Guid.NewGuid(), Guid.NewGuid() };
+            var warehouses = new[] { Guid.NewGuid(), Guid.NewGuid() };
+            var assignments = new[] { Guid.NewGuid(), Guid.NewGuid() };
+            var receiptIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+            var approvalIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+            var historyIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+            var outboxIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+            var fingerprint = System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes("fixed-candidate-order-request"));
+
+            foreach (var id in receiptIds)
+                await ExecuteAsync(cs,
+                    $"INSERT INTO {q}.command_receipt(receipt_id,request_fingerprint) VALUES (@id,@hash);",
+                    ("id", id), ("hash", fingerprint));
+            foreach (var id in approvalIds)
+                await ExecuteAsync(cs,
+                    $"INSERT INTO {q}.approval_request(request_id,request_fingerprint) VALUES (@id,@hash);",
+                    ("id", id), ("hash", fingerprint));
+            foreach (var id in branches)
+                await ExecuteAsync(cs, $"INSERT INTO {q}.branch_probe(branch_id) VALUES (@id);", ("id", id));
+            for (var i = 0; i < warehouses.Length; i++)
+                await ExecuteAsync(cs,
+                    $"INSERT INTO {q}.warehouse_probe(warehouse_id,branch_id) VALUES (@id,@branch);",
+                    ("id", warehouses[i]), ("branch", branches[i]));
+            for (var i = 0; i < assignments.Length; i++)
+                await ExecuteAsync(cs,
+                    $"INSERT INTO {q}.assignment_probe(assignment_id,warehouse_id) VALUES (@id,@warehouse);",
+                    ("id", assignments[i]), ("warehouse", warehouses[i]));
+
+            var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var forward = Task.Run(async () =>
+            {
+                await start.Task;
+                return await RunCandidateTransactionAsync(
+                    cs, q, receiptIds[0], approvalIds[0], branches, warehouses, assignments,
+                    historyIds[0], outboxIds[0], "candidate-order-forward");
+            });
+            var reverse = Task.Run(async () =>
+            {
+                await start.Task;
+                return await RunCandidateTransactionAsync(
+                    cs, q, receiptIds[1], approvalIds[1], branches.Reverse().ToArray(),
+                    warehouses.Reverse().ToArray(), assignments.Reverse().ToArray(),
+                    historyIds[1], outboxIds[1], "candidate-order-reverse");
+            });
+            start.SetResult();
+
+            var logs = await Task.WhenAll(forward, reverse);
+            Assert.Equal(CandidateTotalOrder(receiptIds[0], approvalIds[0], branches, warehouses, assignments),
+                logs[0]);
+            Assert.Equal(CandidateTotalOrder(receiptIds[1], approvalIds[1], branches, warehouses, assignments),
+                logs[1]);
+
+            Assert.Equal(2L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.command_receipt WHERE row_version=2;"));
+            Assert.Equal(2L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.approval_request WHERE row_version=2;"));
+            Assert.Equal(2L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.branch_probe WHERE row_version=3;"));
+            Assert.Equal(2L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.warehouse_probe WHERE row_version=3;"));
+            Assert.Equal(2L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.assignment_probe WHERE row_version=3;"));
+            Assert.Equal(4L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.domain_history;"));
+            Assert.Equal(2L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.audit_outbox WHERE state='PENDING';"));
+        }
+        finally
+        {
+            await DropSchemaAsync(cs, q);
+        }
+    }
+
+    private static string[] CandidateTotalOrder(
+        Guid receipt, Guid approval, Guid[] branches, Guid[] warehouses, Guid[] assignments) =>
+        new[] { $"00:receipt:{receipt:N}", $"20:approval:{approval:N}" }
+            .Concat(branches.OrderBy(x => x.ToString("N"), StringComparer.Ordinal)
+                .Select(x => $"30:branch:{x:N}"))
+            .Concat(warehouses.OrderBy(x => x.ToString("N"), StringComparer.Ordinal)
+                .Select(x => $"40:warehouse:{x:N}"))
+            .Concat(assignments.OrderBy(x => x.ToString("N"), StringComparer.Ordinal)
+                .Select(x => $"50:assignment:{x:N}"))
+            .Concat(new[] { "60:domain-history:append", "70:audit-outbox:append" })
+            .ToArray();
+
+    private static async Task<string[]> RunCandidateTransactionAsync(
+        string cs,
+        string quotedSchema,
+        Guid receiptId,
+        Guid approvalId,
+        Guid[] branches,
+        Guid[] warehouses,
+        Guid[] assignments,
+        Guid historyEventId,
+        Guid outboxEventId,
+        string applicationName)
+    {
+        var branchOrder = branches.OrderBy(x => x.ToString("N"), StringComparer.Ordinal).ToArray();
+        var warehouseOrder = warehouses.OrderBy(x => x.ToString("N"), StringComparer.Ordinal).ToArray();
+        var assignmentOrder = assignments.OrderBy(x => x.ToString("N"), StringComparer.Ordinal).ToArray();
+        var acquired = new System.Collections.Generic.List<string>();
+        var builder = new NpgsqlConnectionStringBuilder(cs) { ApplicationName = applicationName };
+
+        await using var connection = new NpgsqlConnection(builder.ConnectionString);
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        await using (var settings = new NpgsqlCommand(
+            "SET LOCAL lock_timeout='5s'; SET LOCAL statement_timeout='15s';",
+            connection, transaction))
+        {
+            await settings.ExecuteNonQueryAsync();
+        }
+
+        await LockOneAsync(connection, transaction,
+            $"SELECT receipt_id FROM {quotedSchema}.command_receipt WHERE receipt_id=@id FOR UPDATE;", receiptId);
+        acquired.Add($"00:receipt:{receiptId:N}");
+
+        await LockOneAsync(connection, transaction,
+            $"SELECT request_id FROM {quotedSchema}.approval_request WHERE request_id=@id FOR UPDATE;", approvalId);
+        acquired.Add($"20:approval:{approvalId:N}");
+
+        foreach (var id in branchOrder)
+        {
+            await LockOneAsync(connection, transaction,
+                $"SELECT branch_id FROM {quotedSchema}.branch_probe WHERE branch_id=@id FOR UPDATE;", id);
+            acquired.Add($"30:branch:{id:N}");
+            if (acquired.Count == 3) await Task.Delay(75);
+        }
+        foreach (var id in warehouseOrder)
+        {
+            await LockOneAsync(connection, transaction,
+                $"SELECT warehouse_id FROM {quotedSchema}.warehouse_probe WHERE warehouse_id=@id FOR UPDATE;", id);
+            acquired.Add($"40:warehouse:{id:N}");
+        }
+        foreach (var id in assignmentOrder)
+        {
+            await LockOneAsync(connection, transaction,
+                $"SELECT assignment_id FROM {quotedSchema}.assignment_probe WHERE assignment_id=@id FOR UPDATE;", id);
+            acquired.Add($"50:assignment:{id:N}");
+        }
+
+        await IncrementOneAsync(connection, transaction,
+            $"UPDATE {quotedSchema}.command_receipt SET row_version=row_version+1 WHERE receipt_id=@id;", receiptId);
+        await IncrementOneAsync(connection, transaction,
+            $"UPDATE {quotedSchema}.approval_request SET row_version=row_version+1 WHERE request_id=@id;", approvalId);
+        foreach (var id in branchOrder)
+            await IncrementOneAsync(connection, transaction,
+                $"UPDATE {quotedSchema}.branch_probe SET row_version=row_version+1 WHERE branch_id=@id;", id);
+        foreach (var id in warehouseOrder)
+            await IncrementOneAsync(connection, transaction,
+                $"UPDATE {quotedSchema}.warehouse_probe SET row_version=row_version+1 WHERE warehouse_id=@id;", id);
+        foreach (var id in assignmentOrder)
+            await IncrementOneAsync(connection, transaction,
+                $"UPDATE {quotedSchema}.assignment_probe SET row_version=row_version+1 WHERE assignment_id=@id;", id);
+
+        // Append-only domain history and local outbox are inserted after all aggregate locks,
+        // in the same local transaction. No network delivery occurs while locks are held.
+        await using (var history = new NpgsqlCommand(
+            $"INSERT INTO {quotedSchema}.domain_history(event_id,aggregate_id,aggregate_version,event_type) VALUES (@event,@aggregate,2,'ASSIGNMENT_UPDATED');",
+            connection, transaction))
+        {
+            history.Parameters.AddWithValue("event", historyEventId);
+            history.Parameters.AddWithValue("aggregate", assignments[0]);
+            Assert.Equal(1, await history.ExecuteNonQueryAsync());
+        }
+
+        var payloadHash = System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes($"event:{outboxEventId:N}"));
+        await using (var outbox = new NpgsqlCommand(
+            $"INSERT INTO {quotedSchema}.audit_outbox(event_id,payload_hash,state) VALUES (@event,@hash,'PENDING');",
+            connection, transaction))
+        {
+            outbox.Parameters.AddWithValue("event", outboxEventId);
+            outbox.Parameters.AddWithValue("hash", payloadHash);
+            Assert.Equal(1, await outbox.ExecuteNonQueryAsync());
+        }
+        acquired.Add("60:domain-history:append");
+        acquired.Add("70:audit-outbox:append");
+
+        await transaction.CommitAsync();
+        return acquired.ToArray();
+    }
+
     private static string[] CandidateRankedOrder(
         Guid[] branches, Guid[] warehouses, Guid[] assignments) =>
         branches.OrderBy(x => x.ToString("N"), StringComparer.Ordinal)
