@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Security.Claims;
+using MDGsm.IdentityAccess.Application;
 
 namespace MDGsm.Api.Security;
 
@@ -7,12 +8,8 @@ namespace MDGsm.Api.Security;
 /// Exposes only request-scoped identity facts installed by SessionAuthenticationMiddleware.
 /// These claims are not accepted from client headers or request data.
 /// </summary>
-public interface IAuthenticatedActorContext
+public interface IAuthenticatedActorContext : IValidatedRequestPrincipalAccessor
 {
-    Guid AccountId { get; }
-    Guid SessionId { get; }
-    long CredentialVersion { get; }
-    DateTimeOffset AuthenticatedAtUtc { get; }
 }
 
 public sealed class HttpAuthenticatedActorContext(IHttpContextAccessor accessor) : IAuthenticatedActorContext
