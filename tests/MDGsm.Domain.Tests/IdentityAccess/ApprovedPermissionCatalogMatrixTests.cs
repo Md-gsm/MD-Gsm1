@@ -11,6 +11,7 @@ public sealed class ApprovedPermissionCatalogMatrixTests
     private static readonly string[] ApprovedCatalog =
     [
         "persons.read", "persons.create", "persons.update", "persons.archive", "persons.merge", "persons.export",
+        "persons.sensitive.read",
         "repairs.read", "repairs.create", "repairs.update", "repairs.assign", "repairs.complete",
         "repairs.worklog.write", "repairs.parts.consume", "repairs.deliver", "repairs.cancel", "repairs.export",
         "inventory.read", "inventory.item.create", "inventory.item.update", "inventory.receipt.create",
@@ -102,6 +103,18 @@ public sealed class ApprovedPermissionCatalogMatrixTests
             "persons.read", "repairs.read", "inventory.read", "sales.read",
             "purchasing.read", "cash.read", "finance.read",
             "dashboard.read", "dashboard.configure.self", "reports.read", "reports.print");
+    }
+
+    [Fact]
+    public void Sensitive_person_data_permission_remains_super_admin_only()
+    {
+        Assert.True(PermissionCatalog.IsKnown("persons.sensitive.read"));
+        Assert.True(PermissionCatalog.RoleHasPermission(RoleCatalog.SuperAdmin, "persons.sensitive.read"));
+
+        foreach (var role in RoleCatalog.All.Where(x => x != RoleCatalog.SuperAdmin))
+        {
+            Assert.False(PermissionCatalog.RoleHasPermission(role, "persons.sensitive.read"));
+        }
     }
 
     [Fact]
