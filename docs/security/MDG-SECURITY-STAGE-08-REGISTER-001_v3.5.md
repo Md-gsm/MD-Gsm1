@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Register ID | MDG-SECURITY-STAGE-08-REGISTER-001 |
-| Version / Date | 3.4 / 2026-11-22 |
+| Version / Date | 3.5 / 2026-11-22 |
 | Supersedes | v3.4 |
 | Package | O20-E/O20-F closure work; PR #91 revert remains Draft/unmerged; this branch is not merged |
 | Branch | `security/o20-o21-final-closure` |
