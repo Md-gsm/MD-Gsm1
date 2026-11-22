@@ -11,11 +11,12 @@ namespace MDGsm.Domain.Tests.IdentityAccess;
 public sealed class SessionAuthenticationMiddlewareTests
 {
     private static readonly Guid TrustedAccount = Guid.Parse("01936f3e-7b2a-7abc-8def-0123456789ab");
+    private static readonly Guid TrustedSession = Guid.Parse("01936f3e-7b2a-7abc-8def-0123456789ac");
 
     [Fact]
     public async Task Installs_only_database_resolved_actor_and_renews_valid_session()
     {
-        var resolver = new StubResolver(new ValidatedSessionIdentity(AccountId.From(TrustedAccount), 7));
+        var resolver = new StubResolver(new ValidatedSessionIdentity(AccountId.From(TrustedAccount), 7, false, TrustedSession));
         var sessions = new StubSessions(true);
         var services = CreateServices(resolver, sessions);
         var context = CreateContext(services, "/api/v2/persons/" + Guid.NewGuid().ToString("D"));
@@ -29,6 +30,9 @@ public sealed class SessionAuthenticationMiddlewareTests
         Assert.True(called);
         Assert.Equal(TrustedAccount.ToString("D"), context.User.FindFirstValue(ClaimTypes.NameIdentifier));
         Assert.Equal("MDGsm.Session", context.User.Identity?.AuthenticationType);
+        Assert.Equal(TrustedSession.ToString("D"), context.User.FindFirstValue("mdgsm:session_id"));
+        Assert.Equal("7", context.User.FindFirstValue("mdgsm:credential_version"));
+        Assert.NotNull(context.User.FindFirstValue("mdgsm:authenticated_at_utc"));
         Assert.Equal(7L, sessions.LastCredentialVersion);
         Assert.Equal(32, resolver.LastDigestLength);
         Assert.Equal(1, sessions.HeartbeatCalls);
