@@ -38,8 +38,8 @@ public sealed class IdentityAccessLiveSessionPermissionPostgresProofTests
             await ExecuteAsync(cs, """
                 INSERT INTO identity.accounts
                     (account_id,login_name,login_name_normalized,password_hash,password_hash_version,
-                     must_change_password,is_enabled,credential_version,created_at_utc,updated_at_utc)
-                VALUES (@account,@login,@normalized,'test-only-hash',1,false,true,2,clock_timestamp(),clock_timestamp());
+                     must_change_password,is_enabled,is_bootstrap_account,credential_version,created_at_utc,updated_at_utc)
+                VALUES (@account,@login,@normalized,'test-only-hash',1,false,true,false,2,clock_timestamp(),clock_timestamp());
                 """,
                 ("account", accountId), ("login", loginName), ("normalized", loginNormalized));
 
