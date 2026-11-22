@@ -264,16 +264,13 @@ public sealed class O20OrganizationPolicyPostgresProofTests
             var warehouse = Guid.NewGuid();
             var account = Guid.NewGuid();
             var assignment = Guid.NewGuid();
-            await ExecuteAsync(cs, $"""
-                INSERT INTO {q}.branch(branch_id,state) VALUES
-                    (@source,'ACTIVE'),(@destination,'ACTIVE'),(@inactive,'INACTIVE');
-                INSERT INTO {q}.warehouse(warehouse_id,branch_id,state)
-                    VALUES (@warehouse,@source,'ACTIVE');
-                INSERT INTO {q}.account_warehouse_assignment(assignment_id,account_id,warehouse_id,state)
-                    VALUES (@assignment,@account,@warehouse,'ACTIVE');
-                """,
-                ("source", sourceBranch), ("destination", destinationBranch), ("inactive", inactiveBranch),
-                ("warehouse", warehouse), ("assignment", assignment), ("account", account));
+            await ExecuteAsync(cs, $"INSERT INTO {q}.branch(branch_id,state) VALUES (@id,'ACTIVE');", ("id", sourceBranch));
+            await ExecuteAsync(cs, $"INSERT INTO {q}.branch(branch_id,state) VALUES (@id,'ACTIVE');", ("id", destinationBranch));
+            await ExecuteAsync(cs, $"INSERT INTO {q}.branch(branch_id,state) VALUES (@id,'INACTIVE');", ("id", inactiveBranch));
+            await ExecuteAsync(cs, $"INSERT INTO {q}.warehouse(warehouse_id,branch_id,state) VALUES (@warehouse,@branch,'ACTIVE');",
+                ("warehouse", warehouse), ("branch", sourceBranch));
+            await ExecuteAsync(cs, $"INSERT INTO {q}.account_warehouse_assignment(assignment_id,account_id,warehouse_id,state) VALUES (@assignment,@account,@warehouse,'ACTIVE');",
+                ("assignment", assignment), ("account", account), ("warehouse", warehouse));
 
             Assert.True(await ScalarBoolAsync(cs,
                 $"SELECT {q}.warehouse_scope(@account,@warehouse);",
@@ -317,11 +314,9 @@ public sealed class O20OrganizationPolicyPostgresProofTests
                 ExecuteAsync(cs, $"SELECT {q}.archive_warehouse(@warehouse);", ("warehouse", warehouse)));
             Assert.Equal("23514", blockedArchive.SqlState);
 
-            await ExecuteAsync(cs, $"""
-                UPDATE {q}.warehouse SET state='INACTIVE' WHERE warehouse_id=@warehouse;
-                UPDATE {q}.account_warehouse_assignment SET state='REVOKED' WHERE assignment_id=@assignment;
-                SELECT {q}.archive_warehouse(@warehouse);
-                """, ("warehouse", warehouse), ("assignment", assignment));
+            await ExecuteAsync(cs, $"UPDATE {q}.warehouse SET state='INACTIVE' WHERE warehouse_id=@warehouse;", ("warehouse", warehouse));
+            await ExecuteAsync(cs, $"UPDATE {q}.account_warehouse_assignment SET state='REVOKED' WHERE assignment_id=@assignment;", ("assignment", assignment));
+            await ExecuteAsync(cs, $"SELECT {q}.archive_warehouse(@warehouse);", ("warehouse", warehouse));
 
             var reactivate = await Assert.ThrowsAsync<PostgresException>(() =>
                 ExecuteAsync(cs, $"UPDATE {q}.warehouse SET state='ACTIVE' WHERE warehouse_id=@warehouse;",
