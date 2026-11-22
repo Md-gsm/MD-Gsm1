@@ -4,7 +4,7 @@ using MDGsm.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 namespace MDGsm.Infrastructure.IdentityAccess;
 public sealed class PostgresIdentityAccessStores(MdGsmDbContext db) :
- IAccountStore, ISessionStore, ILoginAttemptStore, IRolePermissionStore, IAuditWriter, ISystemPolicyStore, IRecoveryStore, IDatabaseClock
+ IAccountStore, ISessionStore, ILoginAttemptStore, IRolePermissionStore, IRequestAuthorizationStore, IAuditWriter, ISystemPolicyStore, IRecoveryStore, IDatabaseClock
 {
  public Task<DateTimeOffset> GetUtcNowAsync(CancellationToken ct) =>
   db.Database.SqlQuery<DateTimeOffset>($"SELECT clock_timestamp() AS \"Value\"").SingleAsync(ct);
@@ -76,6 +76,28 @@ public sealed class PostgresIdentityAccessStores(MdGsmDbContext db) :
    join p in db.IdentityPermissions on rp.PermissionId equals p.PermissionId
    where account.AccountId==id.Value && account.IsEnabled && p.PermissionKey==permissionKey && p.IsActive
    select p.PermissionId).AnyAsync(ct);
+ public Task<bool> HasPermissionForLiveSessionAsync(
+  AccountId accountId,Guid sessionId,long credentialVersion,string permissionKey,CancellationToken ct)=>
+  db.Database.SqlQuery<bool>($"""
+   SELECT EXISTS
+   (
+     SELECT 1
+     FROM identity.sessions s
+     JOIN identity.accounts a ON a.account_id=s.account_id
+     JOIN identity.account_roles ar ON ar.account_id=a.account_id
+     JOIN identity.role_permissions rp ON rp.role_id=ar.role_id
+     JOIN identity.permissions p ON p.permission_id=rp.permission_id
+     WHERE s.session_id={sessionId}
+       AND s.account_id={accountId.Value}
+       AND s.revoked_at_utc IS NULL
+       AND s.lease_expires_at_utc>clock_timestamp()
+       AND s.credential_version_at_issue={credentialVersion}
+       AND a.is_enabled
+       AND a.credential_version={credentialVersion}
+       AND p.permission_key={permissionKey}
+       AND p.is_active
+   ) AS "Value"
+   """).SingleAsync(ct);
  public Task<bool> HasRoleAsync(AccountId id,string roleKey,CancellationToken ct)=>
   (from ar in db.IdentityAccountRoles join role in db.IdentityRoles on ar.RoleId equals role.RoleId where ar.AccountId==id.Value&&role.RoleKey==roleKey select role.RoleId).AnyAsync(ct);
  public async Task AppendAsync(string eventType,AccountId? actor,AccountId? subject,string outcome,string correlationId,CancellationToken ct)
