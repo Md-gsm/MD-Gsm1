@@ -216,6 +216,8 @@ jobs:
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "Category=Integration" --no-restore
       - name: Run explicit O-20 support identity and catalog proof
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20SupportIdentityPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20 runtime login mapping PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20RuntimeLoginMappingPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit O-20-F emergency lifecycle PostgreSQL proof
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20EmergencyAccessPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit O-20-E Organization policy PostgreSQL proofs
