@@ -192,7 +192,7 @@ public sealed class O20OrganizationCrossAggregateConcurrencyPostgresProofTests
                 reassignment.Parameters.AddWithValue("b",destination);
                 var task=reassignment.ExecuteNonQueryAsync();
                 Assert.True(await IsBlockedAsync(cs,pid));
-                await using(var deactivate=new NpgsqlCommand($"UPDATE {q}.branch SET state='INACTIVE' WHERE branch_id=@b;",blocker,tx))
+                await using(var deactivate=new NpgsqlCommand($"SELECT {q}.deactivate_branch(@b);",blocker,tx))
                 {
                     deactivate.Parameters.AddWithValue("b",destination);
                     await deactivate.ExecuteNonQueryAsync();
