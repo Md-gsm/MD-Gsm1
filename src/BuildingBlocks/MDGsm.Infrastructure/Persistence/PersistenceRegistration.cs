@@ -29,6 +29,7 @@ public static class PersistenceRegistration
   services.AddScoped<ISessionIdentityResolver,PostgresSessionIdentityResolver>();
   services.AddScoped<ILoginAttemptStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<IRolePermissionStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
+  services.AddScoped<IRequestAuthorizationStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<IAuditWriter>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<ISystemPolicyStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<IDatabaseClock>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
