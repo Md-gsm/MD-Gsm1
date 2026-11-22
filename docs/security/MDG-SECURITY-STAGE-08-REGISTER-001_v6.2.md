@@ -12,7 +12,7 @@
 | Supersedes | v5.1 |
 | Supersedes | v5.0 |
 | Supersedes | v4.9 |
-| Status | O20 / O21 OPEN — PRIOR BOUNDED CI PASS; MULTI-ROLE GUARD SOURCE FIX / INTEGRATED TEST ADDED; LATEST CI PENDING |
+| Status | O20-E/O-20/O-21 OPEN — BOUNDED EXACT-HEAD CI PASS AT 5EB769C; EXTERNAL RELEASE GATES OPEN |
 | Branch | security/o20-o21-final-closure |
 | PR | #92 Draft / unmerged |
 
@@ -222,7 +222,7 @@ These results close only bounded source/test validation. They do not convert dis
 
 ### 10.1 Current authoritative closure matrix
 
-See `MDG-SECURITY-O20E-BLOCKER-CLOSURE-MATRIX-001 v1.0` for the full gate-by-gate evidence mapping. At a glance:
+See `MDG-SECURITY-O20E-BLOCKER-CLOSURE-MATRIX-001 v1.5` for the full gate-by-gate evidence mapping. At a glance:
 - OD-01 through OD-05 policy decisions are owner-accepted; OD-01/02/03 and Legal Hold eligibility have bounded PostgreSQL proofs.
 - IdentityAccess public Contracts v1.2 and transaction-scoped guard are source-implemented and exact-head CI-tested; module-owner acceptance and global Platform lock order remain open.
 - PermissionCatalog's owner-approved matrix is source-aligned; `organization.*` role mapping remains unapproved and absent.
