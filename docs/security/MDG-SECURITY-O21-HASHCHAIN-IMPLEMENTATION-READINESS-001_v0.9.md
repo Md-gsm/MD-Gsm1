@@ -1,0 +1,332 @@
+# O-21 AuditSecurity Hash Chain — Implementation Readiness and Proof Contract
+
+| Field | Value |
+|---|---|
+| Document ID | MDG-SECURITY-O21-HASHCHAIN-IMPLEMENTATION-READINESS-001 |
+| Version / Date | 0.9 / 2026-11-22 |
+| Supersedes | v0.8 |
+| Supersedes | v0.7 |
+| Supersedes | v0.6 |
+| Baseline | MDG-ARCH-MASTER-001 v3.0.3 N.7; Stage 08 Security Design v0.1; Reconciliation Addendum v0.1 |
+| Status | OWNER-APPROVED CRYPTOGRAPHIC/WORM POLICY — DISPOSABLE POSTGRESQL POC; PRODUCTION IMPLEMENTATION, PROVIDER PROOFS AND INDEPENDENT ACCEPTANCE OPEN |
+| Execution | A disposable-only PostgreSQL PoC test source was added to PR #86. It first passed on SHA `8e0b3e10a96e6e605be6513cc22e19673d8c89ac` (workflow `44910227811`), where a separate IdentityAccess test failed. After that unrelated IdentityAccess assertion was corrected, the **same unchanged Hash Chain test source blob** passed again on SHA `7ef35cca3b3c86757ce1893656f9b6f617cdb4d9` in workflow `44912452300`, PostgreSQL job `136871018414`, as part of a complete **37 passed / 0 failed** integration suite. No production schema, migration, key, checkpoint, WORM storage or production configuration was created. |
+
+## 1. Current implementation finding
+
+The current repository tree contains the Stage 08 design documents but no AuditSecurity module, canonical AuditEvent stream implementation, hash-chain writer, checkpoint signer/exporter, independent verifier or operational runbook. The IdentityAccess migration has an append-only `identity.security_audit_events` table and a trigger rejecting UPDATE/DELETE, but that table is not the canonical cross-module AuditSecurity ledger and does not implement N.7 Hash Chain requirements.
+
+The current IdentityAccess security audit table must not be relabeled as the canonical Hash Chain. IdentityAccess and other modules submit immutable audit intents through transactional outboxes; AuditSecurity alone owns canonical event ordering, chain heads, checkpoints, verification and retention.
+
+## 2. Required component boundaries
+
+| Component | Sole responsibility | Must not do |
+|---|---|---|
+| AuditSecurity domain | Canonical event envelope, deterministic canonicalization version, stream sequence and hash invariants | Own account/session policy or business-module private data |
+| AuditSecurity persistence | Append event + sequence + predecessor + chain head atomically; idempotent EventId handling | Update/delete committed canonical events |
+| AuditSecurity verifier | Read-only recomputation, continuity/signature/anchor checks and evidence report | Repair, rewrite, reseed or truncate the chain |
+| Platform checkpoint adapter | Sign checkpoint using externally managed asymmetric key; export to independent append-only/WORM trust domain | Store private signing key in PostgreSQL, application config or the same backup domain |
+| Source module outboxes | Durable immutable audit intents in the source business transaction | Create parallel canonical AuditEvent ledgers |
+| Operations | Monitor, alert, retain evidence, run restore verification and incident process | Automatically bless a mismatched or rolled-back chain |
+
+## 3. Canonical event and serialization contract
+
+The canonical envelope must contain:
+- EventId (stable idempotency key);
+- AuditStreamId and committed StreamSequence;
+- SchemaVersion, CanonicalizationVersion and hash algorithm identifier;
+- EventTypeCode, OccurredAtUtc and RecordedAtUtc;
+- typed ActorRef and optional SubjectRef;
+- source module and source event identity;
+- CorrelationId and CausationId;
+- outcome and allow-listed, non-secret metadata;
+- PreviousEventHash and EventHash.
+
+Canonicalization must be deterministic and versioned. The specification must fix field order, UTF-8 encoding, Unicode normalization, null representation, number encoding, UTC timestamp format, string escaping and prohibited/allowed metadata. It must not use locale-sensitive formatting, serializer defaults that can change silently, unordered maps or floating-point representations for identity-critical fields.
+
+The exact canonical byte specification and published test vectors are a hard prerequisite to implementation. At least one golden vector must cover each supported event schema version, optional/null fields, non-ASCII Persian/Arabic text, escaped characters, UTC precision and numeric edge cases. Cross-runtime implementations must produce byte-identical canonical payloads and SHA-256 hashes.
+
+Hash construction must be domain-separated and versioned, with the previous hash and canonical envelope included. Genesis uses a documented fixed marker; it must not silently use an implicit all-zero hash. The algorithm is SHA-256 as specified by Stage 08; no custom cryptographic algorithm is permitted.
+
+Secrets, password hashes, raw bearer tokens, OTPs, recovery codes, HMAC keys, connection strings and unnecessary raw PII are prohibited from canonical payloads.
+
+## 4. Two-independent-writer transaction protocol
+
+N.7 requires proof using two independent writers against the same AuditStreamId. A single process, a single connection or a sequential unit test is insufficient.
+
+Each append must:
+1. Validate the immutable event intent and supported schema/canonicalization version.
+2. Begin a PostgreSQL transaction.
+3. Acquire the stream-head row lock for the target AuditStreamId.
+4. Resolve EventId idempotency. Same EventId + same canonical digest returns the original committed event; same EventId + different digest fails closed.
+5. Read the committed chain head after lock acquisition.
+6. Allocate the next committed StreamSequence; calculate PreviousEventHash and EventHash.
+7. Insert the canonical event and update the stream head in the same transaction.
+8. Commit both atomically. Any error/rollback leaves neither a committed event nor an advanced head.
+
+Unique constraints must enforce EventId and (AuditStreamId, StreamSequence). Concurrent appends serialize only within the same stream. No gap skipping, fork repair, sequence reseeding or automatic tail deletion is allowed.
+
+### Required failure-injection scenarios
+
+| Scenario | Writer A | Writer B | Required invariant |
+|---|---|---|---|
+| Parallel commit | Holds stream lock and commits sequence N | Waits, then commits sequence N+1 | One linear chain; B references A |
+| Rollback | Locks stream, allocates tentative N, then rolls back | Appends after rollback | N is not committed; next committed event uses the next valid committed sequence with no fork |
+| Process crash before commit | Terminates after event/head writes but before COMMIT | Retries/appends after recovery | PostgreSQL rolls back both writes; one valid head |
+| Connection loss during COMMIT | Commit outcome deliberately made unknown | Retries same EventId | Read-after-unknown-commit resolves stable outcome; no duplicate or fork |
+| Same EventId / same payload | Appends first copy | Replays same event | Returns original event, no second sequence |
+| Same EventId / different payload | Appends first copy | Replays changed payload | Fails closed and alerts; no mutation |
+| Out-of-order delivery | Receives later source intent first | Receives earlier source intent later | Ordering policy is explicit per stream; stable source event identity prevents silent reorder or duplicate |
+| Different streams | Appends to stream A | Appends to stream B | Independent stream heads; no unsupported global order claim |
+
+## 5. Checkpoint trust, key custody and external anchor
+
+A checkpoint must include AuditStreamId, last committed StreamSequence, chain-head hash, schema/canonicalization/hash versions, checkpoint timestamp and previous checkpoint reference.
+
+The signing private key must be Platform-managed and outside PostgreSQL and the application database backup domain. The selected provider/algorithm, key policy, backup/recovery mechanism, custody owners, separation of duties, rotation schedule and revocation process are Platform decisions and are not invented here. Prefer non-exportable key material where supported. No private key or signing secret is placed in source, appsettings, installer, database, CI logs or application telemetry.
+
+The signed checkpoint must be exported to independently controlled append-only/WORM storage whose administrators and credentials are separate from PostgreSQL database administrators. A checkpoint copy in PostgreSQL is not a trust anchor.
+
+Required lifecycle proof:
+- initial key provisioning and owner/custodian separation;
+- signing authorization and audit trail;
+- public-key and key-version retention;
+- key rotation without rewriting historical checkpoints;
+- backup and recovery of verification material;
+- private-key revocation and compromise incident procedure;
+- failed signing/export and ambiguous provider outcomes;
+- external-anchor availability and integrity;
+- restore comparison against the latest independently held checkpoint.
+
+A lost, revoked or compromised signing key must not silently validate old or new history. Any trust epoch transition must be explicit and auditable.
+
+## 6. Independent verifier and runbook
+
+The verifier must be a separately invocable, read-only utility. It must:
+- verify deterministic canonical bytes and each EventHash;
+- verify sequence continuity and PreviousEventHash;
+- detect duplicate EventId and duplicate stream sequence;
+- verify checkpoint signatures and retained public-key versions;
+- compare restored stream heads with the latest independent external checkpoint;
+- report first failing stream/sequence, failure category and evidence digest;
+- exit non-zero on any mismatch and never modify source data.
+
+The runbook must define scheduled verification, after-restore verification, incident verification, checkpoint export monitoring, alert ownership, evidence preservation, quarantine, escalation and recovery decision authority. A mismatch freezes trusted export for the affected stream and triggers incident response. There is no automatic repair or re-seeding.
+
+## 6.1 Disposable PostgreSQL PoC candidate added in PR #86
+
+The new integration test is `tests/MDGsm.Domain.Tests/Security/AuditSecurityHashChainPostgresProofTests.cs`. It creates an ephemeral schema and ephemeral role set only inside the marked disposable PostgreSQL test database. It is test code, not an AuditSecurity production module or migration.
+
+Candidate test coverage in source:
+- Two independent PostgreSQL LOGIN writers append concurrently into the same stream; their shared NOLOGIN group can execute only the owner-controlled `SECURITY DEFINER` append/lock functions. Writers have no direct table SELECT/INSERT/UPDATE/DELETE/TRUNCATE rights. The functions use a fixed `search_path`, schema-qualified objects and a NOLOGIN owner.
+- The append transaction locks the stream head, checks the prior sequence/hash, inserts the event, and advances the head with a compare-and-swap predicate. `EventId` is serialized with an advisory transaction lock; identical intent replay returns the original sequence/hash, while changed intent with the same id fails.
+- Canonical intent serialization is versioned, UTF-8/NFC, length-prefixed and ordinally sorted. The envelope includes typed actor/subject identity, source module/event, correlation/causation IDs, outcome, hash algorithm, occurred time, DB-read recorded time, metadata, sequence and predecessor hash.
+- The source includes a fixed golden digest vector, two concurrent writers, injected transaction rollback, PostgreSQL backend termination before commit, simulated lost acknowledgement after commit followed by same-EventId replay, and conflicting replay rejection.
+- A read-only verifier recomputes canonical intent/event bytes, verifies sequence continuity, predecessor hashes, current chain head and an externally pinned RSA-PSS checkpoint public key. The candidate exercises key-id pinning, old/new test keys and a corrupted signature.
+- Tamper and deletion probes modify/remove the first event only as the disposable DB owner; the read-only verifier must detect the modified payload and a sequence gap. The test attempts to restore the original event after the tamper check, before testing the deletion gap.
+- Test roles/schema and temporary checkpoint file are cleaned up in `finally`.
+
+Important evidence boundary:
+- The checkpoint is written to a local temporary JSON file for test round-trip. This is **not** an independent WORM or external trust-domain anchor. The signing keys are ephemeral test-only RSA keys; they prove format/signature verification, not production key custody, protected key storage, backup, recovery, rotation governance or revocation.
+- The candidate obtains a DB time value from a test-only SECURITY DEFINER lock function and binds it into the event envelope. The current candidate still passes the recorded timestamp from the test writer into the append function; production must make timestamp assignment and hash construction non-forgeable at the trusted persistence boundary before claiming authoritative database time.
+- No production AuditSecurity module, canonical schema, application/outbox adapter, durable outbox retry, checkpoint scheduler/provider, WORM integration, key registry, independent deployed verifier, alerts or runbook has been implemented.
+- The Hash Chain PoC integration test is **PASS on the exact unchanged PoC test-file blob** `4c90263f019c27f5063f0cbe1c1793be44bfc50c` within the latest successful 37/37 PostgreSQL 18 suite on SHA `284ac9dbb94fbbd05d19de18146ccc27d35d8cbf` (workflow `44914448417`, job `136876940898`). The PoC test source blob is unchanged from the earlier passing run. This test-source PASS is not production AuditSecurity acceptance. External WORM/key custody/outbox/runbook/restore/alerting and independent security review remain open.
+
+### PoC-to-acceptance mapping
+
+| Requirement | Candidate coverage in source | Status |
+|---|---|---|
+| Canonical serialization / golden vector | Versioned binary UTF-8/NFC envelope, full typed source/correlation fields and fixed vector | SOURCE ADDED — CI PENDING |
+| Concurrent independent writers / no fork | Two separate LOGINs, 40 events on one stream, locked head and compare-and-swap | SOURCE ADDED — CI PENDING |
+| Rollback / crash / replay / unknown outcome | Injected rollback, backend termination, lost acknowledgement + same EventId replay, changed-intent conflict | SOURCE ADDED — CI PENDING |
+| Read-only verification / tamper / gap | Separate SELECT-only verifier and mutation/deletion detection | SOURCE ADDED — CI PENDING |
+| Signed checkpoint / trust pinning | Test RSA-PSS checkpoint and out-of-band public-key pinning | SOURCE ADDED — CI PENDING; TEST ONLY |
+| External WORM / independent anchor | None | OPEN — NOT IMPLEMENTED |
+| Production key custody / backup / restore / revocation | None; only ephemeral test keys | OPEN — NOT IMPLEMENTED |
+| Outbox durability / outage replay / source transaction integration | None | OPEN — NOT IMPLEMENTED |
+| Alerts, operations runbook, restore continuity | None | OPEN — NOT IMPLEMENTED |
+## 6.2 Recorded PoC execution evidence — workflow run 44910227811
+
+| Field | Evidence |
+|---|---|
+| Repository / PR | `Md-gsm/MD-Gsm1`, PR #86 (Draft) |
+| Tested source SHA | `8e0b3e10a96e6e605be6513cc22e19673d8c89ac` |
+| Workflow run | `44910227811` — MD-Gsm Persons Module Gates |
+| PostgreSQL job | `persons-postgres-migrations`, job `136864370902` |
+| Integration result | 37 total; 36 passed; one failed test was `IdentityAccessHttpEndToEndTests.Http_login_issues_opaque_session_and_forced_password_change_unlocks_only_after_relogin` at its runtime privilege assertion. The Hash Chain PoC test was among the passing tests. |
+| PoC test source identity | The PoC test file blob at the tested SHA is `4c90263f019c27f5063f0cbe1c1793be44bfc50c`; the current PR head contains the identical blob. |
+
+The PoC's successful execution proves the disposable concurrency/rollback/backend-termination/replay/checkpoint/verifier test code completed on PostgreSQL 18 for that file version. It does **not** prove production AuditSecurity readiness, external WORM anchoring, key custody, outbox delivery, or independent attestation. The failed IdentityAccess test from that run was corrected separately; the latest full package SHA must still pass the current end-to-end job.
+## 6.3 Full integration-suite confirmation on SHA 7ef35cca…
+
+| Field | Result |
+|---|---|
+| Source SHA | `7ef35cca3b3c86757ce1893656f9b6f617cdb4d9` |
+| Workflow | `44912452300` — MD-Gsm Persons Module Gates |
+| PostgreSQL job | `136871018414` — `persons-postgres-migrations` |
+| Integration suite | **37 passed / 0 failed / 0 skipped** |
+| Hash Chain PoC test source blob | `4c90263f019c27f5063f0cbe1c1793be44bfc50c` — identical to tested source blob in previous run |
+
+This later 37/37 run is the stronger execution evidence. It shows the PoC test was successful together with the runtime_app IdentityAccess hardening tests. The run does not satisfy the external WORM/key custody/outbox/runbook/independent-review acceptance criteria. The latest PR head after documentation/checksum successors is a different SHA and its package CI must finish before the Stage 08 package is considered fully verified.
+## 6.4 Latest full-suite execution on exact PR package SHA
+
+| Evidence | Result |
+|---|---|
+| SHA | `284ac9dbb94fbbd05d19de18146ccc27d35d8cbf` |
+| Workflow / job | `44914448417` / `136876940898` |
+| PostgreSQL integration suite | 37 passed / 0 failed / 0 skipped |
+| Hash Chain source blob | `4c90263f019c27f5063f0cbe1c1793be44bfc50c` (unchanged) |
+| Checksum verifier | `persons-spec-lint` job `136876940885` — PASS, 459 files |
+
+The Hash Chain PoC passed again inside the full PostgreSQL 18 suite after the email-only Recovery privilege correction. This is stronger evidence than the earlier one-test run: the same PoC runs alongside the runtime_app identity/API and session lifecycle tests. It still does not close O-21's production components and platform dependencies.
+
+## 7. Required test catalogue — NOT RUN
+
+| ID | Test | Pass condition |
+|---|---|---|
+| O21-T01 | Canonical golden vectors | All implementations produce byte-identical bytes and SHA-256 |
+| O21-T02 | Two independent concurrent writers | One contiguous stream with correct predecessor links |
+| O21-T03 | Rollback atomicity | Failed transaction commits neither event nor head |
+| O21-T04 | Crash before commit | Restart leaves one valid prior head; retry is safe |
+| O21-T05 | Unknown commit outcome | Stable EventId resolves outcome without duplicate append |
+| O21-T06 | EventId replay | Same digest deduplicates; changed digest fails closed |
+| O21-T07 | Tamper/reorder/delete/gap | Verifier identifies first invalid stream/sequence |
+| O21-T08 | Checkpoint signature | Valid signatures verify; invalid/unknown key version fails closed |
+| O21-T09 | External anchor separation | DB-only administrator cannot replace external WORM checkpoint |
+| O21-T10 | Key custody and backup | Recovery of verification trust is proven without exposing private key |
+| O21-T11 | Rotation and revocation | Historical checkpoints remain verifiable; revoked key cannot sign new checkpoints |
+| O21-T12 | Restore continuity | Restored head matches latest independent checkpoint or stream is quarantined |
+| O21-T13 | Read-only verifier | Verification does not mutate events, heads, checkpoints or source DB |
+| O21-T14 | Outbox outage/replay | Durable retry, dedupe and no silent event loss |
+| O21-T15 | Secret/PII exclusion | No prohibited secret or unnecessary raw PII enters canonical events |
+| O21-T16 | Alerts/runbook | Gap, corruption, checkpoint lag and provider failures alert the assigned operator |
+
+All tests above are specifications only and NOT RUN / NOT PASS.
+
+## 8. External decisions required before executable implementation
+
+1. Platform selects the supported asymmetric signing provider and algorithm; key custody, backup, recovery, rotation and revocation owners.
+2. Platform/owner selects the independent append-only/WORM storage trust domain and access separation.
+3. Platform/owner sets checkpoint cadence, retention and legal-hold behavior; no duration is invented.
+4. Architecture confirms stream partitioning and whether any future global ordering is required. Current design claims stream-local ordering only.
+5. Owner confirms the canonical event metadata allow-list and data-minimization policy.
+6. O-20 canonical database roles and grants must be resolved before production AuditSecurity database privileges are provisioned.
+
+## 9. Status and non-authorization
+
+O-21 remains **OPEN / disposable PoC integration test PASS in the 37/37 integration suite; production and independent acceptance OPEN**. This v0.2 documents candidate test source only; it does not certify a successful PostgreSQL execution or satisfy the external anchor, platform key-operations, outbox, operational or independent-review requirements. No canonical AuditSecurity schema, DDL, migration, key, checkpoint, WORM bucket, production secret, grant, runtime activation, audit purge, G1 activation, Posting Release or Go-Live is authorized by this document.
+
+**END — MDG-SECURITY-O21-HASHCHAIN-IMPLEMENTATION-READINESS-001 v0.5**
+
+
+## 8. Owner-approved implementation decisions — 2026-11-21
+
+The owner approved the following O-21 policy baseline. These decisions resolve the algorithm and storage-class choices but do not claim that a production provider, key, WORM bucket, AuditSecurity module or operational control has been deployed.
+
+### 8.1 Cryptographic profile
+
+- Hash algorithm: SHA-256, with domain separation and explicit version identifiers as defined by the canonical event contract.
+- Checkpoint signature: RSA-3072 with RSA-PSS and SHA-256.
+- Private signing key: held by a Platform-managed key service outside PostgreSQL, application configuration, installer, source control, CI artifacts/logs and the application backup domain.
+- Prefer non-exportable private key material. Signing authorization must be separated from database administration and independently audited.
+- Public keys, key identifiers, algorithm identifiers and validity/revocation history must be retained so historical checkpoints remain verifiable.
+- Key rotation creates a new key identifier/trust epoch and never rewrites historical events or checkpoints. Revocation blocks new signing under the compromised key; it does not silently erase historical verification evidence.
+
+### 8.2 Independent checkpoint storage
+
+- The accepted storage class is Object Storage with immutable retention / Object Lock in **Compliance mode** (or a provider-neutral implementation proven to provide equivalent non-bypassable retention semantics).
+- The storage account, administrators, credentials and recovery authority must be separate from PostgreSQL database administration and application runtime.
+- The database may retain a convenience copy, but only the independently controlled immutable object is the external trust anchor.
+- A checkpoint object is content-addressed and includes stream ID, committed sequence, head hash, schema/canonicalization/hash versions, checkpoint timestamp, previous checkpoint reference, signing key ID and signature.
+- The system must fail closed for trust/export status if the independent anchor is unavailable, replaced, unverifiable or behind the required checkpoint policy. It must never auto-bless a restored or divergent chain.
+- Provider selection, region, retention duration, checkpoint cadence, legal hold, cost controls and named operational custodians remain deployment decisions; none are invented or hard-coded in this architecture decision.
+
+### 8.3 Independent verifier and recovery
+
+- The verifier is a separately invocable, read-only component. It recomputes canonical bytes and hashes, verifies sequence/predecessor continuity, validates signatures against pinned public-key history and compares the restored head to the latest independently held checkpoint.
+- Any mismatch produces a non-zero result, identifies the first failing stream/sequence, preserves evidence and places the affected stream in quarantine. No repair, truncation, reseeding or automatic continuation is allowed.
+- Restore acceptance requires an explicit comparison against the external checkpoint and a recorded operator decision. Database-only administrators cannot replace the independent anchor.
+- Alerts are required for checkpoint lag, signing/export failures, signature/key errors, chain gaps, tampering, restore divergence and verifier failures.
+
+### 8.4 Implementation gates
+
+1. Define provider-neutral signing and immutable-object interfaces; do not bind the domain to one cloud vendor.
+2. Implement the production AuditSecurity append/verify core and durable source-module Outbox integration; database timestamp assignment and hash construction must occur at a trusted persistence boundary and must not be caller-forgeable.
+3. Implement provider adapters only after deployment selects a compatible key service and Object Lock Compliance store.
+4. Prove key provisioning, signing authorization, rotation, backup/recovery of verification material, revocation and compromise response.
+5. Prove immutable-object retention against a separate administrator identity, plus restore continuity and read-only verification.
+6. Complete alerts, runbook, secret/PII exclusion tests and independent security review.
+
+The current test-only RSA keys and local temporary JSON checkpoint remain PoC fixtures. They are not substitutes for the approved key service or independent immutable storage. O-21 remains OPEN until all implementation gates above pass on an exact accepted SHA and receive independent review.
+
+**END ADDENDUM — OWNER-APPROVED O-21 POLICY BASELINE v0.6**
+
+## 10. O-21 PoC hardening — checkpoint profile and chain metadata
+
+The disposable PostgreSQL PoC source was extended after owner approval to align the test checkpoint envelope with the approved policy profile:
+
+- Ephemeral signing keys now use RSA-3072; signatures use RSA-PSS with SHA-256.
+- The signed checkpoint bytes now include schema version, canonicalization version, hash algorithm identifier, stream ID, committed sequence, head hash, key ID, UTC checkpoint timestamp and optional previous-checkpoint reference.
+- A content reference is calculated over the canonical signed bytes and signature. The rotation test creates a checkpoint under a new key ID and links it to the prior checkpoint reference without rewriting the earlier checkpoint.
+- The verifier rejects an untrusted key ID, invalid signature, altered previous-checkpoint reference, unsupported canonicalization version and unsupported hash-algorithm identifier.
+- Existing disposable PoC coverage remains for independent concurrent writers, atomic append/head update, rollback and backend termination, unknown commit outcome/idempotent replay, conflicting EventId replay, canonicalization golden vector, read-only verification, chain tamper/deletion detection and checkpoint-to-ledger head comparison.
+
+**Evidence status: source changed; exact-head PostgreSQL 18 CI PENDING.** This is still a test-only simulation: keys are ephemeral process memory and the checkpoint file is local temporary storage. The content reference is not an Object Lock/WORM anchor; the test does not prove platform key custody, key backup/recovery, operational revocation/custodian separation, source-module transactional outbox integration, production append persistence, alerts or runbook. No production AuditSecurity component or provider adapter is implied. O-21 remains OPEN pending CI, production implementation, independent external-anchor/key-service proofs, recovery/restore exercises and independent review.
+
+**END ADDENDUM — O-21 DISPOSABLE CHECKPOINT HARDENING v0.1**
+
+
+## 11. Exact current O-21 evidence boundary — 2026-11-22 (v0.7)
+
+### 11.1 Existing executable proof
+
+`tests/MDGsm.Domain.Tests/Security/AuditSecurityHashChainPostgresProofTests.cs` is a single large marked-disposable PostgreSQL integration scenario. It exercises two independent writers, atomic event/sequence/head updates, rollback and backend termination, unknown-commit replay/idempotency, duplicate EventId/hash conflict, canonicalization vectors, RSA-3072/RSA-PSS/SHA-256 checkpoint signing, key-ID rotation, trusted public-key pins, verifier read-only behavior, and detection of tampered/deleted/reordered chain evidence. The test uses temporary database objects, ephemeral process-memory RSA keys and local temporary checkpoint files.
+
+The PR workflow now invokes this class explicitly by fully-qualified name, in addition to the general Category=Integration suite. The explicit invocation has been newly added and does not yet have a latest exact-head CI result.
+
+### 11.2 Production component inventory
+
+The repository still contains no executable AuditSecurity module or production canonical AuditEvent pipeline. The existing IdentityAccess identity.security_audit_events table is not the shared canonical ledger. The following production components remain absent or unproven:
+- canonical AuditSecurity writer, stream/sequence allocator and database-owned timestamp/hash boundary;
+- production EventId deduplication and durable acknowledgement API/contract;
+- source-module transactional outbox adapters and retry/reconciliation workers;
+- platform-managed non-exportable RSA-3072 key custody, key authorization separation, backup/recovery, rotation/revocation and trust epochs;
+- independent Object Lock Compliance (or proven equivalent) adapter and separately administered account;
+- external checkpoint cadence, continuity on restore and latest-anchor comparison;
+- standalone read-only verifier and operational quarantine;
+- alerts, dashboards, recovery/incident runbook, retention/legal hold and independent Security review.
+
+### 11.3 Acceptance interpretation
+
+Owner-approved algorithms and storage class are design decisions, not proof that provider infrastructure has been deployed. No cloud provider, region, retention period, cadence, custodian or recovery account is inferred by this document. The outbox PoC added for O20 uses a synthetic canonical receiver and does not constitute AuditSecurity.
+
+**Disposition:** O-21 cryptographic design and disposable PoC exist; production AuditSecurity, outbox integration, external key custody, immutable external anchor, independent verifier, restore/operations proof and independent exact-SHA review remain OPEN. O-21 NOT CLOSED.
+
+**END — O-21 readiness successor v0.7**
+
+
+## 12. Exact-head disposable PostgreSQL proof update — 2026-11-22 (v0.8)
+
+At source/test SHA 448b6cc9809a934a85507f4213de1e4395a0b74b, the explicit workflow step Run explicit O-21 AuditSecurity hash-chain PostgreSQL proof passed in Linux PostgreSQL job persons-postgres-migrations (workflow 45046411908). The selected test AuditSecurityHashChainPostgresProofTests.Two_independent_writers_are_serialized_and_chain_is_verifiable_and_tamper_evident passed on the marked disposable PostgreSQL database.
+
+The same workflow ran the complete 52/52 .NET integration suite and completed adjacent O20 proofs for local outbox atomicity and replay/conflict quarantine, idempotency concurrency, deterministic candidate UUID lock order, Organization relationship history, maker-checker policy, live IdentityAccess permission, revocation/permission linearization and transaction-scoped IdentityAccess guard.
+
+This is an exact-head test result for the disposable PoC only. It does not convert ephemeral RSA-3072 keys or local test checkpoint files into an external trust anchor. No production AuditSecurity module, canonical writer/EventId durable ACK endpoint, production source outbox, KMS/HSM, Object Lock Compliance bucket, external verifier, restore checkpoint, production alerts or runbook exists at this source head.
+
+The same SHA's CodeQL and Windows Preview Installer runs completed successfully. The Windows PostgreSQL migration job was still in progress at last inspection, so no all-platform full workflow PASS is claimed.
+
+**Disposition:** O21 disposable cryptographic/hash-chain PoC PASS at exact Linux test head 448b6cc...; production AuditSecurity, external WORM/KMS, verifier, restore/operations and independent review remain OPEN. O-21 NOT CLOSED.
+
+**END — O-21 readiness successor v0.8**
+
+
+## 13. Updated exact-head disposable PostgreSQL evidence — 2026-11-22 (v0.9)
+
+At source/test head `5096fe9693a65213321f1b123341a220a9826a7d`, primary workflow `45047243289` completed successfully with all 13 jobs passing. The explicitly selected `AuditSecurityHashChainPostgresProofTests.Two_independent_writers_are_serialized_and_chain_is_verifiable_and_tamper_evident` passed in the Linux PostgreSQL 18 job. The general marked integration suite passed 52/52, and the .NET suite passed 242/242. CodeQL, Windows Preview Installer, Project Charter Owner Gate and Windows PostgreSQL 18 migrations also succeeded on that SHA.
+
+This confirms the current disposable PoC source on the specified commit, including two independent writers, transactional sequence/head integrity, rollback/backend termination, unknown-commit replay, EventId/hash conflict behavior, canonicalization, RSA-3072/RSA-PSS/SHA-256 checkpoints, key-ID rotation, pinned public-key verification and tamper detection.
+
+The proof still uses ephemeral test keys and local temporary checkpoint files. It does not provide production AuditSecurity canonical writer/EventId durable-ACK endpoint, deployed source-module outbox, platform-managed non-exportable HSM/KMS signing key, independent Object Lock Compliance anchor, separately administered custody, key recovery/trust epochs, external checkpoint continuity, independent verifier deployment, alerting/quarantine operations, restore runbook or legal retention/hold implementation.
+
+**Disposition:** O-21 disposable cryptographic/hash-chain PoC PASS at exact source/test SHA `5096fe9693a65213321f1b123341a220a9826a7d`; production AuditSecurity, outbox integration, external WORM/KMS, verifier, restore/operations and independent review remain OPEN. O-21 NOT CLOSED.
+
+**END — O-21 readiness successor v0.9**
