@@ -178,22 +178,31 @@ public sealed class IdentityAccessAuthorizationContractAdapter(
             AddParameter(command, "@permission_key", permissionKey);
 
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            var allowed = await reader.ReadAsync(cancellationToken);
-            if (allowed
-                && (reader.GetGuid(0) != accountId
-                    || reader.GetGuid(1) != sessionId
-                    || !string.Equals(reader.GetString(4), permissionKey, StringComparison.Ordinal)))
+            long authorizedGrantRows = 0;
+            while (await reader.ReadAsync(cancellationToken))
             {
-                return new PermissionDecision(
-                    PermissionDecisionStatus.Unavailable, permissionKey, accountId, sessionId,
-                    credentialVersion, ModuleContractVersion.Current, "authorization_row_identity_mismatch");
+                // Drain the complete permission-grant result. PostgreSQL acquires FOR SHARE
+                // row locks as result rows are visited; reading only the first row would leave
+                // additional role/membership/grant paths unlocked and allow a concurrent revoke
+                // to race a union-of-roles Allow decision.
+                if (reader.GetGuid(0) != accountId
+                    || reader.GetGuid(1) != sessionId
+                    || !string.Equals(reader.GetString(4), permissionKey, StringComparison.Ordinal))
+                {
+                    return new PermissionDecision(
+                        PermissionDecisionStatus.Unavailable, permissionKey, accountId, sessionId,
+                        credentialVersion, ModuleContractVersion.Current, "authorization_row_identity_mismatch");
+                }
+
+                authorizedGrantRows++;
             }
 
+            var allowed = authorizedGrantRows > 0;
             return new PermissionDecision(
                 allowed ? PermissionDecisionStatus.Allowed : PermissionDecisionStatus.Denied,
                 permissionKey, accountId, sessionId, credentialVersion, ModuleContractVersion.Current,
                 allowed
-                    ? "live_permission_locked_until_transaction_end"
+                    ? "all_matching_permission_grants_locked_until_transaction_end"
                     : "session_or_permission_not_active");
         }
         catch (OperationCanceledException)
