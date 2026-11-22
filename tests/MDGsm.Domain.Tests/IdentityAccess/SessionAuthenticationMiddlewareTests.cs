@@ -52,7 +52,7 @@ public sealed class SessionAuthenticationMiddlewareTests
     [Fact]
     public async Task Rejects_session_when_lease_renewal_fails()
     {
-        var resolver = new StubResolver(new ValidatedSessionIdentity(AccountId.From(TrustedAccount), 7));
+        var resolver = new StubResolver(new ValidatedSessionIdentity(AccountId.From(TrustedAccount), 7, false, TrustedSession));
         var context = CreateContext(CreateServices(resolver, new StubSessions(false)), "/api/v2/persons/123");
         context.Request.Headers.Authorization = "Bearer " + new string('A', 43);
         var called = false;
