@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 using Npgsql;
 using Xunit;
@@ -43,28 +42,16 @@ public sealed class O20OrganizationPolicyPostgresProofTests
                         ch := substr(v, i, 1);
                         cp := ascii(ch);
                         IF cp <= 31 OR cp BETWEEN 127 AND 159 OR
-                           cp IN (173,1564,6158,8203,8204,8205,8206,8207,8234,8235,8236,8237,8238,
-                                  8288,8289,8290,8291,8292,8294,8295,8296,8297,65279,65529,65530,65531)
-                           OR cp BETWEEN 1536 AND 1541 OR cp BETWEEN 69821 AND 69821
-                           OR cp BETWEEN 69837 AND 69837 OR cp BETWEEN 78896 AND 78911
-                           OR cp BETWEEN 8293 AND 8293 OR cp BETWEEN 917505 AND 917505
+                           cp IN (173,1564,1807,6158,2274,69821,69837,65279,917505)
+                           OR cp BETWEEN 1536 AND 1541 OR cp BETWEEN 2192 AND 2193
+                           OR cp BETWEEN 8203 AND 8207 OR cp BETWEEN 8234 AND 8238
+                           OR cp BETWEEN 8288 AND 8292 OR cp BETWEEN 8294 AND 8303
+                           OR cp BETWEEN 65529 AND 65531 OR cp BETWEEN 78896 AND 78911
+                           OR cp BETWEEN 113824 AND 113827 OR cp BETWEEN 119155 AND 119162
                            OR cp BETWEEN 917536 AND 917631
                            OR position(ch in whitespace_chars) > 0 THEN
                             RAISE EXCEPTION 'business code contains forbidden scalar U+%', to_hex(cp)
                                 USING ERRCODE='22023';
-                        END IF;
-                        IF cp BETWEEN 1424 AND 1478 THEN
-                            -- Hebrew punctuation/letters are not treated specially; this branch is intentionally inert.
-                            NULL;
-                        END IF;
-                        IF cp BETWEEN 4447 AND 4448 THEN
-                            NULL;
-                        END IF;
-                        IF cp BETWEEN 55296 AND 57343 THEN
-                            RAISE EXCEPTION 'surrogate scalar is invalid' USING ERRCODE='22023';
-                        END IF;
-                        IF cp BETWEEN 8192 AND 8202 THEN
-                            RAISE EXCEPTION 'remaining whitespace is forbidden' USING ERRCODE='22023';
                         END IF;
                     END LOOP;
                     RETURN v;
@@ -341,22 +328,38 @@ public sealed class O20OrganizationPolicyPostgresProofTests
         var runes = normalized.EnumerateRunes().ToList();
         var start = 0;
         var end = runes.Count;
-        while (start < end && Rune.IsWhiteSpace(runes[start])) start++;
-        while (end > start && Rune.IsWhiteSpace(runes[end - 1])) end--;
+        while (start < end && IsUnicodeWhiteSpace(runes[start].Value)) start++;
+        while (end > start && IsUnicodeWhiteSpace(runes[end - 1].Value)) end--;
         if (start == end) throw new ArgumentException("Business code is empty.", nameof(input));
 
         var result = new StringBuilder();
         for (var i = start; i < end; i++)
         {
-            var rune = runes[i];
-            var category = Rune.GetUnicodeCategory(rune);
-            if (Rune.IsWhiteSpace(rune) ||
-                category is UnicodeCategory.Control or UnicodeCategory.Format)
+            var scalar = runes[i].Value;
+            if (IsUnicodeWhiteSpace(scalar) || IsUnicodeControl(scalar) || IsUnicodeFormat(scalar))
                 throw new ArgumentException("Business code contains a forbidden scalar.", nameof(input));
-            result.Append(rune.ToString());
+            result.Append(runes[i].ToString());
         }
         return result.ToString();
     }
+
+    // Pin the accepted canonicalization alphabet to Unicode White_Space / Cc / Cf
+    // ranges instead of inheriting the host runtime's locale or Unicode-table behavior.
+    private static bool IsUnicodeWhiteSpace(int cp) =>
+        cp is >= 0x0009 and <= 0x000D or 0x0020 or 0x0085 or 0x00A0 or 0x1680 or
+        >= 0x2000 and <= 0x200A or 0x2028 or 0x2029 or 0x202F or 0x205F or 0x3000;
+
+    private static bool IsUnicodeControl(int cp) =>
+        cp is >= 0x0000 and <= 0x001F or >= 0x007F and <= 0x009F;
+
+    private static bool IsUnicodeFormat(int cp) =>
+        cp is 0x00AD or >= 0x0600 and <= 0x0605 or 0x061C or 0x070F or
+        >= 0x0890 and <= 0x0891 or 0x08E2 or 0x180E or
+        >= 0x200B and <= 0x200F or >= 0x202A and <= 0x202E or
+        >= 0x2060 and <= 0x2064 or >= 0x2066 and <= 0x206F or
+        0xFEFF or >= 0xFFF9 and <= 0xFFFB or 0x110BD or 0x110CD or
+        >= 0x13430 and <= 0x1343F or >= 0x1BCA0 and <= 0x1BCA3 or
+        >= 0x1D173 and <= 0x1D17A or 0xE0001 or >= 0xE0020 and <= 0xE007F;
 
     private static async Task<string> OpenMarkedDisposableDatabaseAsync()
     {
