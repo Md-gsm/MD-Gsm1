@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using MDGsm.IdentityAccess.Domain;
 using Xunit;
@@ -135,6 +136,31 @@ public sealed class ApprovedPermissionCatalogMatrixTests
 
         Assert.Empty(PermissionCatalog.PermissionsForRole("unknown-role"));
         Assert.False(PermissionCatalog.RoleHasPermission("unknown-role", "persons.read"));
+    }
+
+    [Fact]
+    public void Public_catalog_views_are_read_only_and_cannot_be_mutated_by_consumers()
+    {
+        var permissionCatalog = Assert.IsAssignableFrom<ICollection<string>>(PermissionCatalog.Catalog);
+        var managerPermissions = Assert.IsAssignableFrom<ICollection<string>>(
+            PermissionCatalog.PermissionsForRole(RoleCatalog.Manager));
+        var unknownRolePermissions = Assert.IsAssignableFrom<ICollection<string>>(
+            PermissionCatalog.PermissionsForRole("unknown-role"));
+        var roles = Assert.IsAssignableFrom<ICollection<string>>(RoleCatalog.All);
+
+        Assert.True(permissionCatalog.IsReadOnly);
+        Assert.True(managerPermissions.IsReadOnly);
+        Assert.True(unknownRolePermissions.IsReadOnly);
+        Assert.True(roles.IsReadOnly);
+
+        Assert.Throws<NotSupportedException>(() => permissionCatalog.Add("organization.assignments.create"));
+        Assert.Throws<NotSupportedException>(() => managerPermissions.Add("identity.permissions.manage"));
+        Assert.Throws<NotSupportedException>(() => unknownRolePermissions.Add("persons.read"));
+        Assert.Throws<NotSupportedException>(() => roles.Add("unapproved-role"));
+
+        Assert.False(PermissionCatalog.IsKnown("organization.assignments.create"));
+        Assert.False(PermissionCatalog.RoleHasPermission(RoleCatalog.Manager, "identity.permissions.manage"));
+        Assert.False(PermissionCatalog.RoleHasPermission("unapproved-role", "persons.read"));
     }
 
     private static void AssertRole(string role, params string[] expected)
