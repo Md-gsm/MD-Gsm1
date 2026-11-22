@@ -179,11 +179,9 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
             }
             finally
             {
-                if (writerTransaction.Connection is not null)
-                {
-                    try { await writerTransaction.RollbackAsync(); }
-                    catch (PostgresException) { }
-                }
+                try { await writerTransaction.RollbackAsync(); }
+                catch (InvalidOperationException) { /* Already committed or rolled back. */ }
+                catch (PostgresException) { /* Connection was aborted during the proof. */ }
                 try { await Task.WhenAll(competingWriters).WaitAsync(TimeSpan.FromSeconds(10)); }
                 catch (Exception) { /* The outer test reports the original failure. */ }
             }
