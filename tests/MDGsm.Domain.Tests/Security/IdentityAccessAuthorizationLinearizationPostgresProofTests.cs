@@ -145,7 +145,7 @@ public sealed class IdentityAccessAuthorizationLinearizationPostgresProofTests
                 await using var connection = new NpgsqlConnection(cs);
                 await connection.OpenAsync();
                 await using var tx = await connection.BeginTransactionAsync();
-                var pid = Convert.ToInt64(await new NpgsqlCommand("SELECT pg_backend_pid()::bigint;", connection, tx).ExecuteScalarAsync());
+                var pid = await GetBackendPidAsync(connection, tx);
                 sessionUpdateStarted.TrySetResult(pid);
                 await ExecuteAsync(connection, tx,
                     $"UPDATE {q}.session SET revoked_at_utc=clock_timestamp() WHERE session_id=@session;",
@@ -158,7 +158,7 @@ public sealed class IdentityAccessAuthorizationLinearizationPostgresProofTests
                 await using var connection = new NpgsqlConnection(cs);
                 await connection.OpenAsync();
                 await using var tx = await connection.BeginTransactionAsync();
-                var pid = Convert.ToInt64(await new NpgsqlCommand("SELECT pg_backend_pid()::bigint;", connection, tx).ExecuteScalarAsync());
+                var pid = await GetBackendPidAsync(connection, tx);
                 grantRemovalStarted.TrySetResult(pid);
                 await ExecuteAsync(connection, tx,
                     $"DELETE FROM {q}.role_permission WHERE role_id=@role AND permission_id=@permission;",
@@ -171,7 +171,7 @@ public sealed class IdentityAccessAuthorizationLinearizationPostgresProofTests
                 await using var connection = new NpgsqlConnection(cs);
                 await connection.OpenAsync();
                 await using var tx = await connection.BeginTransactionAsync();
-                var pid = Convert.ToInt64(await new NpgsqlCommand("SELECT pg_backend_pid()::bigint;", connection, tx).ExecuteScalarAsync());
+                var pid = await GetBackendPidAsync(connection, tx);
                 roleDeactivationStarted.TrySetResult(pid);
                 await ExecuteAsync(connection, tx,
                     $"UPDATE {q}.role SET active=false WHERE role_id=@role;",
@@ -268,6 +268,12 @@ public sealed class IdentityAccessAuthorizationLinearizationPostgresProofTests
         await connection.OpenAsync();
         await using var command = new NpgsqlCommand(sql, connection);
         foreach (var (name, value) in parameters) command.Parameters.AddWithValue(name, value);
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
+    private static async Task<long> GetBackendPidAsync(NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        await using var command = new NpgsqlCommand("SELECT pg_backend_pid()::bigint;", connection, transaction);
         return Convert.ToInt64(await command.ExecuteScalarAsync());
     }
 
