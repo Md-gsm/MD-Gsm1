@@ -17,6 +17,20 @@ public interface ISessionIdentityResolver
 {
     Task<ValidatedSessionIdentity?> ResolveAsync(byte[] tokenDigest, DateTimeOffset now, CancellationToken ct);
 }
+
+/// <summary>
+/// Host-supplied request principal accessor. The host implementation may return these
+/// values only from claims created by IdentityAccess session middleware after PostgreSQL
+/// token-digest resolution and lease renewal.
+/// </summary>
+public interface IValidatedRequestPrincipalAccessor
+{
+    Guid AccountId { get; }
+    Guid SessionId { get; }
+    long CredentialVersion { get; }
+    DateTimeOffset AuthenticatedAtUtc { get; }
+}
+
 public interface ILoginAttemptStore { Task RecordAsync(string loginDigest,string sourceDigest,string outcome,DateTimeOffset at,CancellationToken ct); Task<bool> IsSourceRateLimitedAsync(string sourceDigest,DateTimeOffset now,CancellationToken ct); }
 public interface IRolePermissionStore { Task<bool> HasPermissionAsync(AccountId id,string permissionKey,CancellationToken ct); Task<bool> HasRoleAsync(AccountId id,string roleKey,CancellationToken ct); }
 public interface IAuditWriter { Task AppendAsync(string eventType,AccountId? actor,AccountId? subject,string outcome,string correlationId,CancellationToken ct); }
