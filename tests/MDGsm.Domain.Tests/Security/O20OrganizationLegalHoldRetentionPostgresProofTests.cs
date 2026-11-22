@@ -196,8 +196,12 @@ public sealed class O20OrganizationLegalHoldRetentionPostgresProofTests
 
             var activeHold = Guid.NewGuid();
             await ExecuteAsync(cs,
-                $"INSERT INTO {q}.legal_hold(hold_id,record_id,state) VALUES (@hold,@record,'ACTIVE');",
+                $"INSERT INTO {q}.legal_hold(hold_id,record_id,state) VALUES (@hold,@record,'PENDING');",
                 ("hold", activeHold), ("record", record));
+            Assert.False(await EligibleAsync(cs, q, record, authorization, actor));
+            await ExecuteAsync(cs, $"UPDATE {q}.legal_hold SET state='UNKNOWN' WHERE hold_id=@hold;", ("hold", activeHold));
+            Assert.False(await EligibleAsync(cs, q, record, authorization, actor));
+            await ExecuteAsync(cs, $"UPDATE {q}.legal_hold SET state='ACTIVE' WHERE hold_id=@hold;", ("hold", activeHold));
             Assert.False(await EligibleAsync(cs, q, record, authorization, actor));
             await ExecuteAsync(cs, $"UPDATE {q}.legal_hold SET state='RELEASED' WHERE hold_id=@hold;", ("hold", activeHold));
 
