@@ -133,8 +133,8 @@ public sealed class IdentityAccessAuthorizationLinearizationPostgresProofTests
             // The protected mutation executes in the same transaction while the guard rows
             // remain locked. Two competing authorization revocations are started concurrently.
             await ExecuteAsync(writer, writerTx,
-                $"INSERT INTO {q}.protected_write(write_id,account_id,session_id,permission_key) VALUES (@id,@account,@session,'o20.linearization.probe');",
-                ("id", assignmentId), ("account", accountId));
+                $"INSERT INTO {q}.protected_write(write_id,account_id,session_id,permission_key) VALUES (@id,@account,@session_id,'o20.linearization.probe');",
+                ("id", assignmentId), ("account", accountId), ("session_id", sessionId));
 
             var sessionUpdateStarted = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
             var grantRemovalStarted = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
