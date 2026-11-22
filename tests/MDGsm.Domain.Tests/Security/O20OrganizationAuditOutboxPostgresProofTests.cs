@@ -106,6 +106,38 @@ public sealed class O20OrganizationAuditOutboxPostgresProofTests
             var payload = $$"""{"action":"organization.assignment.warehouse.created","assignmentId":"{{assignmentId:D}}","subject":"{{subjectId:D}}","warehouse":"{{warehouseId:D}}"}""";
             var originalHash = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
 
+            // Inject a local failure after both writes have been staged: neither fact nor intent may survive.
+            var rolledBackAssignmentId = Guid.NewGuid();
+            var rolledBackEventId = Guid.NewGuid();
+            await using (var rollbackConnection = new NpgsqlConnection(cs))
+            {
+                await rollbackConnection.OpenAsync();
+                await using var rollbackTx = await rollbackConnection.BeginTransactionAsync();
+                await using (var fact = new NpgsqlCommand(
+                    $"INSERT INTO {q}.assignment_fact(assignment_id,subject_account_id,warehouse_id) VALUES (@id,@subject,@warehouse);",
+                    rollbackConnection, rollbackTx))
+                {
+                    fact.Parameters.AddWithValue("id", rolledBackAssignmentId);
+                    fact.Parameters.AddWithValue("subject", subjectId);
+                    fact.Parameters.AddWithValue("warehouse", warehouseId);
+                    await fact.ExecuteNonQueryAsync();
+                }
+                await using (var intent = new NpgsqlCommand(
+                    $"INSERT INTO {q}.local_outbox(event_id,event_type,payload,payload_hash,state) VALUES (@event,'organization.assignment.warehouse.created',@payload,@hash,'PENDING');",
+                    rollbackConnection, rollbackTx))
+                {
+                    intent.Parameters.AddWithValue("event", rolledBackEventId);
+                    intent.Parameters.AddWithValue("payload", payload);
+                    intent.Parameters.AddWithValue("hash", originalHash);
+                    await intent.ExecuteNonQueryAsync();
+                }
+                await rollbackTx.RollbackAsync();
+            }
+            Assert.Equal(0L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.assignment_fact WHERE assignment_id=@id;", ("id", rolledBackAssignmentId)));
+            Assert.Equal(0L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.local_outbox WHERE event_id=@event;", ("event", rolledBackEventId)));
+
             // Domain fact and outbox intent are one local transaction.
             await using (var connection = new NpgsqlConnection(cs))
             {
