@@ -1,3 +1,5 @@
+using System.Data.Common;
+
 namespace MDGsm.IdentityAccess.Contracts;
 
 /// <summary>
@@ -10,6 +12,21 @@ public interface IIdentityAccessAuthorizationContract
 
     Task<PermissionDecision> EvaluateCurrentPermissionAsync(
         string permissionKey,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Evaluates the current principal's exact permission while retaining PostgreSQL row-share
+    /// locks on every IdentityAccess row that establishes the decision until the caller's
+    /// supplied transaction commits or rolls back. The connection and transaction must already
+    /// be open, must belong to one another, and must be the same local transaction that persists
+    /// the protected mutation. This is not a global lock-order approval; consumers must not use
+    /// this method for cross-module writes until Platform publishes and owners accept the
+    /// applicable lock order and transaction-participant contract.
+    /// </summary>
+    Task<PermissionDecision> EvaluateCurrentPermissionInTransactionAsync(
+        string permissionKey,
+        DbConnection connection,
+        DbTransaction transaction,
         CancellationToken cancellationToken);
 
     Task<ProductOwnerAuthorityDecision> ResolveCurrentProductOwnerAuthorityAsync(
