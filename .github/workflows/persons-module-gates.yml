@@ -220,6 +220,8 @@ jobs:
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20RuntimeLoginMappingPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit O-20-F emergency lifecycle PostgreSQL proof
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20EmergencyAccessPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20 runtime LOGIN to NOLOGIN ACL mapping PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20RuntimeLoginMappingPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit O-20-E Organization policy PostgreSQL proofs
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationPolicyPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit O-20-E immutable Warehouse Branch history PostgreSQL proof
