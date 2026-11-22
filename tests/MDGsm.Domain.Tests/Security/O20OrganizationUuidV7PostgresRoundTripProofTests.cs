@@ -47,10 +47,10 @@ public sealed class O20OrganizationUuidV7PostgresRoundTripProofTests
                 connection,
                 transaction))
             {
-                insert.Parameters.Add(new NpgsqlParameter<Guid>("id"));
+                var idParameter = insert.Parameters.AddWithValue("id", expected[0]);
                 foreach (var id in expected)
                 {
-                    insert.Parameters["id"].Value = id;
+                    idParameter.Value = id;
                     await insert.ExecuteNonQueryAsync();
                 }
 
@@ -68,7 +68,8 @@ public sealed class O20OrganizationUuidV7PostgresRoundTripProofTests
             }
 
             Assert.Equal(expected.Length, actual.Count);
-            Assert.Equal(expected.ToHashSet(), actual.ToHashSet());
+            Assert.Empty(expected.Except(actual));
+            Assert.Empty(actual.Except(expected));
             Assert.All(actual, AssertUuidV7);
         }
         finally
