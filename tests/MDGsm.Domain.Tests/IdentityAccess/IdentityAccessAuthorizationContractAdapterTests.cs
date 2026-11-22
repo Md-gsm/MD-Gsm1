@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using MDGsm.Api.Security;
 using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Contracts;
+using MDGsm.Infrastructure.IdentityAccess;
 using Xunit;
 
 namespace MDGsm.Domain.Tests.IdentityAccess;
@@ -122,7 +122,7 @@ public sealed class IdentityAccessAuthorizationContractAdapterTests
     private static IdentityAccessAuthorizationContractAdapter Create(Guid actorId, bool permissionResult) =>
         new(new Actor(() => actorId), new AuthorizationStore(permissionResult));
 
-    private sealed class Actor(Func<Guid> resolve) : IAuthenticatedActorContext
+    private sealed class Actor(Func<Guid> resolve) : IValidatedRequestPrincipalAccessor
     {
         public Guid AccountId => resolve();
         public Guid SessionId => resolve() == Guid.Empty ? Guid.Empty : IdentityAccessAuthorizationContractAdapterTests.SessionId;
