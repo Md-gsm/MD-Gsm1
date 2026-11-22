@@ -63,8 +63,6 @@ public sealed class O20OrganizationDeterministicLockOrderPostgresProofTests
             Assert.Equal(firstOrder, acquired[0]);
             Assert.Equal(secondOrder, acquired[1]);
 
-            Assert.Equal(2L, await ScalarInt64Async(cs,
-                $"SELECT count(*) FROM {q}.aggregate_lock_probe WHERE row_version=3;"));
             Assert.Equal((long)ids.Length,
                 await ScalarInt64Async(cs,
                     $"SELECT count(*) FROM {q}.aggregate_lock_probe WHERE row_version=3;"));
