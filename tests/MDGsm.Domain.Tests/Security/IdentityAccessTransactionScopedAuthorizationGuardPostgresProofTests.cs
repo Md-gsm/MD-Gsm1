@@ -30,6 +30,7 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
         var cs = await OpenMarkedDisposableDatabaseAsync();
         var accountId = Guid.NewGuid();
         var roleId = Guid.NewGuid();
+        var secondRoleId = Guid.NewGuid();
         var sessionId = Guid.NewGuid();
         var clientInstanceId = Guid.NewGuid();
         var testPermissionId = Guid.NewGuid();
@@ -38,6 +39,7 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
         var loginName = "o20txguard" + suffix;
         var loginNormalized = loginName.ToUpperInvariant();
         var roleKey = "o20-tx-guard-" + suffix;
+        var secondRoleKey = "o20-tx-guard-secondary-" + suffix;
         var permissionKey = "reports.read";
         var permissionCreatedByTest = false;
 
@@ -55,9 +57,12 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
             await ExecuteAsync(cs, """
                 INSERT INTO identity.roles
                     (role_id,role_key,display_name,is_system_role,is_assignable,created_at_utc,updated_at_utc)
-                VALUES (@role,@role_key,'O20 transaction guard disposable role',false,true,clock_timestamp(),clock_timestamp());
+                VALUES
+                    (@role,@role_key,'O20 transaction guard disposable role',false,true,clock_timestamp(),clock_timestamp()),
+                    (@second_role,@second_role_key,'O20 transaction guard secondary disposable role',false,true,clock_timestamp(),clock_timestamp());
                 """,
-                ("role", roleId), ("role_key", roleKey));
+                ("role", roleId), ("role_key", roleKey),
+                ("second_role", secondRoleId), ("second_role_key", secondRoleKey));
 
             // The permission name is already in the owner-approved IdentityAccess catalog.
             // Reuse a seeded row when present; otherwise add and later remove a disposable row.
@@ -76,14 +81,16 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
 
             await ExecuteAsync(cs, """
                 INSERT INTO identity.account_roles(account_id,role_id,assigned_at_utc,assignment_reason)
-                VALUES (@account,@role,clock_timestamp(),'disposable transaction guard proof');
+                VALUES
+                    (@account,@role,clock_timestamp(),'disposable transaction guard proof'),
+                    (@account,@second_role,clock_timestamp(),'disposable transaction guard secondary proof');
                 """,
-                ("account", accountId), ("role", roleId));
+                ("account", accountId), ("role", roleId), ("second_role", secondRoleId));
             await ExecuteAsync(cs, """
                 INSERT INTO identity.role_permissions(role_id,permission_id)
-                VALUES (@role,@permission);
+                VALUES (@role,@permission),(@second_role,@permission);
                 """,
-                ("role", roleId), ("permission", permissionId));
+                ("role", roleId), ("second_role", secondRoleId), ("permission", permissionId));
             await ExecuteAsync(cs, """
                 INSERT INTO identity.sessions
                     (session_id,account_id,token_digest,created_at_utc,last_seen_at_utc,lease_expires_at_utc,
@@ -198,7 +205,7 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
             Assert.Equal(accountId, decision.PrincipalAccountId);
             Assert.Equal(sessionId, decision.PrincipalSessionId);
             Assert.Equal(9L, decision.PrincipalVersion);
-            Assert.Equal("live_permission_locked_until_transaction_end", decision.ReasonCode);
+            Assert.Equal("all_matching_permission_grants_locked_until_transaction_end", decision.ReasonCode);
 
             // The real IdentityAccess guard and the synthetic Organization write facts
             // participate in this exact same PostgreSQL connection/transaction.
@@ -232,7 +239,7 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
                 Assert.Equal(5, await domainMutation.ExecuteNonQueryAsync());
             }
 
-            var pidsReady = Enumerable.Range(0, 5)
+            var pidsReady = Enumerable.Range(0, 7)
                 .Select(_ => new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously))
                 .ToArray();
 
@@ -251,9 +258,15 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
                     DELETE FROM identity.account_roles WHERE account_id=@account AND role_id=@role;
                     """, ("account", accountId), ("role", roleId)),
                 StartCompetingWriterAsync(cs, pidsReady[3], """
+                    DELETE FROM identity.account_roles WHERE account_id=@account AND role_id=@role;
+                    """, ("account", accountId), ("role", secondRoleId)),
+                StartCompetingWriterAsync(cs, pidsReady[4], """
                     DELETE FROM identity.role_permissions WHERE role_id=@role AND permission_id=@permission;
                     """, ("role", roleId), ("permission", permissionId)),
-                StartCompetingWriterAsync(cs, pidsReady[4], """
+                StartCompetingWriterAsync(cs, pidsReady[5], """
+                    DELETE FROM identity.role_permissions WHERE role_id=@role AND permission_id=@permission;
+                    """, ("role", secondRoleId), ("permission", permissionId)),
+                StartCompetingWriterAsync(cs, pidsReady[6], """
                     UPDATE identity.permissions SET is_active=false WHERE permission_id=@permission;
                     """, ("permission", permissionId))
             };
@@ -318,9 +331,12 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
         finally
         {
             await ExecuteAsync(cs, "DELETE FROM identity.sessions WHERE session_id=@id;", ("id", sessionId));
-            await ExecuteAsync(cs, "DELETE FROM identity.role_permissions WHERE role_id=@id;", ("id", roleId));
-            await ExecuteAsync(cs, "DELETE FROM identity.account_roles WHERE account_id=@id;", ("id", accountId));
-            await ExecuteAsync(cs, "DELETE FROM identity.roles WHERE role_id=@id;", ("id", roleId));
+            await ExecuteAsync(cs, "DELETE FROM identity.role_permissions WHERE role_id IN (@role,@second_role);",
+                ("role", roleId), ("second_role", secondRoleId));
+            await ExecuteAsync(cs, "DELETE FROM identity.account_roles WHERE account_id=@account AND role_id IN (@role,@second_role);",
+                ("account", accountId), ("role", roleId), ("second_role", secondRoleId));
+            await ExecuteAsync(cs, "DELETE FROM identity.roles WHERE role_id IN (@role,@second_role);",
+                ("role", roleId), ("second_role", secondRoleId));
             await ExecuteAsync(cs, "DELETE FROM identity.accounts WHERE account_id=@id;", ("id", accountId));
             if (permissionCreatedByTest)
             {
