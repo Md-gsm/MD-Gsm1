@@ -262,6 +262,9 @@ public sealed class IdentityAccessAuthorizationLinearizationPostgresProofTests
         await command.ExecuteNonQueryAsync();
     }
 
+    private static string WithApplicationName(string connectionString, string applicationName) =>
+        new NpgsqlConnectionStringBuilder(connectionString) { ApplicationName = applicationName }.ConnectionString;
+
     private static async Task<long> ScalarInt64Async(string cs, string sql, params (string Name, object Value)[] parameters)
     {
         await using var connection = new NpgsqlConnection(cs);
