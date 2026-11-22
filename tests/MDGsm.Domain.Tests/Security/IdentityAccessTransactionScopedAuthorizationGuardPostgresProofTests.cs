@@ -41,13 +41,6 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
         var permissionKey = "reports.read";
         var permissionCreatedByTest = false;
 
-        await using (var setup = new NpgsqlConnection(cs))
-        {
-            await setup.OpenAsync();
-            await using var command = new NpgsqlCommand("CREATE TEMP TABLE protected_write_probe (write_id uuid PRIMARY KEY, account_id uuid NOT NULL, created_at_utc timestamptz NOT NULL DEFAULT clock_timestamp());", setup);
-            await command.ExecuteNonQueryAsync();
-        }
-
         try
         {
             await ExecuteAsync(cs, """
@@ -110,6 +103,12 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
 
             await using var writer = new NpgsqlConnection(cs);
             await writer.OpenAsync();
+            await using (var tempTable = new NpgsqlCommand(
+                "CREATE TEMP TABLE protected_write_probe (write_id uuid PRIMARY KEY, account_id uuid NOT NULL, created_at_utc timestamptz NOT NULL DEFAULT clock_timestamp());",
+                writer))
+            {
+                await tempTable.ExecuteNonQueryAsync();
+            }
             await using var writerTransaction = await writer.BeginTransactionAsync();
 
             var decision = await adapter.EvaluateCurrentPermissionInTransactionAsync(
@@ -216,14 +215,18 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
         await using var connection = new NpgsqlConnection(cs);
         await connection.OpenAsync();
         await using var transaction = await connection.BeginTransactionAsync();
+        long backendId;
         await using (var pid = new NpgsqlCommand("SELECT pg_backend_pid()::bigint;", connection, transaction))
-            backendPid.TrySetResult(Convert.ToInt64(await pid.ExecuteScalarAsync()));
+        {
+            backendId = Convert.ToInt64(await pid.ExecuteScalarAsync());
+            backendPid.TrySetResult(backendId);
+        }
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         foreach (var (name, value) in parameters) command.Parameters.AddWithValue(name, value);
         await command.ExecuteNonQueryAsync();
         await transaction.CommitAsync();
-        return backendPid.Task.Result;
+        return backendId;
     }
 
     private static async Task WaitForAllBlockedAsync(string cs, long[] backendPids)
@@ -287,16 +290,6 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
         foreach (var (name, value) in parameters) command.Parameters.AddWithValue(name, value);
         var value = await command.ExecuteScalarAsync();
         return value is null or DBNull ? null : (Guid)value;
-    }
-
-    private static async Task<string> ExecuteAsync(
-        string cs, string sql, params (string Name, object Value)[] parameters)
-    {
-        await using var connection = new NpgsqlConnection(cs);
-        await connection.OpenAsync();
-        await using var command = new NpgsqlCommand(sql, connection);
-        foreach (var (name, value) in parameters) command.Parameters.AddWithValue(name, value);
-        return Convert.ToString(await command.ExecuteScalarAsync()) ?? string.Empty;
     }
 
     private static async Task<string> ScalarStringAsync(string cs, string sql, params (string Name, object Value)[] parameters)
