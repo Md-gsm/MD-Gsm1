@@ -45,8 +45,9 @@ public sealed class IdentityAccessLiveSessionPermissionPostgresProofTests
                 ("account", accountId), ("login", loginName), ("normalized", loginNormalized));
 
             await ExecuteAsync(cs, """
-                INSERT INTO identity.roles(role_id,role_key,display_name,is_system_role,is_assignable)
-                VALUES (@role,@role_key,'O20 session authorization proof',false,true);
+                INSERT INTO identity.roles
+                    (role_id,role_key,display_name,is_system_role,is_assignable,created_at_utc,updated_at_utc)
+                VALUES (@role,@role_key,'O20 session authorization proof',false,true,clock_timestamp(),clock_timestamp());
                 """,
                 ("role", roleId), ("role_key", roleKey));
 
