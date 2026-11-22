@@ -110,6 +110,8 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
 
             await using var writer = new NpgsqlConnection(cs);
             await writer.OpenAsync();
+            var commandReceiptId = Guid.NewGuid();
+            var approvalRequestId = Guid.NewGuid();
             var branchId = Guid.NewGuid();
             var warehouseId = Guid.NewGuid();
             var assignmentId = Guid.NewGuid();
@@ -126,6 +128,16 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
                 );
                 -- Synthetic Organization-owned rows only. These tables exist only for this
                 -- disposable test connection; they are not a production Organization schema.
+                CREATE TEMP TABLE command_receipt_probe
+                (
+                    receipt_id uuid PRIMARY KEY,
+                    row_version bigint NOT NULL
+                );
+                CREATE TEMP TABLE approval_request_probe
+                (
+                    request_id uuid PRIMARY KEY,
+                    row_version bigint NOT NULL
+                );
                 CREATE TEMP TABLE organization_branch_probe
                 (
                     branch_id uuid PRIMARY KEY,
@@ -163,12 +175,16 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
             }
 
             await using (var seedOrganization = new NpgsqlCommand("""
+                INSERT INTO command_receipt_probe(receipt_id,row_version) VALUES (@receipt,1);
+                INSERT INTO approval_request_probe(request_id,row_version) VALUES (@approval,1);
                 INSERT INTO organization_branch_probe(branch_id,row_version) VALUES (@branch,1);
                 INSERT INTO organization_warehouse_probe(warehouse_id,branch_id,row_version) VALUES (@warehouse,@branch,1);
                 INSERT INTO organization_assignment_probe(assignment_id,account_id,warehouse_id,row_version)
                     VALUES (@assignment,@account,@warehouse,1);
                 """, writer))
             {
+                seedOrganization.Parameters.AddWithValue("receipt", commandReceiptId);
+                seedOrganization.Parameters.AddWithValue("approval", approvalRequestId);
                 seedOrganization.Parameters.AddWithValue("branch", branchId);
                 seedOrganization.Parameters.AddWithValue("warehouse", warehouseId);
                 seedOrganization.Parameters.AddWithValue("assignment", assignmentId);
@@ -199,6 +215,21 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
                 await otherTransaction.RollbackAsync();
             }
 
+            // Candidate global rank 00: serialize the command's idempotency receipt first.
+            await using (var receiptLock = new NpgsqlCommand(
+                "SELECT receipt_id FROM command_receipt_probe WHERE receipt_id=@id FOR UPDATE;",
+                writer, writerTransaction))
+            {
+                receiptLock.Parameters.AddWithValue("id", commandReceiptId);
+                Assert.Equal(commandReceiptId, (Guid)(await receiptLock.ExecuteScalarAsync())!);
+                await using var receiptUpdate = new NpgsqlCommand(
+                    "UPDATE command_receipt_probe SET row_version=row_version+1 WHERE receipt_id=@id;",
+                    writer, writerTransaction);
+                receiptUpdate.Parameters.AddWithValue("id", commandReceiptId);
+                Assert.Equal(1, await receiptUpdate.ExecuteNonQueryAsync());
+            }
+
+            // Candidate rank 10: evaluate and hold every IdentityAccess fact before proceeding.
             var decision = await adapter.EvaluateCurrentPermissionInTransactionAsync(
                 permissionKey, writer, writerTransaction, CancellationToken.None);
             Assert.Equal(PermissionDecisionStatus.Allowed, decision.Status);
@@ -207,8 +238,23 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
             Assert.Equal(9L, decision.PrincipalVersion);
             Assert.Equal("all_matching_permission_grants_locked_until_transaction_end", decision.ReasonCode);
 
-            // The real IdentityAccess guard and the synthetic Organization write facts
-            // participate in this exact same PostgreSQL connection/transaction.
+            // Candidate rank 20: lock the exact approval/request fact after IdentityAccess.
+            await using (var approvalLock = new NpgsqlCommand(
+                "SELECT request_id FROM approval_request_probe WHERE request_id=@id FOR UPDATE;",
+                writer, writerTransaction))
+            {
+                approvalLock.Parameters.AddWithValue("id", approvalRequestId);
+                Assert.Equal(approvalRequestId, (Guid)(await approvalLock.ExecuteScalarAsync())!);
+                await using var approvalUpdate = new NpgsqlCommand(
+                    "UPDATE approval_request_probe SET row_version=row_version+1 WHERE request_id=@id;",
+                    writer, writerTransaction);
+                approvalUpdate.Parameters.AddWithValue("id", approvalRequestId);
+                Assert.Equal(1, await approvalUpdate.ExecuteNonQueryAsync());
+            }
+
+            // Candidate ranks 30-70: Branch, Warehouse, Assignment, domain history and outbox.
+            // The real IdentityAccess guard and synthetic Organization facts participate in
+            // this exact same PostgreSQL connection and transaction.
             await using (var protectedWrite = new NpgsqlCommand(
                 "INSERT INTO protected_write_probe(write_id,account_id) VALUES (@write,@account);",
                 writer, writerTransaction))
@@ -289,6 +335,8 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
 
                 await using (var verifyOrganization = new NpgsqlCommand("""
                     SELECT
+                        (SELECT row_version FROM command_receipt_probe WHERE receipt_id=@receipt),
+                        (SELECT row_version FROM approval_request_probe WHERE request_id=@approval),
                         (SELECT row_version FROM organization_branch_probe WHERE branch_id=@branch),
                         (SELECT row_version FROM organization_warehouse_probe WHERE warehouse_id=@warehouse),
                         (SELECT row_version FROM organization_assignment_probe WHERE assignment_id=@assignment),
@@ -297,6 +345,8 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
                          WHERE event_id=@outbox_event AND payload_hash=@outbox_hash AND state='PENDING');
                     """, writer))
                 {
+                    verifyOrganization.Parameters.AddWithValue("receipt", commandReceiptId);
+                    verifyOrganization.Parameters.AddWithValue("approval", approvalRequestId);
                     verifyOrganization.Parameters.AddWithValue("branch", branchId);
                     verifyOrganization.Parameters.AddWithValue("warehouse", warehouseId);
                     verifyOrganization.Parameters.AddWithValue("assignment", assignmentId);
@@ -305,11 +355,13 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
                     verifyOrganization.Parameters.AddWithValue("outbox_hash", outboxHash);
                     await using var reader = await verifyOrganization.ExecuteReaderAsync();
                     Assert.True(await reader.ReadAsync());
-                    Assert.Equal(2L, reader.GetInt64(0));
-                    Assert.Equal(2L, reader.GetInt64(1));
-                    Assert.Equal(2L, reader.GetInt64(2));
-                    Assert.Equal(1L, reader.GetInt64(3));
-                    Assert.Equal(1L, reader.GetInt64(4));
+                    Assert.Equal(2L, reader.GetInt64(0)); // idempotency receipt
+                    Assert.Equal(2L, reader.GetInt64(1)); // approval request
+                    Assert.Equal(2L, reader.GetInt64(2)); // Branch
+                    Assert.Equal(2L, reader.GetInt64(3)); // Warehouse
+                    Assert.Equal(2L, reader.GetInt64(4)); // Assignment
+                    Assert.Equal(1L, reader.GetInt64(5)); // immutable domain history
+                    Assert.Equal(1L, reader.GetInt64(6)); // pending local outbox
                 }
 
                 Assert.False(await stores.HasPermissionForLiveSessionAsync(
