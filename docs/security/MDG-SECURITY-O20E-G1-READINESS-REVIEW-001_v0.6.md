@@ -3,7 +3,8 @@
 | Field | Value |
 |---|---|
 | Document ID | MDG-SECURITY-O20E-G1-READINESS-REVIEW-001 |
-| Version / Date | 0.5 / 2026-11-22 |
+| Version / Date | 0.6 / 2026-11-22 |
+| Supersedes | v0.5 |
 | Status | PRELIMINARY CROSS-CONTRACT REVIEW — INITIAL PERMISSION CATALOG SOURCE-ALIGNED; PUBLIC CONTRACT/ORGANIZATION PERMISSIONS AND G1 GATES OPEN |
 | Repository | Md-gsm/MD-Gsm1 |
 | Exact source baseline inspected | `f0b6153ea711041a06230d976f23dee56c2ff2dd` |
