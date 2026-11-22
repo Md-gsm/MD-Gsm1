@@ -1,3 +1,6 @@
+using System;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
 using Npgsql;
 using Xunit;
 
@@ -70,7 +73,7 @@ public sealed class O20OrganizationIdempotencyConcurrencyPostgresProofTests
                     INSERT INTO {q}.account_warehouse_assignment
                         (assignment_id,subject_account_id,warehouse_id,state)
                     VALUES (target_assignment,p_subject,p_warehouse,'ACTIVE')
-                    ON CONFLICT (subject_account_id,warehouse_id) DO NOTHING;
+                    ON CONFLICT DO NOTHING;
 
                     GET DIAGNOSTICS inserted_count = ROW_COUNT;
                     IF inserted_count=0 THEN
@@ -99,7 +102,7 @@ public sealed class O20OrganizationIdempotencyConcurrencyPostgresProofTests
                 () => ScalarGuidAsync(cs, $"SELECT {q}.apply_assignment(@key,@hash,@subject,@warehouse);",
                     ("key", key), ("hash", fingerprint), ("subject", subject), ("warehouse", warehouse)));
 
-            Assert.Equal(sameKeyResults.First(), sameKeyResults.Last());
+            Assert.Equal(sameKeyResults[0], sameKeyResults[1]);
             Assert.Equal(1L, await ScalarInt64Async(cs,
                 $"SELECT count(*) FROM {q}.command_receipt WHERE idempotency_key=@key;", ("key", key)));
             Assert.Equal(1L, await ScalarInt64Async(cs,
