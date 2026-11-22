@@ -33,6 +33,7 @@ builder.Services.AddScoped<ChangeOwnPasswordHandler>();
 builder.Services.AddScoped<LogoutHandler>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthenticatedActorContext, HttpAuthenticatedActorContext>();
+builder.Services.AddScoped<IIdentityAccessAuthorizationContract, IdentityAccessAuthorizationContractAdapter>();
 builder.Services.AddScoped<IFinanceActorContext, AuthenticatedFinanceActorContext>();
 builder.Services.AddScoped<PostgresPartyAccountProvisioner>();
 builder.Services.AddScoped<IPartyMergeParticipant, PostgresPartyAccountMergeParticipant>();
