@@ -224,6 +224,8 @@ jobs:
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationPolicyPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit O-20-E immutable Warehouse Branch history PostgreSQL proof
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationRelationshipHistoryPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20-E fail-closed retention and Legal Hold PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationLegalHoldRetentionPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit O-20-E maker-checker and Product Owner binding policy PostgreSQL proof
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationAssignmentApprovalPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit O-20-E local audit outbox PostgreSQL proofs
