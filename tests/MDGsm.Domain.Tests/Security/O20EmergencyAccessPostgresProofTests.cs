@@ -216,8 +216,8 @@ public sealed class O20EmergencyAccessPostgresProofTests
             var results = await Task.WhenAll(
                 ActivateAsync(adminConnectionString, schema, concurrent, "approver-a", "approver-b"),
                 ActivateAsync(adminConnectionString, schema, concurrent, "approver-a", "approver-b"));
-            Assert.Single(results.Where(x => x));
-            Assert.Single(results.Where(x => !x));
+            Assert.Single(results, x => x);
+            Assert.Single(results, x => !x);
 
             // Local audit-intent failure rolls back activation atomically.
             var auditFailure = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-D", 60);
