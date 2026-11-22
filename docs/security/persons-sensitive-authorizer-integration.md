@@ -14,8 +14,8 @@
 2. API توکن خام را log یا persist نمی‌کند؛ SHA-256 digest را محاسبه می‌کند.
 3. `PostgresSessionIdentityResolver` در هر درخواست digest را با session زنده تطبیق می‌دهد و هم‌زمان این شروط را enforce می‌کند: `revoked_at IS NULL`، `lease_expires_at > now`، حساب فعال، تکمیل تغییر اجباری رمز و تطابق `credential_version_at_issue` با نسخهٔ جاری حساب.
 4. API lease را با `TryHeartbeatAsync` و همان digest و credential version تمدید می‌کند؛ اگر تمدید شکست بخورد درخواست 401 می‌گیرد.
-5. فقط پس از موفقیت، principal با authentication type برابر `MDGsm.Session` و claim شناسهٔ حساب ساخته می‌شود.
-6. `IAuthenticatedActorContext` فقط همین principal را می‌پذیرد. endpoint جزئیات Persons پیش از خواندن، مجوز زندهٔ `persons.read` را بررسی می‌کند؛ شناسهٔ actor را فقط از این context گرفته و به repository می‌دهد.
+5. فقط پس از موفقیت، principal با authentication type برابر `MDGsm.Session` و claimهای server-created شامل AccountId، SessionId، credential version و زمان احراز هویت ساخته می‌شود.
+6. `IAuthenticatedActorContext` فقط همین principal را می‌پذیرد. قرارداد عمومی IdentityAccess principal/session metadata را از این accessor می‌خواند. ارزیابی permission از یک query واحد PostgreSQL استفاده می‌کند که نشست جاری، وضعیت account، credential version و grant فعال را هم‌زمان می‌سنجد. endpoint جزئیات Persons شناسهٔ actor را فقط از همین context می‌گیرد.
 7. در صورت درخواست `includeSensitive=true`، repository دوباره permission زندهٔ `persons.sensitive.read` را بررسی می‌کند. تغییر یا لغو permission در درخواست بعدی اثر می‌گذارد.
 
 ## رفتار fail-closed
@@ -32,3 +32,13 @@
 - تست‌های صریح session منقضی/revoked، account disabled، credential version stale، permission revoked، missing permission و DB failure باید با PostgreSQL واقعی پوشش داده شوند.
 
 این commit به‌تنهایی G1 را تأیید یا production را فعال نمی‌کند. `g1Authorized=false` باقی می‌ماند؛ PRها Draft و Unmerged می‌مانند و `main` تغییر نمی‌کند.
+
+
+## تکمیل محدود قرارداد عمومی و اتصال نشست زنده — 2026-11-22
+
+- Contracts نسخه 1.1 اکنون یک interface عمومی برای principal، permission و Product Owner decision دارد.
+- Host فقط IValidatedRequestPrincipalAccessor را از claimهای server-created پیاده می‌کند.
+- IdentityAccess Infrastructure مالک پیاده‌سازی IIdentityAccessAuthorizationContract است و permission را با IRequestAuthorizationStore بررسی می‌کند.
+- query PostgreSQL grant را فقط زمانی Allow می‌کند که SessionId دقیق فعال و revoke نشده باشد، lease منقضی نشده باشد، account فعال باشد و credential version نشست با نسخه جاری account منطبق باشد.
+- در نبود DB config، یک store صریح fail-closed ثبت می‌شود؛ dependency resolution به رفتار Allow نمی‌افتد.
+- این کنترل یک تصمیم request-time است و هنوز جایگزین commit-time authorization linearization در تراکنش Organization نیست.
