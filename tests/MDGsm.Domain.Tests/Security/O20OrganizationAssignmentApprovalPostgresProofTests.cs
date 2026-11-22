@@ -331,8 +331,8 @@ public sealed class O20OrganizationAssignmentApprovalPostgresProofTests
         await connection.OpenAsync();
         await using var command = new NpgsqlCommand(sql, connection);
         foreach (var (name, value) in parameters) command.Parameters.AddWithValue(name, value);
-        var value = await command.ExecuteScalarAsync();
-        return value is null or DBNull ? Guid.Empty : (Guid)value;
+        var scalarValue = await command.ExecuteScalarAsync();
+        return scalarValue is null or DBNull ? Guid.Empty : (Guid)scalarValue;
     }
 
     private static async Task<long> ScalarInt64Async(string cs, string sql, params (string Name, object Value)[] parameters)
