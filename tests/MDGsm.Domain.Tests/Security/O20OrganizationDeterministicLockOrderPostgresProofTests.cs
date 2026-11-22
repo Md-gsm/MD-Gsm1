@@ -82,7 +82,7 @@ public sealed class O20OrganizationDeterministicLockOrderPostgresProofTests
         string cs, string quotedSchema, Guid[] callerOrder, string applicationName)
     {
         var ordered = callerOrder.OrderBy(x => x.ToString("N"), StringComparer.Ordinal).ToArray();
-        var recorded = ordered.Select(x => x.ToString("N")).ToArray();
+        var recorded = new System.Collections.Generic.List<string>(ordered.Length);
         var builder = new NpgsqlConnectionStringBuilder(cs) { ApplicationName = applicationName };
 
         await using var connection = new NpgsqlConnection(builder.ConnectionString);
@@ -104,6 +104,7 @@ public sealed class O20OrganizationDeterministicLockOrderPostgresProofTests
             command.Parameters.AddWithValue("id", ordered[i]);
             var locked = (Guid)(await command.ExecuteScalarAsync())!;
             Assert.Equal(ordered[i], locked);
+            recorded.Add(locked.ToString("N"));
 
             // Let the competing connection reach the same first lock while this
             // transaction retains its existing locks. Since both use the same order,
@@ -122,7 +123,7 @@ public sealed class O20OrganizationDeterministicLockOrderPostgresProofTests
         }
 
         await transaction.CommitAsync();
-        return recorded;
+        return recorded.ToArray();
     }
 
     private static async Task<string> OpenMarkedDisposableDatabaseAsync()
