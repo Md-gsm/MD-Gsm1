@@ -166,7 +166,6 @@ public sealed class IdentityAccessTransactionScopedAuthorizationGuardPostgresPro
                 seedOrganization.Parameters.AddWithValue("warehouse", warehouseId);
                 seedOrganization.Parameters.AddWithValue("assignment", assignmentId);
                 seedOrganization.Parameters.AddWithValue("account", accountId);
-                seedOrganization.Parameters.AddWithValue("warehouse", warehouseId);
                 await seedOrganization.ExecuteNonQueryAsync();
             }
 
