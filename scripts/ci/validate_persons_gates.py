@@ -257,6 +257,8 @@ def run_spec(root: Path) -> None:
         raise GateFailure("Windows PostgreSQL installer credentials must not be passed as process command-line arguments.")
     if "SetAccessRuleProtection" not in windows_text or "superpassword=$databasePassword" not in windows_text or "servicepassword=$servicePassword" not in windows_text:
         raise GateFailure("Windows PostgreSQL installer option file must be restricted to the runner identity and contain separate per-run credentials.")
+    if "-TimeoutSec 240" not in windows_text or "WaitForExit(900000)" not in windows_text or "Kill($true)" not in windows_text:
+        raise GateFailure("Windows PostgreSQL installer download and unattended process must have bounded timeouts and terminate on deadline.")
     if manifest.get("windowsPostgres18CiIntegrationConfigured") is not True:
         raise GateFailure("Manifest must declare PostgreSQL 18 Windows integration configuration.")
 
