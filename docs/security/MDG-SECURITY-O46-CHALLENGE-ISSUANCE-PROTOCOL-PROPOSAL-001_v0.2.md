@@ -6,7 +6,7 @@
 | Version / Date | 0.2 / 2026-11-23 |
 | Status | **OWNER-APPROVED DESIGN CONSTRAINT — IMPLEMENTATION NOT AUTHORIZED** |
 | Owner | IdentityAccess |
-| Related decisions | O-46 principal decision; O-46 bootstrap DB provisioning decision; physical schema/ACL proposal v0.1; provisioning package contract v0.1 |
+| Related decisions | O-46 principal decision; bootstrap DB provisioning decision v0.2; physical schema/ACL proposal v0.2; provisioning package contract v0.2 |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
 | Supersedes | MDG-SECURITY-O46-CHALLENGE-ISSUANCE-PROTOCOL-PROPOSAL-001 v0.1; owner disposition recorded in PR comment 7110645790 |
 | Target | Windows central server + PostgreSQL 18 |
@@ -24,7 +24,7 @@ The one-time initial Product Owner setup requires an unpredictable challenge tha
 
 IdentityAccess owns the challenge state and the claim decision. Platform may transport InstallationId and SetupOperationId and coordinate first-run orchestration; it does not own the authoritative challenge state.
 
-The current approved DB contract authorizes the bootstrap executor for one exact claim routine only. That leaves no authorized database caller for the initial challenge INSERT. This proposal resolves the caller path without adding a PostgreSQL principal or giving the executor direct table access, but it requires an explicit Product Owner decision because it adds one narrowly typed routine capability and a corresponding function-owner INSERT/limited UPDATE privilege.
+At the time this proposal was first drafted, the approved DB contract authorized only the exact claim routine, leaving no approved caller for the initial challenge INSERT. The Product Owner has now approved the bounded extension to two exact routines and the narrowly described function-owner INSERT / `revoked_at_utc`-only UPDATE delta. This version records that approval; it does not authorize implementation.
 
 ## 2. Owner-approved design constraint
 
@@ -106,7 +106,7 @@ Challenge expiry and consumption are checked using the database clock in the sam
 
 ## 5. Minimum additional function-owner ACL delta
 
-Relative to the physical schema proposal v0.1, this recommendation requires the following narrowly bounded additional capabilities for `mdgsm_identity_bootstrap_fn_owner`:
+Physical schema/ACL proposal v0.2 incorporates the owner-approved bounded delta. The exact challenge-column INSERT and `revoked_at_utc`-only revocation UPDATE capabilities for `mdgsm_identity_bootstrap_fn_owner` are stated below:
 
 | Object | Additional capability proposed | Explicitly denied |
 |---|---|---|
@@ -166,4 +166,4 @@ This owner-approved design constraint does not authorize:
 - O46-G04 and IdentityAccess G1: **OPEN / NOT GRANTED**.
 - PR #92: **must remain Draft and unmerged**.
 
-**END — MDG-SECURITY-O46-CHALLENGE-ISSUANCE-PROTOCOL-PROPOSAL-001 v0.1**
+**END — MDG-SECURITY-O46-CHALLENGE-ISSUANCE-PROTOCOL-PROPOSAL-001 v0.2**
