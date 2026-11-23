@@ -7,7 +7,7 @@
 | Status | **OWNER-APPROVED CHALLENGE PROTOCOL INCORPORATED — PHYSICAL SCHEMA/ACL STILL PROPOSAL; NO DDL / MIGRATION AUTHORIZED** |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
 | Supersedes | MDG-SECURITY-O46-BOOTSTRAP-PHYSICAL-SCHEMA-AND-ACL-PROPOSAL-001 v0.1 |
-| Source baseline | IdentityAccess migration 0003; IdentityAccess schema design; O-46 owner decisions; provisioning package contract v0.2 |
+| Source baseline | IdentityAccess migration 0003; IdentityAccess schema design; bootstrap principal decision v0.2; O-46 owner decisions; provisioning package contract v0.2 |
 | Target PostgreSQL | 18 |
 
 ## 1. Purpose and boundary
