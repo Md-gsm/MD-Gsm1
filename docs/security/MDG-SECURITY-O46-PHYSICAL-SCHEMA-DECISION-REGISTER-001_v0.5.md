@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | MDG-SECURITY-O46-PHYSICAL-SCHEMA-DECISION-REGISTER-001 |
-| Version / Date | 0.7 / 2026-11-24 |
+| Version / Date | 0.8 / 2026-11-24 |
 | Status | **OWNER-APPROVED PROFILE, JOURNAL AND TWO-PRINCIPAL RECONCILIATION TARGETS RECORDED; PHYSICAL/SECURITY PROOFS OPEN; NO IMPLEMENTATION AUTHORIZED** |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
-| Supersedes | v0.6 as the current cross-document index |
+| Supersedes | v0.7 as the current cross-document index |
 
 ## 1. Controlling owner decisions
 
@@ -143,3 +143,52 @@ The current checked-in evidence was inspected without connecting to or changing 
 Therefore no existing, already-authorized SELECT path for the Reconciliation View has been demonstrated. Do not grant View SELECT to `mdgsm_runtime`, provision `reporting_ro`, add a new role, or expand Executor privileges under this decision. The exact View owner and reader execution identity remain unresolved pending a current PostgreSQL 18 role/ACL/ownership inventory and an explicit approved mapping. JRN-REC-01 is design-approved but execution-open.
 
 This inspection is static repository evidence only. It is not a live database audit, effective-privilege proof, View security proof or implementation test.
+
+
+## 11. Exact-head PostgreSQL 18.6 disposable catalog evidence — reader path not present (2026-11-24)
+
+A fresh O-20-G catalog inventory artifact from the PR #92 PostgreSQL CI job was downloaded and inspected. Evidence provenance:
+
+| Field | Value |
+|---|---|
+| PR head SHA | `d90edccd460b722885bb5839a5c6492621c60ad9` |
+| PR test merge SHA checked out by the workflow | `c4af735a570d13570dfc66906ab805047f2ed168` |
+| Workflow run | `45265705287` |
+| PostgreSQL job | `138012180417` — `persons-postgres-migrations`, completed successfully |
+| Catalog inventory step | Step 9 — completed successfully |
+| Artifact | `o20-g-catalog-inventory`, artifact ID `14862936525` |
+| Server version | `180006` — PostgreSQL 18.6 |
+| Artifact JSON SHA-256 | `5ff69d034f943c8981790bd913fe7bfea93556677f9e6aea1d2b945c43dc9def` |
+
+This is a marked disposable CI database catalog, not a production/live database. The O-20-G inventory contains 20 roles, 4 membership edges, 5 schemas, 522 relations and 227 effective-privilege entries.
+
+### 11.1 Existing NOLOGIN owner candidate
+
+`mdgsm_schema_owner` exists as NOLOGIN, non-superuser, non-CREATEROLE, non-CREATEDB, non-BYPASSRLS. In this fixture it owns the `identity` schema and every inventoried IdentityAccess base table/index/routine object (24 ownership entries). It is therefore an existing technical owner candidate, but **not yet accepted as the Reconciliation View owner**.
+
+Important limitation: the sole project-role membership edge is `migration_runner` → `mdgsm_schema_owner` with `SET TRUE`, `INHERIT FALSE`, `ADMIN FALSE`. Thus the migration identity can explicitly SET ROLE to the broad schema owner. Reusing this owner for a security-sensitive Reconciliation View would place View ownership/change authority inside the existing migration/schema-owner trust boundary. This must be assessed and explicitly accepted; NOLOGIN alone does not make the role a narrowly scoped reader or an isolated owner.
+
+### 11.2 No existing authorized reader path
+
+The same inventory shows:
+
+- `mdgsm_runtime` exists as NOLOGIN and has USAGE on `identity` plus SELECT on nine existing IdentityAccess base tables. It has no LOGIN identity in this catalog; `runtime_app` is absent.
+- `reporting_ro` is absent.
+- `mdgsm_bootstrap_executor` and `mdgsm_identity_bootstrap_fn_owner` are absent, consistent with the no-provisioning boundary.
+- No O-46 `identity_bootstrap` schema, O-46 bootstrap tables, or O-46 routines are present.
+- No View exists in the `identity` schema. No O-46 Reconciliation View exists anywhere in the catalog.
+- No effective SELECT privilege entry exists for a Reconciliation View. SELECT on existing base tables does not authorize a future View.
+- `migration_runner` → `mdgsm_schema_owner` SET-only membership is a migration/ownership path, not an approved application Reconciliation reader path. The superuser `postgres` is not an acceptable application reader.
+
+### 11.3 Disposition
+
+The catalog evidence confirms one pre-existing NOLOGIN owner candidate (`mdgsm_schema_owner`) but does not establish it as an acceptable dedicated View owner because of its broad ownership scope and migration_runner SET ROLE edge. It proves no pre-existing application execution identity is currently authorized to SELECT an O-46 View. `mdgsm_runtime` is only a NOLOGIN ACL role in this catalog, and there is no existing View grant or LOGIN route to rely on.
+
+Therefore:
+1. Do not create the View or grant SELECT to `mdgsm_runtime`.
+2. Do not reuse `migration_runner` or `postgres` as the Reconciliation reader.
+3. Do not expand `mdgsm_bootstrap_executor` or create a third PostgreSQL principal.
+4. Keep JRN-REC-01 design-approved but execution-open.
+5. A further Owner/Platform decision is required if the only existing owner candidate, `mdgsm_schema_owner`, is to own the View despite the migration trust-boundary overlap. Independently, an already-authorized reader execution path must be identified; this catalog does not contain one.
+
+This evidence supersedes the earlier statement in §10 that a fresh PostgreSQL 18 catalog proof had not yet been performed. It does not supersede the conclusion that no already-authorized Reconciliation SELECT route has been demonstrated. No production connection, SQL/DDL, role, grant, View, routine, migration, secret or activation was created or changed.
