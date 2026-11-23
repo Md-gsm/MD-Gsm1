@@ -4,7 +4,7 @@
 |---|---|
 | Document ID | MDG-INVENTORY-POSTGRES-LOCK-ORDER-HARNESS-DESIGN-001 |
 | Version / Date | 0.1 / 2026-11-23 |
-| Status | PRE-G1 TEST-HARNESS IMPLEMENTATION — SYNTHETIC OBSERVER PROOF ADDED; INVENTORY PARTICIPANT TESTS NOT RUN |
+| Status | PRE-G1 TEST-HARNESS DESIGN — NOT IMPLEMENTED — NO TESTS RUN |
 | Reviewed branch head | `c3e8e154c900faf71c0072b4a6239571b969dfdf` |
 | Target | PostgreSQL 18; disposable isolated test database only |
 | Related | Inventory Cross-Module Contract v1.2; Inventory Test Spec v1.1; Platform Lock-Order Registry v0.7; Platform–Inventory–IdentityAccess Lock-Order Reconciliation v0.1; Lock-Order Experiment Evidence Map v0.1 |
@@ -243,15 +243,13 @@ No aggregate “suite passed” may conceal an individual FAIL/INCONCLUSIVE/BLOC
 6. **Cutover/load measurements:** only after Projection implementation and representative target PostgreSQL 18/hardware environment; set no numeric budget before measured evidence and acceptance.
 7. **Independent review:** review exact final SHA, test implementation, fixture isolation, captured evidence and all failures before any gate closure.
 
-## 11. Implementation status and current disposition
+## 11. Current disposition
 
-- Test-only harness primitives are implemented under `tests/MDGsm.Domain.Tests/InventoryHarness/`: disposable-target guard, unique schema, independent participant connections, PostgreSQL lock observer, deterministic barriers, lock-plan recorder, SQLSTATE classifier and JSON evidence envelope.
-- A synthetic observer proof test acquires a row lock in session A, blocks session B, and requires `pg_blocking_pids` plus `pg_locks` evidence before releasing A. This validates harness mechanics only; it is not Inventory integration evidence.
-- Pure unit tests cover Inventory-local rank/key monotonicity and SQLSTATE classification.
-- Exact-head CI and execution evidence are pending. No PASS is claimed until the exact commit's PostgreSQL 18 job executes these tests successfully.
-- No production Inventory source, schema, migration, permission, grant, seed, UnitOfWork, runtime consumer or database role is created.
-- Inventory Test Spec v1.1 remains ALL TESTS NOT RUN; every existing Inventory case remains NOT_RUN.
-- LOR-X01…X10 classifications in Evidence Map v0.1 remain unchanged; the synthetic observer test is not evidence for X01…X10.
+- This document is a pre-G1 test-harness design only.
+- No harness source or test code has been added.
+- No PostgreSQL test was run for this design.
+- Inventory Test Spec v1.1 remains ALL TESTS NOT RUN; every existing case remains NOT_RUN.
+- LOR-X01…X10 classifications in Evidence Map v0.1 remain unchanged.
 - The global lock order remains non-normative; cross-module execution is blocked on owner acceptance and a normative Platform registry.
 - O20-E remains OPEN; O-20 and O-21 remain OPEN; Organization G1 is NOT GRANTED; Inventory activation is unauthorized.
 

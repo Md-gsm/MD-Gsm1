@@ -255,4 +255,4 @@ No aggregate “suite passed” may conceal an individual FAIL/INCONCLUSIVE/BLOC
 - The global lock order remains non-normative; cross-module execution is blocked on owner acceptance and a normative Platform registry.
 - O20-E remains OPEN; O-20 and O-21 remain OPEN; Organization G1 is NOT GRANTED; Inventory activation is unauthorized.
 
-**END — MDG-INVENTORY-POSTGRES-LOCK-ORDER-HARNESS-DESIGN-001 v0.1**
+**END — MDG-INVENTORY-POSTGRES-LOCK-ORDER-HARNESS-DESIGN-001 v0.2**
