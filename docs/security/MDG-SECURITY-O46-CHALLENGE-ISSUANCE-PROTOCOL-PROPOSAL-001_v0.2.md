@@ -6,7 +6,7 @@
 | Version / Date | 0.2 / 2026-11-23 |
 | Status | **OWNER-APPROVED DESIGN CONSTRAINT — IMPLEMENTATION NOT AUTHORIZED** |
 | Owner | IdentityAccess |
-| Related decisions | O-46 principal decision; bootstrap DB provisioning decision v0.2; physical schema/ACL proposal v0.2; provisioning package contract v0.2 |
+| Related decisions | Bootstrap principal decision v0.2; bootstrap DB provisioning decision v0.2; physical schema/ACL proposal v0.2; provisioning package contract v0.2 |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
 | Supersedes | MDG-SECURITY-O46-CHALLENGE-ISSUANCE-PROTOCOL-PROPOSAL-001 v0.1; owner disposition recorded in PR comment 7110645790 |
 | Target | Windows central server + PostgreSQL 18 |
