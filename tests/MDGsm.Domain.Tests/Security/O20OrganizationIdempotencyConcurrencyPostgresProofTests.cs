@@ -129,6 +129,78 @@ public sealed class O20OrganizationIdempotencyConcurrencyPostgresProofTests
             Assert.Equal(1L, await ScalarInt64Async(cs,
                 $"SELECT count(*) FROM {q}.account_warehouse_assignment WHERE subject_account_id=@subject AND warehouse_id=@warehouse;",
                 ("subject", subject), ("warehouse", warehouse)));
+
+            // Simulate an unknown commit outcome: the server commits the result, but the caller
+            // deliberately discards the first response and can recover only by replaying the key.
+            var unknownCommitSubject = Guid.NewGuid();
+            var unknownCommitWarehouse = Guid.NewGuid();
+            var unknownCommitKey = "o20-race-unknown-commit";
+            await using (var connection = new NpgsqlConnection(cs))
+            {
+                await connection.OpenAsync();
+                await using var tx = await connection.BeginTransactionAsync();
+                await using var command = new NpgsqlCommand(
+                    $"SELECT {q}.apply_assignment(@key,@hash,@subject,@warehouse);",
+                    connection, tx);
+                command.Parameters.AddWithValue("key", unknownCommitKey);
+                command.Parameters.AddWithValue("hash", fingerprint);
+                command.Parameters.AddWithValue("subject", unknownCommitSubject);
+                command.Parameters.AddWithValue("warehouse", unknownCommitWarehouse);
+                _ = await command.ExecuteScalarAsync();
+                await tx.CommitAsync();
+                // Intentionally do not return the first result to the simulated caller.
+            }
+
+            var replayedUnknownCommit = await ScalarGuidAsync(cs,
+                $"SELECT {q}.apply_assignment(@key,@hash,@subject,@warehouse);",
+                ("key", unknownCommitKey), ("hash", fingerprint),
+                ("subject", unknownCommitSubject), ("warehouse", unknownCommitWarehouse));
+            var durableUnknownCommitResult = await ScalarGuidAsync(cs,
+                $"SELECT assignment_id FROM {q}.command_receipt WHERE idempotency_key=@key;",
+                ("key", unknownCommitKey));
+            Assert.Equal(durableUnknownCommitResult, replayedUnknownCommit);
+            Assert.Equal(1L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.account_warehouse_assignment WHERE subject_account_id=@subject AND warehouse_id=@warehouse;",
+                ("subject", unknownCommitSubject), ("warehouse", unknownCommitWarehouse)));
+
+            // A backend/worker failure before commit leaves neither receipt nor assignment;
+            // a retry can then create the single durable result.
+            var rollbackSubject = Guid.NewGuid();
+            var rollbackWarehouse = Guid.NewGuid();
+            var rollbackKey = "o20-race-crash-before-commit";
+            await using (var connection = new NpgsqlConnection(cs))
+            {
+                await connection.OpenAsync();
+                await using var tx = await connection.BeginTransactionAsync();
+                await using var command = new NpgsqlCommand(
+                    $"SELECT {q}.apply_assignment(@key,@hash,@subject,@warehouse);",
+                    connection, tx);
+                command.Parameters.AddWithValue("key", rollbackKey);
+                command.Parameters.AddWithValue("hash", fingerprint);
+                command.Parameters.AddWithValue("subject", rollbackSubject);
+                command.Parameters.AddWithValue("warehouse", rollbackWarehouse);
+                _ = await command.ExecuteScalarAsync();
+                await tx.RollbackAsync();
+            }
+            Assert.Equal(0L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.command_receipt WHERE idempotency_key=@key;",
+                ("key", rollbackKey)));
+            Assert.Equal(0L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.account_warehouse_assignment WHERE subject_account_id=@subject AND warehouse_id=@warehouse;",
+                ("subject", rollbackSubject), ("warehouse", rollbackWarehouse)));
+
+            var retriedAfterRollback = await ScalarGuidAsync(cs,
+                $"SELECT {q}.apply_assignment(@key,@hash,@subject,@warehouse);",
+                ("key", rollbackKey), ("hash", fingerprint),
+                ("subject", rollbackSubject), ("warehouse", rollbackWarehouse));
+            Assert.NotEqual(Guid.Empty, retriedAfterRollback);
+            Assert.Equal(retriedAfterRollback,
+                await ScalarGuidAsync(cs,
+                    $"SELECT assignment_id FROM {q}.command_receipt WHERE idempotency_key=@key;",
+                    ("key", rollbackKey)));
+            Assert.Equal(1L, await ScalarInt64Async(cs,
+                $"SELECT count(*) FROM {q}.account_warehouse_assignment WHERE subject_account_id=@subject AND warehouse_id=@warehouse;",
+                ("subject", rollbackSubject), ("warehouse", rollbackWarehouse)));
         }
         finally
         {
