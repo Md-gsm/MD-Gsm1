@@ -36,6 +36,12 @@ The Setup Service generates exactly 32 random bytes using the Windows OS CSPRNG.
 
 Only the 32-byte digest is sent to the issuer routine and stored as `identity.bootstrap_challenges.verifier_digest`. The service fails closed on CSPRNG failure, clears mutable buffers where practical, and documents managed-memory zeroization limitations without claiming guaranteed process-memory erasure.
 
+## 3.1 Named Pipe security implementation constraint
+
+The Setup Named Pipe remains a design boundary, not an implementation approval. The local IPC threat review v0.1 identifies that .NET `PipeOptions` does not expose `PIPE_REJECT_REMOTE_CLIENTS`, and `NamedPipeServerStreamAcl.Create` with `CurrentUserOnly` does not preserve a supplied multi-SID ACL. Therefore the implementation design must not rely on either behavior to satisfy the accepted boundary.
+
+The candidate Windows implementation is native `CreateNamedPipeW` with `PIPE_REJECT_REMOTE_CLIENTS`, an explicit protected DACL for the exact enrolled operator SID and minimum required service identities, and first-instance protection, followed by wrapping the native handle in the .NET pipe abstraction. Both peers must authenticate the expected process/user identity; pipe squatting, remote clients and unintended same-SID sessions are explicit threat cases. Exact SID enrollment, allowed logon-session semantics, service SID, DACL masks, process identity proof and SafeHandle/interop behavior remain open proof items. No weakening of the remote-client rejection or ACL boundary is allowed to simplify implementation.
+
 ## 4. Issuer contract
 
 The issuer's typed inputs are:
