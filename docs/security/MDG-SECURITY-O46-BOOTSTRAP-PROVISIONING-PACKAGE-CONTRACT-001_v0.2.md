@@ -6,8 +6,8 @@
 | Version / Date | 0.2 / 2026-11-23 |
 | Status | **OWNER-ACCEPTED MAINTENANCE BOUNDARY + TWO-ROUTINE DESIGN; IMPLEMENTATION NOT AUTHORIZED** |
 | Owner | Product Owner / IdentityAccess Module Owner |
-| Related decision | MDG-SECURITY-O46-BOOTSTRAP-DB-PROVISIONING-DECISION-001 v0.1 |
-| Related design | MDG-SECURITY-O46-BOOTSTRAP-DB-PROVISIONING-PATH-001 v0.1 |
+| Related decision | MDG-SECURITY-O46-BOOTSTRAP-DB-PROVISIONING-DECISION-001 v0.2 |
+| Related design | MDG-SECURITY-O46-BOOTSTRAP-DB-PROVISIONING-PATH-001 v0.2 |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
 | Supersedes | MDG-SECURITY-O46-BOOTSTRAP-PROVISIONING-PACKAGE-CONTRACT-001 v0.1 |
 
@@ -266,4 +266,4 @@ No acceptance test is reported as passed until executed against the exact final 
 
 This document does not authorize DDL, SQL, migrations, role creation/alteration, grants, secret generation, executor LOGIN, Setup Wizard claim execution, production runtime, O-20/O-21 closure or G1. All remain gated by separate change control and evidence.
 
-**END — MDG-SECURITY-O46-BOOTSTRAP-PROVISIONING-PACKAGE-CONTRACT-001 v0.1**
+**END — MDG-SECURITY-O46-BOOTSTRAP-PROVISIONING-PACKAGE-CONTRACT-001 v0.2**
