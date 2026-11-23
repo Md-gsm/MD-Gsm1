@@ -51,6 +51,16 @@ public sealed class IdentityAccessPartySensitiveDataAuthorizerTests
     }
 
     [Fact]
+    public async Task Denies_when_allowed_decision_names_a_different_permission()
+    {
+        var contract = new StubAuthorizationContract(AuthenticatedPrincipal(AccountGuid, SessionGuid),
+            PermissionDecisionStatus.Allowed, AccountGuid, SessionGuid, PrincipalVersion,
+            permissionKeyOverride: "persons.read");
+        var authorizer = new IdentityAccessPartySensitiveDataAuthorizer(contract);
+        Assert.False(await authorizer.CanReadSensitivePartyDataAsync(AccountGuid.ToString("D"), default));
+    }
+
+    [Fact]
     public async Task Denies_when_actor_does_not_match_validated_principal_without_permission_lookup()
     {
         var contract = new StubAuthorizationContract(AuthenticatedPrincipal(Guid.NewGuid(), SessionGuid),
