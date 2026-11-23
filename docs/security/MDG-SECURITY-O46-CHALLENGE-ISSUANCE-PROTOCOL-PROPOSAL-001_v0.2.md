@@ -110,7 +110,7 @@ Physical schema/ACL proposal v0.2 incorporates the owner-approved bounded delta.
 
 | Object | Additional capability proposed | Explicitly denied |
 |---|---|---|
-| `identity.bootstrap_challenges` | INSERT only on exact challenge columns: challenge_id (if not DB-generated), installation_id, setup_operation_id, purpose, operator_sid, verifier_digest, created_at_utc, expires_at_utc; UPDATE only `revoked_at_utc` for conditional revocation of an unconsumed row | SELECT/UPDATE of verifier, binding, expiry or consumed state beyond the already proposed claim verification/consumption columns; DELETE; TRUNCATE |
+| `identity.bootstrap_challenges` | SELECT the exact challenge_id, installation_id, setup_operation_id, challenge_request_id, purpose, operator_sid, verifier_digest, created_at_utc, expires_at_utc and state columns strictly needed for issue idempotency / claim verification; INSERT only on exact challenge columns: challenge_id (if not DB-generated), installation_id, setup_operation_id, challenge_request_id, purpose, operator_sid, verifier_digest, created_at_utc, expires_at_utc; UPDATE only `revoked_at_utc` for conditional revocation of an unconsumed row and `consumed_at_utc` for the separately approved claim transition | SELECT of unrelated tables/rows or unrelated challenge data; UPDATE of identity/binding/verifier/expiry fields; DELETE; TRUNCATE |
 | `identity.product_owner_bindings` | No change | UPDATE; DELETE; TRUNCATE |
 | `identity.bootstrap_operations` | No change | UPDATE; DELETE; TRUNCATE |
 | `identity.accounts` | No change | UPDATE; DELETE; role/session/recovery access |
