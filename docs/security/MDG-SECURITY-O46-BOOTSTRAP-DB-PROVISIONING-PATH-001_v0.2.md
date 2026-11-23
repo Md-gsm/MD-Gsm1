@@ -7,7 +7,7 @@
 | Status | **OWNER-ACCEPTED DEPLOYMENT CONSTRAINT — DESIGN BASELINE ONLY; NO DDL / ROLE / GRANT / RUNTIME AUTHORIZATION** |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
 | Supersedes | MDG-SECURITY-O46-BOOTSTRAP-DB-PROVISIONING-PATH-001 v0.1 |
-| Owner-accepted principal baseline | O-46 Bootstrap Database Principal Decision v0.1 |
+| Owner-accepted principal baseline | O-46 Bootstrap Database Principal Decision v0.2 |
 | Role catalog baseline | O-20 Database Role/Object Matrix v1.8 |
 | Related implementation boundary | O-20-C migration_runner → mdgsm_schema_owner SET-only mapping |
 
