@@ -138,6 +138,7 @@ internal sealed class InventoryPostgresHarness : IAsyncDisposable
                 if (blockers.Contains(expectedBlockerPid))
                 {
                     return new LockObservation(
+                        Guid.Empty,
                         waiterPid,
                         reader.GetString(1),
                         reader.IsDBNull(2) ? null : reader.GetString(2),

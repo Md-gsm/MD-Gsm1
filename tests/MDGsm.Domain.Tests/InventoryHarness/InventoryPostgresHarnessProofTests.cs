@@ -12,7 +12,6 @@ public sealed class InventoryPostgresHarnessProofTests
         await using var harness = await InventoryPostgresHarness.CreateAsync();
         var resourceId = await harness.SeedLockRowAsync("observer-proof");
         var barrierAHasLock = new DeterministicBarrier();
-        var releaseA = new DeterministicBarrier();
         var barrierBAttempting = new DeterministicBarrier();
         var timeline = new List<string>();
         var repositorySha = Environment.GetEnvironmentVariable("GITHUB_SHA") ?? "LOCAL-UNSPECIFIED";
@@ -46,7 +45,6 @@ public sealed class InventoryPostgresHarnessProofTests
         Assert.Contains(pidA, observation.BlockingPids);
         Assert.Equal("Lock", observation.WaitEventType);
 
-        releaseA.Release();
         await txA.CommitAsync();
         timeline.Add("A:committed");
         await writerB.WaitAsync(TimeSpan.FromSeconds(8));
