@@ -48,7 +48,7 @@ public sealed class O20EmergencyAccessPostgresProofTests
                         principal text NOT NULL,
                         database_name text NOT NULL,
                         schema_name text NOT NULL,
-                        allowed_operation text NOT NULL,
+                        allowed_operation text NOT NULL CHECK (allowed_operation IN ('UNLOCK_ACCOUNT','REVOKE_INVALID_SESSION','RESET_CREDENTIAL','BACKUP_RESTORE')),
                         allowed_resource text NOT NULL,
                         is_active boolean NOT NULL,
                         valid_from_utc timestamptz NOT NULL,
@@ -70,7 +70,7 @@ public sealed class O20EmergencyAccessPostgresProofTests
                         grant_id uuid PRIMARY KEY,
                         operator_principal text NOT NULL,
                         requester_principal text NOT NULL,
-                        allowed_operation text NOT NULL,
+                        allowed_operation text NOT NULL CHECK (allowed_operation IN ('UNLOCK_ACCOUNT','REVOKE_INVALID_SESSION','RESET_CREDENTIAL','BACKUP_RESTORE')),
                         allowed_resource text NOT NULL,
                         database_name text NOT NULL,
                         schema_name text NOT NULL,
@@ -230,7 +230,7 @@ public sealed class O20EmergencyAccessPostgresProofTests
             // An otherwise eligible approver outside the validity window cannot activate an emergency grant.
             await ExecuteAsync(adminConnectionString,
                 $"UPDATE {qSchema}.authorized_approver SET valid_until_utc=clock_timestamp()-interval '1 second' WHERE principal='approver-b' AND allowed_resource='scope-A';");
-            var expiredApproverGrant = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-A", 60);
+            var expiredApproverGrant = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "UNLOCK_ACCOUNT", "scope-A", 60);
             Assert.False(await ActivateAsync(adminConnectionString, schema, expiredApproverGrant, "approver-b"));
             Assert.Equal("REQUESTED", await ScalarStringAsync(adminConnectionString,
                 $"SELECT state FROM {qSchema}.emergency_grant WHERE grant_id=@id;", expiredApproverGrant));
@@ -239,7 +239,7 @@ public sealed class O20EmergencyAccessPostgresProofTests
 
             // One authorized independent approver is sufficient for ordinary emergency operations.
             // The approver must be distinct from both requester and emergency operator.
-            var invalid = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-A", 60);
+            var invalid = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "UNLOCK_ACCOUNT", "scope-A", 60);
             Assert.Equal(
                 1L,
                 await ScalarInt64Async(adminConnectionString,
@@ -250,20 +250,20 @@ public sealed class O20EmergencyAccessPostgresProofTests
             Assert.True(await ActivateAsync(adminConnectionString, schema, invalid, "approver-a"));
             Assert.False(await ActivateAsync(adminConnectionString, schema, invalid, "approver-a"));
             // Product Owner approval is allowed only when the owner is independent of requester/operator.
-            var ownerApproved = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-A", 60);
+            var ownerApproved = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "UNLOCK_ACCOUNT", "scope-A", 60);
             Assert.True(await ActivateAsync(adminConnectionString, schema, ownerApproved, "product-owner"));
-            var ownerSelfRequest = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "product-owner", "READ", "scope-A", 60);
+            var ownerSelfRequest = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "product-owner", "UNLOCK_ACCOUNT", "scope-A", 60);
             Assert.False(await ActivateAsync(adminConnectionString, schema, ownerSelfRequest, "product-owner"));
-            Assert.True(await AllowedAsync(adminConnectionString, schema, invalid, emergencyRole, "READ", "scope-A"));
+            Assert.True(await AllowedAsync(adminConnectionString, schema, invalid, emergencyRole, "UNLOCK_ACCOUNT", "scope-A"));
             Assert.False(await AllowedAsync(adminConnectionString, schema, invalid, emergencyRole, "WRITE", "scope-A"));
-            Assert.False(await AllowedAsync(adminConnectionString, schema, invalid, emergencyRole, "READ", "scope-B"));
-            Assert.False(await AllowedAsync(adminConnectionString, schema, invalid, "another-principal", "READ", "scope-A"));
+            Assert.False(await AllowedAsync(adminConnectionString, schema, invalid, emergencyRole, "UNLOCK_ACCOUNT", "scope-B"));
+            Assert.False(await AllowedAsync(adminConnectionString, schema, invalid, "another-principal", "UNLOCK_ACCOUNT", "scope-A"));
             Assert.False(await ScalarBoolAsync(adminConnectionString,
                 $"SELECT {qSchema}.emergency_allowed(@id,@principal,@operation,@resource,'wrong_database',{Literal(schema)});",
-                invalid, ("principal", emergencyRole), ("operation", "READ"), ("resource", "scope-A")));
+                invalid, ("principal", emergencyRole), ("operation", "UNLOCK_ACCOUNT"), ("resource", "scope-A")));
             Assert.False(await ScalarBoolAsync(adminConnectionString,
                 $"SELECT {qSchema}.emergency_allowed(@id,@principal,@operation,@resource,current_database(),'wrong_schema');",
-                invalid, ("principal", emergencyRole), ("operation", "READ"), ("resource", "scope-A")));
+                invalid, ("principal", emergencyRole), ("operation", "UNLOCK_ACCOUNT"), ("resource", "scope-A")));
 
             // Isolated Backup restore retains its explicit two-person approval requirement.
             await ExecuteAsync(adminConnectionString, $"""
@@ -279,13 +279,13 @@ public sealed class O20EmergencyAccessPostgresProofTests
             Assert.True(await AllowedAsync(adminConnectionString, schema, restoreGrant, emergencyRole, "BACKUP_RESTORE", "backup-snapshot-1"));
 
             // An approver who is valid for the same principal but not for this exact resource scope is not authorized.
-            var unlistedScope = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-B", 60);
+            var unlistedScope = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "UNLOCK_ACCOUNT", "scope-B", 60);
             Assert.False(await ActivateAsync(adminConnectionString, schema, unlistedScope, "approver-a", "approver-b"));
             Assert.Equal("REQUESTED", await ScalarStringAsync(adminConnectionString,
                 $"SELECT state FROM {qSchema}.emergency_grant WHERE grant_id=@id;", unlistedScope));
 
             // A 60-minute grant is accepted at the policy boundary; expiry is derived from database time.
-            var sixtyMinuteGrant = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-A", 3600);
+            var sixtyMinuteGrant = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "UNLOCK_ACCOUNT", "scope-A", 3600);
             Assert.True(await ActivateAsync(adminConnectionString, schema, sixtyMinuteGrant, "approver-a"));
             Assert.True(await ScalarBoolAsync(adminConnectionString,
                 $"SELECT extract(epoch FROM (expires_at-activated_at)) BETWEEN 3599 AND 3601 FROM {qSchema}.emergency_grant WHERE grant_id=@id;",
@@ -293,17 +293,17 @@ public sealed class O20EmergencyAccessPostgresProofTests
 
             // At now >= expires_at, authorization is denied even though no cleanup ran.
             await ExecuteAsync(adminConnectionString, $"UPDATE {qSchema}.emergency_grant SET expires_at=clock_timestamp() WHERE grant_id=@id;", invalid);
-            Assert.False(await AllowedAsync(adminConnectionString, schema, invalid, emergencyRole, "READ", "scope-A"));
+            Assert.False(await AllowedAsync(adminConnectionString, schema, invalid, emergencyRole, "UNLOCK_ACCOUNT", "scope-A"));
 
             // Revocation is synchronous at the next authorization decision.
-            var revoked = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-A", 60);
+            var revoked = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "UNLOCK_ACCOUNT", "scope-A", 60);
             Assert.True(await ActivateAsync(adminConnectionString, schema, revoked, "approver-a"));
-            Assert.True(await AllowedAsync(adminConnectionString, schema, revoked, emergencyRole, "READ", "scope-A"));
+            Assert.True(await AllowedAsync(adminConnectionString, schema, revoked, emergencyRole, "UNLOCK_ACCOUNT", "scope-A"));
             Assert.True(await ScalarBoolAsync(adminConnectionString, $"SELECT {qSchema}.revoke_emergency(@id);", revoked));
-            Assert.False(await AllowedAsync(adminConnectionString, schema, revoked, emergencyRole, "READ", "scope-A"));
+            Assert.False(await AllowedAsync(adminConnectionString, schema, revoked, emergencyRole, "UNLOCK_ACCOUNT", "scope-A"));
 
             // Two concurrent activations serialize on the grant row; exactly one succeeds.
-            var concurrent = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-C", 60);
+            var concurrent = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "UNLOCK_ACCOUNT", "scope-C", 60);
             var results = await Task.WhenAll(
                 ActivateAsync(adminConnectionString, schema, concurrent, "approver-a"),
                 ActivateAsync(adminConnectionString, schema, concurrent, "approver-a"));
@@ -311,7 +311,7 @@ public sealed class O20EmergencyAccessPostgresProofTests
             Assert.Single(results, x => !x);
 
             // Local audit-intent failure rolls back activation atomically.
-            var auditFailure = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-D", 60);
+            var auditFailure = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "UNLOCK_ACCOUNT", "scope-D", 60);
             await ExecuteAsync(adminConnectionString, $"UPDATE {qSchema}.audit_control SET fail_insert=true WHERE singleton;");
             var auditException = await Assert.ThrowsAsync<PostgresException>(() =>
                 ActivateAsync(adminConnectionString, schema, auditFailure, "approver-a"));
@@ -327,9 +327,22 @@ public sealed class O20EmergencyAccessPostgresProofTests
                 $"SELECT count(*) FROM {qSchema}.audit_outbox WHERE grant_id=@id AND delivery_state='PENDING' AND canonical_ack_at IS NULL;", auditFailure);
             Assert.Equal(1L, pending);
 
+            // The database CHECK constraint enforces the owner-approved operation allow-list.
+            foreach (var forbiddenOperation in new[]
+                     {
+                         "SALES_MUTATION", "PURCHASE_MUTATION", "INVENTORY_MUTATION",
+                         "JOURNAL_POSTING", "OWNER_BINDING_CHANGE", "WORM_RETENTION_CHANGE",
+                         "AUDIT_DELETE", "PERMANENT_ADMIN"
+                     })
+            {
+                var forbidden = await Assert.ThrowsAsync<PostgresException>(() =>
+                    InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", forbiddenOperation, "scope-E", 60));
+                Assert.Equal("23514", forbidden.SqlState);
+            }
+
             // The database CHECK constraint enforces the owner-approved 60-minute ceiling.
             var tooLong = await Assert.ThrowsAsync<PostgresException>(() =>
-                InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "READ", "scope-E", 3601));
+                InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "UNLOCK_ACCOUNT", "scope-E", 3601));
             Assert.Equal("23514", tooLong.SqlState);
         }
         finally
