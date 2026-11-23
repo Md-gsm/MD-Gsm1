@@ -26,7 +26,7 @@ The cluster-administrator credential is never stored in or exposed to the packag
    - `identity_bootstrap.issue_initial_owner_challenge_v1(...)`
    - `identity_bootstrap.claim_initial_product_owner_v1(...)`
 6. Both routines are owned by the NOLOGIN function-owner. Executor receives only schema USAGE and EXECUTE on those two exact signatures after separate activation gates. It has no direct table/sequence privilege, membership, ownership, schema CREATE, DDL or role administration.
-7. Function-owner grants are aggregate at role level. The approved challenge issuer delta is exact challenge-column INSERT plus conditional `revoked_at_utc)-only UPDATE; this is not a per-function database sandbox. Fixed reviewed bodies, signatures and separate fingerprints must enforce intended side-effect separation, with independent Security/Architecture risk acceptance.
+7. Function-owner grants are aggregate at role level. The approved challenge issuer delta is exact challenge-column INSERT plus conditional UPDATE of `revoked_at_utc` only; this is not a per-function database sandbox. Fixed reviewed bodies, signatures and separate fingerprints must enforce intended side-effect separation, with independent Security/Architecture risk acceptance.
 8. Provisioning and routine installation do not create an Account, challenge, Owner binding, Owner credential, session, role/permission assignment or business data.
 
 ## 3. Signed package and trust
