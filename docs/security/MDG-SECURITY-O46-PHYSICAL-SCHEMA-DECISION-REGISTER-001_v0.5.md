@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | MDG-SECURITY-O46-PHYSICAL-SCHEMA-DECISION-REGISTER-001 |
-| Version / Date | 0.5 / 2026-11-24 |
-| Status | **OWNER-APPROVED PROFILE AND O-46 JOURNAL ARCHITECTURE TARGETS RECORDED; PHYSICAL/SECURITY PROOFS OPEN; NO IMPLEMENTATION AUTHORIZED** |
+| Version / Date | 0.6 / 2026-11-24 |
+| Status | **OWNER-APPROVED PROFILE, JOURNAL AND TWO-PRINCIPAL RECONCILIATION TARGETS RECORDED; PHYSICAL/SECURITY PROOFS OPEN; NO IMPLEMENTATION AUTHORIZED** |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
-| Supersedes | v0.2 as the current cross-document index |
+| Supersedes | v0.5 as the current cross-document index |
 
 ## 1. Controlling owner decisions
 
@@ -93,9 +93,37 @@ The controlling technical reconciliation and constraints are in `MDG-SECURITY-O4
 2. The O-46 Journal is the local Bootstrap Operation Journal, not the Accounting ledger. Debit/Credit/PostingStatus fields are out of scope.
 3. Hash chains/signatures alone do not prevent truncation/rollback; no WORM External Anchor is assumed or approved yet.
 4. A View SELECT alone cannot prove absence of an in-flight claim. Reconciliation must use the same InstallationId-scoped serialization barrier as claim and a fresh READ COMMITTED snapshot after the barrier.
-5. The logical Reader identity's database realization is unresolved. A new PostgreSQL principal would supersede the prior exact-two-principal rule and requires explicit owner reconciliation. A Windows service SID still needs an approved database-role mapping. Executor privileges must not be expanded.
+5. `JOURNAL_RECONCILIATION_READER` is an application-layer logical identity/capability only; it is not a PostgreSQL role, LOGIN, membership or principal. The exact-two-PostgreSQL-principal rule is unchanged. Reconciliation must use a pre-existing, already-authorized database execution identity for `SELECT`; the executor is explicitly excluded. The exact role and effective `SELECT` path must be proven from the current Grant Matrix. If no such path exists, Reconciliation remains open; no grant or identity is to be invented or expanded.
 6. View owner, RLS, security-barrier behavior, installation scoping, base-table ACLs and non-updatability require PostgreSQL 18 proof.
 
 All PoCs, Windows/PostgreSQL tests and independent review remain NOT RUN / NOT VERIFIED. No CNG key, TPM key, Journal, View, principal, grant, routine, SQL, DDL or migration has been created or authorized. Candidate migration 0010 remains NOT RESERVED.
 
-**Precedence:** this v0.5 register controls the O-46 Journal/Reconciliation architecture-target decisions above; it does not alter the existing two-routine, no-Executor-expansion, no-implementation boundaries.
+**Precedence:** this v0.6 register controls the O-46 Journal/Reconciliation architecture-target decisions above; it preserves exactly two PostgreSQL principals, exactly two routines, no Executor privilege expansion and the no-implementation boundary.
+
+
+## 9. Owner reconciliation — JRN-REC-01 exact-two-principal decision (2026-11-24)
+
+The Product Owner has explicitly resolved the former database-identity conflict:
+
+| Item | Binding decision |
+|---|---|
+| PostgreSQL principal count | Exactly two new principals; unchanged |
+| Accepted principals | `mdgsm_identity_bootstrap_fn_owner` and `mdgsm_bootstrap_executor` only |
+| `JOURNAL_RECONCILIATION_READER` | Logical application-layer identity/capability only; never a PostgreSQL role or principal |
+| Reconciliation View | Dedicated read-only View is an approved design target; no View has been created |
+| View owner | A pre-existing, controlled, non-login PostgreSQL role must be selected from the current role inventory; no new owner role |
+| SELECT execution identity | A pre-existing execution identity may read only if the current Grant Matrix proves it is already authorized; no assumed or newly invented grant |
+| Executor | No direct View SELECT and no privilege expansion |
+| Routine count | Exactly the two approved SECURITY DEFINER routines; no third routine |
+
+The logical application identity is authorized by application policy to invoke the Reconciliation capability. It has no direct PostgreSQL credentials, database connection, table access, routine execution grant, write capability or private-key access. The application must route the read through an already-existing execution identity whose database authorization is independently established; logical application authorization does not itself create or imply a database grant.
+
+The View must expose only the minimum bootstrap operation reconciliation metadata. It must not expose password hashes, challenge verifier material, raw challenges, profile PII, secrets, keys or unrelated attributes. It must be non-updatable and have no DML path. View owner, RLS behavior, security-barrier use, installation scoping, effective privileges, base-table grants and the exact existing SELECT execution identity require PostgreSQL 18 catalog/effective-privilege proof.
+
+The Reconciliation reader and claim path must share the same InstallationId-scoped serialization barrier. Claim takes the exclusive transaction-level form; Reconciliation takes the compatible shared transaction-level form and, after acquiring it, reads under a fresh READ COMMITTED snapshot. The lock primitive, namespace derivation, collision behavior and proof that every claim path participates remain open. The lock must not create a durable write or a third routine.
+
+**Open implementation gate:** inspect the current role inventory and Grant Matrix and prove (a) which pre-existing NOLOGIN role owns the View, and (b) which pre-existing execution identity already has an authorized SELECT route. If either cannot be established without creating a third principal or expanding Executor privileges, do not create the View or grant; keep JRN-REC-01 design-approved but execution-open and return with the exact missing authorization path.
+
+This Owner reconciliation supersedes the former unresolved alternative that proposed a third PostgreSQL Reader role or a Windows-SID-to-new-role mapping. It does not authorize SQL, DDL, View creation, grants, routine changes, migration, credentials or activation.
+
+**END — v0.6**
