@@ -213,6 +213,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Run Persons PostgreSQL end-to-end integration test
+        env:
+          MDGSM_INVENTORY_HARNESS_EVIDENCE_DIR: ${{ runner.temp }}/inventory-harness-evidence
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "Category=Integration" --no-restore
       - name: Run explicit O-20 support identity and catalog proof
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20SupportIdentityPostgresProofTests" --no-restore --logger "console;verbosity=normal"
@@ -251,6 +253,14 @@ jobs:
       - name: Run isolated Accounting AP-03/AP-04 PostgreSQL 18 proof
         shell: bash
         run: bash scripts/ci/test_accounting_postgres_ap03_ap04.sh
+      - name: Upload Inventory PostgreSQL harness evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: inventory-postgres-harness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/inventory-harness-evidence/*.json
+          if-no-files-found: warn
+          retention-days: 14
   persons-postgres-windows-migrations:
     name: persons-postgres-windows-migrations
     runs-on: windows-latest
