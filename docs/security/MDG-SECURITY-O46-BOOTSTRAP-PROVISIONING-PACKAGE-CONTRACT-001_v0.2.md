@@ -258,7 +258,7 @@ No acceptance test is reported as passed until executed against the exact final 
 ## 10. Open dependencies and explicit non-authorizations
 
 1. WG-0 must reserve a new IdentityAccess schema migration number; 0009 remains RESERVED for Accounting and must not be consumed. Issue #93 requests candidate 0010 and remains open; no number is reserved.
-2. IdentityAccess must own and review the exact schema and table/column grant set required by both routines. Because both routines share one function-owner role, ACLs are aggregated at role level; fixed routine bodies, static review and adversarial PostgreSQL 18 tests must prove issuer/claim side-effect separation. The grant set cannot be guessed from this document.
+2. IdentityAccess must own and review the exact schema and table/column grant set required by both routines. Because both routines share one function-owner role, ACLs are aggregated at role level; per-signature EXECUTE does not provide per-function table ACLs. Side-effect separation is therefore code-integrity separation under fixed function bodies and signed package fingerprints, not an independent database privilege sandbox. Static review, adversarial PostgreSQL 18 tests and explicit independent Security/Architecture acceptance of this residual trust boundary are mandatory. The grant set cannot be guessed from this document.
 3. The platform must approve the release-signing trust anchor, rotation/revocation process and canonical manifest format.
 4. The exact local PostgreSQL administrative authentication channel and Windows operator UX remain to be specified and tested.
 5. Executor secret custody, authentication mechanism, loopback-only HBA and Setup Service SID isolation remain separate gates.
