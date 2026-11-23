@@ -107,9 +107,9 @@
 ‫ سند یکپارچه مرجع معماری و حسابداری‬MD-Gsm
 Unified Architecture & Accounting Blueprint — Version 3.0.4
 
-‫شناسه مرجع‬: MDG-ARCH-MASTER-001 3.0.4 :‫ — نسخه‬Accepted Master Architecture Baseline — Owner Accepted v3.0.4; implementation and release gates remain independent ‫ نوامبر‬23 :‫تاریخ‬
+‫شناسه مرجع‬: MDG-ARCH-MASTER-001 3.0.4 :‫ — نسخه‬Historical working derivative — not the governing Master; v3.0.3 remains the official accepted baseline; implementation and release gates remain independent ‫ نوامبر‬23 :‫تاریخ‬
 
-‫ وضعیت‬2026: OWNER-ACCEPTED MASTER SUCCESSOR — v3.0.4 ACCEPTED BY EXPLICIT OWNER DIRECTIVE ON 2026-11-23;
+‫ وضعیت‬2026: HISTORICAL WORKING DERIVATIVE — v3.0.4 IS NOT THE CURRENT OR OFFICIAL MASTER; v3.0.3 REMAINS THE SOLE ACCEPTED MASTER UNDER OWNER REAFFIRMATION ON 2026-11-24;
 PRIOR VERSIONS ARE HISTORICAL REFERENCES ONLY. IMPLEMENTATION, INDEPENDENT TECHNICAL REVIEW, TEST, RELEASE AND GO-LIVE GATES REMAIN SEPARATE;
 
 DOCUMENT CONTROL — AUTHORITATIVE STATUS (2026-11-20)
@@ -118,11 +118,18 @@ This control block supersedes all contradictory status statements in the histori
 
 1. OWNER ACCEPTANCE — ACCEPTED. The owner explicitly accepted MDG-ARCH-MASTER-001 v3.0.3 on 2026-11-20 as the sole current architecture and accounting-policy baseline. v2.5, v2.6, v3.0 and v3.0.1 are historical references only; they are not current baselines.
 2. INDEPENDENT TECHNICAL REVIEW — PENDING. Review must be performed against the exact final commit SHA. Owner acceptance is not independent review and must not be represented as such.
-3. REPOSITORY REGISTRATION — PENDING. The document is on the open PR #72 branch. It is not registered in main until the relevant PR is successfully merged. A PR, approval, passing check or branch commit alone is not registration in main.
+3. REPOSITORY REGISTRATION — NOT REGISTERED AS MASTER. This v3.0.4 derivative is present only on the controlled PR #92 branch. The sole registered Master in `main` is v3.0.3, registered through PR #71 merge commit `8f89653e25e6a599387128e0209f5009d9dd59cd`.
 4. IMPLEMENTATION / TEST / EVIDENCE / LEGAL / RELEASE — SEPARATE. Owner acceptance does not imply design completion, implementation, test PASS, evidence acceptance, legal clearance, Gate C or Gate D PASS, Posting Release, production migration or Go-Live. Each retains its own criteria and status.
 5. REVISION DATE — 2026-11-23. Dates elsewhere remain the dates of their underlying decisions, source records or test evidence; they do not override this document revision date.
 
 DOCUMENT CONTROL UPDATE — AUTHORITATIVE SUCCESSOR STATUS (2026-11-23)
+
+DOCUMENT CONTROL REAFFIRMATION — 2026-11-24
+
+The Product Owner's current directive confirms MDG-ARCH-MASTER-001 v3.0.3 as the sole accepted, official and governing Master. This v3.0.4 file is retained as a historical working derivative only; it is not an accepted or registered Master successor and must not be cited as the current governing architecture.
+
+The 2026-11-23 CHG-101 decisions remain separately authoritative only within their explicit owner-approved scope. Their existence does not promote this derivative to Master status or authorize unreviewed changes to unrelated architecture/accounting requirements. Future incorporation into the Master requires a controlled successor version and explicit owner acceptance.
+
 
 This v3.0.4 successor is explicitly accepted by the Product Owner on 2026-11-23 for the bounded IdentityAccess/O-46 reconciliation recorded in CHG-101. It supersedes v3.0.3 only for the directly affected N.1 Bootstrap, N.2 Recovery, IAM-BOOTSTRAP, IAM-RECOVERY, O-46 status and related cross-references. All unaffected v3.0.3 architecture/accounting decisions remain in force.
 
