@@ -280,7 +280,7 @@ public sealed class O20EmergencyAccessPostgresProofTests
 
             // An approver who is valid for the same principal but not for this exact resource scope is not authorized.
             var unlistedScope = await InsertGrantAsync(adminConnectionString, schema, emergencyRole, "requester-1", "UNLOCK_ACCOUNT", "scope-B", 60);
-            Assert.False(await ActivateAsync(adminConnectionString, schema, unlistedScope, "approver-a", "approver-b"));
+            Assert.False(await ActivateWithTwoApproversAsync(adminConnectionString, schema, unlistedScope, "approver-a", "approver-b"));
             Assert.Equal("REQUESTED", await ScalarStringAsync(adminConnectionString,
                 $"SELECT state FROM {qSchema}.emergency_grant WHERE grant_id=@id;", unlistedScope));
 
