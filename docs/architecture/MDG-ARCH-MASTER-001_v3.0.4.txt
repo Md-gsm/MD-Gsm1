@@ -107,9 +107,9 @@
 ‫ سند یکپارچه مرجع معماری و حسابداری‬MD-Gsm
 Unified Architecture & Accounting Blueprint — Version 3.0.4
 
-‫شناسه مرجع‬: MDG-ARCH-MASTER-001 3.0.3 :‫ — نسخه‬Accepted Master Architecture Baseline — Owner Accepted v3.0.4; implementation and release gates remain independent ‫ نوامبر‬20 :‫تاریخ‬
+‫شناسه مرجع‬: MDG-ARCH-MASTER-001 3.0.4 :‫ — نسخه‬Accepted Master Architecture Baseline — Owner Accepted v3.0.4; implementation and release gates remain independent ‫ نوامبر‬23 :‫تاریخ‬
 
-‫ وضعیت‬2026: OWNER-ACCEPTED MASTER BASELINE — v3.0.3 ACCEPTED BY EXPLICIT OWNER DIRECTIVE ON 2026-11-20;
+‫ وضعیت‬2026: OWNER-ACCEPTED MASTER SUCCESSOR — v3.0.4 ACCEPTED BY EXPLICIT OWNER DIRECTIVE ON 2026-11-23;
 PRIOR VERSIONS ARE HISTORICAL REFERENCES ONLY. IMPLEMENTATION, INDEPENDENT TECHNICAL REVIEW, TEST, RELEASE AND GO-LIVE GATES REMAIN SEPARATE;
 
 DOCUMENT CONTROL — AUTHORITATIVE STATUS (2026-11-20)
