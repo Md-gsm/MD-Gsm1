@@ -177,6 +177,7 @@
 3c7b0468831d9ee9827b4de148e882984d7638129bbaab30b509b298ff8d65fc  docs/modules/inventory/MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-001_v0.5.md
 3c7e4f667ba3674453b561ed52cfbbae4251ce6e5f0c42e697d47f1e7c1e1886  docs/operations/evidence/g0-work-closure-attempt-2026-10-31.md
 3d0b0733474ee2ac84d9d7ba0dd38cc88866283a48e92ed52fe2e463415e30e7  docs/modules/inventory/INVENTORY-SOURCE-EVENT-CONTRACT-PROPOSAL-001_v0.1.md
+3d2da3838878eceb796a30ce9575128e50bc9fb049989c9d3b17df5151dd1de9  docs/security/MDG-SECURITY-O46-BOOTSTRAP-PHYSICAL-SCHEMA-AND-ACL-PROPOSAL-001_v0.1.md
 3d31f66f51f27f849639c1e738612452cd2a6c73098371a6a643c40fae51d0ab  docs/decisions/0018-accounting-core-foundation-scope.md
 3df36cfaa8936d5a8c15304a5feeb7c2898d9efb2acbca8cd82f3ea6212d228c  src/Modules/Persons/Contracts/README.md
 3f74dd95e5ff8423caed8f423bde6e3506fef0e14ea34eb2fd9b9e2ce8fc8b08  src/Host/Desktop/Assets/menu-catalog-fa.json
