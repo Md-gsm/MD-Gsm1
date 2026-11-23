@@ -55,6 +55,8 @@ The Account profile input mapping is Product Owner-approved. The three-table col
 
 ## 6. Remaining gates — all OPEN / NOT RUN
 
+- Restart-safe preservation of the exact salted password-hash output/fingerprint across an uncertain claim and process restart; safe abandonment/revocation before any new SetupOperationId.
+
 - Product Owner acceptance of the three-field Owner profile is recorded. Fingerprint v1, exact columns, serialization test vectors, routine signatures and data-access order remain proposed/open for review.
 - Trusted operator SID attestation and Windows IPC DACL/process/remote-client proof.
 - PostgreSQL 18 catalog/effective-privilege proof, including RLS, PUBLIC/default ACL, ownership and membership.
@@ -70,7 +72,7 @@ The Product Owner explicitly accepted the initial Owner profile as exactly three
 
 Payload fingerprint v1 is a technical proposal, not a Product Owner-approved decision; it is proposed as a domain-separated SHA-256 digest over the deterministic binary envelope: versioned domain tag; InstallationId, SetupOperationId and AccountId in RFC 4122 byte order; length-prefixed strict UTF-8 values for normalized username, validated display_name, validated email and exact stored password-hash output; and password_hash_version. No raw password, raw challenge or secret is included. Exact serialization and cross-language test vectors remain proof obligations.
 
-The three candidate tables and exact column/constraint proposal are in Physical Schema v0.4 and remain subject to technical review. The fingerprint serialization is proposed, not owner-approved. Candidate migration 0010 remains unreserved and must be IdentityAccess-owned/table-only, including only the approved nullable display_name column/check on accounts in addition to the three bootstrap tables and their constraints/indexes. No SQL is authorized.
+The three candidate tables and exact column/constraint proposal are in Physical Schema v0.4 and remain subject to technical review. The fingerprint serialization is proposed, not owner-approved. Restart-safe idempotency for salted password hashes is an additional unresolved design gate. Candidate migration 0010 remains unreserved and must be IdentityAccess-owned/table-only, including only the approved nullable display_name column/check on accounts in addition to the three bootstrap tables and their constraints/indexes. No SQL is authorized.
 
 ## 7. Non-authorization
 
