@@ -51,7 +51,8 @@ internal sealed class InventoryPostgresHarness : IAsyncDisposable
 
         if (!new[] { "127.0.0.1", "localhost", "::1" }.Contains(builder.Host, StringComparer.OrdinalIgnoreCase))
             throw new InvalidOperationException("Harness refuses non-loopback PostgreSQL hosts.");
-        if (!System.Text.RegularExpressions.Regex.IsMatch(
+        if (string.IsNullOrWhiteSpace(builder.Database) ||
+            !System.Text.RegularExpressions.Regex.IsMatch(
                 builder.Database, "^mdgsm_identityaccess_disposable_[0-9]+_[0-9]+$"))
             throw new InvalidOperationException("Harness refuses databases outside the approved disposable naming convention.");
 
