@@ -39,6 +39,7 @@
 0cb1752e8daa2cd5059f6a6032ebd11128096ba2c4d3c8fa4c7a30e110d7920f  docs/finance/workpapers/p4h/7b/WP06-P4H-7B-POSTING-MATRIX-001_v0.2.md
 0cdc345fd66842287f4508e54bcb9c92537e92502441a173260673e63c521319  scripts/Verify-SourceChecksums.ps1
 0d6fb26199cd5c49bb758103b3cf2a5ba680008f3cd727a10360b7bfaf39fce1  tests/MDGsm.Domain.Tests/Security/O20OrganizationCrossAggregateConcurrencyPostgresProofTests.cs
+0d853eb03bfd214dac99c11addc33e8d2f2027f26865ce5c2804093a0c4af2ab  docs/architecture/MDG-ARCH-MASTER-001_v3.0.4.txt
 0d89a8095d383ca99350aea03ed9b88819633d5167da1f9f04e74fbe8653b3e7  docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v1.7.md
 0db3df7dfc11d0170e251f8fcb8f67e709744cc0896919c5ea95448ff74e62b6  docs/security/MDG-SECURITY-O20E-G1-READINESS-REVIEW-001_v3.7.md
 0de90221addf5459529a697500b9c8c7676ec028d023a2c81adcc61ee17debe6  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v2.2.md
@@ -411,7 +412,6 @@
 8d04bcdafd593b73041eaa5f4d43bd9cede84259b8a36cb73acc9f67d204ce6f  src/BuildingBlocks/MDGsm.Application/Persons/PartyQuickRegistration.cs
 8d13ff0fc27758390bab699999425ee5b4dbd2cc4daaeb20655c6c2671c26c22  docs/security/MDG-SECURITY-O20F-EMERGENCY-ACCESS-LIFECYCLE-001_v0.3.md
 8d550aa7c264745c7c8c8b8b82caed23d4cd169477f93ec17faf0c965fdba6f0  tests/MDGsm.Domain.Tests/Security/O20OrganizationAuditOutboxPostgresProofTests.cs
-8d7396fb9afa3ede446e55caba12932e0cdb2c7cc3875969cd259d1a95a58d6f  docs/architecture/MDG-ARCH-MASTER-001_v3.0.4.txt
 8d9e05f9540c4fb62679d616c6ab97f917175a35eafbe1b9c2cfed5e336a49f5  .gitignore
 8e37b79ef33716fe55c88c18bc897b6fed07b96ed354ebb3e6b28bcb8247230b  docs/security/MDG-SECURITY-O21-HASHCHAIN-IMPLEMENTATION-READINESS-001_v0.1.md
 8e3c23031b3ede73492129912453d6f315f313231a517e311bc2fd7d93937434  docs/security/accounting-runtime-privilege-matrix-fa.md
