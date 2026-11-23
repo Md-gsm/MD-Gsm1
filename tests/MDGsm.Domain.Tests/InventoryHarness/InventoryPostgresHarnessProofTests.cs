@@ -17,7 +17,10 @@ public sealed class InventoryPostgresHarnessProofTests
         var barrierAHasLock = new DeterministicBarrier();
         var barrierBAttempting = new DeterministicBarrier();
         var timeline = new List<string>();
-        var repositorySha = Environment.GetEnvironmentVariable("GITHUB_SHA") ?? "LOCAL-UNSPECIFIED";
+        var repositorySha = Environment.GetEnvironmentVariable("MDGSM_PR_HEAD_SHA")
+            ?? Environment.GetEnvironmentVariable("GITHUB_SHA")
+            ?? "LOCAL-UNSPECIFIED";
+        var workflowTestedSha = Environment.GetEnvironmentVariable("GITHUB_SHA") ?? "LOCAL-UNSPECIFIED";
 
         await using var a = await harness.OpenParticipantAsync("writer-a");
         await using var b = await harness.OpenParticipantAsync("writer-b");
@@ -62,6 +65,7 @@ public sealed class InventoryPostgresHarnessProofTests
             "H0-H1-OBSERVER-ROW-LOCK",
             harness.FixtureKind,
             repositorySha,
+            workflowTestedSha,
             await ServerVersionAsync(a),
             a.Database,
             harness.Schema,

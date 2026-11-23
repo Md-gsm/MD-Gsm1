@@ -174,7 +174,10 @@ internal sealed class InventoryPostgresHarness : IAsyncDisposable
         var bytes = Encoding.UTF8.GetBytes(payload);
         var path = Path.Combine(directory, $"{RunId}-{evidence.CaseId}.json");
         await File.WriteAllBytesAsync(path, bytes, cancellationToken);
-        return Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+        var hash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+        var sidecar = $"{hash}  {Path.GetFileName(path)}{Environment.NewLine}";
+        await File.WriteAllTextAsync(path + ".sha256", sidecar, Encoding.ASCII, cancellationToken);
+        return hash;
     }
 
     private async Task ExecuteAsync(string sql, CancellationToken cancellationToken)
@@ -212,6 +215,7 @@ internal sealed record HarnessEvidence(
     string CaseId,
     string FixtureKind,
     string RepositorySha,
+    string WorkflowTestedSha,
     string PostgreSqlVersion,
     string DatabaseName,
     string Schema,
