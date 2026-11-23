@@ -52,7 +52,7 @@ The issuer's typed inputs are:
 - exactly 32-byte SHA-256 digest;
 - challenge_request_id UUID as issuer idempotency key.
 
-Purpose is a fixed routine-owned constant for InitialOwnerClaim. Lifetime is fixed by the routine and no greater than 30 minutes. PostgreSQL time governs created/expiry timestamps and expiry checks. The issuer returns only challenge_id and expiry, never the raw challenge or digest.
+Purpose is a fixed routine-owned constant for initial_product_owner. Lifetime is fixed by the routine and no greater than 30 minutes. PostgreSQL time governs created/expiry timestamps and expiry checks. The issuer returns only challenge_id and expiry, never the raw challenge or digest.
 
 The Setup Service obtains the SID from the authenticated Named Pipe client token, impersonates only for identity inspection, reverts promptly, and re-attests the same SID for claim. It rejects any SID supplied in Wizard payload or API input.
 
@@ -102,4 +102,4 @@ PostgreSQL 18 disposable tests are required for concurrent issue, issue-vs-claim
 
 This protocol is an owner-approved design constraint only. It does not authorize WG-0 migration reservation/application, SQL/DDL, role/schema/routine/grant creation, secret provisioning, executor LOGIN activation, Setup Wizard execution, Recovery, Organization, Inventory, G1 or production activation.
 
-**END — v0.3**
+**END — v0.4**
