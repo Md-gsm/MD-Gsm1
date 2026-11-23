@@ -7,7 +7,7 @@
 | Status | **OWNER-APPROVED CHALLENGE PROTOCOL INCORPORATED — PHYSICAL SCHEMA/ACL STILL PROPOSAL; NO DDL / MIGRATION AUTHORIZED** |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
 | Supersedes | MDG-SECURITY-O46-BOOTSTRAP-PHYSICAL-SCHEMA-AND-ACL-PROPOSAL-001 v0.1 |
-| Source baseline | IdentityAccess migration 0003; IdentityAccess schema design; O-46 owner decisions and provisioning package contract |
+| Source baseline | IdentityAccess migration 0003; IdentityAccess schema design; O-46 owner decisions; provisioning package contract v0.2 |
 | Target PostgreSQL | 18 |
 
 ## 1. Purpose and boundary
@@ -95,7 +95,7 @@ The exact fingerprint canonicalization and whether the receipt stores a binding 
 
 ## 4. Minimum SECURITY DEFINER function-owner privileges
 
-The role `mdgsm_identity_bootstrap_fn_owner` remains NOLOGIN, NOSUPERUSER, NOCREATEDB, NOCREATEROLE, NOREPLICATION, NOBYPASSRLS; it owns only schema `identity_bootstrap` and the exact versioned claim routine(s). It does not own schema `identity` or any application table.
+The role `mdgsm_identity_bootstrap_fn_owner` remains NOLOGIN, NOSUPERUSER, NOCREATEDB, NOCREATEROLE, NOREPLICATION, NOBYPASSRLS; it owns only schema `identity_bootstrap` and the two exact versioned bootstrap routines. It does not own schema `identity` or any application table.
 
 Proposed privilege matrix (column-level wherever PostgreSQL supports it):
 
@@ -196,4 +196,4 @@ WG-0 must validate global number/path uniqueness, migration ownership, dependenc
 - O46-G04: **OPEN**.
 - IdentityAccess G1 / runtime activation: **NOT GRANTED**.
 
-**END — MDG-SECURITY-O46-BOOTSTRAP-PHYSICAL-SCHEMA-AND-ACL-PROPOSAL-001 v0.1**
+**END — MDG-SECURITY-O46-BOOTSTRAP-PHYSICAL-SCHEMA-AND-ACL-PROPOSAL-001 v0.2**
