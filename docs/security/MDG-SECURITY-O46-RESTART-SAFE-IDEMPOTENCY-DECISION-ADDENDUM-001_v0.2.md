@@ -133,3 +133,16 @@ All gates are **NOT RUN / NOT VERIFIED**.
 This addendum authorizes architecture-target documentation only. It does not authorize CNG key generation, TPM provisioning, Windows key ACLs, Journal creation, SQL/DDL, View creation, PostgreSQL role/grant/membership creation, migration reservation/application, Routine changes, Executor activation, Owner account/binding/challenge creation, Setup Wizard execution, Recovery, G1 or production activation.
 
 **END — v0.2**
+
+
+## 7. JRN-REC-01 Owner reconciliation — logical Reader and exact-two-principal rule (2026-11-24)
+
+The Product Owner resolved the former Reader-identity conflict. Exactly two new PostgreSQL principals remain approved: `mdgsm_identity_bootstrap_fn_owner` and `mdgsm_bootstrap_executor`. `JOURNAL_RECONCILIATION_READER` is only a logical application-layer identity/capability; it is not a PostgreSQL role, LOGIN, membership or principal.
+
+The dedicated read-only Reconciliation View may be owned only by a pre-existing controlled NOLOGIN role identified from the current PostgreSQL role inventory. SELECT may be performed only through a pre-existing execution identity whose already-effective Grant Matrix authorizes that View. No new role, LOGIN, grant, database connection identity or routine is implied. The Executor is not the reader and must not receive direct SELECT or any privilege expansion. If no pre-authorized SELECT path exists, the implementation gate remains open.
+
+The logical Reader capability is enforced in the application and does not confer direct database access, routine execution, DML, private-key access or secret access. The View must expose only minimum reconciliation metadata and exclude password hashes, challenge verifier/raw challenge, PII and secrets. Its owner, RLS, installation scoping, non-updatability, effective SELECT route and base-table ACLs require PostgreSQL 18 proof.
+
+The View reader and claim path must share the same InstallationId-scoped transaction-level serialization barrier; the reader obtains a fresh READ COMMITTED snapshot after acquiring the shared form, while claim uses the exclusive form. Lock derivation and all-path participation remain unproven and OPEN. No third routine is permitted.
+
+This reconciliation supersedes any earlier wording in this addendum that left open creation of a third Reader principal or mapping a Windows SID to a new database role. It does not authorize View creation, grants, SQL, DDL, migration or activation.
