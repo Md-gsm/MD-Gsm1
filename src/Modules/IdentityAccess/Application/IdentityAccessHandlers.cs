@@ -123,8 +123,12 @@ public sealed class ChangeOwnPasswordHandler(
     ISessionStore sessions, IAuditWriter audit, IDatabaseClock databaseClock)
 {
     public Task<bool> HandleAsync(AccountId accountId, string currentPassword, string newPassword,
-        string correlationId, CancellationToken ct) =>
-        unitOfWork.ExecuteAsync(async token =>
+        string correlationId, CancellationToken ct)
+    {
+        if (!PasswordPolicy.IsValidChange(currentPassword, newPassword))
+            return Task.FromResult(false);
+
+        return unitOfWork.ExecuteAsync(async token =>
         {
             var account = await accounts.FindByIdAsync(accountId, token);
             if (account is null || !hasher.Verify(account.PasswordHash, currentPassword)) return false;
@@ -135,6 +139,7 @@ public sealed class ChangeOwnPasswordHandler(
             await audit.AppendAsync("identity.password.changed", accountId, accountId, "success", correlationId, token);
             return true;
         }, ct);
+    }
 }
 
 public sealed class AdminResetPasswordHandler(
@@ -142,8 +147,12 @@ public sealed class AdminResetPasswordHandler(
     IRolePermissionStore permissions, ISessionStore sessions, IAuditWriter audit, IDatabaseClock databaseClock)
 {
     public Task<bool> HandleAsync(AccountId administratorId, AccountId targetId, string temporaryPassword,
-        string correlationId, CancellationToken ct) =>
-        unitOfWork.ExecuteAsync(async token =>
+        string correlationId, CancellationToken ct)
+    {
+        if (!PasswordPolicy.IsValid(temporaryPassword))
+            return Task.FromResult(false);
+
+        return unitOfWork.ExecuteAsync(async token =>
         {
             if (!await permissions.HasPermissionAsync(administratorId, "identity.credentials.reset", token))
             {
@@ -166,6 +175,7 @@ public sealed class AdminResetPasswordHandler(
             await audit.AppendAsync("identity.password.admin_reset", administratorId, targetId, "success", correlationId, token);
             return true;
         }, ct);
+    }
 }
 
 

@@ -124,9 +124,7 @@ app.MapPost("/api/v1/identity/password/change", async (
     HttpContext context,
     CancellationToken cancellationToken) =>
 {
-    if (string.IsNullOrEmpty(request.NewPassword) || request.NewPassword.Length < 12
-        || request.NewPassword.Length > 128
-        || string.Equals(request.CurrentPassword, request.NewPassword, StringComparison.Ordinal))
+    if (!PasswordPolicy.IsValidChange(request.CurrentPassword, request.NewPassword))
         return Results.BadRequest(new { error = "password_policy_failed" });
 
     var changed = await handler.HandleAsync(AccountId.From(actor.AccountId),
