@@ -149,9 +149,9 @@ The Setup Service's local Named Pipe is a separate application trust channel for
 
 The challenge issue and claim routines are invoked only through the separately gated executor path; executor LOGIN remains disabled until secret custody, loopback-only PostgreSQL access, complete HBA ordering and negative connection tests are independently proven and separately authorized.
 
-## 4.5 Payload fingerprint v1
+## 4.5 Proposed payload fingerprint v1 — owner approval and test vectors pending
 
-The claim payload fingerprint is computed by the trusted IdentityAccess server boundary and persisted as a 32-byte SHA-256 digest. It is not keyed: no new key, secret, role or credential boundary is introduced. It is domain-separated and includes the final salted/versioned password-hash output, not the plaintext password. The exact v1 binary envelope is normative in the Challenge Protocol v0.4. Cross-language test vectors remain required.
+The proposed claim payload fingerprint is computed by the trusted IdentityAccess server boundary and persisted as a 32-byte SHA-256 digest. It is not keyed: no new key, secret, role or credential boundary is introduced. It is domain-separated and includes the final salted/versioned password-hash output, not the plaintext password. The exact v1 binary envelope is a cross-document technical proposal in Challenge Protocol v0.4; it is not yet Product Owner-approved. Cross-language test vectors remain required.
 
 ## 5. Required proof and unresolved decisions
 
