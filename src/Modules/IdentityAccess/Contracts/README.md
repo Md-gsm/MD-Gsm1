@@ -29,7 +29,7 @@ Product Owner authority is a distinct protected server-side binding, not a role,
 
 ## Acceptance boundary
 
-The public source contract and transaction-scoped IdentityAccess adapter are implemented on the closure branch. The marked-disposable PostgreSQL proof invokes the actual adapter against the real `identity.*` schema and confirms competing session/account/membership/role/grant/permission mutations are blocked by `pg_blocking_pids()` until the protected transaction ends. Exact-head CI, IdentityAccess module-owner acceptance, Platform lock-order acceptance, a real Organization UnitOfWork consumer, and independent exact-SHA review remain separate gates.
+The public source contract and transaction-scoped IdentityAccess adapter are implemented on the closure branch. The IdentityAccess owner has accepted the IdentityAccess-owned API 1.2 semantics and local transaction-guard boundary in `MDG-IDENTITYACCESS-MODULE-BASELINE-001 v1.0`. The marked-disposable PostgreSQL proof invokes the actual adapter against the real `identity.*` schema and confirms competing session/account/membership/role/grant/permission mutations are blocked by `pg_blocking_pids()` until the protected transaction ends. Latest exact-head CI, Platform lock-order and lease-expiry acceptance, Organization-specific permission mapping/concurrence, a real Organization UnitOfWork consumer, and independent exact-SHA review remain separate gates.
 
 Organization must consume only this Contracts assembly; it must not reference IdentityAccess Domain/Application/Infrastructure or query IdentityAccess private tables.
 
