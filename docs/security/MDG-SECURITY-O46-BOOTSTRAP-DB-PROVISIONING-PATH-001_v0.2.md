@@ -213,7 +213,7 @@ The following remain open even if the owner accepts the recommended deployment a
 1. Final local authentication mechanism for the cluster-administrator maintenance session.
 2. Final secure handoff and protection mechanism for the SCRAM secret (or separately approved client certificate) accessible only to Setup Service SID.
 3. Exact Windows service/process boundary and administrative invocation UX for the maintenance package.
-4. Exact IdentityAccess schema and table/column grant set, owned by IdentityAccess and reviewed against the final function body.
+4. Exact IdentityAccess schema and aggregate table/column grant set, owned by IdentityAccess and reviewed against both final function bodies. Because both routines share one function-owner role, the separation is code-integrity controlled rather than independent per-function SQL ACL isolation; explicit independent Security/Architecture risk acceptance is required.
 5. WG-0 allocation of a new migration sequence number; 0009 is reserved for Accounting and cannot be used.
 6. The function package's release/signature verification, external deployment attestation schema and hash-verification implementation.
 7. PostgreSQL 18 disposable tests and Windows central-server tests for all O46-DEP cases.
