@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | MDG-SECURITY-O46-PHYSICAL-SCHEMA-DECISION-REGISTER-001 |
-| Version / Date | 0.9 / 2026-11-24 |
+| Version / Date | 1.0 / 2026-11-24 |
 | Status | **OWNER-APPROVED PROFILE, JOURNAL AND TWO-PRINCIPAL RECONCILIATION TARGETS RECORDED; PHYSICAL/SECURITY PROOFS OPEN; NO IMPLEMENTATION AUTHORIZED** |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
 | Supersedes | v0.7 as the current cross-document index |
@@ -231,3 +231,58 @@ No currently inventoried role satisfies both the approved narrow View-owner boun
 JRN-REC-01 remains **design-approved / execution-open**. Two independent prerequisites remain unresolved: (a) an Owner-approved existing NOLOGIN View owner with an accepted ownership/trust boundary, and (b) an existing application execution identity with a proven authorized SELECT path. Any proposed change to the function-owner contract or schema-owner reuse must return for explicit Product Owner and independent Security/Architecture review. No SQL, DDL, grant, View, role, credential, migration or activation is authorized.
 
 This is a document/contract review grounded in the checked-in O-20 role matrix v1.8, O-46 physical-schema/ACL proposal v0.4 and the disposable PostgreSQL 18.6 catalog evidence in §11. It is not a live database audit or a PostgreSQL View security test.
+
+
+## 13. Independent owner decision — Reconciliation View ownership (JRN-REC-02) (2026-11-24)
+
+**Product Owner disposition: CONDITIONAL APPROVAL IN PRINCIPLE.**
+
+The Product Owner accepts `mdgsm_schema_owner` as the preferred existing candidate to own the dedicated O-46 Reconciliation View, but only after its actual role contract and ownership/migration boundary are verified and reconciled. This is a View-ownership decision only. It does not identify or authorize a reader, grant SELECT, or make the owner role an application identity.
+
+Conditions that must all be proven before any View DDL:
+1. The role already exists in the target database; no new PostgreSQL principal or LOGIN is created.
+2. Its actual attributes, schema ownership, object ownership, memberships, SET ROLE paths, default ACLs and effective privileges are inventoried on the exact target PostgreSQL 18 database. NOLOGIN alone is insufficient.
+3. The O-20 role/object contract is explicitly reconciled to permit ownership of this one dedicated Reconciliation View while preserving the role's other ownership and migration responsibilities. The current O-20 matrix v1.8 says its purpose/ownership graph remains unchanged; therefore this condition is NOT YET SATISFIED.
+4. The View definition can be installed, replaced and rolled back only through versioned, reviewed migrations under the already-approved migration trust boundary. Neither application runtime nor `mdgsm_bootstrap_executor` may alter/drop the View, change its owner or grant/revoke its privileges.
+5. PostgreSQL 18 proofs establish View owner behavior, non-updatability, RLS/security-barrier semantics, base-table privilege behavior, installation scoping, and that no unnecessary direct Journal base-table access is introduced.
+6. The existing `migration_runner → mdgsm_schema_owner` SET-capable edge is explicitly included in the threat model and accepted by the required Owner/Platform and independent Security/Architecture review. No membership or migration privilege expansion is implied.
+
+The exact-head disposable catalog previously observed `mdgsm_schema_owner` as NOLOGIN, owning the `identity` schema and 24 IdentityAccess objects, with `migration_runner` able to SET ROLE to it. This confirms existence and the trust-boundary facts in that fixture; it does not by itself prove the production/target catalog or satisfy conditions 3–6.
+
+**Disposition:** JRN-REC-02 is **OWNER-CONDITIONALLY-APPROVED / TECHNICAL-CONTRACT-AND-PROOF-OPEN**. This is not DDL authorization and does not make View creation executable.
+
+## 14. Independent reader-path decision and candidate assessment (JRN-REC-03) (2026-11-24)
+
+**Product Owner disposition: NO NEW PRINCIPAL; reuse only a pre-existing, independently authorized read connection.**
+
+The logical `JOURNAL_RECONCILIATION_READER` remains an application-layer capability only. It is not a PostgreSQL Role, LOGIN, membership or principal. Reader identity and View ownership are independent: the View owner does not become its reader merely by owning it.
+
+### 14.1 Candidate naming and current evidence
+
+The canonical O-20 matrix name is `reporting_ro`; the shorthand `report_ro` is not established as a separate PostgreSQL identity by the controlling matrix. O-20 role/object matrix v1.8 explicitly classifies `reporting_ro` as **not provisioned**. The PostgreSQL 18.6 disposable catalog in §11 also contains no `reporting_ro`.
+
+The same catalog contains `mdgsm_runtime` as a NOLOGIN support role, but no `runtime_app` LOGIN. It shows no O-46 View and no effective SELECT privilege on such a View. The O-20 privilege audit v0.7 records `runtime_app` as a disposable/CI binding candidate and explicitly says production identity mapping remains open. Neither base-table SELECT on `mdgsm_runtime` nor the mere existence of that support role establishes an authorized View reader.
+
+### 14.2 Required reader proof
+
+Before any reader mapping can be accepted, the exact target catalog and approved connection/deployment contract must establish:
+1. An already-existing application connection identity and its LOGIN/role membership path; no new PostgreSQL principal or LOGIN.
+2. Explicit authorization for SELECT on this exact Reconciliation View, without deriving it from base-table privileges.
+3. No INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER, ownership, ALTER/DROP, schema CREATE or grant-management capability on the View or Journal base objects.
+4. No direct Journal base-table access unless a separate, explicit data-owner contract approves it.
+5. The application's `JOURNAL_RECONCILIATION_READER` capability is enforced independently; the database connection identity is mapped through an explicit reviewed contract.
+6. PostgreSQL 18 effective-privilege and adversarial tests prove allowed View SELECT and denied direct-table/DML/DDL/privilege-escalation paths, including RLS and installation-scope behavior.
+
+`mdgsm_bootstrap_executor` remains excluded from SELECT and receives no privilege expansion. `mdgsm_identity_bootstrap_fn_owner` remains limited to its two approved routines and is not a reader. `migration_runner` and `postgres` are not application readers. Do not provision `reporting_ro` merely to close this gap; doing so would be a new principal and is outside the approved ceiling.
+
+**Disposition:** JRN-REC-03 is **OPEN / BLOCKED — NO EXISTING AUTHORIZED READER PATH PROVEN**. `reporting_ro` is a future candidate only if it is already present under the approved target contract; current evidence says it is not. If no existing connection identity satisfies the above, return an architecture decision to the Product Owner. Do not create a third principal, grant Executor SELECT, or silently broaden runtime grants.
+
+## 15. Combined gate — independent decisions, independent evidence
+
+JRN-REC-02 and JRN-REC-03 are separate gates and must be assessed separately:
+- A valid View owner does not confer SELECT on the View to any application identity.
+- A valid SELECT reader does not confer ownership, ALTER/DROP, or grant-management rights.
+- The View may not be created until its owner gate and reader gate are each independently satisfied, and the View/RLS/serialization proof is complete.
+- The two-principal ceiling, exact two SECURITY DEFINER routines, unchanged Executor ACL, no-third-principal rule and no-implementation boundary remain in force.
+
+No Role, LOGIN, membership, View, grant, routine, schema, SQL, DDL, migration, credential or activation was created or changed by these decisions.
