@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | MDG-SECURITY-O46-PHYSICAL-SCHEMA-DECISION-REGISTER-001 |
-| Version / Date | 0.8 / 2026-11-24 |
+| Version / Date | 0.9 / 2026-11-24 |
 | Status | **OWNER-APPROVED PROFILE, JOURNAL AND TWO-PRINCIPAL RECONCILIATION TARGETS RECORDED; PHYSICAL/SECURITY PROOFS OPEN; NO IMPLEMENTATION AUTHORIZED** |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
 | Supersedes | v0.7 as the current cross-document index |
@@ -192,3 +192,42 @@ Therefore:
 5. A further Owner/Platform decision is required if the only existing owner candidate, `mdgsm_schema_owner`, is to own the View despite the migration trust-boundary overlap. Independently, an already-authorized reader execution path must be identified; this catalog does not contain one.
 
 This evidence supersedes the earlier statement in §10 that a fresh PostgreSQL 18 catalog proof had not yet been performed. It does not supersede the conclusion that no already-authorized Reconciliation SELECT route has been demonstrated. No production connection, SQL/DDL, role, grant, View, routine, migration, secret or activation was created or changed.
+
+
+## 12. Function-owner suitability review for JRN-REC-01 — no acceptable owner or reader path (2026-11-24)
+
+The proposed alternative of assigning the Reconciliation View to `mdgsm_identity_bootstrap_fn_owner` was checked against the controlling O-20 role/object contract and O-46 physical-schema/ACL proposal.
+
+### 12.1 Function-owner is not an eligible View owner under the current contract
+
+The checked-in O-20 role/object matrix v1.8 constrains `mdgsm_identity_bootstrap_fn_owner` to ownership of only the isolated `identity_bootstrap` schema and the exact versioned bootstrap routines. It expressly assigns no IdentityAccess/business-table ownership and rejects a `migration_runner` membership edge. O-46 physical-schema/ACL proposal v0.4 independently states that both approved SECURITY DEFINER routines are owned by this principal and that the function-owner's grants are an aggregate role-wide ACL shared by both routines.
+
+Consequently, making this principal own a Reconciliation View would be a contract expansion beyond its accepted isolated schema/routine ownership. If the View were placed in `identity_bootstrap`, that would also cross the defined separation between the bootstrap function-owner's isolated routine surface and the reconciliation projection. If placed in `identity`, it would extend ownership into the IdentityAccess schema. Either choice changes the approved ownership boundary and cannot be treated as a harmless reuse of an existing role.
+
+The shared aggregate ACL is an additional concern: a View owned by the function-owner would combine View-owner read authority with the aggregate privileges needed by both SECURITY DEFINER routines. This would enlarge the consequences of a defect or unintended invocation and complicate the independent routine side-effect boundary. No PostgreSQL 18 adversarial proof exists to justify that combination.
+
+**Disposition:** `mdgsm_identity_bootstrap_fn_owner` is not an accepted or eligible JRN-REC-01 View owner under the current contract. No change to its ownership scope, schema, grants or routine surface is authorized.
+
+### 12.2 Existing schema-owner candidate remains unsuitable without a separate Owner decision
+
+The exact-head PostgreSQL 18.6 disposable catalog evidence in §11 shows `mdgsm_schema_owner` as a NOLOGIN owner with broad ownership of the `identity` schema and 24 IdentityAccess objects. It also shows the explicit SET-capable membership edge from `migration_runner` to `mdgsm_schema_owner`. Assigning the security-sensitive View to this role would place its ownership/change authority inside the existing migration/schema-owner trust boundary. NOLOGIN alone does not make this a dedicated or isolated owner.
+
+The O-20 role matrix further states that this role's existing purpose and ownership graph are unchanged. Reusing it for the View therefore requires a specific Owner/Platform decision that explicitly accepts the broad ownership and migration SET ROLE relationship, plus a PostgreSQL 18 proof of the View's RLS, base-table privilege and security semantics. That approval is not present.
+
+### 12.3 Reader execution identity remains independently absent
+
+The §11 catalog contains no LOGIN identity for `mdgsm_runtime`, no `reporting_ro`, no O-46 View and no effective SELECT privilege for such a View. The `mdgsm_bootstrap_executor` remains excluded from SELECT and may not be expanded. The function-owner is not an application reader identity. Thus selecting or changing a View owner would not establish a valid application SELECT route.
+
+### 12.4 Binding conclusion and next decision gate
+
+No currently inventoried role satisfies both the approved narrow View-owner boundary and an already-proven Reconciliation reader route:
+
+1. Do not use `mdgsm_identity_bootstrap_fn_owner` as View owner under its current ownership/ACL contract.
+2. Do not assign the View to `mdgsm_schema_owner` unless the Product Owner explicitly accepts its broad ownership and `migration_runner` SET ROLE trust-boundary overlap.
+3. Do not use `mdgsm_runtime` as View owner or infer that its base-table SELECT grants authorize the future View.
+4. Do not use `migration_runner`, `postgres` or `mdgsm_bootstrap_executor` as the Reconciliation application reader.
+5. Do not create a third principal, new LOGIN, View, grant, routine, schema, membership or migration to work around this gap.
+
+JRN-REC-01 remains **design-approved / execution-open**. Two independent prerequisites remain unresolved: (a) an Owner-approved existing NOLOGIN View owner with an accepted ownership/trust boundary, and (b) an existing application execution identity with a proven authorized SELECT path. Any proposed change to the function-owner contract or schema-owner reuse must return for explicit Product Owner and independent Security/Architecture review. No SQL, DDL, grant, View, role, credential, migration or activation is authorized.
+
+This is a document/contract review grounded in the checked-in O-20 role matrix v1.8, O-46 physical-schema/ACL proposal v0.4 and the disposable PostgreSQL 18.6 catalog evidence in §11. It is not a live database audit or a PostgreSQL View security test.
