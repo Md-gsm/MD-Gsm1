@@ -63,11 +63,11 @@ Provisioning and routine installation leave executor NOLOGIN. Activation require
 
 After the exact claim receipt and immutable Owner binding are independently verified, the same existing cluster-superuser maintenance boundary sets executor NOLOGIN, terminates all executor backends and verifies none remain. Setup Service separately proves its executor credential was erased and the Setup Named Pipe setup path closed. The maintenance actor does not receive or inspect the Setup Service secret. Cleanup is idempotent and retryable against the same InstallationId/SetupOperationId; failure remains fail-closed and never permits a second claim.
 
-### 3.7 Accepted Account profile and payload fingerprint v1
+### 3.7 Accepted Account profile and proposed payload fingerprint v1
 
 The initial Owner input contract is exactly `username`, `display_name`, and `email`. These map respectively to `identity.accounts.login_name` plus the existing normalized login value, new `identity.accounts.display_name`, and existing `identity.accounts.email`. All three are required for this one bootstrap account. Phone/mobile is excluded; `phone_e164` remains untouched. The existing base schema has no display-name column, so candidate migration 0010 must add nullable `display_name` for compatibility and enforce non-empty display_name/email when `is_bootstrap_account=TRUE`. The Owner row sets `is_bootstrap_account=TRUE` and `must_change_password=FALSE`. No role, permission, session or phone value is created.
 
-Fingerprint v1 is SHA-256 over this deterministic binary envelope, computed by the trusted IdentityAccess server boundary:
+The proposed fingerprint v1 is SHA-256 over this deterministic binary envelope, computed by the trusted IdentityAccess server boundary:
 
 1. ASCII domain tag `MDGSM-O46-OWNER-CLAIM-FP`, followed by unsigned 16-bit big-endian version `1`.
 2. InstallationId, SetupOperationId and AccountId as 16-byte RFC 4122/network-order UUID values, in that order.
@@ -76,7 +76,7 @@ Fingerprint v1 is SHA-256 over this deterministic binary envelope, computed by t
 
 String bytes are strict UTF-8 of the exact post-validation values; no additional trimming, case folding or Unicode normalization is performed by the fingerprint layer. Username normalization remains governed by the existing IdentityAccess username policy. The envelope excludes raw password, raw challenge, challenge digest, operator SID, private keys and transport secrets. It includes the salted/versioned password-hash output so that the fingerprint binds the actual credential result and is not merely a digest of low-entropy profile fields. Fingerprint is an idempotency/integrity identifier, not a password verifier or authentication factor.
 
-The receipt stores `payload_fingerprint_version=1` and exactly 32 digest bytes. Same SetupOperationId plus identical v1 fingerprint is a reconciliation match; different fingerprint is a hard conflict and never updates or replaces the prior receipt. Implementations must share test vectors across .NET and PostgreSQL-facing contract code. If the hash implementation cannot be reproduced identically from the exact persisted password-hash output, the claim must fail closed rather than fall back to a different serialization.
+If accepted, the receipt will store `payload_fingerprint_version=1` and exactly 32 digest bytes. Same SetupOperationId plus identical v1 fingerprint is a reconciliation match; different fingerprint is a hard conflict and never updates or replaces the prior receipt. Implementations must share test vectors across .NET and PostgreSQL-facing contract code. If the hash implementation cannot be reproduced identically from the exact persisted password-hash output, the claim must fail closed rather than fall back to a different serialization.
 ## 4. Function-owner ACL limitation
 
 The function-owner grants are aggregate at role level, not isolated per SECURITY DEFINER routine. The approved issuer extension is limited to exact challenge-column INSERT and conditional `revoked_at_utc)-only UPDATE, in addition to claim's previously approved verification and conditional `consumed_at_utc) transition and exact Owner-claim writes. The executor has no direct table/sequence access. Issuer/claim side-effect separation depends on fixed reviewed routine bodies, signed package integrity, separate definition fingerprints and adversarial PostgreSQL 18 proof. Independent Security/Architecture must explicitly accept this residual risk; otherwise stop and return for a new owner decision. No third role is implied.
