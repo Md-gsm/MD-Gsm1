@@ -51,7 +51,7 @@ Only these typed operations are allowed:
 
 No arbitrary SQL, shell, generic dispatcher, caller-supplied role/schema/routine/database name, free-form file path or connection string is accepted. The package resolves the designated target from trusted local deployment metadata and verifies it against the signed manifest.
 
-## 2.1 Owner Account input contract — Product Owner accepted
+### 4.1 Owner Account input contract — Product Owner accepted
 
 The initial Product Owner Account profile is exactly these three user-supplied fields:
 
@@ -66,7 +66,7 @@ No mobile/phone field is collected or required by this bootstrap contract. The e
 The existing base migration names the login field `login_name`, not `username`, and already has nullable `email` and `phone_e164`; it has no `display_name`. Therefore the future reserved IdentityAccess migration must add `identity.accounts.display_name` as nullable for compatibility with existing non-bootstrap accounts, and add a CHECK constraint requiring non-empty `display_name` and `email` whenever `is_bootstrap_account = TRUE`. The Owner claim must set `is_bootstrap_account = TRUE`, `must_change_password = FALSE`, and supply all three approved fields. It must not set a phone number or create any role/permission/session data.
 
 The accepted field set is frozen. Email syntax/canonicalization and display-name validation details must reuse a reviewed IdentityAccess validator; this decision does not invent trimming, case folding, email canonicalization or new Unicode rules. For fingerprinting, the exact validated strings are encoded as UTF-8 without any additional transformation; username fingerprint input is the established `login_name_normalized`, not the raw Wizard spelling.
-### 5.1 Accepted Account profile and payload fingerprint v1
+### 4.2 Accepted Account profile and payload fingerprint v1
 
 The initial Owner input contract is exactly `username`, `display_name`, and `email`. These map respectively to `identity.accounts.login_name` plus the existing normalized login value, new `identity.accounts.display_name`, and existing `identity.accounts.email`. All three are required for this one bootstrap account. Phone/mobile is excluded; `phone_e164` remains untouched. The existing base schema has no display-name column, so candidate migration 0010 must add nullable `display_name` for compatibility and enforce non-empty display_name/email when `is_bootstrap_account=TRUE`. The Owner row sets `is_bootstrap_account=TRUE` and `must_change_password=FALSE`. No role, permission, session or phone value is created.
 
@@ -149,4 +149,4 @@ All O46-PKG and O46-DEP acceptance tests remain **NOT RUN / NOT VERIFIED**. Requ
 
 No role, schema, table, routine, grant, membership, credential, secret, migration, Owner, challenge, LOGIN activation, Setup Wizard execution, recovery, G1 or production activation is authorized by this contract. It is a design-only contract.
 
-**END — v0.3**
+**END — v0.4**
