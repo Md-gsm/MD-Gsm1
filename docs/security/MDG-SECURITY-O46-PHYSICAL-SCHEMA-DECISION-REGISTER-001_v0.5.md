@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | MDG-SECURITY-O46-PHYSICAL-SCHEMA-DECISION-REGISTER-001 |
-| Version / Date | 0.6 / 2026-11-24 |
+| Version / Date | 0.7 / 2026-11-24 |
 | Status | **OWNER-APPROVED PROFILE, JOURNAL AND TWO-PRINCIPAL RECONCILIATION TARGETS RECORDED; PHYSICAL/SECURITY PROOFS OPEN; NO IMPLEMENTATION AUTHORIZED** |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
-| Supersedes | v0.5 as the current cross-document index |
+| Supersedes | v0.6 as the current cross-document index |
 
 ## 1. Controlling owner decisions
 
@@ -127,3 +127,19 @@ The Reconciliation reader and claim path must share the same InstallationId-scop
 This Owner reconciliation supersedes the former unresolved alternative that proposed a third PostgreSQL Reader role or a Windows-SID-to-new-role mapping. It does not authorize SQL, DDL, View creation, grants, routine changes, migration, credentials or activation.
 
 **END — v0.6**
+
+
+## 10. Static Grant Matrix inspection — Reconciliation path remains OPEN (2026-11-24)
+
+The current checked-in evidence was inspected without connecting to or changing any live PostgreSQL database:
+
+- `docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v1.8.md` classifies `mdgsm_runtime` as the NOLOGIN runtime ACL role; its associated `runtime_app` LOGIN is described as a disposable/CI binding candidate, not a proven production deployment identity. The same matrix explicitly lists `reporting_ro` as not provisioned.
+- `docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v0.7.md` states that the full five-identity mapping and complete object/ACL matrix remain open. Its evidence is disposable CI, not a live production catalog.
+- `database/operations/identityaccess-runtime-role-grants.sql` grants `mdgsm_runtime` SELECT on selected existing IdentityAccess base tables, including `identity.accounts`; it does not define the O-46 Reconciliation View and contains no SELECT grant on that View. The View does not yet exist.
+- The earlier disposable catalog report in O-20 audit v1.6 observed `mdgsm_schema_owner` as owner of the then-inventoried target objects and as NOLOGIN. This is only a candidate existing View owner; it is not a fresh catalog proof for the current target and does not establish a SELECT execution path.
+
+**Finding:** the checked-in matrix identifies a possible existing application runtime route (`runtime_app` → `mdgsm_runtime`) and a possible existing NOLOGIN owner (`mdgsm_schema_owner`), but it does not prove that either is currently authorized for the not-yet-created Reconciliation View. `reporting_ro` is unavailable, and `mdgsm_bootstrap_executor` is expressly excluded. Existing base-table SELECT does not automatically confer SELECT on a new View.
+
+Therefore no existing, already-authorized SELECT path for the Reconciliation View has been demonstrated. Do not grant View SELECT to `mdgsm_runtime`, provision `reporting_ro`, add a new role, or expand Executor privileges under this decision. The exact View owner and reader execution identity remain unresolved pending a current PostgreSQL 18 role/ACL/ownership inventory and an explicit approved mapping. JRN-REC-01 is design-approved but execution-open.
+
+This inspection is static repository evidence only. It is not a live database audit, effective-privilege proof, View security proof or implementation test.
