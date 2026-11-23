@@ -24,7 +24,9 @@ public sealed class IdentityAccessPartySensitiveDataAuthorizer(
             return false;
 
         var principal = await authorization.ResolveCurrentPrincipalAsync(cancellationToken);
-        if (!principal.IsAuthenticated || principal.AccountId != requestedAccountId)
+        if (!principal.IsAuthenticated
+            || principal.AccountId != requestedAccountId
+            || principal.ContractVersion != ModuleContractVersion.Current)
             return false;
 
         var decision = await authorization.EvaluateCurrentPermissionAsync(
@@ -33,6 +35,8 @@ public sealed class IdentityAccessPartySensitiveDataAuthorizer(
         // Bind the decision to the exact principal snapshot used for this request.
         // An Allowed result for another account/session/version is never accepted.
         return decision.IsAllowed
+            && decision.ContractVersion == ModuleContractVersion.Current
+            && decision.PermissionKey == PermissionKey
             && decision.PrincipalAccountId == requestedAccountId
             && decision.PrincipalSessionId == principal.SessionId
             && decision.PrincipalVersion == principal.PrincipalVersion;
