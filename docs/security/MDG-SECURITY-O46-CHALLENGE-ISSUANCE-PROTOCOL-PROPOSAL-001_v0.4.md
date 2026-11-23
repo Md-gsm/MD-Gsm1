@@ -66,7 +66,7 @@ The final Owner username/password/profile (username, display_name and email only
 
 A timeout or unknown commit is reconciled read-only by the same SetupOperationId, challenge_request_id and exact payload fingerprint. It must never trigger a second Account or Owner binding.
 
-### 5.1 Accepted Account profile and proposed payload fingerprint v1
+### 5.1 Accepted Account profile and proposed payload fingerprint v1 — owner approval pending
 
 The initial Owner input contract is exactly `username`, `display_name`, and `email`. These map respectively to `identity.accounts.login_name` plus the existing normalized login value, new `identity.accounts.display_name`, and existing `identity.accounts.email`. All three are required for this one bootstrap account. Phone/mobile is excluded; `phone_e164` remains untouched. The existing base schema has no display-name column, so candidate migration 0010 must add nullable `display_name` for compatibility and enforce non-empty display_name/email when `is_bootstrap_account=TRUE`. The Owner row sets `is_bootstrap_account=TRUE` and `must_change_password=FALSE`. No role, permission, session or phone value is created.
 
