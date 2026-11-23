@@ -89,6 +89,7 @@
 1e1bc83037017e06abf85745b19e4e355b862417699f18d96e0cc80a10a7d102  src/BuildingBlocks/MDGsm.Application/Contracts/ApiResponse.cs
 1ecd878800bb0cea65feef76526168e530ae6994efac2678a19cb5aadd58cece  docs/architecture/MDG-ORGANIZATION-ASSIGNMENT-SCOPE-DESIGN-001_v0.4.md
 1ee20dca5746dfcb009481501e23c991fe6e0d3de2e9ca464789d4cbde9ec842  tests/MDGsm.Domain.Tests/ApiClientTests.cs
+1fc0cc63380dbd0d5e09529fc957aad47f21a4c0437d5794828927c4195a942d  docs/architecture/MDG-IDENTITYACCESS-ORGANIZATION-PRINCIPAL-PERMISSION-CONTRACT-001_v2.2.md
 201e7f2371270ecf2a1b4b7518e25ed170b4e7a6cce7a9f508897dbcf7a2be9b  src/Host/Api/Program.cs
 20a4439a0f7388492a47ca9b9944776f9a6d28e129e8670e7684d8df3e470ac7  src/BuildingBlocks/MDGsm.Infrastructure/Persons/PostgresTemporaryWorkflowStore.cs
 20c93ca7812d0a9825eef71217156f95ab2f4fe5aadfeb22ebc1c24b630018d3  global.json
@@ -113,7 +114,6 @@
 288799b2a8f1d2ea5252b6ffec59c00cd009f11a1445611ed612b4f78e554abb  tests/MDGsm.Domain.Tests/Persons/PersonsTemporaryDataRetentionTests.cs
 28e240374aa26b7e7169e34811bc4ecf73d17738848c8beecb4ac599ea7ade55  CHANGELOG_V0.2.5_FA.md
 29878513518708c1eb7ef33baead03954d227ea15b7967c994caaaf510ac2b9f  docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v5.4.md
-299bcb973f24853acc0e11e58160cf95dc56da24af9063bcf7aaf487e30155db  src/Modules/IdentityAccess/Contracts/README.md
 2b3c9ea4c7df7318a62e89e4db4275f5714e92b5adaca6e625d540ab2d805789  docs/operations/evidence/EVD-FINANCE-INVENTORY-BUNDLE-004_v0.6.md
 2b8b11f5a23bedc921e02add8260f6350fc6f698af7431c949a4bf45f042190c  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v1.6.md
 2b9f15acd1897d9a309d6cc5758c268e0a0601b8fca15c1d0fa509a83e64fe6b  docs/architecture/MDG-IDENTITYACCESS-ORGANIZATION-PRINCIPAL-PERMISSION-CONTRACT-001_v0.5.md
@@ -356,6 +356,7 @@
 7e3ab4ef6d842ff2de5562b1a5a552bc3276af4145057aab07718f16af96cd1f  tests/MDGsm.Domain.Tests/MenuCatalogArchitectureTests.cs
 7ea95649972e1ee95ae9f346cb98c0df08bcc5d3d910d6e00c2094931af8f425  docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.7.md
 7ec791b2915e20c034b55f155cdaf7345f35b8ab4b55918403afb51b58abcc85  docs/governance/MDG-OPEN-ISSUE-REGISTER-001_v1.4.md
+7f5ba6743bfacbb1239c1050e8ca5f60b38b528b0b6b2314faf1f5f76b300235  src/Modules/IdentityAccess/Contracts/README.md
 7fcdb743eb137630c9b882a514da4f8a1fe6a6b8bd7d9c444a2aa6d182988724  docs/finance/workpapers/p4h/7c/WP06-P4H-7C-COA-RECONCILIATION-001_v0.3.md
 804ea006c1f9988ae5358a3a5185a934eef371753ed09cae54fc7c7ac45cb67b  docs/menu/menu-catalog-fa.csv
 815b19c39f3c9309d5db5d22f059e53a8e85b42e91d4950473a2828b48fa4ee6  docs/security/MDG-SECURITY-O20E-OWNER-POLICY-RECONCILIATION-REGISTER-001_v0.2.md
