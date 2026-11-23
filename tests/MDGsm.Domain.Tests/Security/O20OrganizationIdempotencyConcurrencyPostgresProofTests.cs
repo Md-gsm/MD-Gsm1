@@ -135,6 +135,8 @@ public sealed class O20OrganizationIdempotencyConcurrencyPostgresProofTests
             var unknownCommitSubject = Guid.NewGuid();
             var unknownCommitWarehouse = Guid.NewGuid();
             var unknownCommitKey = "o20-race-unknown-commit";
+            var unknownCommitFingerprint = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+                $"grant|{unknownCommitSubject:D}|{unknownCommitWarehouse:D}|reason-v1"));
             await using (var connection = new NpgsqlConnection(cs))
             {
                 await connection.OpenAsync();
@@ -143,7 +145,7 @@ public sealed class O20OrganizationIdempotencyConcurrencyPostgresProofTests
                     $"SELECT {q}.apply_assignment(@key,@hash,@subject,@warehouse);",
                     connection, tx);
                 command.Parameters.AddWithValue("key", unknownCommitKey);
-                command.Parameters.AddWithValue("hash", fingerprint);
+                command.Parameters.AddWithValue("hash", unknownCommitFingerprint);
                 command.Parameters.AddWithValue("subject", unknownCommitSubject);
                 command.Parameters.AddWithValue("warehouse", unknownCommitWarehouse);
                 _ = await command.ExecuteScalarAsync();
@@ -153,7 +155,7 @@ public sealed class O20OrganizationIdempotencyConcurrencyPostgresProofTests
 
             var replayedUnknownCommit = await ScalarGuidAsync(cs,
                 $"SELECT {q}.apply_assignment(@key,@hash,@subject,@warehouse);",
-                ("key", unknownCommitKey), ("hash", fingerprint),
+                ("key", unknownCommitKey), ("hash", unknownCommitFingerprint),
                 ("subject", unknownCommitSubject), ("warehouse", unknownCommitWarehouse));
             var durableUnknownCommitResult = await ScalarGuidAsync(cs,
                 $"SELECT assignment_id FROM {q}.command_receipt WHERE idempotency_key=@key;",
@@ -168,6 +170,8 @@ public sealed class O20OrganizationIdempotencyConcurrencyPostgresProofTests
             var rollbackSubject = Guid.NewGuid();
             var rollbackWarehouse = Guid.NewGuid();
             var rollbackKey = "o20-race-crash-before-commit";
+            var rollbackFingerprint = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+                $"grant|{rollbackSubject:D}|{rollbackWarehouse:D}|reason-v1"));
             await using (var connection = new NpgsqlConnection(cs))
             {
                 await connection.OpenAsync();
@@ -176,7 +180,7 @@ public sealed class O20OrganizationIdempotencyConcurrencyPostgresProofTests
                     $"SELECT {q}.apply_assignment(@key,@hash,@subject,@warehouse);",
                     connection, tx);
                 command.Parameters.AddWithValue("key", rollbackKey);
-                command.Parameters.AddWithValue("hash", fingerprint);
+                command.Parameters.AddWithValue("hash", rollbackFingerprint);
                 command.Parameters.AddWithValue("subject", rollbackSubject);
                 command.Parameters.AddWithValue("warehouse", rollbackWarehouse);
                 _ = await command.ExecuteScalarAsync();
@@ -191,7 +195,7 @@ public sealed class O20OrganizationIdempotencyConcurrencyPostgresProofTests
 
             var retriedAfterRollback = await ScalarGuidAsync(cs,
                 $"SELECT {q}.apply_assignment(@key,@hash,@subject,@warehouse);",
-                ("key", rollbackKey), ("hash", fingerprint),
+                ("key", rollbackKey), ("hash", rollbackFingerprint),
                 ("subject", rollbackSubject), ("warehouse", rollbackWarehouse));
             Assert.NotEqual(Guid.Empty, retriedAfterRollback);
             Assert.Equal(retriedAfterRollback,
