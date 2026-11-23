@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | MDG-SECURITY-O46-BOOTSTRAP-PHYSICAL-SCHEMA-AND-ACL-PROPOSAL-001 |
-| Version / Date | 0.4 / 2026-11-23 |
-| Status | **OWNER-APPROVED DESIGN CONSTRAINTS RECONCILED — PHYSICAL CONTRACT FROZEN FOR REVIEW — NO DDL / MIGRATION AUTHORIZED** |
+| Version / Date | 0.5 / 2026-11-24 |
+| Status | **OWNER-APPROVED DESIGN CONSTRAINTS AND JRN-REC-01 TWO-PRINCIPAL BOUNDARY RECONCILED — NO DDL / MIGRATION AUTHORIZED** |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
-| Supersedes | v0.2 only for the reconciliation and precedence rules below |
+| Supersedes | v0.4 only for the reconciliation and precedence rules below |
 
 ## 1. Purpose and controlling decisions
 
@@ -164,3 +164,23 @@ All remain NOT RUN / NOT VERIFIED:
 No SQL, DDL, schema, table, routine, role, grant, membership, credential, secret, migration, Account, Owner binding, challenge, Setup Wizard execution, executor LOGIN, G1 or production activation is authorized. The physical contract remains a proposal and all tests remain NOT RUN.
 
 **END — v0.4**
+
+
+## 8. Reconciliation View boundary — JRN-REC-01 (Owner decision, 2026-11-24)
+
+The Reconciliation View is an approved architecture target, not an implementation authorization. It is read-only and separate from the three durable Bootstrap tables described above.
+
+The exact-two-principal boundary is binding:
+- The only new PostgreSQL principals remain `mdgsm_identity_bootstrap_fn_owner` and `mdgsm_bootstrap_executor`.
+- `JOURNAL_RECONCILIATION_READER` is a logical application-layer identity/capability only. It must not be created as a PostgreSQL role, LOGIN, membership or other database principal.
+- The View owner must be selected from a pre-existing controlled NOLOGIN PostgreSQL role after role-inventory review. No third owner role may be created.
+- SELECT must be routed only through a pre-existing execution identity whose existing Grant Matrix and effective privileges prove authorization. This identity is not presumed to be `mdgsm_bootstrap_executor`; Executor receives no direct SELECT and no privilege expansion.
+- If no already-authorized SELECT path exists, View creation and Reconciliation execution remain blocked. Do not add grants, create a service identity or repurpose Executor to close the gap.
+
+At the application layer, `JOURNAL_RECONCILIATION_READER` is checked by explicit application authorization. That logical permission grants no direct database access, no routine execution, no write capability and no access to private keys. Application routing must use the separately verified existing database execution identity.
+
+The View definition must expose only minimum bootstrap operation reconciliation metadata. It must exclude password hashes, raw challenges, challenge verifier digests, profile PII, credentials, private keys and unrelated attributes. It must be non-updatable, have no DML rules or INSTEAD OF triggers, and be subject to PostgreSQL 18 proof for owner, RLS, security-barrier behavior, installation scoping, effective SELECT privileges and base-table ACLs.
+
+The View's read path must participate in the same InstallationId-scoped transaction-level serialization barrier as claim: claim uses the exclusive form; reader uses the compatible shared form and then obtains a fresh READ COMMITTED snapshot. Exact lock primitive, lock namespace derivation, collision analysis and proof that every claim route takes the same lock remain OPEN. No third routine is allowed.
+
+No View, role, grant, lock, routine, SQL, DDL or migration is created or authorized by this design update.
