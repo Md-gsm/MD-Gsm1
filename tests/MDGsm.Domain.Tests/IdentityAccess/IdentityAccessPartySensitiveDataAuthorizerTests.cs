@@ -122,17 +122,19 @@ public sealed class IdentityAccessPartySensitiveDataAuthorizerTests
         private readonly Guid? _permissionAccountId;
         private readonly Guid? _permissionSessionId;
         private readonly long? _permissionVersion;
+        private readonly string? _permissionKeyOverride;
         private readonly Exception? _failure;
 
         public StubAuthorizationContract(CurrentPrincipalDecision principal,
             PermissionDecisionStatus permissionStatus, Guid? permissionAccountId,
-            Guid? permissionSessionId, long? permissionVersion)
+            Guid? permissionSessionId, long? permissionVersion, string? permissionKeyOverride = null)
         {
             _principal = principal;
             _permissionStatus = permissionStatus;
             _permissionAccountId = permissionAccountId;
             _permissionSessionId = permissionSessionId;
             _permissionVersion = permissionVersion;
+            _permissionKeyOverride = permissionKeyOverride;
         }
 
         public StubAuthorizationContract(Exception failure) => _failure = failure;
@@ -155,7 +157,7 @@ public sealed class IdentityAccessPartySensitiveDataAuthorizerTests
             LastPermissionKey = permissionKey;
             cancellationToken.ThrowIfCancellationRequested();
             if (_failure is not null) throw _failure;
-            return Task.FromResult(new PermissionDecision(_permissionStatus, permissionKey,
+            return Task.FromResult(new PermissionDecision(_permissionStatus, _permissionKeyOverride ?? permissionKey,
                 _permissionAccountId, _permissionSessionId, _permissionVersion,
                 ModuleContractVersion.Current, "test"));
         }
