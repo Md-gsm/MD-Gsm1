@@ -89,7 +89,7 @@ The account, credential and Product Owner binding must either commit together or
 
 This first-owner claim does **not** create role definitions, permission grants, a SuperAdmin expansion, or a database login. Exact bootstrap role/permission seed and deployment-principal boundaries remain O46-G04 and must be reviewed separately. Until all other setup and release gates are closed, the new account does not enable ordinary business routes.
 
-## 5. First-login policy reconciliation required
+## 5. Accepted first-login policy disposition
 
 The prior version identified a policy inconsistency. The Product Owner has resolved it as follows:
 
@@ -176,13 +176,15 @@ The Product Owner has accepted the following constraints in decision record `MDG
 3. Accept the installation-identity continuity model and UUIDv7 representation.
 4. Accept the recommendation that final owner credentials/profile entered in the trusted Wizard satisfy the initial first-use completion requirement, and direct that IdentityAccess Module Baseline v1.0 §5.5 be reconciled accordingly.
 
-Items 1–4 are a proposal, not accepted decisions. If the trust assumption in item 1 is not acceptable, pause implementation and choose a stronger external proof mechanism rather than weakening the local channel or adding an unauthenticated endpoint.
+Items 1–4 are owner-accepted decisions. The first-owner policy is reconciled in IdentityAccess Module Baseline v1.1 §5.5. Their technical threat review and implementation proofs remain open.
 
 ## 11. Non-authorization and next gates
 
 This document records owner-accepted constraints but remains non-authorizing. No bootstrap provisioning, runtime route, TCP listener, account, role, permission, credential, seed, migration, database grant, secret-provider integration, SMTP, Recovery or production activation is performed or authorized. O46-G01 owner-decision component is recorded; threat review and implementation proof remain open. O46-G04 through O46-G07 remain separate gates. Independent review of the accepted design and exact implementation SHA is required before any feature activation.
 
-**END — MDG-SECURITY-O46-BOOTSTRAP-TRUST-BOUNDARY-PROPOSAL-001 v0.1**
+---
+
+**Prior version note:** v0.1 is superseded by this v0.2 successor.
 
 
 ## 12. Exclusive Product Owner creation and first-login disposition
