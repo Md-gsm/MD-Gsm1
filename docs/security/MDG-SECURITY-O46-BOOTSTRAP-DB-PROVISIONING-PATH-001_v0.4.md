@@ -63,7 +63,7 @@ Provisioning and routine installation leave executor NOLOGIN. Activation require
 
 After the exact claim receipt and immutable Owner binding are independently verified, the same existing cluster-superuser maintenance boundary sets executor NOLOGIN, terminates all executor backends and verifies none remain. Setup Service separately proves its executor credential was erased and the Setup Named Pipe setup path closed. The maintenance actor does not receive or inspect the Setup Service secret. Cleanup is idempotent and retryable against the same InstallationId/SetupOperationId; failure remains fail-closed and never permits a second claim.
 
-### 5.1 Accepted Account profile and payload fingerprint v1
+### 3.7 Accepted Account profile and payload fingerprint v1
 
 The initial Owner input contract is exactly `username`, `display_name`, and `email`. These map respectively to `identity.accounts.login_name` plus the existing normalized login value, new `identity.accounts.display_name`, and existing `identity.accounts.email`. All three are required for this one bootstrap account. Phone/mobile is excluded; `phone_e164` remains untouched. The existing base schema has no display-name column, so candidate migration 0010 must add nullable `display_name` for compatibility and enforce non-empty display_name/email when `is_bootstrap_account=TRUE`. The Owner row sets `is_bootstrap_account=TRUE` and `must_change_password=FALSE`. No role, permission, session or phone value is created.
 
@@ -91,4 +91,4 @@ All O46-DEP tests remain **NOT RUN / NOT VERIFIED**: approved-superuser prefligh
 
 No role, schema, table, routine, grant, membership, credential, secret, migration, Account, Owner binding, challenge, executor LOGIN, Setup Wizard execution, recovery, G1 or production activation is authorized. This is an architecture/design record only.
 
-**END — v0.3**
+**END — v0.4**
