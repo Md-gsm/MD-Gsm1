@@ -9,7 +9,7 @@
 | Status | OWNER POLICY RECONCILIATION RECORDED; CURRENT EXACT-HEAD CI IN PROGRESS; O20-E OPEN PENDING EXTERNAL OWNER / PLATFORM / LEGAL / PRODUCTION / INDEPENDENT GATES |
 | Branch | security/o20-o21-final-closure |
 | Previous exact-green source/test SHA | `4bcb227109d6a3349a5cbfb7f133f3623f5ef9cb` |
-| Current source/test head | `604b411b113c0a1bcd861f8aaa42ab6e5a1514f0` — required workflows in progress |
+| Current source/test head | Final consolidated PR #92 head after document/checksum updates; exact-head workflow results to be captured from GitHub |
 | PR | #92 Draft / unmerged |
 | Governing blocker matrix | MDG-SECURITY-O20E-BLOCKER-CLOSURE-MATRIX-001 v2.2 |
 | Decision packet | MDG-SECURITY-O20-O21-OWNER-PLATFORM-DECISION-PACKET-001 v0.6 |
@@ -96,7 +96,7 @@ The controlling Product Owner decisions are in decision packet v0.6 and PR #92 c
 - The disposable PostgreSQL proof now tests the 60-minute boundary, 3601-second rejection, explicit operation allow-list, independent approver rules, Product Owner approver path, Backup restore two-person path, expiry and local audit-intent atomicity. Production identity/capability and canonical AuditSecurity ACK remain unproven.
 - GOV-OWNER-AUTH-001 v0.1 is registered as a controlled architecture change request, not yet integrated into the governing Master.
 
-Current exact PR head `604b411b113c0a1bcd861f8aaa42ab6e5a1514f0`: CodeQL, Persons Module Gates and Windows Preview Installer are in progress; Project Charter Owner Gate succeeded. The old 4bcb green result does not validate these changes.
+The consolidated successor head shown on PR #92 must receive the full required workflow set. The old 4bcb green result does not validate these changes; exact-head PASS is not claimed until all required checks complete on the final consolidated head.
 
 No production owner binding, Emergency Access grant/LOGIN, Worker credential, External WORM/KMS resource, Organization runtime/schema, report grant or automatic disposal was provisioned. Independent exact-SHA review is still not submitted. O20-E/O-20/O-21 remain OPEN; G1 NOT GRANTED.
 
