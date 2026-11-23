@@ -104,7 +104,7 @@ internal sealed class InventoryPostgresHarness : IAsyncDisposable
     }
 
     public async Task<LockObservation> ObserveWaitAsync(
-        int waiterPid, int expectedBlockerPid, TimeSpan timeout, CancellationToken cancellationToken = default)
+        Guid logicalResourceId, int waiterPid, int expectedBlockerPid, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         await using var observer = await OpenParticipantAsync("observer", cancellationToken);
         var stopwatch = Stopwatch.StartNew();
@@ -138,7 +138,7 @@ internal sealed class InventoryPostgresHarness : IAsyncDisposable
                 if (blockers.Contains(expectedBlockerPid))
                 {
                     return new LockObservation(
-                        Guid.Empty,
+                        logicalResourceId,
                         waiterPid,
                         reader.GetString(1),
                         reader.IsDBNull(2) ? null : reader.GetString(2),
@@ -192,6 +192,7 @@ internal sealed class InventoryPostgresHarness : IAsyncDisposable
 }
 
 internal sealed record LockObservation(
+    Guid LogicalResourceId,
     int WaiterPid,
     string ApplicationName,
     string? WaitEventType,

@@ -40,8 +40,9 @@ public sealed class InventoryPostgresHarnessProofTests
         });
 
         await barrierBAttempting.WaitAsync();
-        var observation = await harness.ObserveWaitAsync(pidB, pidA, TimeSpan.FromSeconds(8));
+        var observation = await harness.ObserveWaitAsync(resourceId, pidB, pidA, TimeSpan.FromSeconds(8));
         timeline.Add("observer:expected-blocker-confirmed");
+        Assert.Equal(resourceId, observation.LogicalResourceId);
         Assert.Contains(pidA, observation.BlockingPids);
         Assert.Equal("Lock", observation.WaitEventType);
 
