@@ -4,7 +4,7 @@
 |---|---|
 | Document ID | MDG-IDENTITYACCESS-MODULE-BASELINE-001 |
 | Version / Date | 1.2 / 2026-11-23 |
-| Status | **IDENTITYACCESS MODULE-OWNER ACCEPTED BASELINE — OWNER PROFILE/FINGERPRINT CONTRACT ACCEPTED; IMPLEMENTATION AND RELEASE GATES OPEN** |
+| Status | **IDENTITYACCESS MODULE-OWNER ACCEPTED BASELINE — OWNER PROFILE CONTRACT ACCEPTED; FINGERPRINT PROPOSAL PENDING REVIEW; IMPLEMENTATION AND RELEASE GATES OPEN** |
 | Module owner | `Md-gsm` (also Product Owner; one existing person/account) |
 | Independent reviewer | `mrdeljoe4` (existing reviewer; no project membership expansion) |
 | Public contract assembly | `src/Modules/IdentityAccess/Contracts` |
@@ -125,7 +125,7 @@ The initial Product Owner profile collected by the trusted local Setup Wizard is
 
 No phone/mobile field is collected or required in this bootstrap flow; the existing `phone_e164` remains untouched. Email remains a contact/recovery channel and is not a login identifier. The Owner claim sets `is_bootstrap_account=true` and `must_change_password=false`; it does not create roles, permissions, sessions or business data. Email/display-name validation must use reviewed IdentityAccess validators; no additional trimming, case folding or Unicode policy is invented here.
 
-The v1 claim fingerprint is the domain-separated SHA-256 binary envelope defined in `MDG-SECURITY-O46-CHALLENGE-ISSUANCE-PROTOCOL-PROPOSAL-001_v0.4.md`. Its persisted form is 32 bytes and its version is 1. The fingerprint binds InstallationId, SetupOperationId, AccountId, normalized username, validated display_name, validated email, password_hash_version and the exact final stored password-hash output; it excludes plaintext password, challenge material and secrets. Shared test vectors remain a technical acceptance gate.
+The proposed v1 claim fingerprint is the domain-separated SHA-256 binary envelope described in `MDG-SECURITY-O46-CHALLENGE-ISSUANCE-PROTOCOL-PROPOSAL-001_v0.4.md`. If accepted, its persisted form will be 32 bytes and its version will be 1. The algorithm remains a technical proposal pending Product Owner/independent review and shared test vectors. The fingerprint binds InstallationId, SetupOperationId, AccountId, normalized username, validated display_name, validated email, password_hash_version and the exact final stored password-hash output; it excludes plaintext password, challenge material and secrets. Shared test vectors remain a technical acceptance gate.
 ### 5.6 Roles and permissions
 
 - The accepted role vocabulary is: `super_admin`, `manager`, `receptionist`, `technician`, `warehouse`, `salesperson`, `purchaser`, `cashier`, `accountant`, `viewer`.
@@ -192,4 +192,6 @@ The owner-accepted route is exclusively the server-local Wizard using the accept
 
 **Successor note:** This v1.1 baseline supersedes v1.0 for the initial Product Owner bootstrap/first-login policy only. All other v1.0 contract boundaries and non-acceptances remain unchanged unless explicitly reconciled above.
 
-**END — MDG-GSM IdentityAccess Module Baseline v1.1**
+**Successor note:** This v1.2 baseline preserves all v1.1 decisions and adds only the accepted three-field initial Owner profile contract; the fingerprint serialization is a proposal pending review.
+
+**END — MDG-GSM IdentityAccess Module Baseline v1.2**
