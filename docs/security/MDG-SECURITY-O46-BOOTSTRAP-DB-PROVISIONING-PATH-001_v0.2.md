@@ -236,4 +236,4 @@ No code, SQL, DDL, role, grant, membership, credential, schema, function, migrat
 
 If this boundary is not accepted, the bootstrap routine installation path must remain unimplemented. Do not substitute a new deployment LOGIN, CREATEROLE grant, migration_runner membership, or application-held database-owner secret without a separate explicit decision.
 
-**END — MDG-SECURITY-O46-BOOTSTRAP-DB-PROVISIONING-PATH-001 v0.1**
+**END — MDG-SECURITY-O46-BOOTSTRAP-DB-PROVISIONING-PATH-001 v0.2**
