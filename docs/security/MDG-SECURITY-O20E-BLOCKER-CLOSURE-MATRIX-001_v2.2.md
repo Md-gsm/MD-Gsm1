@@ -9,7 +9,7 @@
 | Status | O20-F POLICY/TEST SOURCE UPDATE; EXACT-HEAD CI IN PROGRESS; PRODUCTION / EXTERNAL OWNER GATES OPEN |
 | Repository / Branch | Md-gsm/MD-Gsm1 / security/o20-o21-final-closure |
 | Previous exact-green source/test SHA | `4bcb227109d6a3349a5cbfb7f133f3623f5ef9cb` |
-| Current source/test head | `604b411b113c0a1bcd861f8aaa42ab6e5a1514f0` — exact-head workflows in progress |
+| Current source/test head | Final consolidated PR #92 head, including document/checksum updates; exact-head workflows must be captured from the final PR head |
 | PR | #92 Draft / open / unmerged |
 | Current main SHA | `2a52a8b0629769953ff9671a0cf220401614ce9f` |
 | Previous full blocker history | MDG-SECURITY-O20E-BLOCKER-CLOSURE-MATRIX-001 v1.9 |
@@ -142,7 +142,7 @@ The Product Owner decisions are recorded in decision packet v0.6 and PR #92 comm
 - O20-F PostgreSQL proof now enforces the 1–3600-second ceiling, the explicit allowed-operation set, one eligible approver for ordinary operations, two for Backup restore, self-approval denial, synchronous expiry and audit-intent rollback. Its identities and capabilities remain disposable fixtures.
 - GOV-OWNER-AUTH-001 v0.1 records Product Owner final product authority while preserving specialist evidence duties and non-overridable legal/security/release gates.
 
-The current exact PR head is `604b411b113c0a1bcd861f8aaa42ab6e5a1514f0`. On that SHA, CodeQL, MD-Gsm Persons Module Gates and Windows Preview Installer are running; Project Charter Owner Gate succeeded. No all-gates PASS is claimed until the remaining jobs complete on this exact SHA.
+The final consolidated PR #92 head is the head shown on GitHub after all document and checksum updates. Required workflows must complete against that exact head; no all-gates PASS is claimed until the final-head jobs complete.
 
 No production owner binding, emergency credential/grant, production database capability, Worker credential, WORM/KMS resource, RowScope consumer or disposal worker was created. O20-E/O-20/O-21 remain OPEN; G1 is NOT GRANTED.
 
