@@ -58,13 +58,13 @@ public sealed class O20EmergencyAccessPostgresProofTests
                     INSERT INTO {qSchema}.authorized_approver
                         (principal,database_name,schema_name,allowed_operation,allowed_resource,is_active,valid_from_utc,valid_until_utc)
                     VALUES
-                        ('approver-a',current_database(),{Literal(schema)},'READ','scope-A',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
-                        ('product-owner',current_database(),{Literal(schema)},'READ','scope-A',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
-                        ('approver-b',current_database(),{Literal(schema)},'READ','scope-A',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
-                        ('approver-a',current_database(),{Literal(schema)},'READ','scope-C',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
-                        ('approver-b',current_database(),{Literal(schema)},'READ','scope-C',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
-                        ('approver-a',current_database(),{Literal(schema)},'READ','scope-D',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
-                        ('approver-b',current_database(),{Literal(schema)},'READ','scope-D',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour');
+                        ('approver-a',current_database(),{Literal(schema)},'UNLOCK_ACCOUNT','scope-A',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
+                        ('product-owner',current_database(),{Literal(schema)},'UNLOCK_ACCOUNT','scope-A',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
+                        ('approver-b',current_database(),{Literal(schema)},'UNLOCK_ACCOUNT','scope-A',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
+                        ('approver-a',current_database(),{Literal(schema)},'UNLOCK_ACCOUNT','scope-C',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
+                        ('approver-b',current_database(),{Literal(schema)},'UNLOCK_ACCOUNT','scope-C',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
+                        ('approver-a',current_database(),{Literal(schema)},'UNLOCK_ACCOUNT','scope-D',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour'),
+                        ('approver-b',current_database(),{Literal(schema)},'UNLOCK_ACCOUNT','scope-D',true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour');
                     CREATE TABLE {qSchema}.emergency_grant
                     (
                         grant_id uuid PRIMARY KEY,
