@@ -118,9 +118,20 @@ This control block supersedes all contradictory status statements in the histori
 
 1. OWNER ACCEPTANCE — ACCEPTED. The owner explicitly accepted MDG-ARCH-MASTER-001 v3.0.3 on 2026-11-20 as the sole current architecture and accounting-policy baseline. v2.5, v2.6, v3.0 and v3.0.1 are historical references only; they are not current baselines.
 2. INDEPENDENT TECHNICAL REVIEW — PENDING. Review must be performed against the exact final commit SHA. Owner acceptance is not independent review and must not be represented as such.
-3. REPOSITORY REGISTRATION — PENDING. The document is on the open PR #72 branch. It is not registered in main until the relevant PR is successfully merged. A PR, approval, passing check or branch commit alone is not registration in main.
+3. REPOSITORY REGISTRATION — COMPLETED. The v3.0.3 text rendition is registered in `main` through PR #71, merged at `8f89653e25e6a599387128e0209f5009d9dd59cd`. The earlier statement referring to PR #72 is historical and superseded; repository registration of v3.0.3 is complete.
 4. IMPLEMENTATION / TEST / EVIDENCE / LEGAL / RELEASE — SEPARATE. Owner acceptance does not imply design completion, implementation, test PASS, evidence acceptance, legal clearance, Gate C or Gate D PASS, Posting Release, production migration or Go-Live. Each retains its own criteria and status.
 5. REVISION DATE — 2026-11-20. Dates elsewhere remain the dates of their underlying decisions, source records or test evidence; they do not override this document revision date.
+
+
+DOCUMENT CONTROL ADDENDUM — OWNER REAFFIRMATION AND OFFICIAL MASTER STATUS (2026-11-24)
+
+The Product Owner reaffirms MDG-ARCH-MASTER-001 v3.0.3 as the sole accepted, official and governing Architecture/Accounting Master for MD-Gsm. Its repository registration in `main` is complete through PR #71 merge commit `8f89653e25e6a599387128e0209f5009d9dd59cd`.
+
+MDG-ARCH-MASTER-001 v3.0.4 is not the current or official Master and does not supersede v3.0.3. The v3.0.4 file is retained only as a historical working derivative for traceability. Owner decisions recorded separately under CHG-101 remain valid only within their expressly accepted scope; they do not constitute acceptance of v3.0.4 as a Master successor. Any future incorporation into the governing Master requires a separately controlled version and explicit acceptance.
+
+All current project work, module designs, contracts, workpapers, registers, implementation planning and reviews must use v3.0.3 as the governing baseline. Older snapshots and superseded registers remain preserved as historical evidence; their former status statements do not override this addendum or the current registration record.
+
+Owner acceptance and official document status remain independent from independent technical review, design completion, implementation, test PASS, evidence acceptance, legal clearance, Gate C/Gate D, Posting Release, production migration and Go-Live. None of those gates is promoted by this addendum.
 
 
 
