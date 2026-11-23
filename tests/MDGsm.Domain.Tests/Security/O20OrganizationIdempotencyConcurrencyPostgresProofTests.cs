@@ -165,7 +165,7 @@ public sealed class O20OrganizationIdempotencyConcurrencyPostgresProofTests
                 $"SELECT count(*) FROM {q}.account_warehouse_assignment WHERE subject_account_id=@subject AND warehouse_id=@warehouse;",
                 ("subject", unknownCommitSubject), ("warehouse", unknownCommitWarehouse)));
 
-            // A backend/worker failure before commit leaves neither receipt nor assignment;
+            // A transaction abort before commit leaves neither receipt nor assignment;
             // a retry can then create the single durable result.
             var rollbackSubject = Guid.NewGuid();
             var rollbackWarehouse = Guid.NewGuid();
