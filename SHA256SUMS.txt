@@ -122,6 +122,7 @@
 2bba4bda50455bc262fe6a8b48a12f5f71e1193c3b06d10c45057bcf6e5f3547  .github/workflows/windows-preview-installer.yml
 2bd38d663ee4cefd0d8e0eef2142b73422dc72498ea88196e31c8b2bce67025d  src/Modules/IdentityAccess/Application/IdentityAccessPorts.cs
 2c1536a2ccd2a1d4a6cd1c70e812bb7f7bf37bdcfa1a843766bac365768e628b  docs/security/MDG-SECURITY-O20E-G1-READINESS-REVIEW-001_v3.4.md
+2c3b1cc12127a0889d5f9a37eb187477863df0e852ddce9f2320bd8a3e92c192  docs/architecture/MDG-PLATFORM-FIRST-RUN-SETUP-ORCHESTRATION-CONTRACT-001_v0.1.md
 2c4e4eae0db9488f06f99e9326510832e2c1275a88a6fe67d3a962470027ff53  docs/operations/main-branch-protection-fa.md
 2cceb64e4c3c7bfd5124f2f3aeee88b7e3442dab55e89030c9bdce8de10a698f  docs/decisions/0015-finance-party-account-per-party.md
 2cdaf8df7b46f502e79743d2a3558847072074a65fc5ff69523b45f1601240f1  docs/attestations/V0.2.8_DASHBOARD_ALIGNMENT_STATUS_FA.md
