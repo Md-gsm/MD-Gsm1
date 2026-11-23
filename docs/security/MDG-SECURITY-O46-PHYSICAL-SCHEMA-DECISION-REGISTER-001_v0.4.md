@@ -27,9 +27,9 @@ Owner decisions are recorded in Bootstrap DB Provisioning Decision v0.2, Bootstr
 The following v0.4 documents are the current reconciliation layer and must be read together:
 
 - `MDG-SECURITY-O46-BOOTSTRAP-PHYSICAL-SCHEMA-AND-ACL-PROPOSAL-001_v0.4.md` — three candidate IdentityAccess tables, exact role/routine boundaries, aggregate ACL caveat, migration separation and unresolved physical details.
-- `MDG-SECURITY-O46-BOOTSTRAP-PROVISIONING-PACKAGE-CONTRACT-001_v0.3.md` — signed local maintenance package, typed operation surface, dormant state machine, install/verify/revoke and no automatic executor activation.
-- `MDG-SECURITY-O46-CHALLENGE-ISSUANCE-PROTOCOL-PROPOSAL-001_v0.3.md` — two-routine issue/claim semantics, 32-byte CSPRNG challenge, SHA-256 verifier, one-use/idempotency, 30-minute maximum, operator SID binding and Setup Named Pipe security constraints.
-- `MDG-SECURITY-O46-BOOTSTRAP-DB-PROVISIONING-PATH-001_v0.3.md` — existing cluster-superuser maintenance path, role/routine provisioning, WG-0 migration boundary, executor activation separation and cleanup.
+- `MDG-SECURITY-O46-BOOTSTRAP-PROVISIONING-PACKAGE-CONTRACT-001_v0.4.md` — signed local maintenance package, typed operation surface, dormant state machine, install/verify/revoke and no automatic executor activation.
+- `MDG-SECURITY-O46-CHALLENGE-ISSUANCE-PROTOCOL-PROPOSAL-001_v0.4.md` — two-routine issue/claim semantics, 32-byte CSPRNG challenge, SHA-256 verifier, one-use/idempotency, 30-minute maximum, operator SID binding and Setup Named Pipe security constraints.
+- `MDG-SECURITY-O46-BOOTSTRAP-DB-PROVISIONING-PATH-001_v0.4.md` — existing cluster-superuser maintenance path, role/routine provisioning, WG-0 migration boundary, executor activation separation and cleanup.
 
 The earlier v0.2 documents remain historical design baselines. If wording differs, the v0.4 reconciliation documents control only within their stated scope; the explicit owner decisions remain authoritative.
 
@@ -53,7 +53,7 @@ Candidate IdentityAccess-owned objects remain:
 
 Exact candidate columns/constraints and Account profile input mapping are frozen for review. Fingerprint v1 serialization is defined. Lock primitive/key derivation, exact routine signatures, UUIDv7 provider proof, final ACL matrix and PostgreSQL 18 proof remain OPEN. Migration 0009 remains RESERVED for Accounting. Candidate 0010 is NOT RESERVED; WG-0 must allocate the authoritative number and approve the table-only migration before any SQL is written. No routine, principal, grant, credential or activation is included in that migration.
 
-## 5. Remaining gates — all OPEN / NOT RUN
+## 6. Remaining gates — all OPEN / NOT RUN
 
 - Product Owner acceptance of the three-field Owner profile and fingerprint v1 is recorded; independent review of exact columns, serialization test vectors, routine signatures and data-access order remains OPEN.
 - Trusted operator SID attestation and Windows IPC DACL/process/remote-client proof.
@@ -72,8 +72,8 @@ Payload fingerprint v1 is fixed as a domain-separated SHA-256 digest over the de
 
 The three candidate tables and exact column/constraint proposal are in Physical Schema v0.4. Candidate migration 0010 remains unreserved and must be IdentityAccess-owned/table-only, including only the approved nullable display_name column/check on accounts in addition to the three bootstrap tables and their constraints/indexes. No SQL is authorized.
 
-## 6. Non-authorization
+## 7. Non-authorization
 
 No SQL, DDL, migration reservation/application, role/schema/routine/grant creation, credential, secret, Owner account/binding, challenge, executor LOGIN, Setup Wizard execution, Recovery, Organization, Inventory, G1 or production activation is authorized. All technical acceptance tests remain NOT RUN / NOT VERIFIED.
 
-**END — v0.3**
+**END — v0.4**
