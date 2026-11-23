@@ -86,7 +86,7 @@ Both ends must authenticate their peer; access to a pipe name alone is not suffi
 **Client authenticates server:**
 
 - Before sending any password, profile data or challenge response, the Wizard verifies that the connected pipe server is the expected MD-Gsm server service process.
-- The candidate proof is to obtain the connected server PID through the native pipe API, open the process/token with minimum query rights and verify the expected service SID and protected installation/service identity. A PID or process name alone is not sufficient.
+- The candidate proof is to obtain the connected server PID using Windows `GetNamedPipeServerProcessId`, open the process/token with minimum query rights and verify the expected service SID and protected installation/service identity. A PID or process name alone is not sufficient.
 - The server must create the first pipe instance itself. If another process created the name first, service initialization fails closed. The Wizard must not send any secret to an unverified endpoint.
 - If the service identity cannot be verified or the connection is ambiguous, the Wizard displays a controlled server-authentication error and terminates the exchange.
 
@@ -222,5 +222,6 @@ The following Microsoft documentation was consulted on 2026-11-23:
 4. Windows CreateNamedPipeW / PIPE_REJECT_REMOTE_CLIENTS: https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-createnamedpipew
 5. Windows Named Pipe Security and Access Rights: https://learn.microsoft.com/en-us/windows/win32/ipc/named-pipe-security-and-access-rights
 6. .NET 10 NamedPipeServerStream.RunAsClient: https://learn.microsoft.com/en-us/dotnet/api/system.io.pipes.namedpipeserverstream.runasclient?view=net-10.0
+7. Windows GetNamedPipeServerProcessId: https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getnamedpipeserverprocessid
 
 **END — MDG-SECURITY-O46-LOCAL-IPC-THREAT-REVIEW-001 v0.1**
