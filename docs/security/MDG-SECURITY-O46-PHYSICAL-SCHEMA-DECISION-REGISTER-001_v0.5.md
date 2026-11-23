@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | MDG-SECURITY-O46-PHYSICAL-SCHEMA-DECISION-REGISTER-001 |
-| Version / Date | 1.0 / 2026-11-24 |
+| Version / Date | 1.1 / 2026-11-24 |
 | Status | **OWNER-APPROVED PROFILE, JOURNAL AND TWO-PRINCIPAL RECONCILIATION TARGETS RECORDED; PHYSICAL/SECURITY PROOFS OPEN; NO IMPLEMENTATION AUTHORIZED** |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
 | Supersedes | v0.7 as the current cross-document index |
@@ -286,3 +286,42 @@ JRN-REC-02 and JRN-REC-03 are separate gates and must be assessed separately:
 - The two-principal ceiling, exact two SECURITY DEFINER routines, unchanged Executor ACL, no-third-principal rule and no-implementation boundary remain in force.
 
 No Role, LOGIN, membership, View, grant, routine, schema, SQL, DDL, migration, credential or activation was created or changed by these decisions.
+
+
+## 16. Read-only application-connection and PostgreSQL catalog recheck (2026-11-24)
+
+This section records a read-only recheck for JRN-REC-03. It does not change the independent JRN-REC-02 View-owner disposition.
+
+### 16.1 Repository connection and credential contract
+
+- `PersistenceRegistration.AddMdGsmPersistence` reads one named `ConnectionStrings:MDGsmDatabase` value and uses that same value for both the EF Core `MdGsmDbContext` and the singleton `NpgsqlDataSource`. The reviewed API host registers this persistence path; no separate reporting/read-only connection name or reader-specific data source is defined in the reviewed registration/API source.
+- Decision 0002 states that the WPF Desktop client does not connect directly to PostgreSQL; the API/server owns database credentials and connections.
+- `docs/data/persistence-and-migrations.md` states that the runtime grant template creates only the `mdgsm_runtime` NOLOGIN group and that the actual API LOGIN is created outside the repository by the DBA. The repository therefore does not establish the live runtime LOGIN name, credential, or production membership mapping.
+- The DbMigrator has a distinct deployment contract using `ConnectionStrings__MDGsmDatabase`, `MDGSM_MIGRATION_LOGIN_ROLE`, and `MDGSM_MIGRATION_OWNER_ROLE`; the verified migration path is `migration_runner → mdgsm_schema_owner` with SET-only membership. This is a migration identity, not an application read identity.
+- Repository search found no implementation/configuration contract for `JOURNAL_RECONCILIATION_READER`, `reporting_ro` as a provisioned identity, `report_ro`, `ReportingConnection`, or `ReadOnlyConnection`.
+
+### 16.2 Latest available PostgreSQL 18.6 catalog evidence
+
+The latest catalog artifact available for this recheck is from the PR #92 PostgreSQL workflow:
+- PR branch head at workflow event: `4409abe7050ebfb976ea8ddf16eb45d769de3672`.
+- Workflow run: `45224017066`; the workflow checkout/merge-ref SHA is `b8b61a87cbc318492c96850767066e3a9ec99f5b`.
+- Job: `137865835873` (`persons-postgres-migrations)); catalog inventory step and artifact upload completed successfully.
+- PostgreSQL: `server_version_num=180006` (18.6).
+- Artifact: `o20-g-catalog-inventory`, ID `14840518465`; ZIP SHA-256 `3bbcef63b0ceb9e8a8b918cbe662c8a2de13f02ed35d25d93b84a7ee41ae1422`; extracted JSON SHA-256 `5ff69d034f943c8981790bd913fe7bfea93556677f9e6aea1d2b945c43dc9def`.
+- Inventory totals: 20 roles, 4 membership edges, 5 schemas, 522 relations and 227 effective-privilege records.
+
+The exact disposable catalog reports:
+- `reporting_ro` absent; `report_ro` absent; `runtime_app` absent.
+- `mdgsm_runtime` exists as NOLOGIN / NOINHERIT and is the catalog's mapped support role for the logical `runtime_app` binding; it is not a LOGIN.
+- `migration_runner` is LOGIN / NOINHERIT and has its single SET-capable membership to `mdgsm_schema_owner`; it is not an application reader.
+- `mdgsm_schema_owner` is NOLOGIN. `postgres` is the cluster superuser and is not an acceptable application reader.
+- No O-46 Reconciliation View or relation named for Journal/Reconciliation exists in this catalog. The `mdgsm_runtime` effective SELECT set is limited to nine IdentityAccess relations; there is no SELECT on an O-46 View.
+- Neither bootstrap principal is present in this artifact, consistent with the explicit no-provisioning boundary.
+
+### 16.3 Evidence boundary and disposition
+
+The catalog above is a **disposable CI PostgreSQL database**, not the live central/target database. The workflow intentionally uses a privileged CI bootstrap connection and a separate migration LOGIN; it does not attest production credentials, the actual server API LOGIN, or any external deployment connection. No live target-cluster credential/connector was available in this read-only inspection, so the target catalog's actual role graph and effective privileges remain unverified.
+
+**Result:** no existing authorized Reader path is established by the repository contract or the latest disposable catalog. In particular, `mdgsm_runtime` cannot be treated as the Reader: it is NOLOGIN in the observed fixture, no Reconciliation View exists there, and no effective SELECT on such a View is present. The `postgres` superuser and `migration_runner` are expressly excluded from the application-reader role.
+
+**Disposition:** JRN-REC-03 remains **OPEN / BLOCKED — NO EXISTING AUTHORIZED READER PATH PROVEN** pending a sanitized, read-only catalog export from the actual target PostgreSQL 18 database and confirmation of the live API connection identity. Do not create `reporting_ro`, a new LOGIN, a third principal, a membership, a grant, or a new connection credential to close this gap. JRN-REC-02 remains independently **OWNER-CONDITIONALLY-APPROVED / TECHNICAL-CONTRACT-AND-PROOF-OPEN**.
