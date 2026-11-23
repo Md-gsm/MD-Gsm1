@@ -71,7 +71,7 @@ Constraints/indexes: UNIQUE `(challenge_id, installation_id, setup_operation_id)
 | `payload_fingerprint` | `bytea` | NOT NULL, exactly 32 bytes | SHA-256 of the v1 canonical claim envelope. |
 | `completed_at_utc` | `timestamptz` | NOT NULL | PostgreSQL claim timestamp. |
 
-Require UNIQUE `(installation_id, setup_operation_id)`; FK `(installation_id, account_id)` to the corresponding immutable binding; and FK `(challenge_id, installation_id, setup_operation_id)` to the consumed challenge using a matching UNIQUE key on the challenge table. Receipt rows are append-only: the function-owner receives only exact SELECT/INSERT rights, never UPDATE/DELETE/TRUNCATE.
+FK `(installation_id, account_id)` to the corresponding immutable binding; and FK `(challenge_id, installation_id, setup_operation_id)` to the consumed challenge using a matching UNIQUE key on the challenge table. Receipt rows are append-only: the function-owner receives only exact SELECT/INSERT rights, never UPDATE/DELETE/TRUNCATE.
 
 ### 2.4 Cross-table invariants
 
@@ -97,16 +97,6 @@ No mobile/phone field is collected or required by this bootstrap contract. The e
 The existing base migration names the login field `login_name`, not `username`, and already has nullable `email` and `phone_e164`; it has no `display_name`. Therefore the future reserved IdentityAccess migration must add `identity.accounts.display_name` as nullable for compatibility with existing non-bootstrap accounts, and add a CHECK constraint requiring non-empty `display_name` and `email` whenever `is_bootstrap_account = TRUE`. The Owner claim must set `is_bootstrap_account = TRUE`, `must_change_password = FALSE`, and supply all three approved fields. It must not set a phone number or create any role/permission/session data.
 
 The accepted field set is frozen. Email syntax/canonicalization and display-name validation details must reuse a reviewed IdentityAccess validator; this decision does not invent trimming, case folding, email canonicalization or new Unicode rules. For fingerprinting, the exact validated strings are encoded as UTF-8 without any additional transformation; username fingerprint input is the established `login_name_normalized`, not the raw Wizard spelling.
-
-## 3. ACL reconciliation
-
-The proposed IdentityAccess-owned objects remain:
-
-- `identity.product_owner_bindings`: immutable one-row-per-InstallationId binding to the original AccountId; no update, delete, transfer, successor or replacement path.
-- `identity.bootstrap_challenges`: setup-only verifier state, bound to InstallationId, SetupOperationId, fixed purpose and OS-attested operator SID; stores only the 32-byte SHA-256 digest, never raw challenge; one-use, expiring, revocable and idempotent by challenge_request_id.
-- `identity.bootstrap_operations`: append-only claim receipt binding the SetupOperationId, InstallationId, canonical payload fingerprint and resulting AccountId; same-operation/same-fingerprint reconciliation only.
-
-Exact table/column contract is frozen for independent review only. Fingerprint v1 test vectors, UUIDv7 provider boundaries, lock primitive/key derivation, routine signatures, full column ACL catalog and PostgreSQL 18 proof remain OPEN. No DDL may be drafted or applied until WG-0 migration reservation and all independent gates.
 
 ## 3. ACL reconciliation
 
@@ -149,11 +139,11 @@ The Setup Service's local Named Pipe is a separate application trust channel for
 
 The challenge issue and claim routines are invoked only through the separately gated executor path; executor LOGIN remains disabled until secret custody, loopback-only PostgreSQL access, complete HBA ordering and negative connection tests are independently proven and separately authorized.
 
-## 4.5 Proposed payload fingerprint v1 — owner approval and test vectors pending
+## 5. Proposed payload fingerprint v1 — owner approval and test vectors pending
 
 The proposed claim payload fingerprint is computed by the trusted IdentityAccess server boundary and persisted as a 32-byte SHA-256 digest. It is not keyed: no new key, secret, role or credential boundary is introduced. It is domain-separated and includes the final salted/versioned password-hash output, not the plaintext password. The exact v1 binary envelope is a cross-document technical proposal in Challenge Protocol v0.4; it is not yet Product Owner-approved. Cross-language test vectors remain required.
 
-## 5. Required proof and unresolved decisions
+## 6. Required proof and unresolved decisions
 
 All remain NOT RUN / NOT VERIFIED:
 
@@ -166,7 +156,7 @@ All remain NOT RUN / NOT VERIFIED:
 - WG-0 migration number/path reservation and IdentityAccess owner acceptance;
 - independent Security/Architecture acceptance of the aggregate-ACL residual risk.
 
-## 6. Explicit non-authorization
+## 7. Explicit non-authorization
 
 No SQL, DDL, schema, table, routine, role, grant, membership, credential, secret, migration, Account, Owner binding, challenge, Setup Wizard execution, executor LOGIN, G1 or production activation is authorized. The physical contract remains a proposal and all tests remain NOT RUN.
 
