@@ -4,13 +4,19 @@
 |---|---|
 | Document ID | MDG-SECURITY-O46-BOOTSTRAP-DB-PROVISIONING-PATH-001 |
 | Version / Date | 0.1 / 2026-11-23 |
-| Status | **TECHNICAL RECOMMENDATION — OWNER DECISION REQUIRED — NON-AUTHORIZING** |
+| Status | **OWNER-ACCEPTED DEPLOYMENT CONSTRAINT — DESIGN BASELINE ONLY; NO DDL / ROLE / GRANT / RUNTIME AUTHORIZATION** |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
 | Owner-accepted principal baseline | O-46 Bootstrap Database Principal Decision v0.1 |
 | Role catalog baseline | O-20 Database Role/Object Matrix v1.8 |
 | Related implementation boundary | O-20-C migration_runner → mdgsm_schema_owner SET-only mapping |
 
-## 1. Decision sought
+## 1. Owner decision and accepted deployment boundary
+
+**Owner decision: APPROVED on 2026-11-23.** The Product Owner accepts use of the already-existing PostgreSQL cluster superuser, only through a separately invoked, local and explicitly authorized maintenance/provisioning operation on the central Windows server, for provisioning and verifying the two previously accepted bootstrap principals and installing/upgrading the isolated `SECURITY DEFINER` routine. The seven mandatory restrictions in `MDG-SECURITY-O46-BOOTSTRAP-DB-PROVISIONING-DECISION-001_v0.1.md` are binding.
+
+This approval does not authorize creating roles, secrets, grants, schemas, functions, migrations or enabling the runtime path. It does not permit application components to receive or access the cluster-administrator credential. All implementation and exact-head acceptance gates remain open.
+
+## 1A. Accepted deployment boundary (supersedes request for owner approval)
 
 This proposal selects the deployment mechanism for installing and upgrading the isolated IdentityAccess bootstrap function without:
 
@@ -24,7 +30,7 @@ This proposal selects the deployment mechanism for installing and upgrading the 
 
 The operation temporarily executes `SET LOCAL ROLE mdgsm_identity_bootstrap_fn_owner` while connected as the existing cluster superuser. PostgreSQL allows a superuser to select any role with `SET ROLE`; this creates no persistent role-membership edge. The five N.6 identities and the current migration membership graph therefore remain unchanged.
 
-This proposal does not authorize the operation, roles, schema, function, grants, secret, migration, or runtime feature. It requests explicit owner acceptance of the deployment boundary described here.
+This owner-accepted design constrains a future implementation. It does not authorize the operation, roles, schema, function, grants, secret, migration, or runtime feature; each remains subject to its separate change-control and acceptance gates.
 
 ## 2. Verified repository constraints
 
