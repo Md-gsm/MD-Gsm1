@@ -171,10 +171,7 @@ This baseline authorizes contract and implementation work within IdentityAccess'
 
 PR #92 must remain Draft, open and unmerged until all applicable technical gates, exact-SHA CI, independent review and owner acceptance are complete.
 
-**END — MDG-IDENTITYACCESS-MODULE-BASELINE-001 v1.0**
-
-
-## 10.1 O-46 owner decision reconciliation — 2026-11-23
+## 10. O-46 owner decision reconciliation — 2026-11-23
 
 The owner decision recorded in `MDG-SECURITY-O46-BOOTSTRAP-OWNER-DECISION-001_v0.1.md` is controlling for the first Product Owner account. It supersedes the v1.0 wording that required the initial administrator to change username, password and profile at first login. The initial owner's final credentials/profile are completed in the trusted server-local Wizard; there is no forced change after the first login. All ordinary password-change and other-user password-reset controls remain in effect.
 
