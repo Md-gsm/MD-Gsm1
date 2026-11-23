@@ -57,7 +57,7 @@ Also require `UNIQUE (installation_id, account_id)` for the receipt's composite 
 | `revoked_at_utc` | `timestamptz` | NULL | Issuer-only conditional revocation transition. |
 | `consumed_at_utc` | `timestamptz` | NULL | Claim-only conditional single-use transition. |
 
-Constraints/indexes: UNIQUE `(installation_id, setup_operation_id, challenge_request_id)`; UNIQUE `verifier_digest`; CHECK `expires_at_utc > created_at_utc` and `expires_at_utc <= created_at_utc + interval '30 minutes'`; CHECK that a row cannot be both revoked and consumed; and a partial unique index on `(installation_id, setup_operation_id, purpose)` WHERE both `revoked_at_utc` and `consumed_at_utc` are NULL. The issuer must revoke any prior unconsumed row for the same installation/operation/purpose before inserting a replacement, including an expired-but-not-yet-revoked row. No raw challenge is stored.
+Constraints/indexes: UNIQUE `(challenge_id, installation_id, setup_operation_id)` for the receipt FK; UNIQUE `(installation_id, setup_operation_id, challenge_request_id)`; UNIQUE `verifier_digest`; CHECK `expires_at_utc > created_at_utc` and `expires_at_utc <= created_at_utc + interval '30 minutes'`; CHECK that a row cannot be both revoked and consumed; and a partial unique index on `(installation_id, setup_operation_id, purpose)` WHERE both `revoked_at_utc` and `consumed_at_utc` are NULL. The issuer must revoke any prior unconsumed row for the same installation/operation/purpose before inserting a replacement, including an expired-but-not-yet-revoked row. No raw challenge is stored.
 
 ### 2.3 `identity.bootstrap_operations`
 
@@ -82,7 +82,7 @@ Require UNIQUE `(installation_id, setup_operation_id)`; FK `(installation_id, ac
 - UUIDs use the approved UUIDv7 provider at the trusted IdentityAccess/Platform boundary; exact generation ownership for each identifier and catalog/FK proof remain required before DDL.
 - No cross-module FK is introduced for InstallationId or SetupOperationId.
 
-## 2.1 Owner Account input contract — Product Owner accepted
+### 2.5 Owner Account input contract — Product Owner accepted
 
 The initial Product Owner Account profile is exactly these three user-supplied fields:
 
@@ -170,4 +170,4 @@ All remain NOT RUN / NOT VERIFIED:
 
 No SQL, DDL, schema, table, routine, role, grant, membership, credential, secret, migration, Account, Owner binding, challenge, Setup Wizard execution, executor LOGIN, G1 or production activation is authorized. The physical contract remains a proposal and all tests remain NOT RUN.
 
-**END — v0.3**
+**END — v0.4**
