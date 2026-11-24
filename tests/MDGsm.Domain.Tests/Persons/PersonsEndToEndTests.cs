@@ -397,8 +397,11 @@ public sealed class PersonsEndToEndTests
     public async Task Registration_allows_walk_in_party_without_mobile_or_other_contacts()
     {
         await using var scope = await TestScope.OpenAsync();
+        var uniqueSearchTerm = $"walkin{Guid.CreateVersion7():N}";
         var request = NewNatural(null, NewNationalId()) with
         {
+            GivenName = uniqueSearchTerm,
+            FamilyName = "Fixture",
             Province = null,
             City = null,
             PostalCode = null,
@@ -411,7 +414,7 @@ public sealed class PersonsEndToEndTests
         Assert.NotNull(details);
         Assert.Empty(details.Contacts);
         Assert.Null(details.PrimaryAddress);
-        var results = await scope.Repository.SearchAsync(PersianTestData.AliRezaeiCanonical, 10, Actor, default);
+        var results = await scope.Repository.SearchAsync(uniqueSearchTerm, 10, Actor, default);
         Assert.Null(Assert.Single(results).MaskedPrimaryMobile);
     }
 
