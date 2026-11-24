@@ -1,7 +1,10 @@
+using MDGsm.Application.Persons;
+using MDGsm.Infrastructure.Persons;
 using MDGsm.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Xunit;
 
 namespace MDGsm.Domain.Tests;
@@ -35,5 +38,14 @@ public sealed class PersistenceRegistrationTests
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MdGsmDbContext));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MDGsm.Application.Persons.IPartySensitiveDataAuthorizer));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MDGsm.IdentityAccess.Application.ISessionIdentityResolver));
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(PostgresTemporaryWorkflowStore) &&
+            descriptor.Lifetime == ServiceLifetime.Singleton);
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(ITemporaryWorkflowRetentionStore) &&
+            descriptor.Lifetime == ServiceLifetime.Singleton);
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(IHostedService) &&
+            descriptor.ImplementationType == typeof(TemporaryWorkflowRetentionWorker));
     }
 }
