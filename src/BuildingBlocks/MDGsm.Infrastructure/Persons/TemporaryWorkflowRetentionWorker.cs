@@ -4,10 +4,18 @@ using Microsoft.Extensions.Logging;
 
 namespace MDGsm.Infrastructure.Persons;
 
-/// <summary>Receives a PII-free failure code; alert delivery and its five-minute SLA are owned by the host.</summary>
+/// <summary>Closed vocabulary for retention-alert events. It cannot carry record data or exception messages.</summary>
+public enum TemporaryWorkflowRetentionFailureCode
+{
+    SweepFailed = 1
+}
+
+/// <summary>Receives a closed, PII-free failure code; alert delivery and its five-minute SLA are owned by the host.</summary>
 public interface ITemporaryWorkflowRetentionAlert
 {
-    Task NotifyFailureAsync(string failureCode, CancellationToken cancellationToken);
+    Task NotifyFailureAsync(
+        TemporaryWorkflowRetentionFailureCode failureCode,
+        CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -66,10 +74,12 @@ public sealed class TemporaryWorkflowRetentionWorker(
         catch (Exception exception)
         {
             // Never log exception.Message or payload/record values: driver exceptions can contain SQL parameters.
-            var failureCode = "temporary_workflow_retention_sweep_failed:" + exception.GetType().Name;
+            const TemporaryWorkflowRetentionFailureCode failureCode =
+                TemporaryWorkflowRetentionFailureCode.SweepFailed;
             logger.LogError(
-                "Temporary workflow retention sweep failed. FailureCode={FailureCode}",
-                failureCode);
+                "Temporary workflow retention sweep failed. FailureCode={FailureCode}; FailureType={FailureType}",
+                failureCode,
+                exception.GetType().Name);
             try
             {
                 await alert.NotifyFailureAsync(failureCode, cancellationToken);
