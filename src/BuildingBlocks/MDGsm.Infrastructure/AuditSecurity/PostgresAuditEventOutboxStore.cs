@@ -119,7 +119,7 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
         if (leaseDuration <= TimeSpan.Zero || leaseDuration > TimeSpan.FromMinutes(15))
             throw new ArgumentOutOfRangeException(nameof(leaseDuration));
 
-        await using var connection = await OpenWorkerConnectionAsync(cancellationToken);
+        await using var connection = await _workerDataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
         var candidates = new List<Guid>();
         await using (var select = new NpgsqlCommand($"""
@@ -219,7 +219,7 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
             receipt.AuditStreamId.ToString("N"), receipt.Sequence.ToString(System.Globalization.CultureInfo.InvariantCulture),
             receipt.IntentDigestHex.ToUpperInvariant(), receipt.EventHashHex.ToUpperInvariant());
 
-        await using var connection = await _workerDataSource.OpenConnectionAsync(cancellationToken);
+        await using var connection = await OpenWorkerConnectionAsync(cancellationToken);
         await using var command = new NpgsqlCommand($"""
             UPDATE {_schema}.audit_outbox_delivery d
             SET state='ACKNOWLEDGED',ack_reference=@ack_reference,
@@ -252,7 +252,7 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
         if (delay < TimeSpan.Zero || delay > TimeSpan.FromHours(24))
             throw new ArgumentOutOfRangeException(nameof(delay));
 
-        await using var connection = await _workerDataSource.OpenConnectionAsync(cancellationToken);
+        await using var connection = await OpenWorkerConnectionAsync(cancellationToken);
         await using var command = new NpgsqlCommand($"""
             UPDATE {_schema}.audit_outbox_delivery
             SET state='PENDING',next_attempt_at_utc=clock_timestamp()+@delay,
@@ -277,13 +277,14 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
     {
         ValidateLease(lease);
         var reason = AuditEventOutboxReasonCode.Validate(reasonCode);
-        await using var connection = await _workerDataSource.OpenConnectionAsync(cancellationToken);
+        await using var connection = await OpenWorkerConnectionAsync(cancellationToken);
         await using var command = new NpgsqlCommand($"""
             UPDATE {_schema}.audit_outbox_delivery
             SET state='QUARANTINED',quarantine_reason=@reason_code,last_failure_code=@reason_code,
                 lease_expires_at_utc=NULL,lease_token=NULL,claimed_by=NULL,
                 quarantined_at_utc=clock_timestamp(),updated_at_utc=clock_timestamp()
-            WHERE event_id=@event_id AND state='IN_FLIGHT' AND lease_token=@lease_token;
+            WHERE event_id=@event_id AND state='IN_FLIGHT' AND lease_token=@lease_token
+              AND lease_expires_at_utc > clock_timestamp();
             """, connection);
         command.Parameters.AddWithValue("reason_code", reason);
         command.Parameters.AddWithValue("event_id", lease.EventId);
