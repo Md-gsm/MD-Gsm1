@@ -611,6 +611,10 @@ public partial class MainWindow
         {
             PersonsResultText.Text = "ارتباط با سرور برای دریافت جزئیات برقرار نشد.";
         }
+        catch (TaskCanceledException)
+        {
+            PersonsResultText.Text = "مهلت دریافت جزئیات از سرور تمام شد.";
+        }
         catch (InvalidDataException)
         {
             PersonsResultText.Text = "پاسخ جزئیات اشخاص از سرور معتبر نبود.";
