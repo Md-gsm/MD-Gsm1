@@ -187,17 +187,17 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         NpgsqlConnection connection, NpgsqlTransaction transaction, string normalizedMobile,
         CancellationToken cancellationToken)
     {
-        // Merge execution is intentionally disabled and the current Persons schema has no merge marker.
-        // Keep IsMerged false until an approved merge schema and runtime are implemented together.
+        // Keep merged historical identities visible as non-selectable candidates so a
+        // repeated mobile cannot silently create another identity or imply the source is active.
         await using var command = new NpgsqlCommand("""
             SELECT p.party_id, p.party_type, p.business_roles,
                    CASE WHEN p.party_type = 1 THEN concat_ws(' ', p.given_name, p.family_name) ELSE p.legal_name END,
-                   p.is_active, false AS is_merged, bool_or(c.is_active)
+                   p.is_active, (p.merged_into_party_id IS NOT NULL) AS is_merged, bool_or(c.is_active)
             FROM persons p
             JOIN persons_contact_points c ON c.party_id = p.party_id
             WHERE c.kind = 1 AND c.value = @mobile
             GROUP BY p.party_id, p.party_type, p.business_roles, p.given_name, p.family_name,
-                     p.legal_name, p.is_active
+                     p.legal_name, p.is_active, p.merged_into_party_id
             ORDER BY p.is_active DESC, bool_or(c.is_active) DESC, p.party_id;
             """, connection, transaction);
         command.Parameters.AddWithValue("mobile", normalizedMobile);
