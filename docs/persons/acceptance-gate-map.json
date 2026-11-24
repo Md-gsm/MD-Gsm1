@@ -45,9 +45,9 @@
     {
       "id": "AC-36",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsTemporaryWorkflowPostgresTests.cs",
+      "automatedTest": "AC36_temporary_workflow_payload_does_not_appear_in_Persons_search_or_search_route",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Temporary data never appears in global people search or generic autocomplete"
     },
     {
@@ -155,9 +155,9 @@
       "expectedBehavior": "CI evidence contains commit, contract versions, schema fingerprint, gate/test counts, and no raw PII."
     }
   ],
-  "note": "AC-31..38 remain UNMAPPED pending full temporary-data lifecycle and PII evidence. AC-39..44 are mapped to explicit consumer registry/classification and Finance merge participant/preview/conflict/atomicity tests. AC-45 remains UNMAPPED because the full historical snapshot and active-reference reconciliation evidence is still incomplete. AC-46..49 are CI-policy/evidence tests only; they do not demonstrate the remaining runtime acceptance criteria.",
+  "note": "AC-31..35 and AC-37..38 remain UNMAPPED pending full temporary-data lifecycle, promotion and PII evidence. AC-36 now has a disposable PostgreSQL negative test proving encrypted temporary workflow content is not returned by Persons search and that no search/autocomplete route is exposed. AC-39..44 are mapped to explicit consumer registry/classification and Finance merge participant/preview/conflict/atomicity tests. AC-45 remains UNMAPPED because full historical snapshot and active-reference reconciliation evidence is still incomplete. AC-46..49 are CI-policy/evidence tests only.",
   "runtimeCoverageCaveat": {
-    "AC31toAC38": "Partial temporary workflow ciphertext store/retention worker; exact expiry, purge, renewal, promotion, generic-search isolation and telemetry redaction criteria are not yet individually proven.",
+    "AC31toAC38": "AC-36 is now covered by a disposable PostgreSQL test at repository and route-registration boundaries. AC-31..35 and AC-37..38 remain open: exact expiry/purge SLA, real IdentityAccess renewal authorization/audit, retry/alert delivery, promotion and complete telemetry redaction are not fully proven.",
     "AC39toAC40": "Every external PartyId consumer is source-enumerated, registered exactly once and assigned one accepted merge classification; automated test plus the registry CI gate.",
     "AC41": "The current Finance merge participant is checked against each versioned Preview/Prepare/Validate/Apply/Verify/Recover protocol hook. Future participants must be added to the registry and tested.",
     "AC42toAC43": "Finance merge preview counts references without mutation and an unresolved dual-account conflict blocks execution.",
