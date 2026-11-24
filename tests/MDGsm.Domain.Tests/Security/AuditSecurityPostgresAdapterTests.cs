@@ -40,10 +40,28 @@ public sealed class AuditSecurityPostgresAdapterTests
         var auditSchema = "audit_adapter_" + suffix;
         var sourceSchema = "source_outbox_" + suffix;
         await using var dataSource = NpgsqlDataSource.Create(connectionString);
+        var workerLogin = "audit_delivery_worker_" + suffix;
+        var workerAclRole = "mdgsm_audit_delivery_worker_" + suffix;
+        var workerPassword = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         try
         {
             await CreateAuditSchemaAsync(connectionString, auditSchema);
             await CreateSourceOutboxSchemaAsync(connectionString, sourceSchema);
+            await CreateWorkerRoleAsync(connectionString, sourceSchema, workerLogin, workerAclRole, workerPassword);
+            var workerBuilder = new NpgsqlConnectionStringBuilder(connectionString)
+            {
+                Username = workerLogin,
+                Password = workerPassword,
+                Pooling = false
+            };
+            await using var workerDataSource = NpgsqlDataSource.Create(workerBuilder.ConnectionString);
+            await using (var noRole = new NpgsqlConnection(workerBuilder.ConnectionString))
+            {
+                await noRole.OpenAsync();
+                await using var forbidden = new NpgsqlCommand(
+                    $"SELECT state FROM {Q(sourceSchema)}.audit_outbox_delivery LIMIT 1;", noRole);
+                await Assert.ThrowsAsync<PostgresException>(() => forbidden.ExecuteScalarAsync());
+            }
 
             var auditStore = new PostgresAuditEventStore(dataSource, auditSchema);
             var appender = new AuditEventAppender(auditStore, new EmptyOnlyAuditEventMetadataPolicy());
@@ -65,7 +83,7 @@ public sealed class AuditSecurityPostgresAdapterTests
             }
             var rolledBack = await auditStore.ReadSnapshotAsync(rollbackStream, CancellationToken.None);
             Assert.Empty(rolledBack.Events);
-            Assert.Equal(0, rolledBack.Head.LastSequence);
+            Assert.Equal(0L, rolledBack.Head.LastSequence);
 
             var first = await appender.AppendAsync(firstIntent, CancellationToken.None);
             var duplicate = await appender.AppendAsync(firstIntent, CancellationToken.None);
@@ -90,7 +108,8 @@ public sealed class AuditSecurityPostgresAdapterTests
             var verifier = new AuditChainVerificationService(auditStore);
             Assert.True((await verifier.VerifyAsync(streamId, CancellationToken.None)).IsValid);
 
-            var outboxStore = new PostgresAuditEventOutboxStore(dataSource, sourceSchema);
+            var outboxStore = new PostgresAuditEventOutboxStore(
+                workerDataSource, sourceSchema, workerLogin, workerAclRole);
             var sourceEvent = CreateSubmission(Guid.NewGuid(), streamId, "IdentityAccess");
             await using (var rollbackConnection = new NpgsqlConnection(connectionString))
             {
@@ -154,7 +173,8 @@ public sealed class AuditSecurityPostgresAdapterTests
             await using var cleanup = new NpgsqlConnection(connectionString);
             await cleanup.OpenAsync();
             await using var command = new NpgsqlCommand(
-                $"DROP SCHEMA IF EXISTS {Q(sourceSchema)} CASCADE; DROP SCHEMA IF EXISTS {Q(auditSchema)} CASCADE;", cleanup);
+                $"DROP SCHEMA IF EXISTS {Q(sourceSchema)} CASCADE; DROP SCHEMA IF EXISTS {Q(auditSchema)} CASCADE; " +
+                $"DROP ROLE IF EXISTS {Q(workerLogin)}; DROP ROLE IF EXISTS {Q(workerAclRole)};", cleanup);
             await command.ExecuteNonQueryAsync();
         }
     }
@@ -250,6 +270,32 @@ public sealed class AuditSecurityPostgresAdapterTests
                 quarantined_at_utc timestamptz NULL,
                 updated_at_utc timestamptz NOT NULL DEFAULT clock_timestamp()
             );
+            """);
+    }
+
+    private static async Task CreateWorkerRoleAsync(
+        string cs, string schema, string login, string aclRole, string password)
+    {
+        await ExecuteAsync(cs, $"""
+            CREATE ROLE {Q(aclRole)} NOLOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+            """);
+        await ExecuteAsync(cs, $"""
+            CREATE ROLE {Q(login)} LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS
+            PASSWORD '{password}';
+            """);
+        await ExecuteAsync(cs, $"GRANT {Q(aclRole)} TO {Q(login)} WITH ADMIN FALSE, INHERIT FALSE, SET TRUE;");
+        await ExecuteAsync(cs, $"GRANT CONNECT ON DATABASE {Q(new NpgsqlConnectionStringBuilder(cs).Database)} TO {Q(login)};");
+        await ExecuteAsync(cs, $"GRANT USAGE ON SCHEMA {Q(schema)} TO {Q(aclRole)};");
+        await ExecuteAsync(cs, $"GRANT SELECT ON {Q(schema)}.audit_outbox_events TO {Q(aclRole)};");
+        await ExecuteAsync(cs, $"GRANT SELECT ON {Q(schema)}.audit_outbox_delivery TO {Q(aclRole)};");
+        await ExecuteAsync(cs, $"""
+            GRANT UPDATE
+            (
+                state, attempts, next_attempt_at_utc, lease_expires_at_utc, lease_token,
+                claimed_by, ack_reference, last_failure_code, quarantine_reason,
+                quarantined_at_utc, updated_at_utc
+            )
+            ON {Q(schema)}.audit_outbox_delivery TO {Q(aclRole)};
             """);
     }
 

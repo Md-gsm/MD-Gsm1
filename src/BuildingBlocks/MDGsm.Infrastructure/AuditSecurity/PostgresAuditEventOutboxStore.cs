@@ -16,13 +16,19 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
 {
     private readonly NpgsqlDataSource _workerDataSource;
     private readonly string _schema;
+    private readonly string _workerLoginName;
+    private readonly string _workerAclRoleName;
 
     public PostgresAuditEventOutboxStore(
         NpgsqlDataSource workerDataSource,
-        string sourceSchemaName)
+        string sourceSchemaName,
+        string workerLoginName = AuditEventOutboxWorkerIdentity.PostgreSqlLogin,
+        string workerAclRoleName = AuditEventOutboxWorkerIdentity.PostgreSqlAclRole)
     {
         _workerDataSource = workerDataSource ?? throw new ArgumentNullException(nameof(workerDataSource));
         _schema = QuoteSchema(sourceSchemaName);
+        _workerLoginName = ValidateRoleName(workerLoginName, nameof(workerLoginName));
+        _workerAclRoleName = ValidateRoleName(workerAclRoleName, nameof(workerAclRoleName));
     }
 
     public async Task EnqueueAsync(
@@ -113,7 +119,7 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
         if (leaseDuration <= TimeSpan.Zero || leaseDuration > TimeSpan.FromMinutes(15))
             throw new ArgumentOutOfRangeException(nameof(leaseDuration));
 
-        await using var connection = await _workerDataSource.OpenConnectionAsync(cancellationToken);
+        await using var connection = await OpenWorkerConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
         var candidates = new List<Guid>();
         await using (var select = new NpgsqlCommand($"""
@@ -190,6 +196,7 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
         }
 
         await transaction.CommitAsync(cancellationToken);
+        await ResetWorkerRoleAsync(connection, cancellationToken);
         return leases;
     }
 
@@ -219,6 +226,7 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
                 lease_expires_at_utc=NULL,lease_token=NULL,claimed_by=NULL,
                 last_failure_code=NULL,updated_at_utc=clock_timestamp()
             WHERE d.event_id=@event_id AND d.state='IN_FLIGHT' AND d.lease_token=@lease_token
+              AND d.lease_expires_at_utc > clock_timestamp()
               AND EXISTS (
                   SELECT 1 FROM {_schema}.audit_outbox_events e
                   WHERE e.event_id=d.event_id AND e.intent_digest=@intent_digest
@@ -229,7 +237,8 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
         command.Parameters.AddWithValue("lease_token", lease.LeaseToken);
         command.Parameters.AddWithValue("intent_digest", Convert.FromHexString(lease.IntentDigestHex));
         if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
-            throw new AuditEventOutboxLeaseLostException("Outbox lease was lost before durable acknowledgement could be recorded.");
+            throw new AuditEventOutboxLeaseLostException("Outbox lease was lost or expired before durable acknowledgement could be recorded.");
+        await ResetWorkerRoleAsync(connection, cancellationToken);
     }
 
     public async Task ScheduleRetryAsync(
@@ -249,14 +258,16 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
             SET state='PENDING',next_attempt_at_utc=clock_timestamp()+@delay,
                 lease_expires_at_utc=NULL,lease_token=NULL,claimed_by=NULL,
                 last_failure_code=@failure_code,updated_at_utc=clock_timestamp()
-            WHERE event_id=@event_id AND state='IN_FLIGHT' AND lease_token=@lease_token;
+            WHERE event_id=@event_id AND state='IN_FLIGHT' AND lease_token=@lease_token
+              AND lease_expires_at_utc > clock_timestamp();
             """, connection);
         command.Parameters.AddWithValue("delay", delay);
         command.Parameters.AddWithValue("failure_code", reason);
         command.Parameters.AddWithValue("event_id", lease.EventId);
         command.Parameters.AddWithValue("lease_token", lease.LeaseToken);
         if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
-            throw new AuditEventOutboxLeaseLostException("Outbox lease was lost before retry scheduling.");
+            throw new AuditEventOutboxLeaseLostException("Outbox lease was lost or expired before retry scheduling.");
+        await ResetWorkerRoleAsync(connection, cancellationToken);
     }
 
     public async Task QuarantineAsync(
@@ -278,8 +289,73 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
         command.Parameters.AddWithValue("event_id", lease.EventId);
         command.Parameters.AddWithValue("lease_token", lease.LeaseToken);
         if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
-            throw new AuditEventOutboxLeaseLostException("Outbox lease was lost before quarantine.");
+            throw new AuditEventOutboxLeaseLostException("Outbox lease was lost or expired before quarantine.");
+        await ResetWorkerRoleAsync(connection, cancellationToken);
     }
+
+
+    private async Task<NpgsqlConnection> OpenWorkerConnectionAsync(CancellationToken cancellationToken)
+    {
+        var connection = await _workerDataSource.OpenConnectionAsync(cancellationToken);
+        try
+        {
+            var initial = await ReadDatabaseIdentityAsync(connection, cancellationToken);
+            if (!string.Equals(initial.SessionUser, _workerLoginName, StringComparison.Ordinal)
+                || !string.Equals(initial.CurrentUser, _workerLoginName, StringComparison.Ordinal))
+                throw new UnauthorizedAccessException(
+                    "Worker connection pool returned an unexpected PostgreSQL session identity or a contaminated role state.");
+
+            await using (var setRole = new NpgsqlCommand(
+                $"SET ROLE {QuoteRole(_workerAclRoleName)};", connection))
+            {
+                await setRole.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            var active = await ReadDatabaseIdentityAsync(connection, cancellationToken);
+            if (!string.Equals(active.SessionUser, _workerLoginName, StringComparison.Ordinal)
+                || !string.Equals(active.CurrentUser, _workerAclRoleName, StringComparison.Ordinal))
+                throw new UnauthorizedAccessException(
+                    "Worker PostgreSQL session_user/current_user did not match the approved SET ROLE boundary.");
+
+            return connection;
+        }
+        catch
+        {
+            await connection.DisposeAsync();
+            throw;
+        }
+    }
+
+    private static async Task<(string SessionUser, string CurrentUser)> ReadDatabaseIdentityAsync(
+        NpgsqlConnection connection,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand("SELECT session_user, current_user;", connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            throw new UnauthorizedAccessException("PostgreSQL did not return the active worker identity.");
+        return (reader.GetString(0), reader.GetString(1));
+    }
+
+    private static async Task ResetWorkerRoleAsync(
+        NpgsqlConnection connection,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand("RESET ROLE;", connection);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static string ValidateRoleName(string roleName, string parameterName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(roleName);
+        if (roleName.Length > 63 || roleName[0] is >= '0' and <= '9'
+            || roleName.Any(character =>
+                !(character is >= 'a' and <= 'z' or >= '0' and <= '9' or '_')))
+            throw new ArgumentException("Worker role names must be canonical lowercase PostgreSQL identifiers.", parameterName);
+        return roleName;
+    }
+
+    private static string QuoteRole(string roleName) => "\"" + roleName + "\"";
 
     private static void AddSubmissionParameters(
         NpgsqlCommand command,
