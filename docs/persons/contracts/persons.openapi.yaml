@@ -3,7 +3,7 @@ info:
   title: MD-Gsm Persons API
   version: 2.0.0
   description: >
-    Versioned contract. The protected party-details GET endpoint is implemented and requires a validated IdentityAccess session and server-side permission checks. Search remains contract-only. Natural/legal create and quick-registration POST routes are implemented behind Persons:WriteApiEnabled (default false); enabling them is not authorized until the independent Persons G1/release gates pass.
+    Versioned contract. The protected party-details GET endpoint is implemented and requires a validated IdentityAccess session and server-side permission checks. Search remains contract-only. Natural/legal registration POST routes always use duplicate resolution and are implemented behind Persons:WriteApiEnabled (default false); no lower-level HTTP route bypasses the quick-registration decision. Enabling writes is not authorized until the independent Persons G1/release gates pass.
 servers:
   - url: https://{host}
     variables:
@@ -37,56 +37,11 @@ paths:
         '401': { description: Missing, invalid, expired, or revoked opaque session token }
         '403': { description: Authenticated user lacks Persons read permission }
     post:
-      operationId: createNaturalParty
-      summary: Register a natural person
-      description: The actor identity is derived from the validated server session, never from the request body. Registration is idempotent by Idempotency-Key (V1 verifies actor ownership but does not compare request payloads).
-      parameters:
-        - in: header
-          name: Idempotency-Key
-          required: true
-          schema: { type: string, format: uuid }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/CreateNaturalPartyRequest' }
-      x-feature-flag: Persons:WriteApiEnabled
-      responses:
-        '201': { description: Party created }
-        '200': { description: Existing result returned for an idempotent replay }
-        '401': { description: Missing or invalid session }
-        '403': { description: Missing write permission }
-        '409': { description: Duplicate national identifier or contact conflict }
-        '422': { description: Validation failure }
-  /api/v2/persons/legal:
-    post:
-      operationId: createLegalParty
-      summary: Register a legal entity
-      description: Idempotent by Idempotency-Key (V1 verifies actor ownership but does not compare request payloads).
-      parameters:
-        - in: header
-          name: Idempotency-Key
-          required: true
-          schema: { type: string, format: uuid }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/CreateLegalPartyRequest' }
-      x-feature-flag: Persons:WriteApiEnabled
-      responses:
-        '201': { description: Legal party created }
-        '200': { description: Existing result returned for an idempotent replay }
-        '401': { description: Missing or invalid session }
-        '403': { description: Missing write permission }
-        '409': { description: Duplicate legal identifier }
-        '422': { description: Validation failure }
-  /api/v2/persons/quick/natural:
-    post:
       operationId: quickRegisterNaturalParty
-      summary: Resolve or register a natural person during intake
-      description: Requires persons.create and persons.read. The authenticated actor is taken from the server session. Existing candidates require explicit selection unless ForceNew is set.
-      x-feature-flag: Persons:WriteApiEnabled
+      summary: Resolve or register a natural person
+      description: >-
+        Every natural-person creation path performs duplicate resolution. Requires persons.create and persons.read.
+        Existing candidates require explicit selection unless ForceNew is set. Actor is derived from the validated server session.
       parameters:
         - in: header
           name: Idempotency-Key
@@ -97,6 +52,7 @@ paths:
         content:
           application/json:
             schema: { $ref: '#/components/schemas/QuickRegisterNaturalPartyRequest' }
+      x-feature-flag: Persons:WriteApiEnabled
       responses:
         '201': { description: A new Party was created }
         '200': { description: An existing Party was reused, the operation was replayed, or candidate selection is required }
@@ -105,12 +61,13 @@ paths:
         '409': { description: Cross-actor idempotency replay or invalid selected candidate }
         '422': { description: Validation failure }
         '503': { description: Persons write API is disabled }
-  /api/v2/persons/quick/legal:
+  /api/v2/persons/legal:
     post:
       operationId: quickRegisterLegalParty
-      summary: Resolve or register a legal entity during intake
-      description: Requires persons.create and persons.read. The authenticated actor is taken from the server session. Existing candidates require explicit selection unless ForceNew is set.
-      x-feature-flag: Persons:WriteApiEnabled
+      summary: Resolve or register a legal entity
+      description: >-
+        Every legal-entity creation path performs duplicate resolution. Requires persons.create and persons.read.
+        Existing candidates require explicit selection unless ForceNew is set. Actor is derived from the validated server session.
       parameters:
         - in: header
           name: Idempotency-Key
@@ -121,6 +78,7 @@ paths:
         content:
           application/json:
             schema: { $ref: '#/components/schemas/QuickRegisterLegalPartyRequest' }
+      x-feature-flag: Persons:WriteApiEnabled
       responses:
         '201': { description: A new legal Party was created }
         '200': { description: An existing legal Party was reused, the operation was replayed, or candidate selection is required }
