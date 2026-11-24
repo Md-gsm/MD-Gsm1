@@ -102,7 +102,7 @@ public sealed class PersonsRegistrationMapperTests
         var response = PersonsRegistrationMapper.Map(details);
 
         Assert.Equal("LegalEntity", response.PartyType);
-        Assert.Equal(["Customer", "Colleague"], response.Roles);
+        Assert.Equal(new[] { "Customer", "Colleague" }, response.Roles);
         Assert.Equal("*********01", response.NationalIdentifier);
         Assert.Null(response.EconomicCode);
         Assert.Equal("***", response.ResponsiblePersonName);
