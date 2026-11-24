@@ -1,4 +1,6 @@
 using System.Security.Cryptography;
+using System.Text;
+using MDGsm.Application.Persons;
 using MDGsm.Infrastructure.Persons;
 using Npgsql;
 using Xunit;
@@ -29,6 +31,54 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         Assert.Equal(0L, await CountPayloadRowsAsync(dataSource, id));
         Assert.Equal("purged", await ReadLifecycleStatusAsync(dataSource, id));
         Assert.Equal(0, await store.PurgeExpiredAsync(now.AddDays(8)));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AC36_temporary_workflow_payload_does_not_appear_in_Persons_search_or_search_route()
+    {
+        await using var dataSource = OpenDataSource();
+        await AssertDisposableDatabaseAsync(dataSource);
+
+        const string privateTemporaryName = "AC36-TEMPORARY-PRIVATE-SEARCH-NEVER-EXPOSE";
+        var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        var store = new PostgresTemporaryWorkflowStore(dataSource);
+        var workflowId = Guid.CreateVersion7();
+        await store.CreateAsync(
+            workflowId,
+            "Persons",
+            "contact-capture",
+            "ci-actor",
+            Guid.CreateVersion7(),
+            now,
+            Encrypt(Encoding.UTF8.GetBytes(privateTemporaryName)),
+            "test-key-v1");
+
+        // Global Persons search reads only committed Party identities and active contacts;
+        // it must never query the encrypted temporary-workflow payload store.
+        var repository = new PostgresPartyRepository(dataSource);
+        var results = await repository.SearchAsync(
+            privateTemporaryName,
+            PartySearchLimits.MaxResults,
+            "ci-temp-search-actor",
+            default);
+        Assert.Empty(results);
+
+        // The current host exposes only Party details; no search/autocomplete HTTP route is registered.
+        var root = FindRepositoryRoot();
+        var program = await File.ReadAllTextAsync(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
+        Assert.DoesNotContain("app.MapGet(\"/api/v2/persons\",", program, StringComparison.Ordinal);
+        Assert.DoesNotContain("SearchAsync(", program, StringComparison.Ordinal);
+        Assert.DoesNotContain("autocomplete", program, StringComparison.OrdinalIgnoreCase);
+
+        await using var payloadConnection = await dataSource.OpenConnectionAsync();
+        await using var payloadCommand = new NpgsqlCommand(
+            "SELECT encrypted_payload FROM persons_temporary_workflow_payloads WHERE workflow_record_id = @id;",
+            payloadConnection);
+        payloadCommand.Parameters.AddWithValue("id", workflowId);
+        var storedCiphertext = (byte[])(await payloadCommand.ExecuteScalarAsync())!;
+        Assert.NotEmpty(storedCiphertext);
+        Assert.DoesNotContain(Encoding.UTF8.GetBytes(privateTemporaryName), storedCiphertext);
     }
 
     [Fact]
@@ -99,6 +149,28 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
             "SELECT lifecycle_status FROM persons_temporary_workflows WHERE workflow_record_id = @id;", connection);
         command.Parameters.AddWithValue("id", workflowId);
         return (string)(await command.ExecuteScalarAsync())!;
+    }
+
+    private static async Task AssertDisposableDatabaseAsync(NpgsqlDataSource dataSource)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT coalesce(shobj_description(oid, 'pg_database'), '') FROM pg_database WHERE datname = current_database();",
+            connection);
+        var marker = (string?)await command.ExecuteScalarAsync();
+        Assert.Contains("MDGSM_DISPOSABLE_TEST_DB", marker ?? string.Empty);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "MDGsm.sln")) &&
+                File.Exists(Path.Combine(directory.FullName, "src", "Host", "Api", "Program.cs")))
+                return directory.FullName;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate MD-Gsm repository root for AC-36.");
     }
 
     private static NpgsqlDataSource OpenDataSource()
