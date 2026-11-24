@@ -10,7 +10,7 @@ public sealed record PartyResponse(
     string? ResponsiblePersonName,
     IReadOnlyList<PartyContactContract> Contacts,
     PartyAddressContract? PrimaryAddress,
-    PartyCommunicationPreferencesContract Communication,
+    PartyCommunicationPreferencesContract? Communication,
     string? AcquaintanceSource,
     DateTimeOffset CreatedAtUtc,
     bool SensitiveFieldsIncluded = false,
