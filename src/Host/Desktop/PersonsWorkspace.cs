@@ -21,6 +21,7 @@ public partial class MainWindow
     private string? _apiConfigurationError;
     private string? _accessToken;
     private string? _signedInUsername;
+    private string? _lastResolvedPartyId;
     private bool _mustChangePassword;
     private PendingQuickRegistration? _pendingQuickRegistration;
 
@@ -311,6 +312,8 @@ public partial class MainWindow
         _signedInUsername = null;
         _mustChangePassword = false;
         _pendingQuickRegistration = null;
+        _lastResolvedPartyId = null;
+        ViewPartyDetailsButton.Visibility = Visibility.Collapsed;
         PersonsCandidates.Clear();
         PersonsCandidatesPanel.Visibility = Visibility.Collapsed;
         PersonsResultPanel.Visibility = Visibility.Collapsed;
@@ -454,6 +457,8 @@ public partial class MainWindow
         PersonsCandidates.Clear();
         PersonsResultText.Text = "در حال ارسال درخواست به سرور...";
         PersonsPartyIdText.Text = string.Empty;
+        _lastResolvedPartyId = null;
+        ViewPartyDetailsButton.Visibility = Visibility.Collapsed;
         PersonsRetryButton.IsEnabled = false;
         RegisterNaturalButton.IsEnabled = false;
         RegisterLegalButton.IsEnabled = false;
@@ -488,17 +493,17 @@ public partial class MainWindow
                     break;
                 case "Created":
                     PersonsResultText.Text = "شخص جدید توسط سرور ثبت شد.";
-                    PersonsPartyIdText.Text = $"PartyId: {result.PartyId}";
+                    SetResolvedPartyId(result.PartyId);
                     CompletePendingRegistration();
                     break;
                 case "ExistingPartyMatched":
                     PersonsResultText.Text = "شخص موجود شناسایی شد و نقش‌های انتخاب‌شده به همان هویت افزوده شدند.";
-                    PersonsPartyIdText.Text = $"PartyId: {result.PartyId}";
+                    SetResolvedPartyId(result.PartyId);
                     CompletePendingRegistration();
                     break;
                 case "Replayed":
                     PersonsResultText.Text = "نتیجه قبلی همین عملیات از سرور دریافت شد؛ ثبت تکراری انجام نشد.";
-                    PersonsPartyIdText.Text = $"PartyId: {result.PartyId}";
+                    SetResolvedPartyId(result.PartyId);
                     CompletePendingRegistration();
                     break;
                 default:
@@ -542,6 +547,77 @@ public partial class MainWindow
             PersonsRetryButton.IsEnabled = true;
             RegisterNaturalButton.IsEnabled = true;
             RegisterLegalButton.IsEnabled = true;
+        }
+    }
+
+    private void SetResolvedPartyId(string? value)
+    {
+        if (!Guid.TryParse(value, out var partyId) || partyId == Guid.Empty)
+        {
+            _lastResolvedPartyId = null;
+            PersonsPartyIdText.Text = "شناسه شخص از پاسخ سرور معتبر نبود.";
+            ViewPartyDetailsButton.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        _lastResolvedPartyId = partyId.ToString("D");
+        PersonsPartyIdText.Text = $"PartyId: {_lastResolvedPartyId}";
+        ViewPartyDetailsButton.Visibility = Visibility.Visible;
+    }
+
+    private async void ViewPartyDetailsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_accessToken) || string.IsNullOrWhiteSpace(_lastResolvedPartyId))
+        {
+            PersonsResultText.Text = "نشست معتبر یا PartyId در دسترس نیست.";
+            return;
+        }
+
+        ViewPartyDetailsButton.IsEnabled = false;
+        PersonsResultText.Text = "در حال دریافت جزئیات پوشانده‌شده از سرور...";
+        try
+        {
+            var party = await _personsApiClient.GetPartyAsync(_accessToken, _lastResolvedPartyId);
+            var contactLines = party.Contacts.Select(contact => $"{contact.Kind}: {contact.Value}").ToArray();
+            var addressLine = party.PrimaryAddress is null
+                ? "نشانی: ثبت نشده"
+                : $"نشانی: {party.PrimaryAddress.Province}، {party.PrimaryAddress.City}، کدپستی {party.PrimaryAddress.PostalCode}، {party.PrimaryAddress.AddressLine}";
+            var sensitiveLine = party.SensitiveFieldsIncluded
+                ? "هشدار: پاسخ سرور شامل فیلدهای حساس است."
+                : "حالت نمایش: اطلاعات حساس پوشانده یا حذف شده‌اند.";
+
+            PersonsResultText.Text = string.Join(Environment.NewLine, new[]
+            {
+                $"نام: {party.DisplayName}",
+                $"نوع: {(party.PartyType == "NaturalPerson" ? "حقیقی" : "حقوقی")}",
+                $"نقش‌ها: {string.Join("، ", party.Roles)}",
+                $"شناسه ملی: {party.NationalIdentifier ?? "—"}",
+                $"مسئول: {party.ResponsiblePersonName ?? "—"}",
+                addressLine,
+                contactLines.Length == 0 ? "راه ارتباطی: ثبت نشده" : string.Join(Environment.NewLine, contactLines),
+                sensitiveLine
+            });
+        }
+        catch (ApiClientException ex)
+        {
+            PersonsResultText.Text = GetPersonsErrorMessage(ex);
+            if (ex.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                ClearPersonsSession();
+                UpdatePersonsAuthenticationView();
+            }
+        }
+        catch (HttpRequestException)
+        {
+            PersonsResultText.Text = "ارتباط با سرور برای دریافت جزئیات برقرار نشد.";
+        }
+        catch (InvalidDataException)
+        {
+            PersonsResultText.Text = "پاسخ جزئیات اشخاص از سرور معتبر نبود.";
+        }
+        finally
+        {
+            ViewPartyDetailsButton.IsEnabled = true;
         }
     }
 
