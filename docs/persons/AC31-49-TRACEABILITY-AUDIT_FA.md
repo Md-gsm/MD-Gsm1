@@ -41,13 +41,14 @@
 
 | AC | آزمون افزوده‌شده در PR #96 | دامنهٔ اثبات |
 |---|---|---|
+| 35 | `PersonsTemporaryDataRetentionTests.cs::AC35_worker_retries_on_next_cycle_and_logs_only_redacted_failure_codes` به‌همراه تست‌های PostgreSQL تکرار purge/close | worker روی failure گذرا alert code بدون PII می‌فرستد و در چرخه زمان‌بندی بعدی sweep را دوباره اجرا می‌کند؛ خطای alert نیز فقط با نوع exception ثبت می‌شود و message/PII وارد log نمی‌شود. تست PostgreSQL جداگانه تکرار purge/close را بدون عملیات تکراری اثبات می‌کند. |
 | 36 | `PersonsTemporaryWorkflowPostgresTests.cs::AC36_temporary_workflow_payload_does_not_appear_in_Persons_search_or_search_route` | درج ciphertext موقت در PostgreSQL، عدم بازگشت آن از repository search، نبود Search API/autocomplete route و ذخیره‌نشدن marker متنی خام در payload. |
 | 39–40 | `PersonsMergeContractTests.cs::AC39_AC40_AllExternalPartyIdConsumersAreRegisteredAndClassifiedExactlyOnce` | تطبیق scan کد با registry، رد مسیرهای تکراری، الزام یک classification مجاز و حذف مصرف‌کننده ناشناخته. طبقه‌بندی در این نسخه به سطح consumer/source path انجام می‌شود. |
 | 41 | `PersonsMergeContractTests.cs::AC41_FinanceMergeParticipantImplementsVersionedProtocolHooks` | اثبات پیاده‌سازی participant ثبت‌شدهٔ Finance و تمام hookهای Preview/Prepare/Validate/Apply/Verify/Recover با نسخه‌های قرارداد ثبت‌شده. |
 | 42–43 | تست‌های موجود `AC42_preview_is_read_only_and_counts_transferable_finance_references` و `AC43_two_existing_finance_accounts_are_a_blocking_conflict_and_no_state_changes` | preview بدون تغییر state و جلوگیری از merge در تعارض دو حساب Finance. |
 | 44 | `PersonsMergeContractTests.cs::AC44_MergeIsAtomicConcurrentAndIdempotentWithFailureRollback` | suite ترکیبی replay/idempotency، rollback پس از خطای Verify و انتخاب دقیقاً یک برنده در mergeهای هم‌زمان. |
 
-AC-45 و AC-31..35، AC-37..38 همچنان باز هستند. این تست‌ها فقط بر مصرف‌کنندگان و runtime فعلیِ ثبت‌شده در مخزن تکیه دارند؛ اثبات تمام consumerهای آینده، همهٔ historical snapshotها، تمام failure stageها یا SLA عملیاتی production محسوب نمی‌شوند.
+AC-45 و AC-31..34، AC-37..38 همچنان باز هستند. این تست‌ها فقط بر مصرف‌کنندگان و runtime فعلیِ ثبت‌شده در مخزن تکیه دارند؛ اثبات تمام consumerهای آینده، همهٔ historical snapshotها، تمام failure stageها یا SLA عملیاتی production محسوب نمی‌شوند.
 
 ## ۴. AC-46 تا AC-49 — CI/evidence
 
@@ -82,6 +83,6 @@ PR #47 بسته و `merged=false` است؛ بدنه آن **Superseded / Do Not M
 
 **WG1-01 از نظر ممیزی و تفکیک شواهد این دور تکمیل شد؛ AC-31..AC-45 از نظر پذیرش runtime همچنان OPEN هستند.**
 
-گام بعدی: (1) تست‌های مستقل AC-35..AC-40 برای retry/alert، عدم کشف عمومی، promotion، redaction و classification؛ (2) پیش از تغییر Host/persistence/Contracts مشترک، ثبت هماهنگی WG-0؛ (3) سپس WG1-02 برای create/search و چرخه کامل ContactPoint/Address با API، authorization، DTO minimization، masking، rate-limit و audit؛ (4) انتقال internals در WG1-03 مطابق ADR-0014.
+گام بعدی: (1) AC-31..34 و AC-37..38 برای SLA حذف، authorization/audit تمدید، promotion و redaction جامع؛ (2) AC-45 برای snapshot تاریخی و reconciliation همه ارجاعات؛ (3) پیش از تغییرات schema/Outbox/quota، تصمیم Owner/WG-0 و رزرو migration از مسیر Issue #97/#98؛ (4) چرخه کامل ContactPoint/Address و انتقال internals مطابق ADR-0016 در workstream هماهنگ جداگانه.
 
 این سند فقط ممیزی مستنداتی است؛ runtime، schema، migration، DB، تنظیم زنده GitHub یا تصمیم معماری را تغییر نمی‌دهد. `g1Authorized=false` باقی است.
