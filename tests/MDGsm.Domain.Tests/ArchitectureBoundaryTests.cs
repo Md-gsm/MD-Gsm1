@@ -42,8 +42,8 @@ public sealed class ArchitectureBoundaryTests
         AssertReferences(
             root,
             "src/Modules/AuditSecurity/Application/MDGsm.AuditSecurity.Application.csproj",
-            "..\Domain\MDGsm.AuditSecurity.Domain.csproj",
-            "..\Contracts\MDGsm.AuditSecurity.Contracts.csproj");
+            "..\\Domain\\MDGsm.AuditSecurity.Domain.csproj",
+            "..\\Contracts\\MDGsm.AuditSecurity.Contracts.csproj");
         AssertReferences(
             root,
             "src/Modules/Accounting/Application/MDGsm.Accounting.Application.csproj",

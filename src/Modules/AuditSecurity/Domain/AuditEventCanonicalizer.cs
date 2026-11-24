@@ -60,7 +60,7 @@ public static class AuditEventCanonicalizer
         }
         catch (Exception exception) when (
             exception is ArgumentException or InvalidOperationException or NotSupportedException
-                or EncoderFallbackException or FormatException)
+                or FormatException)
         {
             return false;
         }
