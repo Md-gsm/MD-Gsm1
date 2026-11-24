@@ -87,14 +87,14 @@ public sealed class AuditSecurityOperationalCoreTests
     }
 
     [Fact]
-    public void Appender_is_idempotent_and_rejects_reuse_of_event_id_with_changed_intent()
+    public async Task Appender_is_idempotent_and_rejects_reuse_of_event_id_with_changed_intent()
     {
         var store = new InMemoryAuditEventStore();
         var appender = new AuditEventAppender(store, new EmptyOnlyAuditEventMetadataPolicy());
         var intent = CreateIntent(Guid.NewGuid(), Guid.NewGuid(), "identity.login.succeeded");
 
-        var first = appender.AppendAsync(intent, CancellationToken.None).GetAwaiter().GetResult();
-        var duplicate = appender.AppendAsync(intent, CancellationToken.None).GetAwaiter().GetResult();
+        var first = await appender.AppendAsync(intent, CancellationToken.None);
+        var duplicate = await appender.AppendAsync(intent, CancellationToken.None);
 
         Assert.False(first.Duplicate);
         Assert.True(duplicate.Duplicate);
@@ -102,11 +102,10 @@ public sealed class AuditSecurityOperationalCoreTests
         Assert.Equal(first.EventHashHex, duplicate.EventHashHex);
 
         var changed = intent with { OutcomeCode = "denied" };
-        Assert.Throws<AuditEventConflictException>(
-            () => appender.AppendAsync(changed, CancellationToken.None).GetAwaiter().GetResult());
+        await Assert.ThrowsAsync<AuditEventConflictException>(
+            () => appender.AppendAsync(changed, CancellationToken.None));
 
-        var snapshot = store.ReadSnapshotAsync(intent.AuditStreamId, CancellationToken.None)
-            .GetAwaiter().GetResult();
+        var snapshot = await store.ReadSnapshotAsync(intent.AuditStreamId, CancellationToken.None);
         Assert.Single(snapshot.Events);
         Assert.True(AuditHashChainVerifier.Verify(intent.AuditStreamId, snapshot.Events, snapshot.Head).IsValid);
     }

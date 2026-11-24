@@ -274,7 +274,8 @@ def run_architecture(root: Path) -> None:
         # Shared Infrastructure may implement module-owned application ports through
         # explicitly enumerated references; this is an inward dependency only.
         "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {
-            "MDGsm.Application", "MDGsm.IdentityAccess.Application", "MDGsm.Persons.Contracts"
+            "MDGsm.Application", "MDGsm.IdentityAccess.Application", "MDGsm.AuditSecurity.Application",
+            "MDGsm.AuditSecurity.Contracts", "MDGsm.Persons.Contracts"
         },
         "BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj": set(),
         "Host/Api/MDGsm.Api.csproj": {
@@ -284,7 +285,7 @@ def run_architecture(root: Path) -> None:
         },
         "Host/Desktop/MDGsm.Desktop.csproj": {"MDGsm.Client"},
     }
-    modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance", "Accounting")
+    modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance", "Accounting", "AuditSecurity")
     for module in modules:
         expected_projects[f"Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj"] = set()
     expected_projects["Modules/Finance/MDGsm.Finance.csproj"] = {"MDGsm.Finance.Contracts", "MDGsm.Persons.Contracts"}
@@ -292,10 +293,14 @@ def run_architecture(root: Path) -> None:
     expected_projects["Modules/Accounting/Application/MDGsm.Accounting.Application.csproj"] = {
         "MDGsm.Accounting.Domain", "MDGsm.Accounting.Contracts"
     }
+    expected_projects["Modules/AuditSecurity/Domain/MDGsm.AuditSecurity.Domain.csproj"] = set()
+    expected_projects["Modules/AuditSecurity/Application/MDGsm.AuditSecurity.Application.csproj"] = {
+        "MDGsm.AuditSecurity.Domain", "MDGsm.AuditSecurity.Contracts"
+    }
 
-    # IdentityAccess is the first module allowed to add internal layers on its
-    # isolated feature branch. Contracts remain dependency-free; Application
-    # may depend only on its own Domain and public Contracts.
+    # IdentityAccess and AuditSecurity contain bounded internal layers. Contracts
+    # remain dependency-free; each Application may depend only on its own Domain
+    # and published Contracts. No cross-module internal reference is permitted.
     expected_projects["Modules/IdentityAccess/Domain/MDGsm.IdentityAccess.Domain.csproj"] = set()
     expected_projects["Modules/IdentityAccess/Application/MDGsm.IdentityAccess.Application.csproj"] = {
         "MDGsm.IdentityAccess.Domain", "MDGsm.IdentityAccess.Contracts"
@@ -349,6 +354,7 @@ def run_architecture(root: Path) -> None:
         root / "src/Modules/RepairOperations/Contracts/README.md",
         root / "src/Modules/Finance/Contracts/README.md",
         root / "src/Modules/Accounting/Contracts/README.md",
+        root / "src/Modules/AuditSecurity/Contracts/README.md",
     ]
     if not target.exists() or any(not path.exists() for path in required_readmes):
         raise GateFailure("Modular target specification or required Host/Contracts boundary documentation is missing.")
