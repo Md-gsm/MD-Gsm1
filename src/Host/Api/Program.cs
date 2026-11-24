@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using MDGsm.Api.Security;
+using MDGsm.Api.Persons;
 using MDGsm.Application.Contracts;
 using MDGsm.Application.Persons;
 using MDGsm.IdentityAccess.Application;
@@ -152,6 +153,87 @@ app.MapPost("/api/v1/identity/logout", async (
 
     // Deliberately return the same response for unknown, expired or already-revoked tokens.
     return Results.NoContent();
+});
+
+
+app.MapPost("/api/v2/persons", async (
+    CreateNaturalPartyRequest request, HttpContext context, IConfiguration configuration,
+    IAuthenticatedActorContext actor, IRolePermissionStore permissions,
+    IPartyRepository parties, CancellationToken cancellationToken) =>
+{
+    if (!configuration.GetValue<bool>("Persons:WriteApiEnabled"))
+        return (IResult)Results.Json(new { error = "persons_write_api_disabled" },
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+
+    var accountId = AccountId.From(actor.AccountId);
+    if (!await permissions.HasPermissionAsync(accountId, "persons.create", cancellationToken))
+        return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
+
+    if (!Guid.TryParse(context.Request.Headers["Idempotency-Key"].ToString(), out var operationId)
+        || operationId == Guid.Empty)
+        return (IResult)Results.BadRequest(new { error = "idempotency_key_required" });
+
+    try
+    {
+        var registration = PersonsRegistrationMapper.Map(request);
+        var result = await parties.AddNaturalAsync(registration, actor.AccountId.ToString("D"),
+            operationId, null, cancellationToken);
+        var response = new { partyId = result.PartyId, created = result.Created };
+        if (result.Created) return (IResult)Results.Created($"/api/v2/persons/{result.PartyId}", response);
+        return Results.Ok(response);
+    }
+    catch (IdempotencyKeyConflictException)
+    {
+        return (IResult)Results.Conflict(new { error = "idempotency_key_conflict" });
+    }
+    catch (DuplicatePartyIdentifierException)
+    {
+        return (IResult)Results.Conflict(new { error = "duplicate_party_identifier" });
+    }
+    catch (ArgumentException)
+    {
+        return Results.UnprocessableEntity(new { error = "validation_failed" });
+    }
+});
+
+app.MapPost("/api/v2/persons/legal", async (
+    CreateLegalPartyRequest request, HttpContext context, IConfiguration configuration,
+    IAuthenticatedActorContext actor, IRolePermissionStore permissions,
+    IPartyRepository parties, CancellationToken cancellationToken) =>
+{
+    if (!configuration.GetValue<bool>("Persons:WriteApiEnabled"))
+        return (IResult)Results.Json(new { error = "persons_write_api_disabled" },
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+
+    var accountId = AccountId.From(actor.AccountId);
+    if (!await permissions.HasPermissionAsync(accountId, "persons.create", cancellationToken))
+        return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
+
+    if (!Guid.TryParse(context.Request.Headers["Idempotency-Key"].ToString(), out var operationId)
+        || operationId == Guid.Empty)
+        return (IResult)Results.BadRequest(new { error = "idempotency_key_required" });
+
+    try
+    {
+        var registration = PersonsRegistrationMapper.Map(request);
+        var result = await parties.AddLegalAsync(registration, actor.AccountId.ToString("D"),
+            operationId, null, cancellationToken);
+        var response = new { partyId = result.PartyId, created = result.Created };
+        if (result.Created) return (IResult)Results.Created($"/api/v2/persons/{result.PartyId}", response);
+        return Results.Ok(response);
+    }
+    catch (IdempotencyKeyConflictException)
+    {
+        return (IResult)Results.Conflict(new { error = "idempotency_key_conflict" });
+    }
+    catch (DuplicatePartyIdentifierException)
+    {
+        return (IResult)Results.Conflict(new { error = "duplicate_party_identifier" });
+    }
+    catch (ArgumentException)
+    {
+        return Results.UnprocessableEntity(new { error = "validation_failed" });
+    }
 });
 
 app.MapGet("/api/v2/persons/{partyId}", async (
