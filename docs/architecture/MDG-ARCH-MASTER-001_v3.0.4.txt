@@ -102,12 +102,13 @@
 ‫ پیوست‬U — Source Crosswalk، ‫تصمیم‌ها و کنترل نسخه‬
 
 ‫ پیوست‬V — ‫ و ممیزی دور دوم گروه دوم مالی‬۳ ‫ تا‬۱ ‫رجیستر تلفیقی ممیزی‌های قبلی گروه‌های‬
+‫ پیوست‬W — CHG-101 IdentityAccess Bootstrap، Recovery و تصمیم بازیابی مالک
 
 
 ‫ سند یکپارچه مرجع معماری و حسابداری‬MD-Gsm
 Unified Architecture & Accounting Blueprint — Version 3.0.4
 
-‫شناسه مرجع‬: MDG-ARCH-MASTER-001 3.0.4 :‫ — نسخه‬Historical working derivative — not the governing Master; v3.0.3 remains the official accepted baseline; implementation and release gates remain independent ‫ نوامبر‬23 :‫تاریخ‬
+‫شناسه مرجع‬: MDG-ARCH-MASTER-001 3.0.4 :‫ — نسخه‬OWNER-ACCEPTED OFFICIAL MASTER — governing baseline from 2026-11-24; implementation and release gates remain independent ‫ نوامبر‬23 :‫تاریخ‬
 
 ‫ وضعیت‬2026: HISTORICAL WORKING DERIVATIVE — v3.0.4 IS NOT THE CURRENT OR OFFICIAL MASTER; v3.0.3 REMAINS THE SOLE ACCEPTED MASTER UNDER OWNER REAFFIRMATION ON 2026-11-24;
 PRIOR VERSIONS ARE HISTORICAL REFERENCES ONLY. IMPLEMENTATION, INDEPENDENT TECHNICAL REVIEW, TEST, RELEASE AND GO-LIVE GATES REMAIN SEPARATE;
