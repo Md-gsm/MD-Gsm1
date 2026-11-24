@@ -6,7 +6,7 @@
 | Version | 0.4 |
 | Classification | CONTROLLED RECONSTRUCTION / CONTROLLED REPLACEMENT |
 | Parent | WP06-P4H-7C-COA-RECONCILIATION-001 v0.3 |
-| Architecture | MDG-ARCH-MASTER-001 v3.0.3 |
+| Architecture | MDG-ARCH-MASTER-001 v3.0.4 (current); v3.0.3 historical |
 | Owner decision | OWN-7C-043 and prior effective owner decisions |
 | COA authority | v1.2 master baseline; v1.5 controlled supplementary reconstruction/crosswalk; v1.4 historical/superseded; v1.3 intermediate only |
 | Source register | COA v1.2 master + COA v1.5 supplementary register + accepted owner decisions |
@@ -19,7 +19,7 @@
 
 این سند Controlled Replacement برای تکمیل 7C است. سلسله‌مراتب معتبر:
 
-1. Architecture v3.0.3 و قواعد هنجاری آن؛
+1. Architecture v3.0.4 و قواعد هنجاری آن؛
 2. تصمیمات قطعی مالک و ADRهای پذیرفته‌شده؛
 3. COA v1.2 به‌عنوان سند مادر و مرجع اصلی کدینگ و قواعد دفترکل؛
 4. COA v1.5 به‌عنوان رجیستر تکمیلی جاری و مبنای تطبیق حساب‌به‌حساب بر پایه v1.2؛
@@ -277,3 +277,8 @@ Owner-approved dispositions now controlling under v3.0.3 include: 110801 sole GL
 Do not mark an account canonical merely because its code or owner disposition is known. AccountId, ParentAccountId, Level, Nature, NormalBalance, Postable, DirectPostingAllowed, Effective dates, Subledger dimensions, Tax treatment and FE eligibility remain NOT VERIFIED/NOT SPECIFIED wherever the controlling sources do not explicitly determine them. Those unresolved fields remain fail-closed for Posting.
 
 COA authority and owner-policy conflicts are reconciled; canonical row-level attributes, full namespace collision proof, FE↔COA crosswalk, 2114/5106 qualification, 7C gate tests and independent evidence remain open. Gate B-final is not closed by this overlay.
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. v3.0.3 remains a historical snapshot and may be referenced only to describe prior source material or decisions. This notice does not change the COA source hierarchy, posting-rule status, test evidence, unresolved source gaps or release authorization recorded in this workpaper. Any detailed semantic dependency must be reconciled against v3.0.4 before implementation or Posting Release.
