@@ -66,7 +66,7 @@ public sealed class PersonsHttpClientTests
         using var http = CreateClient(request =>
         {
             Assert.Equal(HttpMethod.Post, request.Method);
-            Assert.Equal("/api/v2/persons/quick/natural", request.RequestUri!.AbsolutePath);
+            Assert.Equal("/api/v2/persons", request.RequestUri!.AbsolutePath);
             Assert.Equal("opaque-token", request.Headers.Authorization?.Parameter);
             Assert.True(request.Headers.TryGetValues("Idempotency-Key", out var values));
             Assert.Equal(operationId.ToString("D"), Assert.Single(values!));
