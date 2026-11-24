@@ -22,7 +22,7 @@ public sealed class PersonsPreviewInstallerTests
 
         var codeBehind = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml.cs"));
         var xaml = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml"));
-        Assert.Contains("ShowPersonsPreview();", codeBehind);
+        Assert.Contains("ShowPersonsWorkspace();", codeBehind);
         Assert.Contains("x:Name=\"PersonsPreviewView\"", xaml);
         Assert.Contains("MouseEnter=\"NavMenuButton_MouseEnter\"", xaml);
         Assert.Contains("MouseLeave=\"HeaderRoot_MouseLeave\"", xaml);
@@ -111,21 +111,34 @@ public sealed class PersonsPreviewInstallerTests
     }
 
     [Fact]
-    public void Preview_add_handler_is_in_memory_only_and_explicitly_demonstration_scoped()
+    public void Persons_workspace_uses_authenticated_server_API_and_has_no_synthetic_person_store()
     {
         var root = FindSolutionRoot();
         var codeBehind = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml.cs"));
-        var start = codeBehind.IndexOf("private void SavePreviewPersonButton_Click", StringComparison.Ordinal);
-        Assert.True(start >= 0, "Preview-only add handler must exist.");
-        var end = codeBehind.IndexOf("private void CancelNewPersonButton_Click", start, StringComparison.Ordinal);
-        Assert.True(end > start, "Preview-only add handler must have a clear end boundary.");
-        var handler = codeBehind[start..end];
+        var workspace = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "PersonsWorkspace.cs"));
+        var apiClient = File.ReadAllText(Path.Combine(root, "src", "Host", "Client", "PersonsApiClient.cs"));
+        var xaml = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml"));
+        var api = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
 
-        Assert.Contains("_allPreviewPersons.Insert(0, row)", handler);
-        Assert.DoesNotContain("_apiClient", handler);
-        Assert.False(handler.Contains("DbContext", StringComparison.OrdinalIgnoreCase));
-        Assert.False(handler.Contains("SaveChanges", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains("فقط نمایشی", handler);
+        Assert.Contains("InitializePersonsWorkspace();", codeBehind);
+        Assert.Contains("IdentityAccessApiClient", workspace);
+        Assert.Contains("PersonsApiClient", workspace);
+        Assert.Contains("PersonsLoginButton_Click", workspace);
+        Assert.Contains("PersonsChangePasswordButton_Click", workspace);
+        Assert.Contains("PersonsLogoutButton_Click", workspace);
+        Assert.Contains("QuickRegisterNaturalAsync", workspace);
+        Assert.Contains("QuickRegisterLegalAsync", workspace);
+        Assert.Contains("Idempotency-Key", apiClient);
+        Assert.Contains("Persons:WriteApiEnabled", api);
+        Assert.Contains("x:Name=\"PersonsLoginPanel\"", xaml);
+        Assert.Contains("x:Name=\"NaturalGivenNameBox\"", xaml);
+        Assert.Contains("x:Name=\"LegalNameBox\"", xaml);
+        Assert.Contains("x:Name=\"PersonsCandidatesPanel\"", xaml);
+        Assert.Contains("x:Name=\"PersonsRetryPanel\"", xaml);
+        Assert.DoesNotContain("PersonPreviewRow", codeBehind);
+        Assert.DoesNotContain("DEMO-000", codeBehind);
+        Assert.DoesNotContain("_allPreviewPersons", codeBehind);
+        Assert.DoesNotContain("SavePreviewPersonButton_Click", codeBehind);
     }
 
     [Fact]
