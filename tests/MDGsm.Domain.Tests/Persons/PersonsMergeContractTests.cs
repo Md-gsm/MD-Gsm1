@@ -90,8 +90,18 @@ public sealed class PersonsMergeContractTests
             .EnumerateArray()
             .Single(item => item.GetProperty("path").GetString() ==
                 "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs");
-        Assert.Equal("TRANSFER_ACTIVE_REFERENCE",
+        Assert.Equal("PERSISTED_ACTIVE_REFERENCE",
             participantEntry.GetProperty("mergeClassification").GetString());
+        Assert.True(participantEntry.GetProperty("mergeParticipant").GetBoolean());
+        var declaredParticipants = registryDocument.RootElement.GetProperty("registeredConsumers")
+            .EnumerateArray()
+            .Where(item => item.GetProperty("mergeParticipant").GetBoolean())
+            .Select(item => item.GetProperty("path").GetString())
+            .ToArray();
+        Assert.Equal(new[]
+        {
+            "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs"
+        }, declaredParticipants);
     }
 
     [Fact]
