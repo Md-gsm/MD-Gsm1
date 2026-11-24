@@ -180,7 +180,7 @@ app.MapPost("/api/v2/persons", async (
             operationId, null, cancellationToken);
         var response = new { partyId = result.PartyId, created = result.Created };
         if (result.Created) return (IResult)Results.Created($"/api/v2/persons/{result.PartyId}", response);
-        return Results.Ok(response);
+        return (IResult)Results.Ok(response);
     }
     catch (IdempotencyKeyConflictException)
     {
@@ -192,7 +192,7 @@ app.MapPost("/api/v2/persons", async (
     }
     catch (ArgumentException)
     {
-        return Results.UnprocessableEntity(new { error = "validation_failed" });
+        return (IResult)Results.UnprocessableEntity(new { error = "validation_failed" });
     }
 });
 
@@ -220,7 +220,7 @@ app.MapPost("/api/v2/persons/legal", async (
             operationId, null, cancellationToken);
         var response = new { partyId = result.PartyId, created = result.Created };
         if (result.Created) return (IResult)Results.Created($"/api/v2/persons/{result.PartyId}", response);
-        return Results.Ok(response);
+        return (IResult)Results.Ok(response);
     }
     catch (IdempotencyKeyConflictException)
     {
@@ -232,7 +232,7 @@ app.MapPost("/api/v2/persons/legal", async (
     }
     catch (ArgumentException)
     {
-        return Results.UnprocessableEntity(new { error = "validation_failed" });
+        return (IResult)Results.UnprocessableEntity(new { error = "validation_failed" });
     }
 });
 
