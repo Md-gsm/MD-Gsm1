@@ -19,7 +19,7 @@ paths:
       description: >-
         A term is required: either a name of at least two characters or exactly four digits matching the end of a mobile number.
         At most 10 results are returned and mobile numbers are masked (only the last two digits are visible).
-        Per-actor rate limits are enforced by the API (owner-approved policy on PR #11).
+        Per-actor rate limiting remains a required policy for the future search endpoint; no search HTTP route is currently exposed.
       parameters:
         - in: query
           name: q
