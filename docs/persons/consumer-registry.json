@@ -32,6 +32,13 @@
       "purpose": "Protected GET party-details plus feature-gated natural/legal create and quick-registration endpoints; actor identity comes from validated IdentityAccess session context. Quick registration requires both persons.read and persons.create."
     },
     {
+      "module": "DesktopHost",
+      "path": "src/Host/Desktop/PersonsWorkspace.cs",
+      "contractVersion": "Persons.Contracts/2.0",
+      "mergeProtocolVersion": "1.0",
+      "purpose": "WPF client uses opaque PartyId only to present authenticated quick-registration outcomes and masked duplicate candidates; it does not own Party records or perform persistence."
+    },
+    {
       "module": "Finance",
       "path": "src/Modules/Finance/Contracts/PartyAccountReference.cs",
       "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
