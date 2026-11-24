@@ -96,15 +96,28 @@ class DashboardUiContractTests(unittest.TestCase):
         self.assertIn('<Setter Property="VerticalContentAlignment" Value="Center"/>', XAML)
         self.assertIn('ElementStyle="{StaticResource AlignedDataGridTextStyle}"', XAML)
 
-    def test_persons_grid_expands_to_all_visible_rows_without_internal_scroll(self):
-        grid_start = XAML.index('<DataGrid x:Name="PersonsPreviewGrid"')
-        grid_open_end = XAML.index('>', grid_start)
-        grid_open = XAML[grid_start:grid_open_end + 1]
-        self.assertIn('HorizontalScrollBarVisibility="Disabled"', grid_open)
-        self.assertIn('VerticalScrollBarVisibility="Disabled"', grid_open)
-        self.assertNotIn('MaxHeight=', grid_open)
-        self.assertIn('UpdatePersonsGridHeight(PreviewPersons.Count);', CS)
-        self.assertIn('PersonsPreviewGrid.Height = headerHeight + Math.Max(0, visibleRowCount) * personRowHeight;', CS)
+    def test_persons_workspace_is_authenticated_and_uses_the_server_api(self):
+        workspace = (ROOT / "src/Host/Desktop/PersonsWorkspace.cs").read_text(encoding="utf-8")
+        api_client = (ROOT / "src/Host/Client/PersonsApiClient.cs").read_text(encoding="utf-8")
+
+        self.assertIn('x:Name="PersonsLoginPanel"', XAML)
+        self.assertIn('x:Name="PersonsPasswordChangePanel"', XAML)
+        self.assertIn('x:Name="PersonsWorkspacePanel"', XAML)
+        self.assertIn('x:Name="NaturalGivenNameBox"', XAML)
+        self.assertIn('x:Name="LegalNameBox"', XAML)
+        self.assertIn('x:Name="PersonsCandidatesPanel"', XAML)
+        self.assertIn('x:Name="PersonsRetryPanel"', XAML)
+        self.assertIn("ShowPersonsWorkspace();", CS)
+        self.assertIn("IdentityAccessApiClient", workspace)
+        self.assertIn("PersonsApiClient", workspace)
+        self.assertIn("PersonsLoginButton_Click", workspace)
+        self.assertIn("PersonsChangePasswordButton_Click", workspace)
+        self.assertIn("QuickRegisterNaturalAsync", workspace)
+        self.assertIn("QuickRegisterLegalAsync", workspace)
+        self.assertIn('Idempotency-Key', api_client)
+        self.assertNotIn("PersonsPreviewGrid", XAML)
+        self.assertNotIn("PersonPreviewRow", CS)
+        self.assertNotIn("DEMO-000", CS)
 
     def test_delivery_marker_is_ten_percent_thicker_than_three_px_baseline(self):
         self.assertIn('<DataGridTemplateColumn Header="" Width="3.3" MinWidth="3.3" MaxWidth="3.3"', XAML)
