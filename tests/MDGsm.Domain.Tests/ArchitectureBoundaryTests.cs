@@ -46,7 +46,14 @@ public sealed class ArchitectureBoundaryTests
         AssertReferences(
             root,
             "src/Host/Desktop/MDGsm.Desktop.csproj",
-            "..\\..\\BuildingBlocks\\MDGsm.Client\\MDGsm.Client.csproj");
+            "..\\..\\BuildingBlocks\\MDGsm.Client\\MDGsm.Client.csproj",
+            "..\\Client\\MDGsm.Host.Client.csproj");
+        AssertReferences(
+            root,
+            "src/Host/Client/MDGsm.Host.Client.csproj",
+            "..\\..\\BuildingBlocks\\MDGsm.Client\\MDGsm.Client.csproj",
+            "..\\..\\Modules\\IdentityAccess\\Contracts\\MDGsm.IdentityAccess.Contracts.csproj",
+            "..\\..\\Modules\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj");
     }
 
     [Fact]
