@@ -1,4 +1,6 @@
 using System.Data.Common;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using MDGsm.Finance.Infrastructure.Accounts;
 using MDGsm.Infrastructure.Persons;
 using MDGsm.Persons.Contracts;
@@ -9,6 +11,89 @@ namespace MDGsm.Domain.Tests.Persons;
 
 public sealed class PersonsMergeContractTests
 {
+    [Fact]
+    public void AC39_AC40_AllExternalPartyIdConsumersAreRegisteredAndClassifiedExactlyOnce()
+    {
+        var root = FindRepositoryRoot();
+        using var registryDocument = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(root, "docs", "persons", "consumer-registry.json")));
+        var registry = registryDocument.RootElement;
+        var owners = registry.GetProperty("ownerPaths").EnumerateArray()
+            .Select(item => item.GetString()!.Replace('\\', '/').TrimEnd('/'))
+            .ToArray();
+        var consumers = registry.GetProperty("registeredConsumers").EnumerateArray().ToArray();
+        var paths = consumers.Select(item => item.GetProperty("path").GetString()!.Replace('\\', '/')).ToArray();
+
+        Assert.Equal(paths.Length, paths.Distinct(StringComparer.Ordinal).Count());
+
+        var allowed = registry.GetProperty("registryPolicy").GetProperty("allowedMergeClassifications")
+            .EnumerateArray().Select(item => item.GetString()!).ToHashSet(StringComparer.Ordinal);
+        Assert.NotEmpty(allowed);
+        foreach (var consumer in consumers)
+        {
+            Assert.Equal(1, consumer.EnumerateObject().Count(property => property.Name == "mergeClassification"));
+            Assert.Contains(consumer.GetProperty("mergeClassification").GetString(), allowed);
+        }
+
+        var referencePattern = new Regex(
+            @"\bPartyId\b|\bparty_id\b|REFERENCES\s+parties\b",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        var extensions = new HashSet<string>(
+            [".cs", ".sql", ".xaml", ".json", ".yml", ".yaml", ".xml", ".props", ".csproj"],
+            StringComparer.OrdinalIgnoreCase);
+        var discovered = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var scanRoot in new[] { Path.Combine(root, "src"), Path.Combine(root, "database", "migrations") })
+        {
+            if (!Directory.Exists(scanRoot)) continue;
+            foreach (var file in Directory.EnumerateFiles(scanRoot, "*", SearchOption.AllDirectories))
+            {
+                if (!extensions.Contains(Path.GetExtension(file))) continue;
+                var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
+                if (relative.Split('/').Any(segment => segment is "bin" or "obj")) continue;
+                if (owners.Any(owner => relative == owner || relative.StartsWith(owner + "/", StringComparison.Ordinal))) continue;
+                var source = File.ReadAllText(file);
+                if (referencePattern.IsMatch(source)) discovered.Add(relative);
+            }
+        }
+
+        Assert.Equal(discovered.OrderBy(x => x, StringComparer.Ordinal),
+            paths.OrderBy(x => x, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void AC41_FinanceMergeParticipantImplementsVersionedProtocolHooks()
+    {
+        var participant = new PostgresPartyAccountMergeParticipant();
+        var contract = typeof(IPartyMergeParticipant);
+        var implementation = typeof(PostgresPartyAccountMergeParticipant);
+
+        Assert.Contains(contract, implementation.GetInterfaces());
+        Assert.Equal("Finance", participant.Module);
+        Assert.Equal("1.1", participant.ContractVersion);
+        Assert.Equal(PostgresPartyMergeService.ProtocolVersion, participant.MergeProtocolVersion);
+
+        var requiredHooks = new[]
+        {
+            "PreviewAsync", "PrepareAsync", "ValidateAsync", "ApplyAsync", "VerifyAsync", "RecoverAsync"
+        };
+        var interfaceMap = implementation.GetInterfaceMap(contract);
+        var implementedHooks = interfaceMap.InterfaceMethods
+            .Select(method => method.Name)
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var hook in requiredHooks)
+            Assert.Contains(hook, implementedHooks);
+
+        var root = FindRepositoryRoot();
+        using var registryDocument = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(root, "docs", "persons", "consumer-registry.json")));
+        var participantEntry = registryDocument.RootElement.GetProperty("registeredConsumers")
+            .EnumerateArray()
+            .Single(item => item.GetProperty("path").GetString() ==
+                "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs");
+        Assert.Equal("TRANSFER_ACTIVE_REFERENCE",
+            participantEntry.GetProperty("mergeClassification").GetString());
+    }
+
     [Fact]
     [Trait("Category", "Integration")]
     public async Task AC42_preview_is_read_only_and_counts_transferable_finance_references()
@@ -145,6 +230,18 @@ public sealed class PersonsMergeContractTests
             "SELECT count(*) FROM finance_party_accounts WHERE party_id = @party;", connection);
         command.Parameters.AddWithValue("party", partyId);
         return (long)(await command.ExecuteScalarAsync())!;
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "MDGsm.sln")) &&
+                File.Exists(Path.Combine(directory.FullName, "docs", "persons", "consumer-registry.json")))
+                return directory.FullName;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate the MD-Gsm repository root for the Persons merge contract tests.");
     }
 
     private static NpgsqlDataSource OpenDataSource()
