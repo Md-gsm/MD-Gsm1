@@ -78,7 +78,9 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         payloadCommand.Parameters.AddWithValue("id", workflowId);
         var storedCiphertext = (byte[])(await payloadCommand.ExecuteScalarAsync())!;
         Assert.NotEmpty(storedCiphertext);
-        Assert.DoesNotContain(Encoding.UTF8.GetBytes(privateTemporaryName), storedCiphertext);
+        var plaintextMarker = Encoding.UTF8.GetBytes(privateTemporaryName);
+        Assert.True(storedCiphertext.AsSpan().IndexOf(plaintextMarker) < 0,
+            "Temporary workflow storage must contain ciphertext, never the raw search phrase.");
     }
 
     [Fact]
