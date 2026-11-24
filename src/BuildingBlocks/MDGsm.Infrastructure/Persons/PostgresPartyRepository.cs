@@ -98,13 +98,19 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         }
 
         await using (var replayCommand = new NpgsqlCommand(
-            "SELECT party_id FROM persons_operations WHERE operation_id = @operation;", connection, transaction))
+            "SELECT party_id, actor FROM persons_operations WHERE operation_id = @operation;", connection, transaction))
         {
             replayCommand.Parameters.AddWithValue("operation", operationId);
-            var replay = await replayCommand.ExecuteScalarAsync(cancellationToken);
-            if (replay is Guid replayPartyId)
+            await using var replayReader = await replayCommand.ExecuteReaderAsync(cancellationToken);
+            if (await replayReader.ReadAsync(cancellationToken))
+            {
+                if (!string.Equals(replayReader.GetString(1), actor, StringComparison.Ordinal))
+                    throw new IdempotencyKeyConflictException();
+
+                var replayPartyId = replayReader.GetGuid(0);
                 return new PartyQuickRegistrationResult(PartyQuickRegistrationOutcome.Replayed,
                     replayPartyId.ToString("D"), false, Array.Empty<PartyQuickRegistrationCandidate>());
+            }
         }
 
         var normalizedMobile = string.IsNullOrWhiteSpace(request.PrimaryMobile)
@@ -281,7 +287,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         {
             if (addressFields.Any(string.IsNullOrWhiteSpace))
                 throw new ArgumentException("Province, city, postal code and full address must be supplied together.", nameof(request));
-            address = PartyAddress.Create(request.Province!, request.City!, request.PostalCode!, request.AddressLine!);
+            address = PartyAddress.Create(request.Province!, request.City!, request.PostalCode!, request.AddressLine!, request.CountryCode);
         }
 
         var workClassification = request.WorkClassification is { } wc ? (short?)(short)wc : null;
@@ -296,12 +302,18 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             }
 
             await using (var existingCommand = new NpgsqlCommand(
-                "SELECT party_id FROM persons_operations WHERE operation_id = @op;", connection, transaction))
+                "SELECT party_id, actor FROM persons_operations WHERE operation_id = @op;", connection, transaction))
             {
                 existingCommand.Parameters.AddWithValue("op", operationId);
-                var existing = await existingCommand.ExecuteScalarAsync(cancellationToken);
-                if (existing is Guid existingPartyId)
+                await using var existingReader = await existingCommand.ExecuteReaderAsync(cancellationToken);
+                if (await existingReader.ReadAsync(cancellationToken))
+                {
+                    if (!string.Equals(existingReader.GetString(1), actor, StringComparison.Ordinal))
+                        throw new IdempotencyKeyConflictException();
+
+                    var existingPartyId = existingReader.GetGuid(0);
                     return new PartyRegistrationResult(existingPartyId.ToString("D"), false);
+                }
             }
 
             await using (var command = new NpgsqlCommand("""
