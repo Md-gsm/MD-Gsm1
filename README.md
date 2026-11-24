@@ -38,6 +38,14 @@ Run the API with `dotnet run --project .\src\Host\Api\MDGsm.Api.csproj`. The `/h
 
 ## Governance
 
+## Architecture authority
+
+- **Current governing Master:** [MDG-ARCH-MASTER-001 v3.0.4](docs/architecture/MDG-ARCH-MASTER-001_v3.0.4.txt).
+- **Current baseline registration:** [MDG-ARCH-BASELINE-REGISTRATION-001 v1.3](docs/architecture/MDG-ARCH-BASELINE-REGISTRATION-001_v1.3.md).
+- **Project-wide authority and document hierarchy:** [MDG-PROJECT-AUTHORITY-CONTROL-001 v1.0](docs/governance/MDG-PROJECT-AUTHORITY-CONTROL-001_v1.0.md).
+- **Current IdentityAccess baseline:** [MDG-IDENTITYACCESS-MODULE-BASELINE-001 v1.2](docs/architecture/MDG-IDENTITYACCESS-MODULE-BASELINE-001_v1.2.md); **CHG-101:** [Bootstrap/Owner Recovery change control v0.3](docs/architecture/change-requests/CR-ARCH-IDENTITYACCESS-BOOTSTRAP-OWNER-001_v0.3.md).
+- Earlier Architecture Master versions and registration records are historical work records; subordinate technical artifacts retain only their own scoped status and must conform to v3.0.4.
+
 - `docs/roadmap/PROJECT_ROADMAP_AND_ACCEPTANCE_PLAN_FA.md` — نقشه راه مرجع، معیار خروج و یافته‌های ممیزی.
 
 - `docs/governance/PROJECT_GOVERNANCE_CHARTER_FA.md` — the binding project charter. All contributors and coding agents must follow it; only the project owner may authorize changes.

@@ -118,9 +118,20 @@ This control block supersedes all contradictory status statements in the histori
 
 1. OWNER ACCEPTANCE — ACCEPTED. The owner explicitly accepted MDG-ARCH-MASTER-001 v3.0.3 on 2026-11-20 as the sole current architecture and accounting-policy baseline. v2.5, v2.6, v3.0 and v3.0.1 are historical references only; they are not current baselines.
 2. INDEPENDENT TECHNICAL REVIEW — PENDING. Review must be performed against the exact final commit SHA. Owner acceptance is not independent review and must not be represented as such.
-3. REPOSITORY REGISTRATION — PENDING. The document is on the open PR #72 branch. It is not registered in main until the relevant PR is successfully merged. A PR, approval, passing check or branch commit alone is not registration in main.
+3. REPOSITORY REGISTRATION — COMPLETED. The v3.0.3 text rendition is registered in `main` through PR #71, merged at `8f89653e25e6a599387128e0209f5009d9dd59cd`. The earlier statement referring to PR #72 is historical and superseded; repository registration of v3.0.3 is complete.
 4. IMPLEMENTATION / TEST / EVIDENCE / LEGAL / RELEASE — SEPARATE. Owner acceptance does not imply design completion, implementation, test PASS, evidence acceptance, legal clearance, Gate C or Gate D PASS, Posting Release, production migration or Go-Live. Each retains its own criteria and status.
 5. REVISION DATE — 2026-11-20. Dates elsewhere remain the dates of their underlying decisions, source records or test evidence; they do not override this document revision date.
+
+
+DOCUMENT CONTROL ADDENDUM — HISTORICAL STATUS / SUPERSESSION (2026-11-24)
+
+This v3.0.3 document is retained as a historical, previously accepted Architecture/Accounting Master snapshot. Its 2026-11-20 acceptance and PR #71 registration are historical facts and are not erased.
+
+By the Product Owner's subsequent explicit directive dated 2026-11-24, MDG-ARCH-MASTER-001 v3.0.4 is now the sole current, accepted, official and governing Architecture/Accounting Master for MD-Gsm. v3.0.3 is superseded for current work and must not be cited as the governing baseline. The current repository-level authority is recorded in MDG-ARCH-BASELINE-REGISTRATION-001 v1.3 and MDG-PROJECT-AUTHORITY-CONTROL-001 v1.0.
+
+All statements in this historical v3.0.3 snapshot that describe it as the current or sole governing Master are retained as evidence of the earlier state and are superseded by the later 2026-11-24 Product Owner directive. Current project work must use v3.0.4. Historical snapshots remain unchanged except for this dated supersession notice.
+
+This supersession changes document authority only. It does not imply independent technical review, design completion, implementation, test PASS, evidence acceptance, legal clearance, Gate C/Gate D, Posting Release, production migration, IdentityAccess G1 or Go-Live.
 
 
 
