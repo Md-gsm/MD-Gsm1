@@ -19,7 +19,7 @@
 | 33 سقف مطلق ۳۰ روز | `AC33_renewal_never_extends_beyond_absolute_thirty_day_age` و تست PostgreSQL `AC33_AC34_renewal_is_single_use_authorized_and_capped_at_thirty_days` | سقف در Domain و DB آزموده شده؛ ماتریس کامل ساعت/ترتیب تمدید و انقضا موجود نیست. **شواهد جزئی؛ باز.** |
 | 34 یک تمدید مجاز با دلیل | `AC34_only_one_authorized_renewal_with_a_reason_is_accepted`، `AC34_renewal_rejects_missing_reason_or_missing_authorization` و تست PostgreSQL ترکیبی AC33/34 | تمدید مجاز، نبود مجوز/دلیل و تمدید دوم رد می‌شود؛ ماتریس مجوز واقعی IdentityAccess و audit trail کامل ثابت نشده. **شواهد جزئی؛ باز.** |
 | 35 worker idempotent و retry | `AC35_closed_workflow_is_not_readable_and_is_purged_after_expiry`؛ worker دوره‌ای و catch/alert دارد. | close تکراری رد و purge تکراری بی‌اثر است؛ تست مستقیم worker برای خطای گذرا، retry چرخه بعد، شکست alert و SLA پنج‌دقیقه‌ای وجود ندارد. **شواهد جزئی؛ باز.** |
-| 36 عدم حضور در global search/autocomplete | تست `PersonsTemporaryWorkflowPostgresTests.cs::AC36_temporary_workflow_payload_does_not_appear_in_Persons_search_or_search_route` دادهٔ موقت رمز‌شده را درج می‌کند، عدم حضور در نتایج Search را می‌سنجد و نبود route جست‌وجو/autocomplete را از Program.cs اثبات می‌کند. | مرز Repository و Host route registration پوشش داده شده است؛ هیچ API عمومی جست‌وجو فعلاً exposed نیست. **IMPLEMENTED در دامنه فعلی.** |
+| 36 عدم حضور در global search/autocomplete | payload موقت در جدول جداست؛ `PostgresPartyRepository.SearchAsync` از Party و ContactPoint فعال جست‌وجو می‌کند. | تست منفی صریح workflow موقت در search/autocomplete در main وجود ندارد. **باز؛ تست پذیرش لازم.** |
 | 37 promotion اتمیک/idempotent | Quick Registration و انتخاب Party وجود دارد؛ promotion از temporary workflow به Party در کد بررسی‌شده پیدا نشد. | انتخاب صریح، duplicate check، تراکنش اتمیک و replay برای promotion اثبات نشده. **باز؛ قابلیت/تست لازم.** |
 | 38 عدم افشای PII در telemetry | worker فقط failure code و نوع exception را log می‌کند و exception.Message را ثبت نمی‌کند؛ تست redaction عمومی AC-49 وجود دارد. | تست اختصاصی payload یکتا در تمام log/audit/metrics/artifacts و اثبات عدم حضورش وجود ندارد. **شواهد جزئی؛ باز.** |
 
@@ -34,6 +34,20 @@
 | 43 conflict مانع اجرا | `AC43_two_existing_finance_accounts_are_a_blocking_conflict_and_no_state_changes` | conflict دو حساب Finance و عدم تغییر state آزموده شده؛ ماتریس conflict سایر participantها موجود نیست. **شواهد جزئی؛ باز.** |
 | 44 atomicity/concurrency/idempotency | تست‌های `AC41_AC44_merge_transfers_registered_reference_atomically_and_replays_idempotently`، `AC44_failure_after_apply_rolls_back_every_participant_and_runs_recovery` و `AC44_concurrent_merges_of_one_source_allow_exactly_one_winner` | replay، rollback و یک برنده در رقابت PostgreSQL آزموده‌اند؛ تمام مصرف‌کنندگان و failure pathها پوشش ندارند. **شواهد جزئی؛ باز.** |
 | 45 حفظ snapshot و reconciliation | تست merge شناسه و created_at حساب Finance را پس از انتقال بررسی می‌کند؛ coordinator snapshot تاریخی را immutable فرض می‌کند. | همه snapshotهای تاریخی و reconciliation تمام referenceهای فعال آزموده نشده‌اند. **شواهد جزئی؛ باز.** |
+
+## ۳-الف. شواهد افزوده‌شده در PR #96 (Draft؛ هنوز وارد main نشده‌اند)
+
+موارد زیر فقط روی شاخهٔ PR #96 پیاده‌سازی و آزموده می‌شوند؛ تا زمان merge و بازبینی مستقل، نباید به‌عنوان قابلیت‌های موجود در main گزارش شوند:
+
+| AC | آزمون افزوده‌شده در PR #96 | دامنهٔ اثبات |
+|---|---|---|
+| 36 | `PersonsTemporaryWorkflowPostgresTests.cs::AC36_temporary_workflow_payload_does_not_appear_in_Persons_search_or_search_route` | درج ciphertext موقت در PostgreSQL، عدم بازگشت آن از repository search، نبود Search API/autocomplete route و ذخیره‌نشدن marker متنی خام در payload. |
+| 39–40 | `PersonsMergeContractTests.cs::AC39_AC40_AllExternalPartyIdConsumersAreRegisteredAndClassifiedExactlyOnce` | تطبیق scan کد با registry، رد مسیرهای تکراری، الزام یک classification مجاز و حذف مصرف‌کننده ناشناخته. طبقه‌بندی در این نسخه به سطح consumer/source path انجام می‌شود. |
+| 41 | `PersonsMergeContractTests.cs::AC41_FinanceMergeParticipantImplementsVersionedProtocolHooks` | اثبات پیاده‌سازی participant ثبت‌شدهٔ Finance و تمام hookهای Preview/Prepare/Validate/Apply/Verify/Recover با نسخه‌های قرارداد ثبت‌شده. |
+| 42–43 | تست‌های موجود `AC42_preview_is_read_only_and_counts_transferable_finance_references` و `AC43_two_existing_finance_accounts_are_a_blocking_conflict_and_no_state_changes` | preview بدون تغییر state و جلوگیری از merge در تعارض دو حساب Finance. |
+| 44 | `PersonsMergeContractTests.cs::AC44_MergeIsAtomicConcurrentAndIdempotentWithFailureRollback` | suite ترکیبی replay/idempotency، rollback پس از خطای Verify و انتخاب دقیقاً یک برنده در mergeهای هم‌زمان. |
+
+AC-45 و AC-31..35، AC-37..38 همچنان باز هستند. این تست‌ها فقط بر مصرف‌کنندگان و runtime فعلیِ ثبت‌شده در مخزن تکیه دارند؛ اثبات تمام consumerهای آینده، همهٔ historical snapshotها، تمام failure stageها یا SLA عملیاتی production محسوب نمی‌شوند.
 
 ## ۴. AC-46 تا AC-49 — CI/evidence
 
