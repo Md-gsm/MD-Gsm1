@@ -87,6 +87,32 @@ public sealed class PersonsHttpClientTests
     }
 
     [Fact]
+    public async Task QuickRegistration_LegalPartyUsesCanonicalLegalEndpoint()
+    {
+        var operationId = Guid.CreateVersion7();
+        using var http = CreateClient(request =>
+        {
+            Assert.Equal(HttpMethod.Post, request.Method);
+            Assert.Equal("/api/v2/persons/legal", request.RequestUri!.AbsolutePath);
+            Assert.Equal("opaque-token", request.Headers.Authorization?.Parameter);
+            Assert.True(request.Headers.TryGetValues("Idempotency-Key", out var values));
+            Assert.Equal(operationId.ToString("D"), Assert.Single(values!));
+            return Json(HttpStatusCode.OK,
+                "{\\"outcome\\":\\"SelectionRequired\\",\\"partyId\\":null,\\"created\\":false,\\"candidates\\":[]}");
+        });
+        var api = new PersonsApiClient(http);
+        var party = new CreateLegalPartyRequest(
+            "شرکت نمونه", null, null, null, ["Customer"], null, null, null, null, null,
+            new PartyCommunicationPreferencesContract(true, true, false), "Unknown", null);
+
+        var result = await api.QuickRegisterLegalAsync(
+            "opaque-token", operationId, new QuickRegisterLegalPartyRequest(party, ForceNew: false));
+
+        Assert.Equal("SelectionRequired", result.Outcome);
+        Assert.Empty(result.Candidates);
+    }
+
+    [Fact]
     public async Task GetParty_SendsBearerAndReadsTheMaskedPartyContract()
     {
         var partyId = Guid.CreateVersion7();
