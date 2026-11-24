@@ -37,9 +37,15 @@ public sealed class PersonsApiClient(HttpClient httpClient)
             var party = await response.Content.ReadFromJsonAsync<PartyResponse>(
                 JsonOptions, cancellationToken).ConfigureAwait(false);
             if (party is null || !Guid.TryParse(party.PartyId, out var responsePartyId) ||
-                responsePartyId != parsedPartyId || string.IsNullOrWhiteSpace(party.PartyType) ||
-                string.IsNullOrWhiteSpace(party.DisplayName) || party.Contacts is null)
+                responsePartyId != parsedPartyId ||
+                party.PartyType is not ("NaturalPerson" or "LegalEntity") ||
+                string.IsNullOrWhiteSpace(party.DisplayName) || party.Roles is null || party.Contacts is null)
                 throw new InvalidDataException("Persons returned an incomplete Party detail response.");
+
+            // This UI client intentionally never requests sensitive fields. Refuse a response
+            // that claims sensitive data was included rather than risking accidental disclosure.
+            if (party.SensitiveFieldsIncluded)
+                throw new InvalidDataException("Persons returned a sensitive Party detail response to a non-sensitive request.");
             return party;
         }
         catch (JsonException)
