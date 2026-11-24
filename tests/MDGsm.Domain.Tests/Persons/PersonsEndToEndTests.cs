@@ -244,7 +244,7 @@ public sealed class PersonsEndToEndTests
         Assert.Equal(source.PartyId, candidate.PartyId);
         Assert.False(candidate.PartyIsActive);
         Assert.True(candidate.IsMerged);
-        Assert.False(candidate.HasActiveMobile);
+        Assert.True(candidate.HasActiveMobile);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             scope.Repository.QuickRegisterNaturalAsync(
