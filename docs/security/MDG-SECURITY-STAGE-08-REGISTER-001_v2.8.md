@@ -63,7 +63,7 @@ The owner-accepted decisions recorded in `MDG-SECURITY-O20E-DATA-OWNERSHIP-001 v
 3. Multiple active Branch and Warehouse assignments may coexist; each is individually auditable.
 4. Branch assignment does not imply Warehouse access; access to a Warehouse requires an explicit assignment to that exact Warehouse.
 
-The governing Master Architecture v3.0.3 and `OWN-INV-018 v1.1` place Branch/Warehouse/location master data and the Warehouse → Section → Shelf → Bin/StorageLocation hierarchy under Organization; Inventory owns stock facts and movement. IdentityAccess remains owner of Account, Credential, Session, Role and Permission. These are ownership/policy conclusions, not G1 approval.
+The governing Master Architecture v3.0.4 and `OWN-INV-018 v1.1` place Branch/Warehouse/location master data and the Warehouse → Section → Shelf → Bin/StorageLocation hierarchy under Organization; Inventory owns stock facts and movement. IdentityAccess remains owner of Account, Credential, Session, Role and Permission. These are ownership/policy conclusions, not G1 approval.
 
 ### 4.2 Controlled logical and physical design
 
