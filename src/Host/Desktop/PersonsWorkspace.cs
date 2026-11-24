@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using MDGsm.Client;
+using MDGsm.Host.Client;
 using MDGsm.IdentityAccess.Contracts;
 using MDGsm.Persons.Contracts;
 
