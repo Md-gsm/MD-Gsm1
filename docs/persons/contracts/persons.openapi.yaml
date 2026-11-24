@@ -134,17 +134,27 @@ paths:
       operationId: getParty
       summary: Read one party
       description: >-
-        Every read is audited with the server-derived actor. Sensitive fields (national identifier, economic code, internal note, full contact values and address) are returned only to callers holding the sensitive-read permission;
-        otherwise they are masked or omitted and sensitiveFieldsIncluded is false. Finance-owned credit limits, pricing discounts and payment-instrument metadata are not part of the Persons contract.
+        Every read is audited with the server-derived actor. Sensitive fields are masked or omitted unless
+        includeSensitive is true and the server authorizes the caller. The response is mapped to the
+        versioned PartyResponse contract. Finance-owned credit limits, pricing discounts and payment-instrument
+        metadata are not part of the Persons contract.
       parameters:
         - in: path
           name: partyId
           required: true
           schema: { type: string, format: uuid }
+        - in: query
+          name: includeSensitive
+          required: false
+          schema: { type: boolean, default: false }
       responses:
-        '200': { description: Party details }
+        '200':
+          description: Party details mapped to the published Persons response contract
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PartyResponse' }
         '401': { description: Missing or invalid session }
-        '403': { description: Missing read permission }
+        '403': { description: Missing read permission or sensitive-read authorization }
         '404': { description: Party not found }
 components:
   securitySchemes:
@@ -242,7 +252,34 @@ components:
         alternateMobile: { type: [string, 'null'] }
         landline: { type: [string, 'null'] }
         email: { type: [string, 'null'], format: email }
-        address: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
+        address    PartyResponse:
+      type: object
+      required: [partyId, partyType, displayName, roles, contacts, createdAtUtc, sensitiveFieldsIncluded]
+      properties:
+        partyId: { type: string, format: uuid }
+        partyType: { type: string, enum: [NaturalPerson, LegalEntity] }
+        displayName: { type: string }
+        roles: { type: array, items: { type: string, enum: [Customer, Colleague] } }
+        nationalIdentifier: { type: [string, 'null'] }
+        economicCode: { type: [string, 'null'] }
+        responsiblePersonName: { type: [string, 'null'] }
+        contacts:
+          type: array
+          items:
+            type: object
+            required: [kind, value, isPrimary, isMessagingAllowed]
+            properties:
+              kind: { type: string, enum: [Mobile, Landline, Email] }
+              value: { type: string, description: Masked unless sensitive-read permission is granted. }
+              isPrimary: { type: boolean }
+              isMessagingAllowed: { type: boolean }
+        primaryAddress: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
+        communication: { anyOf: [{ $ref: '#/components/schemas/CommunicationPreferences' }, { type: 'null' }] }
+        acquaintanceSource: { type: [string, 'null'] }
+        createdAtUtc: { type: string, format: date-time }
+        sensitiveFieldsIncluded: { type: boolean }
+        workClassification: { type: [string, 'null'] }
+: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
         communication: { $ref: '#/components/schemas/CommunicationPreferences' }
         acquaintanceSource: { type: [string, 'null'] }
         internalNote: { type: [string, 'null'], maxLength: 2000 }
