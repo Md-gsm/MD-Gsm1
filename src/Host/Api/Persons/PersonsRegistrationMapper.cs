@@ -41,9 +41,50 @@ public static class PersonsRegistrationMapper
         return new PartyQuickRegistrationResponse(
             result.Outcome.ToString(), result.PartyId, result.Created,
             result.Candidates.Select(candidate => new PartyQuickRegistrationCandidateContract(
-                candidate.PartyId, candidate.Type.ToString(), candidate.DisplayName, ToRoleNames(candidate.Roles),
+                candidate.PartyId, ToContractPartyType(candidate.Type), candidate.DisplayName, ToRoleNames(candidate.Roles),
                 candidate.PartyIsActive, candidate.IsMerged, candidate.HasActiveMobile, candidate.MaskedMobile)).ToArray());
     }
+
+    /// <summary>Maps the application read model to the versioned public response without exposing application-only fields.</summary>
+    public static PartyResponse Map(PartyDetails details)
+    {
+        ArgumentNullException.ThrowIfNull(details);
+        return new PartyResponse(
+            details.PartyId,
+            ToContractPartyType(details.Type),
+            details.DisplayName,
+            ToRoleNames(details.Roles).ToArray(),
+            details.NationalIdentifier,
+            details.EconomicCode,
+            details.ResponsiblePersonName,
+            details.Contacts.Select(contact => new PartyContactContract(
+                contact.Kind, contact.Value, contact.IsPrimary, contact.IsMessagingAllowed)).ToArray(),
+            details.PrimaryAddress is null
+                ? null
+                : new PartyAddressContract(
+                    details.PrimaryAddress.CountryCode,
+                    details.PrimaryAddress.Province,
+                    details.PrimaryAddress.City,
+                    details.PrimaryAddress.PostalCode,
+                    details.PrimaryAddress.AddressLine),
+            details.CommunicationPreferences is null
+                ? null
+                : new PartyCommunicationPreferencesContract(
+                    details.CommunicationPreferences.RepairStatusSmsEnabled,
+                    details.CommunicationPreferences.ReadyForDeliverySmsEnabled,
+                    details.CommunicationPreferences.PromotionsSmsEnabled),
+            details.AcquaintanceSource?.ToString(),
+            details.CreatedAtUtc,
+            details.SensitiveFieldsIncluded,
+            details.WorkClassification?.ToString());
+    }
+
+    private static string ToContractPartyType(PartyType type) => type switch
+    {
+        PartyType.NaturalPerson => "NaturalPerson",
+        PartyType.LegalPerson => "LegalEntity",
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown party type.")
+    };
 
     private static IReadOnlyList<string> ToRoleNames(PartyBusinessRoles roles)
     {
