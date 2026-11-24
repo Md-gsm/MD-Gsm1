@@ -386,13 +386,22 @@ def run_registry(root: Path) -> None:
     registered = set(registered_paths)
     policy = reg.get("registryPolicy", {})
     allowed_classifications = set(policy.get("allowedMergeClassifications", []))
-    if not allowed_classifications:
-        raise GateFailure("Consumer registry must declare its allowed merge classifications.")
+    definitions = policy.get("mergeClassificationDefinitions", {})
+    if not allowed_classifications or set(definitions) != allowed_classifications:
+        raise GateFailure("Consumer registry must define every allowed merge classification exactly once.")
     for consumer in consumers:
         classification = consumer.get("mergeClassification")
         if classification not in allowed_classifications:
             raise GateFailure(
                 f"PartyId consumer must have exactly one allowed mergeClassification: {consumer.get('path')}"
+            )
+        if not isinstance(consumer.get("mergeParticipant"), bool):
+            raise GateFailure(
+                f"PartyId consumer must explicitly declare mergeParticipant true/false: {consumer.get('path')}"
+            )
+        if consumer["mergeParticipant"] and classification != "PERSISTED_ACTIVE_REFERENCE":
+            raise GateFailure(
+                f"Merge participant must classify a persisted active reference: {consumer.get('path')}"
             )
     owner_paths = [str(x).replace("\\", "/").rstrip("/") for x in reg.get("ownerPaths", [])]
     found = set()
