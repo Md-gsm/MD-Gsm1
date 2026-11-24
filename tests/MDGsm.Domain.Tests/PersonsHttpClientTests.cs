@@ -87,6 +87,29 @@ public sealed class PersonsHttpClientTests
     }
 
     [Fact]
+    public async Task GetParty_SendsBearerAndReadsTheMaskedPartyContract()
+    {
+        var partyId = Guid.CreateVersion7();
+        using var http = CreateClient(request =>
+        {
+            Assert.Equal(HttpMethod.Get, request.Method);
+            Assert.Equal($"/api/v2/persons/{partyId:D}", request.RequestUri!.AbsolutePath);
+            Assert.Equal("opaque-token", request.Headers.Authorization?.Parameter);
+            Assert.Equal(string.Empty, request.RequestUri.Query);
+            return Json(HttpStatusCode.OK,
+                $"{{\"partyId\":\"{partyId:D}\",\"partyType\":\"NaturalPerson\",\"displayName\":\"علی رضایی\",\"roles\":[\"Customer\"],\"nationalIdentifier\":\"********01\",\"economicCode\":null,\"responsiblePersonName\":null,\"contacts\":[{{\"kind\":\"Mobile\",\"value\":\"0912•••1234\",\"isPrimary\":true,\"isMessagingAllowed\":false}}],\"primaryAddress\":null,\"communication\":null,\"acquaintanceSource\":null,\"createdAtUtc\":\"2026-11-24T18:00:00Z\",\"sensitiveFieldsIncluded\":false,\"workClassification\":null}}");
+        });
+        var client = new PersonsApiClient(http);
+
+        var result = await client.GetPartyAsync("opaque-token", partyId.ToString("D"));
+
+        Assert.Equal(partyId.ToString("D"), result.PartyId);
+        Assert.Equal("********01", result.NationalIdentifier);
+        Assert.Equal("0912•••1234", Assert.Single(result.Contacts).Value);
+        Assert.False(result.SensitiveFieldsIncluded);
+    }
+
+    [Fact]
     public async Task PersonsClient_ExposesOnlySafeErrorCodeAndRequestId()
     {
         using var http = CreateClient(_ => Json(HttpStatusCode.ServiceUnavailable,
