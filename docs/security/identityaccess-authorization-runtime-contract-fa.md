@@ -215,3 +215,17 @@ Endpoint بدون metadata باید در startup/contract validation fail شود
 - Recovery فقط persistence primitive دارد؛ orchestration، endpoint، ارسال ایمیل و rate-limit/attempt workflow در کد حاضر نیست. در اصلاح PR #41، Store و schema دیگر کانال mobile را نمی‌پذیرند.
 - PR #41 روی SHA `87b4f13f04b1ad7655ffd7efd4bff028fe2a21b1` شامل اصلاحات fail-closed است؛ CI آن SHA باید کامل شود و نتایج قبلی به آن منتقل نمی‌شوند.
 - `g1Authorized=false`؛ این قرارداد مجوز فعال‌سازی نیست.
+
+
+## 12. Controlled source implementation update — 2026-11-22
+
+A bounded portion of this design now has source implementation:
+- public Contracts assembly version 1.1 exposes request-scoped current principal, permission and Product Owner decision types;
+- the current principal is built only from SessionAuthenticationMiddleware-created claims, including AccountId, SessionId, credential version and database authentication timestamp;
+- IdentityAccess PostgreSQL permission evaluation checks the exact active grant and the same session's revocation, lease, account enabled and credential version in one SQL statement;
+- unknown permission keys deny; unavailable persistence returns Unavailable;
+- a PostgreSQL integration test is added for active/revoked/expired/version mismatch/disabled/inactive permission cases.
+
+This is not completion of the full 41-case acceptance plan. SQL RowScope, scope union semantics, all domain approval/threshold rules, commit-time authorization linearization with future Organization writes, export/print paths, full API negative/positive tests, protected Product Owner binding, independent review and G1 remain incomplete. No Organization runtime or permission seed is created by this update.
+
+**Current implementation boundary:** bounded session-bound principal/permission source implemented; remaining 41-case suite and cross-module runtime remain OPEN; g1Authorized=false.

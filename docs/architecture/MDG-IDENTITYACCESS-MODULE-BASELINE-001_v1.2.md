@@ -114,6 +114,26 @@ The later explicit Product Owner decision in `MDG-SECURITY-O46-BOOTSTRAP-OWNER-D
 - No fixed, guessable, shared, embedded or reusable bootstrap credential is allowed. There is no second owner-creation path. If the original owner AccountId cannot be securely recovered, privileged Product Owner operations fail closed; recovery may restore only the same AccountId.
 - Owner-policy decisions above are accepted. However, the threat review, runtime design, schema/migration reservation, deployment-principal boundary, seed/role review, implementation, PostgreSQL evidence, secret-sentinel scans, independent review and release gates remain open. No production credential, listener, migration, seed, role or feature activation is authorized by this baseline.
 
+#### Initial Product Owner profile contract (O-46 accepted)
+
+The initial Product Owner profile collected by the trusted local Setup Wizard is exactly:
+
+- `username` → existing `identity.accounts.login_name` and its established `login_name_normalized` value;
+- `display_name` → new `identity.accounts.display_name`, nullable for legacy/non-bootstrap accounts but required and non-empty for the initial bootstrap account;
+- `email` → existing `identity.accounts.email`, required and non-empty for the initial bootstrap account.
+
+No phone/mobile field is collected or required in this bootstrap flow; the existing `phone_e164` remains untouched. Email remains a contact/recovery channel and is not a login identifier. The Owner claim sets `is_bootstrap_account=true` and `must_change_password=false`; it does not create roles, permissions, sessions or business data. Email/display-name validation must use reviewed IdentityAccess validators; no additional trimming, case folding or Unicode policy is invented here.
+
+#### Fingerprint v1 owner acceptance — 2026-11-24
+
+The Product Owner has approved Fingerprint v1 as the canonical payload-fingerprint contract. The v1 envelope is domain-separated and version-tagged; it encodes InstallationId, SetupOperationId and AccountId as UUID bytes in RFC 4122 byte order; normalized username, validated display_name and validated email as strict UTF-8 length-prefixed fields; and the exact final persisted versioned/salted password-hash output together with its hasher version. SHA-256 produces the 32-byte fingerprint. Plaintext password, raw challenge, verifier digest, operator SID, private keys and transport secrets are excluded.
+
+This is approval of the algorithm and serialization contract only. Cross-language golden vectors, parser/length/overflow and Unicode edge-case tests, restart-safe preservation of the exact password-hash output, adversarial tests and independent review remain mandatory before implementation acceptance.
+
+#### Windows SID policy owner approval — 2026-11-24
+
+The Product Owner has approved the previously presented policy for handling the same Windows SID across multiple Windows/RDP logon sessions. This approval is policy-level only; implementation must encode the approved session-identity rule exactly and must not treat SID equality alone as proof that two logon sessions are the same session. The precise allow/deny rule and its logon-session identity tuple must be carried into the controlled IPC contract and executable tests before implementation is accepted. No SID enrollment, IPC implementation or service activation is authorized by this approval.
+
 ### 5.6 Roles and permissions
 
 - The accepted role vocabulary is: `super_admin`, `manager`, `receptionist`, `technician`, `warehouse`, `salesperson`, `purchaser`, `cashier`, `accountant`, `viewer`.

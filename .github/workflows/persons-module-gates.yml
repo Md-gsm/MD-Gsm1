@@ -52,7 +52,7 @@ jobs:
       - name: Test IdentityAccess username policy oracle
         run: python -m unittest scripts/ci/test_identityaccess_policy.py -v
       - name: Report exact source checksums for integrity repair
-        run: sha256sum tests/MDGsm.Domain.Tests/IdentityAccess/IdentityAccessHttpEndToEndTests.cs .github/workflows/persons-module-gates.yml
+        run: sha256sum tests/MDGsm.Domain.Tests/IdentityAccess/IdentityAccessHttpEndToEndTests.cs tests/MDGsm.Domain.Tests/Security/O20OrganizationAssignmentApprovalPostgresProofTests.cs tests/MDGsm.Domain.Tests/Security/O20OrganizationIdempotencyConcurrencyPostgresProofTests.cs tests/MDGsm.Domain.Tests/Security/IdentityAccessLiveSessionPermissionPostgresProofTests.cs tests/MDGsm.Domain.Tests/Security/IdentityAccessAuthorizationLinearizationPostgresProofTests.cs tests/MDGsm.Domain.Tests/Security/O20OutboxWorkerLeastPrivilegePostgresProofTests.cs docs/architecture/MDG-IDENTITYACCESS-ORGANIZATION-PRINCIPAL-PERMISSION-CONTRACT-001_v1.2.md docs/architecture/MDG-IDENTITYACCESS-ORGANIZATION-PRINCIPAL-PERMISSION-CONTRACT-001_v1.3.md docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v1.8.md docs/security/MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001_v1.9.md docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v1.6.md docs/security/MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001_v1.7.md docs/security/MDG-SECURITY-O20E-G1-READINESS-REVIEW-001_v2.2.md docs/security/MDG-SECURITY-O20E-G1-READINESS-REVIEW-001_v2.3.md docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v4.9.md docs/security/MDG-SECURITY-STAGE-08-REGISTER-001_v5.0.md .github/workflows/persons-module-gates.yml
       - name: Verify SHA256SUMS.txt matches tracked files
         run: python scripts/ci/verify_source_checksums.py
 
@@ -213,16 +213,57 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Run Persons PostgreSQL end-to-end integration test
+        env:
+          MDGSM_INVENTORY_HARNESS_EVIDENCE_DIR: ${{ runner.temp }}/inventory-harness-evidence
+          MDGSM_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "Category=Integration" --no-restore
       - name: Run explicit O-20 support identity and catalog proof
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20SupportIdentityPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20 runtime login mapping PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20RuntimeLoginMappingPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit O-20-F emergency lifecycle PostgreSQL proof
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20EmergencyAccessPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run explicit O-20-E Organization policy PostgreSQL proofs
         run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationPolicyPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20-E immutable Warehouse Branch history PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationRelationshipHistoryPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20-E fail-closed retention and Legal Hold PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationLegalHoldRetentionPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20-E cross-aggregate concurrency PostgreSQL proofs
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationCrossAggregateConcurrencyPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20-E maker-checker and Product Owner binding policy PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationAssignmentApprovalPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20-E local audit outbox PostgreSQL proofs
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationAuditOutboxPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20-E assignment idempotency concurrency PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationIdempotencyConcurrencyPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-21 AuditSecurity hash-chain PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~AuditSecurityHashChainPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20-E deterministic Organization lock-order PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationDeterministicLockOrderPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20-E UUIDv7 PostgreSQL round-trip proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OrganizationUuidV7PostgresRoundTripProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit O-20 worker least-privilege PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~O20OutboxWorkerLeastPrivilegePostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit IdentityAccess live-session permission PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~IdentityAccessLiveSessionPermissionPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit IdentityAccess authorization linearization PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~IdentityAccessAuthorizationLinearizationPostgresProofTests" --no-restore --logger "console;verbosity=normal"
+      - name: Run explicit IdentityAccess transaction-scoped authorization guard PostgreSQL proof
+        run: dotnet test tests/MDGsm.Domain.Tests/MDGsm.Domain.Tests.csproj --configuration Release --filter "FullyQualifiedName~IdentityAccessTransactionScopedAuthorizationGuardPostgresProofTests" --no-restore --logger "console;verbosity=normal"
       - name: Run isolated Accounting AP-03/AP-04 PostgreSQL 18 proof
         shell: bash
         run: bash scripts/ci/test_accounting_postgres_ap03_ap04.sh
+      - name: Upload Inventory PostgreSQL harness evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: inventory-postgres-harness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/inventory-harness-evidence/*.json
+            ${{ runner.temp }}/inventory-harness-evidence/*.sha256
+          if-no-files-found: warn
+          retention-days: 14
   persons-postgres-windows-migrations:
     name: persons-postgres-windows-migrations
     runs-on: windows-latest

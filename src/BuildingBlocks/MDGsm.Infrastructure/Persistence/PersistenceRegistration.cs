@@ -1,5 +1,6 @@
 using MDGsm.Application.Persons;
 using MDGsm.IdentityAccess.Application;
+using MDGsm.IdentityAccess.Contracts;
 using MDGsm.Infrastructure.IdentityAccess;
 using MDGsm.Infrastructure.Persons;
 using MDGsm.Persons.Contracts;
@@ -14,7 +15,12 @@ public static class PersistenceRegistration
  public static IServiceCollection AddMdGsmPersistence(this IServiceCollection services,IConfiguration configuration)
  {
   var cs=configuration.GetConnectionString(ConnectionStringName);
-  if(string.IsNullOrWhiteSpace(cs))return services;
+  if(string.IsNullOrWhiteSpace(cs))
+  {
+   services.AddScoped<IRequestAuthorizationStore,UnavailableRequestAuthorizationStore>();
+   services.AddScoped<IIdentityAccessAuthorizationContract,IdentityAccessAuthorizationContractAdapter>();
+   return services;
+  }
   services.AddDbContext<MdGsmDbContext>(o=>o.UseNpgsql(cs,n=>n.EnableRetryOnFailure(maxRetryCount:3)));
   services.AddSingleton(_=>NpgsqlDataSource.Create(cs));
   services.AddScoped<IPartyRepository,PostgresPartyRepository>();
@@ -29,6 +35,8 @@ public static class PersistenceRegistration
   services.AddScoped<ISessionIdentityResolver,PostgresSessionIdentityResolver>();
   services.AddScoped<ILoginAttemptStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<IRolePermissionStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
+  services.AddScoped<IRequestAuthorizationStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
+  services.AddScoped<IIdentityAccessAuthorizationContract,IdentityAccessAuthorizationContractAdapter>();
   services.AddScoped<IAuditWriter>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<ISystemPolicyStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<IDatabaseClock>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());

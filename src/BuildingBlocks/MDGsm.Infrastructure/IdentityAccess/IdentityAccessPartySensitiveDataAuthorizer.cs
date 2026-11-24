@@ -1,15 +1,15 @@
 using MDGsm.Application.Persons;
-using MDGsm.IdentityAccess.Application;
-using MDGsm.IdentityAccess.Domain;
+using MDGsm.IdentityAccess.Contracts;
 
 namespace MDGsm.Infrastructure.IdentityAccess;
 
 /// <summary>
-/// Resolves the sensitive-data permission against the live IdentityAccess role/permission store.
-/// The actor identifier is accepted only from a trusted server-side authentication boundary;
-/// it must never be copied from a request body, query string, or other client-controlled field.
+/// Resolves sensitive-data permission through the public IdentityAccess contract.
+/// The actor identifier is accepted only as a consistency check against the validated
+/// server-side principal; it is never used as the authorization identity.
 /// </summary>
-public sealed class IdentityAccessPartySensitiveDataAuthorizer(IRolePermissionStore permissions)
+public sealed class IdentityAccessPartySensitiveDataAuthorizer(
+    IIdentityAccessAuthorizationContract authorization)
     : IPartySensitiveDataAuthorizer
 {
     public const string PermissionKey = "persons.sensitive.read";
@@ -19,10 +19,26 @@ public sealed class IdentityAccessPartySensitiveDataAuthorizer(IRolePermissionSt
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!Guid.TryParseExact(actorId, "D", out var value) || value == Guid.Empty)
+        if (!Guid.TryParseExact(actorId, "D", out var requestedAccountId)
+            || requestedAccountId == Guid.Empty)
             return false;
 
-        return await permissions.HasPermissionAsync(
-            AccountId.From(value), PermissionKey, cancellationToken);
+        var principal = await authorization.ResolveCurrentPrincipalAsync(cancellationToken);
+        if (!principal.IsAuthenticated
+            || principal.AccountId != requestedAccountId
+            || principal.ContractVersion != ModuleContractVersion.Current)
+            return false;
+
+        var decision = await authorization.EvaluateCurrentPermissionAsync(
+            PermissionKey, cancellationToken);
+
+        // Bind the decision to the exact principal snapshot used for this request.
+        // An Allowed result for another account/session/version is never accepted.
+        return decision.IsAllowed
+            && decision.ContractVersion == ModuleContractVersion.Current
+            && decision.PermissionKey == PermissionKey
+            && decision.PrincipalAccountId == requestedAccountId
+            && decision.PrincipalSessionId == principal.SessionId
+            && decision.PrincipalVersion == principal.PrincipalVersion;
     }
 }

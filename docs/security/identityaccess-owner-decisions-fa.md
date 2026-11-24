@@ -1,13 +1,13 @@
 # تصمیم‌های مالک محصول برای IdentityAccess
 تاریخ آغاز: 2026-11-04 | آخرین تجمیع تصمیم‌ها: 2026-11-07
 
-> **خلاصه معتبر جاری:** ورود فقط username/password؛ lockout پنج شکست در 15 دقیقه و قفل 15 دقیقه؛ Recovery ایمیل‌تنها با OTP ده‌دقیقه‌ای (MFA نیست) و SMS/offline code خارج از دامنه اجباری این فاز؛ Session تا بازبودن برنامه با heartbeat=30s و lease=180s و سقف 5 حساب فعال متمایز؛ هیچ absolute TTL و هیچ سقف 2 نشست/account تصویب نشده است. ماتریس permission تصویب شده ولی seed/runtime نیست. روش امن provisioning حساب مدیر اولیه هنوز باز است؛ تصمیم محصول ایجاد حساب در نصب و اجبار تغییر username/password/profile در اولین ورود است، اما credential اولیه نباید ثابت/قابل‌حدس یا در source/installer ذخیره شود. هر متن قدیمی‌تر خلاف این خلاصه، سابقه تاریخی و superseded است. g1Authorized=false تا مجوز رسمی G1.
+> **خلاصه معتبر جاری (بازنگری 2026-11-23):** ورود فقط username/password؛ lockout پنج شکست در 15 دقیقه و قفل 15 دقیقه؛ Recovery ایمیل‌تنها با OTP ده‌دقیقه‌ای (MFA نیست) و SMS/offline code خارج از دامنه اجباری این فاز؛ Session تا بازبودن برنامه با heartbeat=30s و lease=180s و سقف 5 حساب فعال متمایز؛ هیچ absolute TTL و هیچ سقف 2 نشست/account تصویب نشده است. ماتریس permission تصویب شده ولی seed/runtime نیست. **Product Owner فقط یک بار از Wizard محلی روی سیستم‌عامل میزبان سرور مرکزی ساخته می‌شود؛ هیچ مسیر جایگزینی برای ایجاد/انتقال/re-enroll مالک وجود ندارد. Wizard رمز و پروفایل نهایی را می‌گیرد و تغییر اجباری پس از اولین Login مالک منتفی است.** trust boundary مورد تأیید شامل Windows Named Pipe با ACL محدود SID محلی، مرز اعتماد OS Administrator/SYSTEM و PostgreSQL deployment/database-owner، challenge یک‌بارمصرف با CSPRNG حداقل 256 بیت و عمر حداکثر 30 دقیقه و InstallationId از نوع UUIDv7 است. پیاده‌سازی، threat review، تست‌ها و Gateهای release همچنان بازند. هر متن تاریخی خلاف این خلاصه superseded است. g1Authorized=false تا مجوز رسمی G1.
 
 - ورود فقط username/password؛ email/mobile فقط تماس/بازیابی.
 - قرارداد پیشنهادی username: NFC، بدون trim خاموش، 3..64 scalar، Unicode L*/Nd، حفظ ارقام هر script، Latin case-fold نسخه‌دار، رد mixed scripts؛ oracle Python جایگزین تست .NET نیست.
 - کاربر رمز خودش را با رمز فعلی تغییر می‌دهد؛ reset دیگران فقط مدیر؛ reset اجبار تغییر در ورود بعدی دارد. هر دو همه نشست‌های حساب را revoke می‌کنند.
 - password hasher پشتیبانی‌شده و versioned؛ plaintext/reversible/custom crypto ممنوع.
-- نصب باید حساب مدیر اولیه ایجاد کند و اولین ورود تغییر username/password/profile را اجباری کند. عبارت admin/admin در ADR-0013 به‌عنوان روش اولیه ثبت شده، اما پروتکل امن تولید/تحویل credential هنوز حل نشده است؛ credential ثابت یا خام در source/installer/config/migration/log/telemetry ممنوع و تا حل provisioning، network listener و عملیات عادی fail-closed است.
+- Product Owner اولیه فقط از Wizard محلی روی سیستم‌عامل میزبان سرور مرکزی ایجاد می‌شود؛ هیچ API، کلاینت، پنل مدیریتی، CLI، script، migration، seed، پشتیبانی یا مسیر مستقیم عادی DB مجاز به ایجاد/جایگزینی/انتقال Product Owner نیست. Wizard username/password/profile نهایی را دریافت و PasswordPolicy را اعمال می‌کند؛ مالک بعد از اولین Login مجبور به تغییر username/password/profile نیست. رمز ثابت/پیش‌فرض/مشترک یا خام در source/installer/config/migration/log/telemetry ممنوع است. trust boundary و challenge پذیرفته‌شده در تصمیم O-46 ثبت شده، اما threat review، پیاده‌سازی و آزمون‌ها بازند؛ تا عبور از gateها listener و عملیات عادی fail-closed است.
 - نشست تا بازبودن برنامه؛ سقف آغازین 5 حساب فعال متمایز قابل تنظیم با permission اختصاصی و audit؛ heartbeat/lease مصوب 30s/180s؛ PostgreSQL authoritative و بدون cache محلی.
 - 5 شکست در 15 دقیقه => قفل 15 دقیقه؛ source rate limit مکمل؛ پاسخ login عمومی و بدون account enumeration.
 - ده نقش: super_admin, manager, receptionist, technician, warehouse, salesperson, purchaser, cashier, accountant, viewer؛ چندنقشی؛ نقش‌ها user خودکار نمی‌سازند.
@@ -62,7 +62,7 @@
 - SMS حذف نشده است؛ جایگاه/adapter/configuration آن برای توسعه آینده به‌صورت placeholder خالی و غیرفعال باقی می‌ماند. در این فاز هیچ provider، SDK، credential یا ارسال SMS فعال نمی‌شود. خالی‌بودن provider مانع Recovery ایمیلی فعلی نیست.
 - فعال‌سازی آینده SMS باید بدون تغییر قرارداد Recovery ایمیلی و از طریق adapter/provider قابل‌تعویض انجام شود؛ انتخاب provider و secretها در فاز آینده.
 - هیچ رمز ثابت، رمز مشترک، master password، backdoor یا رمز قابل بازیابی ذخیره‌شده مجاز نیست. OTP ایمیل تصادفی، کوتاه‌عمر، یک‌بارمصرف، digest-only در DB، rate-limited و secret-free در log است.
-- bootstrap اولیه `admin/admin` فقط یک‌باره و local-only طبق تصمیم bootstrap قبلی باقی می‌ماند؛ این credential ثابت دائمی یا روش Recovery نیست و باید پیش از هر عملیات عادی/شبکه‌ای تغییر کند.
+- **متن تاریخی superseded:** عبارت قدیمی `admin/admin` و الزام تغییر آن پیش از عملیات عادی/شبکه‌ای دیگر معتبر نیست. تصمیم نهایی O-46 هرگونه credential ثابت/default را ممنوع می‌کند؛ Wizard رمز نهایی مالک را دریافت می‌کند و اولین Login مالک بدون اجبار تغییر رمز است.
 
 ## مسیر تصویب ماتریس مجوزها
 
@@ -83,3 +83,8 @@
 - ایمیل‌تنها MFA نیست؛ ریسک mailbox compromise باید مستقل review شود. SMS در این فاز placeholder غیرفعال است؛ هیچ provider/SDK/credential/send/test وجود ندارد. offline code عامل اجباری یا bypass نیست.
 - سیاست نشست: برنامه باز + heartbeat/lease؛ سقف آغازین 5 حساب فعال متمایز قابل تنظیم؛ 30s/180s فقط liveness است؛ absolute TTL یا سقف 2 نشست/account تصویب نشده.
 - retention امنیتی، مالک canonical داده‌های Branch/Warehouse/assignment، threshold مالی و review مستقل هنوز بازند. `g1Authorized=false`.
+
+
+## اصلاح نهایی Bootstrap/Product Owner — 2026-11-23
+
+تصمیم رسمی O-46 Bootstrap Owner Decision v0.1 و successor خط‌مبنای IdentityAccess v1.1 مرجع جاری مسیر ایجاد مالک هستند. هر عبارت قدیمی این سند دربارهٔ admin/admin، تغییر اجباری credentials مالک پس از ورود اول یا امکان provisioning از مسیری غیر از Wizard محلی، superseded است. این اصلاح فقط حساب Product Owner اولیه را پوشش می‌دهد؛ قواعد تغییر/reset رمز کاربران عادی، PasswordPolicy، session revocation و credential version بدون تغییر می‌مانند.

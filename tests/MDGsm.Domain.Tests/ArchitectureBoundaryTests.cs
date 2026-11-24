@@ -19,6 +19,8 @@ public sealed class ArchitectureBoundaryTests
             "src/BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj",
             "..\\MDGsm.Application\\MDGsm.Application.csproj",
             "..\\..\\Modules\\IdentityAccess\\Application\\MDGsm.IdentityAccess.Application.csproj",
+            "..\\..\\Modules\\AuditSecurity\\Application\\MDGsm.AuditSecurity.Application.csproj",
+            "..\\..\\Modules\\AuditSecurity\\Contracts\\MDGsm.AuditSecurity.Contracts.csproj",
             "..\\..\\Modules\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj");
         AssertReferences(root, "src/BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj");
     }
@@ -38,6 +40,12 @@ public sealed class ArchitectureBoundaryTests
             "..\\..\\Modules\\Finance\\Contracts\\MDGsm.Finance.Contracts.csproj",
             "..\\..\\Modules\\Finance\\MDGsm.Finance.csproj");
         AssertReferences(root, "src/Modules/Accounting/Domain/MDGsm.Accounting.Domain.csproj");
+        AssertReferences(root, "src/Modules/AuditSecurity/Domain/MDGsm.AuditSecurity.Domain.csproj");
+        AssertReferences(
+            root,
+            "src/Modules/AuditSecurity/Application/MDGsm.AuditSecurity.Application.csproj",
+            "..\\Domain\\MDGsm.AuditSecurity.Domain.csproj",
+            "..\\Contracts\\MDGsm.AuditSecurity.Contracts.csproj");
         AssertReferences(
             root,
             "src/Modules/Accounting/Application/MDGsm.Accounting.Application.csproj",
@@ -54,7 +62,7 @@ public sealed class ArchitectureBoundaryTests
     {
         var root = FindSolutionRoot();
         var solution = File.ReadAllText(Path.Combine(root, "MDGsm.sln"));
-        foreach (var module in new[] { "Persons", "IdentityAccess", "RepairOperations", "Finance", "Accounting" })
+        foreach (var module in new[] { "Persons", "IdentityAccess", "RepairOperations", "Finance", "Accounting", "AuditSecurity" })
         {
             var relative = $"src/Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj";
             var project = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
@@ -66,7 +74,7 @@ public sealed class ArchitectureBoundaryTests
 
             var versionMarker = Path.Combine(Path.GetDirectoryName(project)!, "ModuleContractVersion.cs");
             Assert.True(File.Exists(versionMarker), $"Missing contract version marker: {versionMarker}");
-            var expectedVersion = module == "Finance" ? "1.1" : "1.0";
+            var expectedVersion = module switch { "Finance" => "1.1", "IdentityAccess" => "1.2", _ => "1.0" };
             var expectedMarker = "Current = " + (char)34 + expectedVersion + (char)34;
             Assert.Contains(expectedMarker, File.ReadAllText(versionMarker));
         }

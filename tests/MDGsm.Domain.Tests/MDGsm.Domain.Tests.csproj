@@ -21,6 +21,9 @@
     <ProjectReference Include="..\..\src\Modules\IdentityAccess\Domain\MDGsm.IdentityAccess.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\IdentityAccess\Application\MDGsm.IdentityAccess.Application.csproj" />
     <ProjectReference Include="..\..\src\Modules\IdentityAccess\Contracts\MDGsm.IdentityAccess.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Modules\AuditSecurity\Domain\MDGsm.AuditSecurity.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\AuditSecurity\Application\MDGsm.AuditSecurity.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\AuditSecurity\Contracts\MDGsm.AuditSecurity.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Modules\Finance\MDGsm.Finance.csproj" />
     <ProjectReference Include="..\..\src\Modules\Accounting\Contracts\MDGsm.Accounting.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Modules\Accounting\Domain\MDGsm.Accounting.Domain.csproj" />

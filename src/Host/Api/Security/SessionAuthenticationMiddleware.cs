@@ -71,6 +71,12 @@ public sealed class SessionAuthenticationMiddleware(RequestDelegate next)
             return;
         }
 
+        if (identity.SessionId == Guid.Empty || identity.CredentialVersion <= 0)
+        {
+            await Unauthorized(context);
+            return;
+        }
+
         var policy = (await policies.GetSessionPolicyAsync(context.RequestAborted)).Validate();
         var renewed = await sessions.TryHeartbeatAsync(
             digest, identity.CredentialVersion, now, now.Add(policy.LeaseDuration), context.RequestAborted);
@@ -84,7 +90,10 @@ public sealed class SessionAuthenticationMiddleware(RequestDelegate next)
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, accountId),
-            new Claim("sub", accountId)
+            new Claim("sub", accountId),
+            new Claim("mdgsm:session_id", identity.SessionId.ToString("D")),
+            new Claim("mdgsm:credential_version", identity.CredentialVersion.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+            new Claim("mdgsm:authenticated_at_utc", now.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture))
         };
         context.User = new ClaimsPrincipal(new ClaimsIdentity(claims, SessionAuthenticationType));
         await next(context);

@@ -53,6 +53,25 @@ public sealed class IdentityAccessHardeningTests
         Assert.Throws<InvalidOperationException>(() => new HmacPrivacyDigest(Config(new byte[16])));
     }
 
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("", false)]
+    [InlineData("12345678901", false)]
+    [InlineData("123456789012", true)]
+    [InlineData("12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", true)]
+    [InlineData("123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789", false)]
+    public void Password_policy_enforces_the_accepted_length_boundary(string? password, bool expected) =>
+        Assert.Equal(expected, PasswordPolicy.IsValid(password));
+
+    [Fact]
+    public void Password_change_rejects_reuse_of_current_password() =>
+        Assert.False(PasswordPolicy.IsValidChange("Same-Password-2026!", "Same-Password-2026!"));
+
+    [Fact]
+    public void Password_change_accepts_a_different_password_within_the_accepted_length_boundary() =>
+        Assert.True(PasswordPolicy.IsValidChange("Current-Password-2026!", "New-Password-2026!"));
+
     private static IConfiguration Config(byte[] key) => new ConfigurationBuilder().AddInMemoryCollection(
         new Dictionary<string, string?> { [HmacPrivacyDigest.ConfigurationKey] = Convert.ToBase64String(key) }).Build();
 

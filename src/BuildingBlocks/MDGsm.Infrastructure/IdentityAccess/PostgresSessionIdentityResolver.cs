@@ -27,12 +27,12 @@ public sealed class PostgresSessionIdentityResolver(MdGsmDbContext db) : ISessio
                 && session.LeaseExpiresAtUtc > now
                 && session.CredentialVersionAtIssue == account.CredentialVersion
                 && account.IsEnabled
-            select new { account.AccountId, account.CredentialVersion, account.MustChangePassword })
+            select new { session.SessionId, account.AccountId, account.CredentialVersion, account.MustChangePassword })
             .SingleOrDefaultAsync(ct);
 
         return match is null
             ? null
             : new ValidatedSessionIdentity(
-                AccountId.From(match.AccountId), match.CredentialVersion, match.MustChangePassword);
+                AccountId.From(match.AccountId), match.CredentialVersion, match.MustChangePassword, match.SessionId);
     }
 }

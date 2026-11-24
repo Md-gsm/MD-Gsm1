@@ -252,6 +252,9 @@ class PersonsGatePolicyTests(unittest.TestCase):
         self.assertIn("SetAccessRuleProtection", script)
         self.assertIn("superpassword=$databasePassword", script)
         self.assertIn("servicepassword=$servicePassword", script)
+        self.assertIn("-TimeoutSec 240", script)
+        self.assertIn("WaitForExit(900000)", script)
+        self.assertIn("Kill($true)", script)
         self.assertNotIn("'--superpassword'", script)
         self.assertNotIn("'--servicepassword'", script)
         with tempfile.TemporaryDirectory() as tmp:
