@@ -5,7 +5,7 @@
 | Document ID | MDG-SECURITY-O20-O21-OWNER-PLATFORM-DECISION-PACKET-001 |
 | Version / Date | 0.7 / 2026-11-24 |
 | Supersedes | v0.6, only for the audit-delivery-worker identity binding |
-| Status | OWNER POLICY DECISIONS ACCEPTED; AUDIT DELIVERY WORKER IDENTITY BINDING SELECTED; PRODUCTION PROVISIONING AND INDEPENDENT GATES OPEN |
+| Status | OWNER POLICY DECISIONS ACCEPTED; AUDIT DELIVERY WORKER TECHNICALLY SELECTED; OWNER RATIFICATION REQUIRED BEFORE PROVISIONING; PRODUCTION PROVISIONING AND INDEPENDENT GATES OPEN |
 | Governing architecture | MDG-ARCH-MASTER-001 v3.0.4 |
 | Repository / Branch | Md-gsm/MD-Gsm1 / security/o20-o21-final-closure |
 | PR | #92 Draft / open / unmerged |
@@ -219,9 +219,9 @@ This packet creates no production Product Owner binding, schema/DDL/migration, p
 **END — MDG-SECURITY-O20-O21-OWNER-PLATFORM-DECISION-PACKET-001 v0.6**
 
 
-## 10. Audit delivery worker identity binding — Product Owner direction, 2026-11-24
+## 10. Audit delivery worker identity binding — WG-0 technical selection, 2026-11-24
 
-This addendum resolves the identity-name and trust-boundary selection for the previously approved conceptual worker `audit-delivery-worker`. It does not provision or authorize a live PostgreSQL role, credential, grant, worker host, API listener or production delivery activation.
+This addendum records the WG-0 technical selection of a concrete identity name and trust boundary for the previously approved conceptual worker `audit-delivery-worker`. Owner ratification is required before any live PostgreSQL role, credential, grant, worker host, API listener or production delivery activation is provisioned.
 
 ### 10.1 Identity selection
 
@@ -253,4 +253,4 @@ The worker has its own independently revocable service credential/certificate, n
 
 This identity decision does not approve a specific number of source modules, Outbox schema migration, retry schedule, operational alert threshold, API hosting topology or the separate AuditSecurity ingestion-service database principal. Those require their own technical and exact-head acceptance. Existing disposable worker tests are supporting least-privilege evidence only; they do not constitute production ACL acceptance.
 
-**Decision effect:** the logical identity and proposed PostgreSQL LOGIN/ACL names are selected and no longer unresolved. Provisioning, credentials, grants, deployment, live API delivery, AuditSecurity service DB identity, O20 closure, O21 closure, Organization G1 and Go-Live remain separate gates.
+**Decision effect:** the WG-0 technical selection of the logical identity and proposed PostgreSQL LOGIN/ACL names is recorded. Owner ratification remains required before provisioning. Credentials, grants, deployment, live API delivery, AuditSecurity service DB identity, O20 closure, O21 closure, Organization G1 and Go-Live remain separate gates.

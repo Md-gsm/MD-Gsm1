@@ -5,7 +5,7 @@
 | Document ID | MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001 |
 | Version / Date | 2.0 / 2026-11-24 |
 | Supersedes | v1.9, for the worker identity decision and adapter status |
-| Status | AUDIT DELIVERY WORKER IDENTITY SELECTED; POSTGRESQL ADAPTERS ADDED; PRODUCTION ROLE / GRANT / SERVICE STILL NOT PROVISIONED |
+| Status | WG-0 AUDIT DELIVERY WORKER IDENTITY SELECTION RECORDED — OWNER RATIFICATION OPEN; POSTGRESQL ADAPTERS ADDED; PRODUCTION ROLE / GRANT / SERVICE NOT PROVISIONED |
 | Related evidence | O20OutboxWorkerLeastPrivilegePostgresProofTests |
 
 ## 1. Accepted baseline
@@ -58,9 +58,9 @@ Before provisioning:
 **END — MDG-SECURITY-O20-DB-PRIVILEGE-AUDIT-001 v2.0**
 
 
-## 5. Product Owner identity resolution and adapter implementation update — 2026-11-24
+## 5. WG-0 worker identity selection and adapter implementation update — 2026-11-24
 
-The previously open identity-name decision is resolved by selecting the previously approved conceptual worker identity `audit-delivery-worker`, with PostgreSQL LOGIN `audit_delivery_worker` and NOLOGIN ACL role `mdgsm_audit_delivery_worker`. This is a sixth logical operational identity in addition to the original five N.6 categories; it does not replace or broaden `mdgsm_runtime`. The required sole membership edge is SET-only (`ADMIN FALSE`, `INHERIT FALSE`, `SET TRUE`).
+WG-0 records a technical selection for the previously approved conceptual worker identity `audit-delivery-worker`, with proposed PostgreSQL LOGIN `audit_delivery_worker` and NOLOGIN ACL role `mdgsm_audit_delivery_worker`. This is a sixth logical operational identity in addition to the original five N.6 categories; it does not replace or broaden `mdgsm_runtime`. Owner ratification is required before provisioning. The required sole membership edge is SET-only (`ADMIN FALSE`, `INHERIT FALSE`, `SET TRUE`).
 
 ### 5.1 Exact capability boundary
 
@@ -83,4 +83,4 @@ The adapters do not create schema, SQL, roles, membership, grants, credential, A
 
 The pre-existing disposable worker ACL proof remains test-only evidence. It does not prove that the real deployed worker's grants, pool identity, certificate, API endpoint or operational lifecycle have passed acceptance.
 
-**Disposition:** identity naming and adapter source implementation are resolved/added; CI evidence is pending for the new adapter tests; production role/credential/grant, source-module Outbox adoption, authenticated deployed API, AuditSecurity service DB identity, Platform key custody, WORM anchor and independent exact-SHA review remain OPEN. O20/O21 are not closed.
+**Disposition:** WG-0 identity naming selection and adapter source implementation are recorded/added; owner ratification and CI evidence are required before production role/credential/grant, source-module Outbox adoption, authenticated deployed API, AuditSecurity service DB identity, Platform key custody, WORM anchor and independent exact-SHA review remain OPEN. O20/O21 are not closed.

@@ -5,7 +5,7 @@
 | Document ID | MDG-SECURITY-O20-DB-ROLE-OBJECT-MATRIX-001 |
 | Version / Date | 1.9 / 2026-11-24 |
 | Supersedes | v1.8, only for the additive audit-delivery-worker identity binding |
-| Status | **BOOTSTRAP PRINCIPAL PAIR AND AUDIT DELIVERY WORKER BINDING OWNER-ACCEPTED; NO PRODUCTION ROLE / GRANT PROVISIONED; O-20 OPEN** |
+| Status | **BOOTSTRAP PRINCIPAL PAIR OWNER-ACCEPTED; AUDIT DELIVERY WORKER TECHNICALLY SELECTED — OWNER RATIFICATION REQUIRED; NO PRODUCTION ROLE / GRANT PROVISIONED; O-20 OPEN** |
 | Owner decision | MDG-SECURITY-O46-BOOTSTRAP-DATABASE-PRINCIPAL-DECISION-001 v0.1 |
 | Related design | MDG-SECURITY-O46-BOOTSTRAP-DATABASE-PRINCIPAL-DESIGN-001 v0.1 |
 | Repository / PR | Md-gsm/MD-Gsm1 / PR #92 Draft |
@@ -14,7 +14,7 @@
 
 This successor records the Product Owner's acceptance of two narrowly scoped, pre-activation PostgreSQL principals for the one-time initial Product Owner claim. It reconciles their classification with the O-20 five-identity model.
 
-The original five N.6 operational categories remain unchanged. Additive Product Owner direction on 2026-11-24 selects a sixth logical operational identity, `audit-delivery-worker`, with PostgreSQL LOGIN `audit_delivery_worker` and NOLOGIN ACL role `mdgsm_audit_delivery_worker`. The accepted bootstrap executor remains a temporary technical capability outside the logical operational set; it is still a real PostgreSQL LOGIN and must be visible in the cluster/database role inventory. The function-owner is a NOLOGIN object/function owner, not an application identity.
+The original five N.6 operational categories remain unchanged. WG-0 technical selection on 2026-11-24 proposes a sixth logical operational identity, `audit-delivery-worker`, with PostgreSQL LOGIN `audit_delivery_worker` and NOLOGIN ACL role `mdgsm_audit_delivery_worker`. The accepted bootstrap executor remains a temporary technical capability outside the logical operational set; it is still a real PostgreSQL LOGIN and must be visible in the cluster/database role inventory. The function-owner is a NOLOGIN object/function owner, not an application identity.
 
 This document does not replace the O-20 privilege audit, production deployment procedures, technical module-owner approval, independent review, WG-0 migration reservation or release gates. The v1.7 outbox-worker material remains a test-only candidate and is unaffected by this bootstrap decision.
 
@@ -27,7 +27,7 @@ This document does not replace the O-20 privilege audit, production deployment p
 | backup_operator | `backup_operator` — not provisioned except approved ephemeral O20-D fixture | Isolated backup/restore under its separate approval |
 | reporting_ro | `reporting_ro` — not provisioned | Deny until RowScope/view contract and proof |
 | emergency_operator | `emergency_operator` — not provisioned | Deny until O20-F lifecycle and exact capabilities are independently proven |
-| audit_delivery_worker | `audit_delivery_worker` LOGIN → `mdgsm_audit_delivery_worker` NOLOGIN | Outbound source-Outbox delivery and receipt/quarantine/retry metadata only; not provisioned |
+| audit_delivery_worker | `audit_delivery_worker` LOGIN → `mdgsm_audit_delivery_worker` NOLOGIN | Outbound source-Outbox delivery and receipt/quarantine/retry metadata only; WG-0 selection pending owner ratification; not provisioned |
 
 `mdgsm_schema_owner` remains a separate NOLOGIN object-owner role, not a sixth N.6 application identity. Its current purpose and ownership graph are unchanged by this successor.
 
@@ -124,7 +124,7 @@ Existing O20-G disposable evidence does not cover either new role and cannot be 
 ## 6. Current disposition
 
 - Original N.6 five operational identities: unchanged.
-- Additive sixth logical identity `audit-delivery-worker` and its proposed LOGIN/ACL names: **OWNER-ACCEPTED BINDING; NOT PROVISIONED**.
+- Additive sixth logical identity `audit-delivery-worker` and its proposed LOGIN/ACL names: **WG-0 TECHNICAL SELECTION; OWNER RATIFICATION REQUIRED; NOT PROVISIONED**.
 - Bootstrap executor + function-owner classification: **OWNER-ACCEPTED CONSTRAINT**.
 - Role creation, secrets, grants, memberships, schema, function and migration: **NOT CREATED / NOT AUTHORIZED**.
 - DDL owner/deployment pathway and WG-0 migration reservation: **OPEN**.
