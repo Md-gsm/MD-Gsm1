@@ -81,6 +81,42 @@ public sealed class PersonsEndToEndTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task Quick_registration_candidate_disclosure_is_audited_even_when_the_business_transaction_rolls_back()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        const string mobile = "09125550129";
+        var first = await scope.Repository.AddNaturalAsync(
+            NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+        var differentName = NewNatural(mobile, NewNationalId()) with
+        {
+            GivenName = "سارا",
+            FamilyName = "محمدی"
+        };
+
+        var result = await scope.Repository.QuickRegisterNaturalAsync(
+            differentName, Actor, Guid.CreateVersion7(), forceNew: false,
+            selectedPartyId: null, scope.Transaction, default);
+
+        Assert.Equal(PartyQuickRegistrationOutcome.SelectionRequired, result.Outcome);
+        Assert.Contains(result.Candidates, candidate => candidate.PartyId == first.PartyId);
+        await scope.RollbackTransactionAsync();
+
+        var auditConnectionString = new NpgsqlConnectionStringBuilder(scope.DataSource.ConnectionString)
+        {
+            Pooling = false
+        }.ConnectionString;
+        await using var auditConnection = new NpgsqlConnection(auditConnectionString);
+        await auditConnection.OpenAsync();
+        await using var auditCommand = new NpgsqlCommand(
+            "SELECT count(*) FROM persons_access_audit WHERE party_id = @party AND actor = @actor AND action = 'search' AND sensitive_included = false;",
+            auditConnection);
+        auditCommand.Parameters.AddWithValue("party", Guid.Parse(first.PartyId));
+        auditCommand.Parameters.AddWithValue("actor", Actor);
+        Assert.Equal(1L, (long)(await auditCommand.ExecuteScalarAsync())!);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task Quick_registration_operation_key_cannot_be_replayed_by_a_different_actor()
     {
         await using var scope = await TestScope.OpenAsync();
