@@ -61,6 +61,7 @@ public sealed class ArchitectureBoundaryTests
     {
         var root = FindSolutionRoot();
         var solution = File.ReadAllText(Path.Combine(root, "MDGsm.sln"));
+        Assert.Contains("src\\Host\\Client\\MDGsm.Host.Client.csproj", solution);
         foreach (var module in new[] { "Persons", "IdentityAccess", "RepairOperations", "Finance", "Accounting" })
         {
             var relative = $"src/Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj";
