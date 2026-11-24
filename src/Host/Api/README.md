@@ -6,10 +6,10 @@ The API host is the server-side boundary for persistence, database connections, 
 
 ## Protected Persons request boundary
 
-- Requests under `/api/v1/persons` require a single opaque Bearer token in the Authorization header.
+- Requests under `/api/v2/persons` require a single opaque Bearer token in the Authorization header.
 - The host hashes the token and resolves its digest against PostgreSQL on every request. Resolution requires a non-revoked, unexpired session, an enabled account, and matching current credential version.
 - A successful request renews the server-side lease and installs the account ID as an authenticated server principal. Client-provided account/actor IDs are never read.
-- The Persons endpoint requires the live `persons.read` permission and obtains its audit actor only from `IAuthenticatedActorContext`; sensitive fields are separately authorized through the live `persons.sensitive.read` permission store.
+- The protected `GET /api/v2/persons/{partyId}` endpoint requires `persons.read`; the audit actor comes only from `IAuthenticatedActorContext`. Sensitive fields are separately authorized through live `persons.sensitive.read` permission checks.\n- PR #96 (Draft, not merged) adds canonical `POST /api/v2/persons` and `POST /api/v2/persons/legal` routes. Both call the transactional duplicate-resolution workflows, require `persons.create` and `persons.read`, require `Idempotency-Key`, and remain disabled unless the server-side `Persons:WriteApiEnabled` setting is explicitly enabled. There is no direct-create HTTP bypass.
 - Invalid/missing sessions return 401; unavailable session infrastructure returns 503; persistence/permission failures do not fall back to allow.
 ## IdentityAccess HTTP login and forced password change
 
