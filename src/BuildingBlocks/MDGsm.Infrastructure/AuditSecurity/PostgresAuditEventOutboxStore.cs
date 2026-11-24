@@ -41,6 +41,9 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
             throw new ArgumentException("Outbox enqueue requires the caller's active Npgsql connection and transaction.");
 
         var normalized = AuditEventSubmissionCanonicalizer.NormalizeAndValidate(submission);
+        if (normalized.Metadata.Count != 0)
+            throw new AuditEventOutboxConflictException(
+                "Audit metadata is disabled until a reviewed event-type allow-list is published.");
         var digest = AuditEventSubmissionCanonicalizer.ComputeIntentDigest(normalized);
         var metadataJson = JsonSerializer.Serialize(normalized.Metadata);
 

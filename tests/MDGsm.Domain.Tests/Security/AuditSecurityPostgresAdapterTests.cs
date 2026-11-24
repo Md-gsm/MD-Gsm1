@@ -50,12 +50,35 @@ public sealed class AuditSecurityPostgresAdapterTests
             var streamId = Guid.NewGuid();
             var firstIntent = CreateIntent(streamId, Guid.NewGuid(), "audit.adapter.first");
 
+            // A partially staged event + head update must both roll back when the transaction is disposed.
+            var rollbackStream = Guid.NewGuid();
+            await using (var staged = await auditStore.BeginAppendTransactionAsync(rollbackStream, CancellationToken.None))
+            {
+                var state = await staged.LockStreamHeadAsync(CancellationToken.None);
+                var stagedIntent = CreateIntent(rollbackStream, Guid.NewGuid(), "audit.adapter.rollback");
+                var stagedRecord = AuditEventCanonicalizer.CreateRecord(
+                    stagedIntent, 1, state.DatabaseRecordedAtUtc, state.Head.HeadHash.Span);
+                await staged.InsertEventAsync(stagedRecord, CancellationToken.None);
+                await staged.AdvanceStreamHeadAsync(
+                    rollbackStream, 1, stagedRecord.EventHash, CancellationToken.None);
+                // Deliberately omit CommitAsync.
+            }
+            var rolledBack = await auditStore.ReadSnapshotAsync(rollbackStream, CancellationToken.None);
+            Assert.Empty(rolledBack.Events);
+            Assert.Equal(0, rolledBack.Head.LastSequence);
+
             var first = await appender.AppendAsync(firstIntent, CancellationToken.None);
             var duplicate = await appender.AppendAsync(firstIntent, CancellationToken.None);
             Assert.False(first.Duplicate);
             Assert.True(duplicate.Duplicate);
             Assert.Equal(first.Sequence, duplicate.Sequence);
             Assert.Equal(first.IntentDigestHex, duplicate.IntentDigestHex);
+            Assert.Equal(AuditEventSubmissionCanonicalizer.ComputeIntentDigestHex(
+                ToSubmission(firstIntent)), first.IntentDigestHex);
+
+            var changedIntent = firstIntent with { OutcomeCode = "denied" };
+            await Assert.ThrowsAsync<AuditEventConflictException>(
+                () => appender.AppendAsync(changedIntent, CancellationToken.None));
 
             var writerA = appender.AppendAsync(
                 CreateIntent(streamId, Guid.NewGuid(), "audit.adapter.concurrent.a"), CancellationToken.None);
@@ -238,6 +261,13 @@ public sealed class AuditSecurityPostgresAdapterTests
         command.Parameters.AddWithValue("id", eventId);
         await command.ExecuteNonQueryAsync();
     }
+
+    private static AuditEventSubmission ToSubmission(AuditEventIntent intent) => new(
+        intent.EventId, intent.AuditStreamId, intent.SchemaVersion, intent.CanonicalizationVersion,
+        intent.HashAlgorithmCode, intent.EventTypeCode, intent.OccurredAtUtc, intent.ActorTypeCode,
+        intent.ActorId, intent.SubjectTypeCode, intent.SubjectId, intent.SourceModuleCode,
+        intent.SourceEventId, intent.CorrelationId, intent.CausationId, intent.OutcomeCode,
+        intent.Metadata, ModuleContractVersion.Current);
 
     private static AuditEventIntent CreateIntent(Guid streamId, Guid eventId, string eventType) => new(
         eventId, streamId, 1, 1, "SHA-256", eventType,
