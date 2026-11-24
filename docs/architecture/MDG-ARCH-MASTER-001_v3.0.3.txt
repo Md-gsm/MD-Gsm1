@@ -123,15 +123,15 @@ This control block supersedes all contradictory status statements in the histori
 5. REVISION DATE — 2026-11-20. Dates elsewhere remain the dates of their underlying decisions, source records or test evidence; they do not override this document revision date.
 
 
-DOCUMENT CONTROL ADDENDUM — OWNER REAFFIRMATION AND OFFICIAL MASTER STATUS (2026-11-24)
+DOCUMENT CONTROL ADDENDUM — HISTORICAL STATUS / SUPERSESSION (2026-11-24)
 
-The Product Owner reaffirms MDG-ARCH-MASTER-001 v3.0.3 as the sole accepted, official and governing Architecture/Accounting Master for MD-Gsm. Its repository registration in `main` is complete through PR #71 merge commit `8f89653e25e6a599387128e0209f5009d9dd59cd`.
+This v3.0.3 document is retained as a historical, previously accepted Architecture/Accounting Master snapshot. Its 2026-11-20 acceptance and PR #71 registration are historical facts and are not erased.
 
-MDG-ARCH-MASTER-001 v3.0.4 is not the current or official Master and does not supersede v3.0.3. The v3.0.4 file is retained only as a historical working derivative for traceability. Owner decisions recorded separately under CHG-101 remain valid only within their expressly accepted scope; they do not constitute acceptance of v3.0.4 as a Master successor. Any future incorporation into the governing Master requires a separately controlled version and explicit acceptance.
+By the Product Owner's subsequent explicit directive dated 2026-11-24, MDG-ARCH-MASTER-001 v3.0.4 is now the sole current, accepted, official and governing Architecture/Accounting Master for MD-Gsm. v3.0.3 is superseded for current work and must not be cited as the governing baseline. The current repository-level authority is recorded in MDG-ARCH-BASELINE-REGISTRATION-001 v1.3 and MDG-PROJECT-AUTHORITY-CONTROL-001 v1.0.
 
-All current project work, module designs, contracts, workpapers, registers, implementation planning and reviews must use v3.0.3 as the governing baseline. Older snapshots and superseded registers remain preserved as historical evidence; their former status statements do not override this addendum or the current registration record.
+All statements in this historical v3.0.3 snapshot that describe it as the current or sole governing Master are retained as evidence of the earlier state and are superseded by the later 2026-11-24 Product Owner directive. Current project work must use v3.0.4. Historical snapshots remain unchanged except for this dated supersession notice.
 
-Owner acceptance and official document status remain independent from independent technical review, design completion, implementation, test PASS, evidence acceptance, legal clearance, Gate C/Gate D, Posting Release, production migration and Go-Live. None of those gates is promoted by this addendum.
+This supersession changes document authority only. It does not imply independent technical review, design completion, implementation, test PASS, evidence acceptance, legal clearance, Gate C/Gate D, Posting Release, production migration, IdentityAccess G1 or Go-Live.
 
 
 
