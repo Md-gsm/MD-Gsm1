@@ -18,7 +18,6 @@ public partial class MainWindow : Window
     private MenuRoot? _activeMenu;
     private Button? _activeMenuAnchor;
     private Popup? _activeGroupPopup;
-    private readonly List<PersonPreviewRow> _allPreviewPersons = [];
     private readonly List<ReceptionRow> _allReceptionRows = [];
 
     private static readonly SolidColorBrush UrgentMarkerBrush = CreateFrozenBrush("#E00000");
@@ -26,11 +25,9 @@ public partial class MainWindow : Window
     private static readonly SolidColorBrush LaterDeliveryMarkerBrush = CreateFrozenBrush("#10B981");
     private static readonly SolidColorBrush TodayDeliveryMarkerBrush = CreateFrozenBrush("#F97316");
     private static readonly SolidColorBrush DefaultMarkerBrush = CreateFrozenBrush("#94A3B8");
-    private int _nextPreviewNumber = 5;
     private string _activeReceptionFilter = "deliveryToday";
 
     public ObservableCollection<MenuRoot> MainMenus { get; } = [];
-    public ObservableCollection<PersonPreviewRow> PreviewPersons { get; } = [];
     public ObservableCollection<ReceptionRow> ReceptionRows { get; } = [];
     public ObservableCollection<StatisticBarRow> PartStatistics { get; } = [];
     public ObservableCollection<StatisticBarRow> RepairStatistics { get; } = [];
@@ -39,7 +36,6 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = this;
-        SeedPreviewPersons();
         SeedReceptionRows();
         SeedDashboardStatistics();
 
@@ -49,7 +45,6 @@ public partial class MainWindow : Window
         if (MainMenus.Count != 11)
             throw new InvalidDataException($"کاتالوگ باید ۱۱ منوی اصلی داشته باشد؛ تعداد فعلی {MainMenus.Count} است.");
 
-        RefreshPreviewPersons();
         RefreshReceptionRows();
         UpdatePersianClock();
 
@@ -466,7 +461,7 @@ public partial class MainWindow : Window
 
         if (string.Equals(option.Id, "BASE-P-06", StringComparison.Ordinal))
         {
-            ShowPersonsPreview();
+            ShowPersonsWorkspace();
             return;
         }
 
@@ -490,39 +485,6 @@ public partial class MainWindow : Window
         };
         StatusText.Text = $"«{title}» در این پیش‌نمایش فقط نمایشی است.";
         DetailsText.Text = "این عملیات هنوز صفحه یا داده عملیاتی ندارد.";
-    }
-
-    private void ShowPersonsPreview()
-    {
-        _menuCloseTimer.Stop();
-        CloseActiveMenu();
-        DashboardView.Visibility = Visibility.Collapsed;
-        PersonsPreviewView.Visibility = Visibility.Visible;
-        NewPersonFormPanel.Visibility = Visibility.Collapsed;
-        PreviewFormMessageText.Text = string.Empty;
-        RefreshPreviewPersons();
-        StatusText.Text = "پیش‌نمایش ماژول اشخاص؛ داده‌ها فقط در حافظه هستند.";
-        DetailsText.Text = "هیچ نوشتنی به API یا دیتابیس انجام نمی‌شود.";
-    }
-
-    private void BackToDashboardButton_Click(object sender, RoutedEventArgs e)
-    {
-        PersonsPreviewView.Visibility = Visibility.Collapsed;
-        NewPersonFormPanel.Visibility = Visibility.Collapsed;
-        DashboardView.Visibility = Visibility.Visible;
-        StatusText.Text = "داشبورد پیش‌نمایش آماده است.";
-        DetailsText.Text = "داده‌های داشبورد نمونه و ساختگی هستند.";
-    }
-
-    private void SeedPreviewPersons()
-    {
-        _allPreviewPersons.AddRange(
-        [
-            new PersonPreviewRow("DEMO-0001", "شخص نمونه الف", "حقیقی", "مشتری", "ثبت نشده", "فعال · نمایشی"),
-            new PersonPreviewRow("DEMO-0002", "شخص نمونه ب", "حقیقی", "مشتری، تأمین‌کننده", "ثبت نشده", "فعال · نمایشی"),
-            new PersonPreviewRow("DEMO-0003", "سازمان نمونه الف", "حقوقی", "تأمین‌کننده", "ثبت نشده", "فعال · نمایشی"),
-            new PersonPreviewRow("DEMO-0004", "شخص نمونه ج", "حقیقی", "بدون نقش", "ثبت نشده", "غیرفعال · نمایشی")
-        ]);
     }
 
     private void SeedReceptionRows()
@@ -732,86 +694,6 @@ public partial class MainWindow : Window
         UpdateReceptionGridHeight(result.Count);
     }
 
-    private void PersonsSearchBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshPreviewPersons();
-
-    private void RefreshPreviewPersons()
-    {
-        if (PersonsPreviewGrid is null)
-            return;
-
-        var query = PersonsSearchBox?.Text?.Trim() ?? string.Empty;
-        var rows = string.IsNullOrEmpty(query)
-            ? _allPreviewPersons
-            : _allPreviewPersons.Where(person =>
-                person.Code.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                person.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                person.PersonType.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                person.Roles.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                person.ContactLabel.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                person.StatusLabel.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
-
-        PreviewPersons.Clear();
-        foreach (var person in rows)
-            PreviewPersons.Add(person);
-
-        UpdatePersonsGridHeight(PreviewPersons.Count);
-        if (PersonsPreviewCountText is not null)
-            PersonsPreviewCountText.Text = $"{_allPreviewPersons.Count} رکورد نمایشی";
-        if (PersonsSearchResultText is not null)
-            PersonsSearchResultText.Text = $"{PreviewPersons.Count} مورد از {_allPreviewPersons.Count} مورد نمایشی";
-    }
-
-
-    private void UpdatePersonsGridHeight(int visibleRowCount)
-    {
-        if (PersonsPreviewGrid is null)
-            return;
-
-        const double headerHeight = 46d;
-        const double personRowHeight = 44d;
-        PersonsPreviewGrid.RowHeight = personRowHeight;
-        PersonsPreviewGrid.Height = headerHeight + Math.Max(0, visibleRowCount) * personRowHeight;
-    }
-
-    private void NewPersonButton_Click(object sender, RoutedEventArgs e)
-    {
-        NewPersonFormPanel.Visibility = Visibility.Visible;
-        NewPersonNameBox.Text = string.Empty;
-        NewPersonTypeBox.SelectedIndex = 0;
-        NewPersonRoleBox.SelectedIndex = 0;
-        PreviewFormMessageText.Text = string.Empty;
-        NewPersonNameBox.Focus();
-    }
-
-    private void SavePreviewPersonButton_Click(object sender, RoutedEventArgs e)
-    {
-        var displayName = NewPersonNameBox.Text.Trim();
-        if (displayName.Length == 0)
-        {
-            PreviewFormMessageText.Text = "نام نمایشی برای این پیش‌نمایش لازم است.";
-            NewPersonNameBox.Focus();
-            return;
-        }
-
-        var personType = (NewPersonTypeBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "حقیقی";
-        var role = (NewPersonRoleBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "بدون نقش";
-        var row = new PersonPreviewRow(
-            $"DEMO-{_nextPreviewNumber++:0000}", displayName, personType, role,
-            "ثبت نشده", "موقت · فقط نمایشی");
-
-        _allPreviewPersons.Insert(0, row);
-        NewPersonFormPanel.Visibility = Visibility.Collapsed;
-        PersonsSearchBox.Text = string.Empty;
-        RefreshPreviewPersons();
-        PersonsSearchResultText.Text = "رکورد فقط به حافظه همین اجرا افزوده شد؛ در دیتابیس ذخیره نشده است.";
-    }
-
-    private void CancelNewPersonButton_Click(object sender, RoutedEventArgs e)
-    {
-        NewPersonFormPanel.Visibility = Visibility.Collapsed;
-        PreviewFormMessageText.Text = string.Empty;
-    }
-
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Escape && RootMenuPopup.IsOpen)
@@ -836,16 +718,9 @@ public partial class MainWindow : Window
         _menuCloseTimer.Stop();
         _clockTimer.Stop();
         CloseActiveMenu();
+        _ = ClosePersonsWorkspaceAsync();
         base.OnClosed(e);
     }
-
-    public sealed record PersonPreviewRow(
-        string Code,
-        string DisplayName,
-        string PersonType,
-        string Roles,
-        string ContactLabel,
-        string StatusLabel);
 
     public sealed record ReceptionRow(
         string Code,
