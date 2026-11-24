@@ -43,7 +43,7 @@ public sealed class HttpAuditEventIngestionClient(
             if (response.StatusCode is HttpStatusCode.RequestTimeout
                 or HttpStatusCode.TooManyRequests
                 || (int)response.StatusCode >= 500
-                || response.StatusCode == HttpStatusCode.TooEarly)
+                || (int)response.StatusCode == 425)
                 throw new AuditEventTransientDeliveryException(failureCode);
 
             if (response.StatusCode is HttpStatusCode.BadRequest
