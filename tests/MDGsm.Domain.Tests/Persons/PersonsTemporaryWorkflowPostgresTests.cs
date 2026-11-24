@@ -7,6 +7,12 @@ using Xunit;
 
 namespace MDGsm.Domain.Tests.Persons;
 
+[CollectionDefinition("PersonsTemporaryWorkflowPostgres", DisableParallelization = true)]
+public sealed class PersonsTemporaryWorkflowPostgresCollection
+{
+}
+
+[Collection("PersonsTemporaryWorkflowPostgres")]
 public sealed class PersonsTemporaryWorkflowPostgresTests
 {
     [Fact]
