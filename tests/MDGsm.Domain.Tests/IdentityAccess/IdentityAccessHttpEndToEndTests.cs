@@ -196,6 +196,17 @@ public sealed class IdentityAccessHttpEndToEndTests
         var noToken = await client.GetAsync(partyUrl);
         Assert.Equal(HttpStatusCode.Unauthorized, noToken.StatusCode);
 
+        var anonymousNaturalParty = new CreateNaturalPartyRequest(
+            "آزمایشی", "بدون نشست", ["Customer"], null, null, null, null, null, null,
+            new PartyCommunicationPreferencesContract(true, true, false), "Unknown", null);
+        using var anonymousWrite = new HttpRequestMessage(HttpMethod.Post, "/api/v2/persons")
+        {
+            Content = JsonContent.Create(new QuickRegisterNaturalPartyRequest(anonymousNaturalParty))
+        };
+        anonymousWrite.Headers.TryAddWithoutValidation("Idempotency-Key", Guid.CreateVersion7().ToString("D"));
+        var anonymousWriteResult = await client.SendAsync(anonymousWrite);
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymousWriteResult.StatusCode);
+
         var heartbeatWithoutToken = await client.PostAsync("/api/v1/identity/heartbeat", content: null);
         Assert.Equal(HttpStatusCode.Unauthorized, heartbeatWithoutToken.StatusCode);
 
