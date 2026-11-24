@@ -435,8 +435,8 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
                      WHERE c.party_id=p.party_id AND c.kind=1 AND c.is_active AND right(c.value, 4) = @suffix))
                   OR
                   (@pattern IS NOT NULL AND (
-                     (p.party_type=1 AND concat_ws(' ', p.given_name, p.family_name) ILIKE @pattern ESCAPE '\\')
-                     OR (p.party_type=2 AND p.legal_name ILIKE @pattern ESCAPE '\\')))
+                     (p.party_type=1 AND concat_ws(' ', p.given_name, p.family_name) ILIKE @pattern ESCAPE '\')
+                     OR (p.party_type=2 AND p.legal_name ILIKE @pattern ESCAPE '\')))
                 )
                 ORDER BY p.created_at_utc DESC, p.party_id LIMIT @limit;
                 """, connection, tx);
