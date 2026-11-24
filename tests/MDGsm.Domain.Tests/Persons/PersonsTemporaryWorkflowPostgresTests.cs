@@ -32,11 +32,18 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         Assert.Equal(ciphertext, stored);
 
         Assert.Null(await store.ReadCiphertextAsync(id, now.AddDays(7)));
-        Assert.Equal(1, await store.PurgeExpiredAsync(now.AddDays(7)));
+
+        // PurgeExpiredAsync is intentionally database-wide. Other serialized tests may have
+        // expired rows in the same disposable database, so assert this record's lifecycle,
+        // not a global number of rows deleted.
+        await store.PurgeExpiredAsync(now.AddDays(7));
         Assert.Null(await store.ReadCiphertextAsync(id, now.AddDays(6)));
         Assert.Equal(0L, await CountPayloadRowsAsync(dataSource, id));
         Assert.Equal("purged", await ReadLifecycleStatusAsync(dataSource, id));
-        Assert.Equal(0, await store.PurgeExpiredAsync(now.AddDays(8)));
+
+        await store.PurgeExpiredAsync(now.AddDays(8));
+        Assert.Equal(0L, await CountPayloadRowsAsync(dataSource, id));
+        Assert.Equal("purged", await ReadLifecycleStatusAsync(dataSource, id));
     }
 
     [Fact]
@@ -103,7 +110,10 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         Assert.True(await store.CloseAsync(id, now.AddDays(1)));
         Assert.False(await store.CloseAsync(id, now.AddDays(1)));
         Assert.Null(await store.ReadCiphertextAsync(id, now.AddDays(1)));
-        Assert.Equal(1, await store.PurgeExpiredAsync(now.AddDays(7)));
+
+        await store.PurgeExpiredAsync(now.AddDays(7));
+        Assert.Equal(0L, await CountPayloadRowsAsync(dataSource, id));
+        Assert.Equal("purged", await ReadLifecycleStatusAsync(dataSource, id));
     }
 
     [Fact]
