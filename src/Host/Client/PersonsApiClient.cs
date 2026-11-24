@@ -60,7 +60,7 @@ public sealed class PersonsApiClient(HttpClient httpClient)
         QuickRegisterNaturalPartyRequest request,
         CancellationToken cancellationToken = default) =>
         SendQuickRegistrationAsync(
-            "api/v2/persons/quick/natural", accessToken, operationId, request, cancellationToken);
+            "api/v2/persons", accessToken, operationId, request, cancellationToken);
 
     public Task<PartyQuickRegistrationResponse> QuickRegisterLegalAsync(
         string accessToken,
@@ -68,7 +68,7 @@ public sealed class PersonsApiClient(HttpClient httpClient)
         QuickRegisterLegalPartyRequest request,
         CancellationToken cancellationToken = default) =>
         SendQuickRegistrationAsync(
-            "api/v2/persons/quick/legal", accessToken, operationId, request, cancellationToken);
+            "api/v2/persons/legal", accessToken, operationId, request, cancellationToken);
 
     private async Task<PartyQuickRegistrationResponse> SendQuickRegistrationAsync<TRequest>(
         string route,
