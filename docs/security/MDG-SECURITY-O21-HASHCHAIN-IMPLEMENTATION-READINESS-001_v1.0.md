@@ -7,7 +7,7 @@
 | Supersedes | v0.9, with current repository implementation status added |
 | Supersedes | v0.7 |
 | Supersedes | v0.6 |
-| Baseline | MDG-ARCH-MASTER-001 v3.0.3 N.7; Stage 08 Security Design v0.1; Reconciliation Addendum v0.1 |
+| Baseline | MDG-ARCH-MASTER-001 v3.0.4 N.7; Stage 08 Security Design v0.1; Reconciliation Addendum v0.1 |
 | Status | PROVIDER-NEUTRAL CORE AND POSTGRESQL/OUTBOX ADAPTERS ADDED; MIGRATION 0011 RESERVED; PRODUCTION PROVIDERS, DEPLOYMENT AND INDEPENDENT ACCEPTANCE OPEN |
 | Execution | A disposable-only PostgreSQL PoC test source was added to PR #86. It first passed on SHA `8e0b3e10a96e6e605be6513cc22e19673d8c89ac` (workflow `44910227811`), where a separate IdentityAccess test failed. After that unrelated IdentityAccess assertion was corrected, the **same unchanged Hash Chain test source blob** passed again on SHA `7ef35cca3b3c86757ce1893656f9b6f617cdb4d9` in workflow `44912452300`, PostgreSQL job `136871018414`, as part of a complete **37 passed / 0 failed** integration suite. No production schema, migration, key, checkpoint, WORM storage or production configuration was created. |
 

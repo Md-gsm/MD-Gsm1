@@ -78,7 +78,7 @@ The worker claims a bounded batch using row locks with \`FOR UPDATE SKIP LOCKED\
 
 On successful response, the worker validates EventId, AuditStreamId, ContractVersion, positive canonical sequence, matching IntentDigest and 32-byte EventHash. A 2xx response alone is not sufficient. ACKNOWLEDGED is committed only with an exact active lease token and a matching event digest. The stored ACK reference is an opaque receipt reference/digest record; transport authenticity is provided by the configured authenticated channel.
 
-Transient transport/service outcomes use bounded exponential retry; permanent schema/auth/conflict/rejection outcomes are quarantined. Retry count, maximum event age, batch size, lease duration, alert thresholds and manual replay policy are deployment configuration subject to Platform/Security approval; no unbounded retry or silent discard is permitted. Worker crash or uncertain response leaves a finite lease which may be reclaimed after expiry. Lease token mismatch prevents stale workers from acknowledging or reclassifying an event.
+Transient transport/service outcomes use bounded exponential retry; permanent schema/auth/conflict/rejection outcomes are quarantined. Retry count, maximum event age, batch size, lease duration, alert thresholds and manual replay policy are deployment configuration subject to Platform/Security approval; no unbounded retry or silent discard is permitted. Worker crash or uncertain response leaves a finite lease which may be reclaimed after expiry. Lease token mismatch and database-side lease-expiry checks prevent stale workers from acknowledging, retrying or reclassifying an expired lease.
 
 ## 7. Operational metrics and required tests
 

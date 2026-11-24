@@ -6,7 +6,7 @@
 | Version / Date | 0.7 / 2026-11-24 |
 | Supersedes | v0.6, only for the audit-delivery-worker identity binding |
 | Status | OWNER POLICY DECISIONS ACCEPTED; AUDIT DELIVERY WORKER IDENTITY BINDING SELECTED; PRODUCTION PROVISIONING AND INDEPENDENT GATES OPEN |
-| Governing architecture | MDG-ARCH-MASTER-001 v3.0.3 |
+| Governing architecture | MDG-ARCH-MASTER-001 v3.0.4 |
 | Repository / Branch | Md-gsm/MD-Gsm1 / security/o20-o21-final-closure |
 | PR | #92 Draft / open / unmerged |
 | Owner decision record | PR #92 comment 7094120301 |
