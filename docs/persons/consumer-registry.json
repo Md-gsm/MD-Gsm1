@@ -32,6 +32,13 @@
       "purpose": "Protected GET party-details plus feature-gated natural/legal create and quick-registration endpoints; actor identity comes from validated IdentityAccess session context. Quick registration requires both persons.read and persons.create."
     },
     {
+      "module": "HostClient",
+      "path": "src/Host/Client/PersonsApiClient.cs",
+      "contractVersion": "Persons.Contracts/2.0",
+      "mergeProtocolVersion": "1.0",
+      "purpose": "Authenticated HTTP adapter transports opaque PartyId path/query values and versioned masked Party detail/quick-registration contracts; it does not own Party data or authorize sensitive reads."
+    },
+    {
       "module": "DesktopHost",
       "path": "src/Host/Desktop/PersonsWorkspace.cs",
       "contractVersion": "Persons.Contracts/2.0",
