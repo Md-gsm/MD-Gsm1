@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
@@ -714,12 +715,34 @@ public partial class MainWindow : Window
         LiveDateTimeText.Text = $"{dayName} {calendar.GetDayOfMonth(now)} {months[calendar.GetMonth(now) - 1]} {calendar.GetYear(now)} — {now:HH:mm}";
     }
 
+    private bool _personsLogoutCompletedBeforeClose;
+
+    protected override async void OnClosing(CancelEventArgs e)
+    {
+        if (_personsLogoutCompletedBeforeClose)
+        {
+            base.OnClosing(e);
+            return;
+        }
+
+        // Keep the WPF dispatcher alive until the server has had a chance to revoke this session.
+        e.Cancel = true;
+        try
+        {
+            await ClosePersonsWorkspaceAsync();
+        }
+        finally
+        {
+            _personsLogoutCompletedBeforeClose = true;
+            Close();
+        }
+    }
+
     protected override void OnClosed(EventArgs e)
     {
         _menuCloseTimer.Stop();
         _clockTimer.Stop();
         CloseActiveMenu();
-        _ = ClosePersonsWorkspaceAsync();
         base.OnClosed(e);
     }
 
