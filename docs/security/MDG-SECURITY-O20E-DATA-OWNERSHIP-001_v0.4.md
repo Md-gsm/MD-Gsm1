@@ -6,7 +6,7 @@
 | Version / Date | 0.3 / 2026-11-22 |
 | Supersedes | v0.2 |
 | Status | OWNER-ACCEPTED POLICY; DETAILED IMPLEMENTATION AND G1 NOT AUTHORIZED |
-| Governing baseline | MDG-ARCH-MASTER-001 v3.0.3 |
+| Governing baseline | MDG-ARCH-MASTER-001 v3.0.4 |
 | Related decisions | OWN-INV-018 v1.1; IdentityAccess permission-matrix approval; O20-E logical and physical design |
 
 ## 1. Accepted ownership and assignment rules carried forward
@@ -146,3 +146,8 @@ This section supersedes the conflicting self-assignment sentence in v0.3. The ex
 **Authority boundary:** this records the Product Owner's policy decision; trusted principal enrollment/recovery and technical enforcement remain G1 prerequisites. It does not authorize runtime, DDL, migration, grants, G1 or Go-Live.
 
 **END — MDG-SECURITY-O20E-DATA-OWNERSHIP-001 v0.4**
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. v3.0.3 is a superseded historical snapshot and must not be cited as the current governing baseline. References above that describe prior v3.0.3 design inputs, review dates or evidence remain historical facts; they do not override v3.0.4. Any section-specific semantic dependency must be checked against v3.0.4 before implementation. This authority alignment does not change this document's own acceptance, implementation, test, evidence, security-gate or release status.
