@@ -110,6 +110,18 @@ public sealed class PersonsHttpClientTests
     }
 
     [Fact]
+    public async Task GetParty_RejectsAResponseMarkedAsContainingSensitiveFields()
+    {
+        var partyId = Guid.CreateVersion7();
+        using var http = CreateClient(_ => Json(HttpStatusCode.OK,
+            $"{{\"partyId\":\"{partyId:D}\",\"partyType\":\"NaturalPerson\",\"displayName\":\"علی رضایی\",\"roles\":[\"Customer\"],\"nationalIdentifier\":\"1234567890\",\"economicCode\":null,\"responsiblePersonName\":null,\"contacts\":[],\"primaryAddress\":null,\"communication\":null,\"acquaintanceSource\":null,\"createdAtUtc\":\"2026-11-24T18:00:00Z\",\"sensitiveFieldsIncluded\":true,\"workClassification\":null}}"));
+        var client = new PersonsApiClient(http);
+
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            client.GetPartyAsync("opaque-token", partyId.ToString("D")));
+    }
+
+    [Fact]
     public async Task PersonsClient_ExposesOnlySafeErrorCodeAndRequestId()
     {
         using var http = CreateClient(_ => Json(HttpStatusCode.ServiceUnavailable,
