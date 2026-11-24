@@ -209,6 +209,51 @@ public sealed class PersonsEndToEndTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task Quick_registration_identifies_a_merged_source_as_non_selectable()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        const string mobile = "09125550130";
+        var source = await scope.Repository.AddNaturalAsync(
+            NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+        var target = await scope.Repository.AddNaturalAsync(
+            NewNatural(null, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+
+        await using (var mergeMarker = new NpgsqlCommand("""
+            UPDATE persons
+            SET is_active = false, merged_into_party_id = @target
+            WHERE party_id = @source;
+            """, scope.Connection, scope.Transaction))
+        {
+            mergeMarker.Parameters.AddWithValue("source", Guid.Parse(source.PartyId));
+            mergeMarker.Parameters.AddWithValue("target", Guid.Parse(target.PartyId));
+            Assert.Equal(1, await mergeMarker.ExecuteNonQueryAsync());
+        }
+
+        var request = NewNatural(mobile, NewNationalId()) with
+        {
+            GivenName = "سارا",
+            FamilyName = "محمدی"
+        };
+        var operationId = Guid.CreateVersion7();
+        var result = await scope.Repository.QuickRegisterNaturalAsync(
+            request, Actor, operationId, forceNew: false, selectedPartyId: null,
+            scope.Transaction, default);
+
+        var candidate = Assert.Single(result.Candidates);
+        Assert.Equal(PartyQuickRegistrationOutcome.SelectionRequired, result.Outcome);
+        Assert.Equal(source.PartyId, candidate.PartyId);
+        Assert.False(candidate.PartyIsActive);
+        Assert.True(candidate.IsMerged);
+        Assert.False(candidate.HasActiveMobile);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            scope.Repository.QuickRegisterNaturalAsync(
+                request, Actor, operationId, forceNew: false, selectedPartyId: candidate.PartyId,
+                scope.Transaction, default));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task Quick_registration_rejects_selection_when_the_matching_mobile_is_inactive()
     {
         await using var scope = await TestScope.OpenAsync();
