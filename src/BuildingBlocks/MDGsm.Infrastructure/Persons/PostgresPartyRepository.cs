@@ -396,7 +396,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
     }
 
     public async Task<IReadOnlyList<PartyListItem>> SearchAsync(
-        string term, int limit, string actorId, DbTransaction? transaction, CancellationToken cancellationToken)
+        string term, int limit, string actorId, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(term);
         var actor = RequireActor(actorId);
@@ -420,7 +420,7 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             pattern = "%" + EscapeLike(normalized) + "%";
         }
 
-        var results = await RunAsync<IReadOnlyList<PartyListItem>>(transaction, async (connection, tx) =>
+        var results = await RunAsync<IReadOnlyList<PartyListItem>>(null, async (connection, tx) =>
         {
             await using var command = new NpgsqlCommand("""
                 SELECT p.party_id, p.party_type, p.business_roles,
