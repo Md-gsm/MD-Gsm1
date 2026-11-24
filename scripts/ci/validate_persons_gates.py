@@ -280,7 +280,10 @@ def run_architecture(root: Path) -> None:
             "MDGsm.Persons.Contracts", "MDGsm.IdentityAccess.Contracts",
             "MDGsm.RepairOperations.Contracts", "MDGsm.Finance.Contracts", "MDGsm.Finance",
         },
-        "Host/Desktop/MDGsm.Desktop.csproj": {"MDGsm.Client"},
+        "Host/Client/MDGsm.Host.Client.csproj": {
+            "MDGsm.Client", "MDGsm.IdentityAccess.Contracts", "MDGsm.Persons.Contracts",
+        },
+        "Host/Desktop/MDGsm.Desktop.csproj": {"MDGsm.Client", "MDGsm.Host.Client"},
     }
     modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance", "Accounting")
     for module in modules:
@@ -328,7 +331,7 @@ def run_architecture(root: Path) -> None:
                 f"expected {sorted(expected_refs)}, found {sorted(actual_refs)}"
             )
 
-    for relative_dir in ("Host/Desktop", "BuildingBlocks/MDGsm.Client"):
+    for relative_dir in ("Host/Desktop", "Host/Client", "BuildingBlocks/MDGsm.Client"):
         source_dir = project_root / relative_dir
         for source in source_dir.rglob("*.cs"):
             source_text = source.read_text(encoding="utf-8", errors="replace")
