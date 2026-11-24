@@ -9,10 +9,17 @@ namespace MDGsm.Infrastructure.Persons;
 public sealed class StructuredLogTemporaryWorkflowRetentionAlert(
     ILogger<StructuredLogTemporaryWorkflowRetentionAlert> logger) : ITemporaryWorkflowRetentionAlert
 {
-    public Task NotifyFailureAsync(string failureCode, CancellationToken cancellationToken)
+    public Task NotifyFailureAsync(
+        TemporaryWorkflowRetentionFailureCode failureCode,
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        logger.LogCritical("SECURITY_ALERT Temporary workflow cleanup failed. FailureCode={FailureCode}", failureCode);
+        if (!Enum.IsDefined(failureCode))
+            throw new ArgumentOutOfRangeException(nameof(failureCode));
+
+        logger.LogCritical(
+            "SECURITY_ALERT Temporary workflow cleanup failed. FailureCode={FailureCode}",
+            failureCode);
         return Task.CompletedTask;
     }
 }
