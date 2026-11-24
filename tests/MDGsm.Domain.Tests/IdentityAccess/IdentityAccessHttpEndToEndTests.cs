@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using MDGsm.IdentityAccess.Contracts;
+using MDGsm.Persons.Contracts;
 using MDGsm.IdentityAccess.Domain;
 using MDGsm.Infrastructure.IdentityAccess;
 using MDGsm.Infrastructure.Persistence;
@@ -228,6 +229,35 @@ public sealed class IdentityAccessHttpEndToEndTests
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", active.AccessToken);
         var heartbeat = await client.PostAsync("/api/v1/identity/heartbeat", content: null);
         Assert.Equal(HttpStatusCode.NoContent, heartbeat.StatusCode);
+
+        // The natural/legal Persons write routes must be reachable through the real
+        // session middleware but remain closed by default. This test deliberately does
+        // not enable the flag or exercise a business write/production permission path.
+        var naturalParty = new CreateNaturalPartyRequest(
+            "آزمایشی", "طبیعی", ["Customer"], null, null, null, null, null, null,
+            new PartyCommunicationPreferencesContract(true, true, false), "Unknown", null);
+        using var naturalWrite = new HttpRequestMessage(HttpMethod.Post, "/api/v2/persons")
+        {
+            Content = JsonContent.Create(new QuickRegisterNaturalPartyRequest(naturalParty))
+        };
+        naturalWrite.Headers.TryAddWithoutValidation("Idempotency-Key", Guid.CreateVersion7().ToString("D"));
+        var naturalWriteDisabled = await client.SendAsync(naturalWrite);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, naturalWriteDisabled.StatusCode);
+        var naturalWriteError = await naturalWriteDisabled.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        Assert.Equal("persons_write_api_disabled", naturalWriteError!["error"]);
+
+        var legalParty = new CreateLegalPartyRequest(
+            "شرکت آزمایشی", null, null, null, ["Customer"], null, null, null, null, null,
+            new PartyCommunicationPreferencesContract(true, true, false), "Unknown", null);
+        using var legalWrite = new HttpRequestMessage(HttpMethod.Post, "/api/v2/persons/legal")
+        {
+            Content = JsonContent.Create(new QuickRegisterLegalPartyRequest(legalParty))
+        };
+        legalWrite.Headers.TryAddWithoutValidation("Idempotency-Key", Guid.CreateVersion7().ToString("D"));
+        var legalWriteDisabled = await client.SendAsync(legalWrite);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, legalWriteDisabled.StatusCode);
+        var legalWriteError = await legalWriteDisabled.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        Assert.Equal("persons_write_api_disabled", legalWriteError!["error"]);
 
         // This proof is intentionally scoped to IdentityAccess. Persons/Finance grants
         // are not inferred from the current IdentityAccess-only runtime grant script.
