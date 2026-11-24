@@ -33,6 +33,9 @@ public sealed class PersonsApiContractTests
         Assert.Contains("Persons:WriteApiEnabled", program, StringComparison.Ordinal);
         Assert.Contains("HasPermissionAsync(accountId, \"persons.create\"", program, StringComparison.Ordinal);
         Assert.Contains("IdempotencyKeyConflictException", program, StringComparison.Ordinal);
+        Assert.Contains("app.MapPost(\"/api/v2/persons/quick/natural\"", program, StringComparison.Ordinal);
+        Assert.Contains("app.MapPost(\"/api/v2/persons/quick/legal\"", program, StringComparison.Ordinal);
+        Assert.Contains("HasPermissionAsync(accountId, \"persons.read\"", program, StringComparison.Ordinal);
     }
 
     private static string FindRepositoryRoot()
