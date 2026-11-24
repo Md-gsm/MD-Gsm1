@@ -3,7 +3,7 @@ info:
   title: MD-Gsm Persons API
   version: 2.0.0
   description: >
-    Versioned contract. The protected party-details GET endpoint is implemented and requires a validated IdentityAccess session and server-side permission checks. Search remains contract-only. Natural-person and legal-entity POST routes are implemented behind Persons:WriteApiEnabled (default false); enabling them is not authorized until the independent Persons G1/release gates pass.
+    Versioned contract. The protected party-details GET endpoint is implemented and requires a validated IdentityAccess session and server-side permission checks. Search remains contract-only. Natural/legal create and quick-registration POST routes are implemented behind Persons:WriteApiEnabled (default false); enabling them is not authorized until the independent Persons G1/release gates pass.
 servers:
   - url: https://{host}
     variables:
@@ -81,6 +81,54 @@ paths:
         '403': { description: Missing write permission }
         '409': { description: Duplicate legal identifier }
         '422': { description: Validation failure }
+  /api/v2/persons/quick/natural:
+    post:
+      operationId: quickRegisterNaturalParty
+      summary: Resolve or register a natural person during intake
+      description: Requires persons.create and persons.read. The authenticated actor is taken from the server session. Existing candidates require explicit selection unless ForceNew is set.
+      x-feature-flag: Persons:WriteApiEnabled
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuickRegisterNaturalPartyRequest' }
+      responses:
+        '201': { description: A new Party was created }
+        '200': { description: An existing Party was reused, the operation was replayed, or candidate selection is required }
+        '401': { description: Missing or invalid session }
+        '403': { description: Missing read or create permission }
+        '409': { description: Cross-actor idempotency replay or invalid selected candidate }
+        '422': { description: Validation failure }
+        '503': { description: Persons write API is disabled }
+  /api/v2/persons/quick/legal:
+    post:
+      operationId: quickRegisterLegalParty
+      summary: Resolve or register a legal entity during intake
+      description: Requires persons.create and persons.read. The authenticated actor is taken from the server session. Existing candidates require explicit selection unless ForceNew is set.
+      x-feature-flag: Persons:WriteApiEnabled
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuickRegisterLegalPartyRequest' }
+      responses:
+        '201': { description: A new legal Party was created }
+        '200': { description: An existing legal Party was reused, the operation was replayed, or candidate selection is required }
+        '401': { description: Missing or invalid session }
+        '403': { description: Missing read or create permission }
+        '409': { description: Cross-actor idempotency replay or invalid selected candidate }
+        '422': { description: Validation failure }
+        '503': { description: Persons write API is disabled }
   /api/v2/persons/{partyId}:
     get:
       operationId: getParty
@@ -108,6 +156,42 @@ components:
         Random opaque token. The server stores only its cryptographic hash and
         checks session/account/revocation state against PostgreSQL on every request.
   schemas:
+    QuickRegisterNaturalPartyRequest:
+      type: object
+      required: [party]
+      properties:
+        party: { $ref: '#/components/schemas/CreateNaturalPartyRequest' }
+        forceNew: { type: boolean, default: false }
+        selectedPartyId: { type: string, format: uuid, nullable: true }
+    QuickRegisterLegalPartyRequest:
+      type: object
+      required: [party]
+      properties:
+        party: { $ref: '#/components/schemas/CreateLegalPartyRequest' }
+        forceNew: { type: boolean, default: false }
+        selectedPartyId: { type: string, format: uuid, nullable: true }
+    PartyQuickRegistrationCandidate:
+      type: object
+      required: [partyId, partyType, displayName, roles, partyIsActive, isMerged, hasActiveMobile, maskedMobile]
+      properties:
+        partyId: { type: string, format: uuid }
+        partyType: { type: string, enum: [NaturalPerson, LegalEntity] }
+        displayName: { type: string }
+        roles: { type: array, items: { type: string, enum: [Customer, Colleague] } }
+        partyIsActive: { type: boolean }
+        isMerged: { type: boolean }
+        hasActiveMobile: { type: boolean }
+        maskedMobile: { type: string }
+    PartyQuickRegistrationResponse:
+      type: object
+      required: [outcome, created, candidates]
+      properties:
+        outcome: { type: string, enum: [Created, ExistingPartyMatched, SelectionRequired, Replayed] }
+        partyId: { type: string, format: uuid, nullable: true }
+        created: { type: boolean }
+        candidates:
+          type: array
+          items: { $ref: '#/components/schemas/PartyQuickRegistrationCandidate' }
     PartyAddress:
       type: object
       required: [countryCode, province, city, postalCode, addressLine]
