@@ -395,10 +395,11 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         }, cancellationToken);
     }
 
-    public Task<IReadOnlyList<PartyListItem>> SearchAsync(
-        string term, int limit, DbTransaction? transaction, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PartyListItem>> SearchAsync(
+        string term, int limit, string actorId, DbTransaction? transaction, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(term);
+        var actor = RequireActor(actorId);
         if (limit is < 1 or > PartySearchLimits.MaxResults)
             throw new ArgumentOutOfRangeException(nameof(limit), $"At most {PartySearchLimits.MaxResults} results may be requested.");
 
@@ -419,39 +420,44 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             pattern = "%" + EscapeLike(normalized) + "%";
         }
 
-        return RunAsync<IReadOnlyList<PartyListItem>>(transaction, async (connection, tx) =>
+        var results = await RunAsync<IReadOnlyList<PartyListItem>>(transaction, async (connection, tx) =>
         {
-        await using var command = new NpgsqlCommand("""
-            SELECT p.party_id, p.party_type, p.business_roles,
-                   CASE WHEN p.party_type = 1 THEN concat(p.given_name, ' ', p.family_name) ELSE p.legal_name END,
-                   (SELECT c.value FROM persons_contact_points c WHERE c.party_id=p.party_id AND c.kind=1 AND c.is_primary AND c.is_active LIMIT 1),
-                   (SELECT a.city FROM persons_addresses a WHERE a.party_id=p.party_id AND a.is_primary AND a.is_active LIMIT 1),
-                   p.created_at_utc
-            FROM persons p
-            WHERE p.is_active AND (
-              (@suffix IS NOT NULL AND EXISTS (
-                 SELECT 1 FROM persons_contact_points c
-                 WHERE c.party_id=p.party_id AND c.kind=1 AND c.is_active AND right(c.value, 4) = @suffix))
-              OR
-              (@pattern IS NOT NULL AND (
-                 (p.party_type=1 AND concat_ws(' ', p.given_name, p.family_name) ILIKE @pattern ESCAPE '\')
-                 OR (p.party_type=2 AND p.legal_name ILIKE @pattern ESCAPE '\')))
-            )
-            ORDER BY p.created_at_utc DESC, p.party_id LIMIT @limit;
-            """, connection, tx);
-        command.Parameters.Add(new NpgsqlParameter("suffix", NpgsqlDbType.Text) { Value = (object?)suffix ?? DBNull.Value });
-        command.Parameters.Add(new NpgsqlParameter("pattern", NpgsqlDbType.Text) { Value = (object?)pattern ?? DBNull.Value });
-        command.Parameters.AddWithValue("limit", limit);
-        var results = new List<PartyListItem>();
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
-            results.Add(new PartyListItem(reader.GetGuid(0).ToString("D"), (PartyType)reader.GetInt16(1),
-                reader.GetString(3), (PartyBusinessRoles)reader.GetInt16(2),
-                reader.IsDBNull(4) ? null : PartyIdentifiers.MaskPhone(reader.GetString(4)),
-                reader.IsDBNull(5) ? null : reader.GetString(5),
-                reader.GetFieldValue<DateTimeOffset>(6)));
-        return results;
+            await using var command = new NpgsqlCommand("""
+                SELECT p.party_id, p.party_type, p.business_roles,
+                       CASE WHEN p.party_type = 1 THEN concat(p.given_name, ' ', p.family_name) ELSE p.legal_name END,
+                       (SELECT c.value FROM persons_contact_points c WHERE c.party_id=p.party_id AND c.kind=1 AND c.is_primary AND c.is_active LIMIT 1),
+                       (SELECT a.city FROM persons_addresses a WHERE a.party_id=p.party_id AND a.is_primary AND a.is_active LIMIT 1),
+                       p.created_at_utc
+                FROM persons p
+                WHERE p.is_active AND (
+                  (@suffix IS NOT NULL AND EXISTS (
+                     SELECT 1 FROM persons_contact_points c
+                     WHERE c.party_id=p.party_id AND c.kind=1 AND c.is_active AND right(c.value, 4) = @suffix))
+                  OR
+                  (@pattern IS NOT NULL AND (
+                     (p.party_type=1 AND concat_ws(' ', p.given_name, p.family_name) ILIKE @pattern ESCAPE '\\')
+                     OR (p.party_type=2 AND p.legal_name ILIKE @pattern ESCAPE '\\')))
+                )
+                ORDER BY p.created_at_utc DESC, p.party_id LIMIT @limit;
+                """, connection, tx);
+            command.Parameters.Add(new NpgsqlParameter("suffix", NpgsqlDbType.Text) { Value = (object?)suffix ?? DBNull.Value });
+            command.Parameters.Add(new NpgsqlParameter("pattern", NpgsqlDbType.Text) { Value = (object?)pattern ?? DBNull.Value });
+            command.Parameters.AddWithValue("limit", limit);
+            var rows = new List<PartyListItem>();
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+                rows.Add(new PartyListItem(reader.GetGuid(0).ToString("D"), (PartyType)reader.GetInt16(1),
+                    reader.GetString(3), (PartyBusinessRoles)reader.GetInt16(2),
+                    reader.IsDBNull(4) ? null : PartyIdentifiers.MaskPhone(reader.GetString(4)),
+                    reader.IsDBNull(5) ? null : reader.GetString(5),
+                    reader.GetFieldValue<DateTimeOffset>(6)));
+            return rows;
         }, cancellationToken);
+
+        if (results.Count > 0)
+            await AppendSearchAuditAsync(results.Select(x => Guid.Parse(x.PartyId)).ToArray(), actor, cancellationToken);
+
+        return results;
     }
 
     public async Task<PartyDetails?> GetAsync(
@@ -552,6 +558,33 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         if (details is not null)
             await AppendReadAuditAsync(id.Value, actor, includeSensitive, cancellationToken);
         return details;
+    }
+
+    private async Task AppendSearchAuditAsync(IReadOnlyList<Guid> partyIds, string actor, CancellationToken cancellationToken)
+    {
+        var distinctPartyIds = partyIds.Distinct().ToArray();
+        if (distinctPartyIds.Length == 0) return;
+
+        // Search evidence is committed independently, matching single-party read-audit behavior.
+        // A caller-owned business transaction rollback must not erase the fact that results were disclosed.
+        var auditConnectionString = new NpgsqlConnectionStringBuilder(dataSource.ConnectionString)
+        {
+            Pooling = false
+        }.ConnectionString;
+        await using var connection = new NpgsqlConnection(auditConnectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var auditTransaction = await connection.BeginTransactionAsync(cancellationToken);
+        foreach (var partyId in distinctPartyIds)
+        {
+            await using var command = new NpgsqlCommand(
+                "INSERT INTO persons_access_audit (audit_id, party_id, actor, action, sensitive_included) VALUES (@audit, @party, @actor, 'search', false);",
+                connection, auditTransaction);
+            command.Parameters.AddWithValue("audit", Guid.CreateVersion7());
+            command.Parameters.AddWithValue("party", partyId);
+            command.Parameters.AddWithValue("actor", actor);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+        await auditTransaction.CommitAsync(cancellationToken);
     }
 
     private async Task AppendReadAuditAsync(Guid partyId, string actor, bool sensitive, CancellationToken cancellationToken)
