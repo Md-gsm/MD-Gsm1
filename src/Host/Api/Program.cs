@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using Npgsql;
 using MDGsm.Api.Security;
 using MDGsm.Api.Persons;
 using MDGsm.Application.Contracts;
@@ -234,6 +235,77 @@ app.MapPost("/api/v2/persons/legal", async (
     {
         return (IResult)Results.UnprocessableEntity(new { error = "validation_failed" });
     }
+});
+
+
+app.MapPost("/api/v2/persons/quick/natural", async (
+    QuickRegisterNaturalPartyRequest request, HttpContext context, IConfiguration configuration,
+    NpgsqlDataSource dataSource, IAuthenticatedActorContext actor, IRolePermissionStore permissions,
+    IPartyRepository parties, CancellationToken cancellationToken) =>
+{
+    if (!configuration.GetValue<bool>("Persons:WriteApiEnabled"))
+        return (IResult)Results.Json(new { error = "persons_write_api_disabled" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+
+    var accountId = AccountId.From(actor.AccountId);
+    if (!await permissions.HasPermissionAsync(accountId, "persons.create", cancellationToken) ||
+        !await permissions.HasPermissionAsync(accountId, "persons.read", cancellationToken))
+        return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
+    if (!Guid.TryParse(context.Request.Headers["Idempotency-Key"].ToString(), out var operationId) || operationId == Guid.Empty)
+        return (IResult)Results.BadRequest(new { error = "idempotency_key_required" });
+
+    try
+    {
+        var registration = PersonsRegistrationMapper.Map(request.Party);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var result = await parties.QuickRegisterNaturalAsync(
+            registration, actor.AccountId.ToString("D"), operationId, request.ForceNew, request.SelectedPartyId,
+            transaction, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        var response = PersonsRegistrationMapper.Map(result);
+        return result.Created
+            ? (IResult)Results.Created($"/api/v2/persons/{result.PartyId}", response)
+            : (IResult)Results.Ok(response);
+    }
+    catch (IdempotencyKeyConflictException) { return (IResult)Results.Conflict(new { error = "idempotency_key_conflict" }); }
+    catch (DuplicatePartyIdentifierException) { return (IResult)Results.Conflict(new { error = "duplicate_party_identifier" }); }
+    catch (InvalidOperationException) { return (IResult)Results.Conflict(new { error = "quick_registration_selection_invalid" }); }
+    catch (ArgumentException) { return (IResult)Results.UnprocessableEntity(new { error = "validation_failed" }); }
+});
+
+app.MapPost("/api/v2/persons/quick/legal", async (
+    QuickRegisterLegalPartyRequest request, HttpContext context, IConfiguration configuration,
+    NpgsqlDataSource dataSource, IAuthenticatedActorContext actor, IRolePermissionStore permissions,
+    IPartyRepository parties, CancellationToken cancellationToken) =>
+{
+    if (!configuration.GetValue<bool>("Persons:WriteApiEnabled"))
+        return (IResult)Results.Json(new { error = "persons_write_api_disabled" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+
+    var accountId = AccountId.From(actor.AccountId);
+    if (!await permissions.HasPermissionAsync(accountId, "persons.create", cancellationToken) ||
+        !await permissions.HasPermissionAsync(accountId, "persons.read", cancellationToken))
+        return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
+    if (!Guid.TryParse(context.Request.Headers["Idempotency-Key"].ToString(), out var operationId) || operationId == Guid.Empty)
+        return (IResult)Results.BadRequest(new { error = "idempotency_key_required" });
+
+    try
+    {
+        var registration = PersonsRegistrationMapper.Map(request.Party);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var result = await parties.QuickRegisterLegalAsync(
+            registration, actor.AccountId.ToString("D"), operationId, request.ForceNew, request.SelectedPartyId,
+            transaction, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        var response = PersonsRegistrationMapper.Map(result);
+        return result.Created
+            ? (IResult)Results.Created($"/api/v2/persons/{result.PartyId}", response)
+            : (IResult)Results.Ok(response);
+    }
+    catch (IdempotencyKeyConflictException) { return (IResult)Results.Conflict(new { error = "idempotency_key_conflict" }); }
+    catch (DuplicatePartyIdentifierException) { return (IResult)Results.Conflict(new { error = "duplicate_party_identifier" }); }
+    catch (InvalidOperationException) { return (IResult)Results.Conflict(new { error = "quick_registration_selection_invalid" }); }
+    catch (ArgumentException) { return (IResult)Results.UnprocessableEntity(new { error = "validation_failed" }); }
 });
 
 app.MapGet("/api/v2/persons/{partyId}", async (
