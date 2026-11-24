@@ -167,6 +167,17 @@ public sealed class PersonsMergeContractTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task AC44_MergeIsAtomicConcurrentAndIdempotentWithFailureRollback()
+    {
+        // Compose all three independent failure modes under one AC-44 acceptance test:
+        // replay idempotency, transaction rollback/recovery, and competing merge concurrency.
+        await AC41_AC44_merge_transfers_registered_reference_atomically_and_replays_idempotently();
+        await AC44_failure_after_apply_rolls_back_every_participant_and_runs_recovery();
+        await AC44_concurrent_merges_of_one_source_allow_exactly_one_winner();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task AC44_failure_after_apply_rolls_back_every_participant_and_runs_recovery()
     {
         await using var dataSource = OpenDataSource();
