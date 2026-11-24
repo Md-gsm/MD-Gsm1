@@ -3,7 +3,7 @@ info:
   title: MD-Gsm Persons API
   version: 2.0.0
   description: >
-    Versioned contract. The protected party-details GET endpoint is implemented and requires a validated IdentityAccess session and server-side permission checks. Search and create routes remain contract-only; G1 is not authorized.
+    Versioned contract. The protected party-details GET endpoint is implemented and requires a validated IdentityAccess session and server-side permission checks. Search remains contract-only. Natural-person and legal-entity POST routes are implemented behind Persons:WriteApiEnabled (default false); enabling them is not authorized until the independent Persons G1/release gates pass.
 servers:
   - url: https://{host}
     variables:
@@ -39,7 +39,7 @@ paths:
     post:
       operationId: createNaturalParty
       summary: Register a natural person
-      description: The actor identity is derived from the validated server session, never from the request body. Registration is idempotent by the Idempotency-Key header (V1: key only, no payload comparison).
+      description: The actor identity is derived from the validated server session, never from the request body. Registration is idempotent by Idempotency-Key (V1 verifies actor ownership but does not compare request payloads).
       parameters:
         - in: header
           name: Idempotency-Key
@@ -50,8 +50,10 @@ paths:
         content:
           application/json:
             schema: { $ref: '#/components/schemas/CreateNaturalPartyRequest' }
+      x-feature-flag: Persons:WriteApiEnabled
       responses:
         '201': { description: Party created }
+        '200': { description: Existing result returned for an idempotent replay }
         '401': { description: Missing or invalid session }
         '403': { description: Missing write permission }
         '409': { description: Duplicate national identifier or contact conflict }
@@ -60,7 +62,7 @@ paths:
     post:
       operationId: createLegalParty
       summary: Register a legal entity
-      description: Idempotent by the Idempotency-Key header (V1: key only, no payload comparison).
+      description: Idempotent by Idempotency-Key (V1 verifies actor ownership but does not compare request payloads).
       parameters:
         - in: header
           name: Idempotency-Key
@@ -71,8 +73,10 @@ paths:
         content:
           application/json:
             schema: { $ref: '#/components/schemas/CreateLegalPartyRequest' }
+      x-feature-flag: Persons:WriteApiEnabled
       responses:
         '201': { description: Legal party created }
+        '200': { description: Existing result returned for an idempotent replay }
         '401': { description: Missing or invalid session }
         '403': { description: Missing write permission }
         '409': { description: Duplicate legal identifier }
