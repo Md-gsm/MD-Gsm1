@@ -98,7 +98,7 @@ public sealed class PersonsHttpClientTests
             Assert.True(request.Headers.TryGetValues("Idempotency-Key", out var values));
             Assert.Equal(operationId.ToString("D"), Assert.Single(values!));
             return Json(HttpStatusCode.OK,
-                "{\\"outcome\\":\\"SelectionRequired\\",\\"partyId\\":null,\\"created\\":false,\\"candidates\\":[]}");
+                """{"outcome":"SelectionRequired","partyId":null,"created":false,"candidates":[]}""");
         });
         var api = new PersonsApiClient(http);
         var party = new CreateLegalPartyRequest(
