@@ -330,7 +330,7 @@ app.MapGet("/api/v2/persons/{partyId}", async (
     {
         var details = await parties.GetAsync(
             partyId, actor.AccountId.ToString("D"), includeSensitive ?? false, null, cancellationToken);
-        return details is null ? Results.NotFound() : Results.Ok(details);
+        return details is null ? Results.NotFound() : Results.Ok(PersonsRegistrationMapper.Map(details));
     }
     catch (UnauthorizedAccessException)
     {
