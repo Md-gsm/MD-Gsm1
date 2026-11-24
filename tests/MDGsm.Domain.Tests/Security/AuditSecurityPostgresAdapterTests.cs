@@ -22,7 +22,8 @@ public sealed class AuditSecurityPostgresAdapterTests
     public async Task Postgres_append_and_source_outbox_are_atomic_idempotent_and_verifiable()
     {
         var connectionString = Environment.GetEnvironmentVariable("IdentityAccessTestConnectionString");
-        Assert.False(string.IsNullOrWhiteSpace(connectionString));
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new InvalidOperationException("The marked disposable PostgreSQL integration connection string is required.");
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
         Assert.Contains(builder.Host, new[] { "127.0.0.1", "localhost", "::1" });
         Assert.Matches("^mdgsm_identityaccess_disposable_[0-9]+_[0-9]+$", builder.Database);
@@ -51,8 +52,7 @@ public sealed class AuditSecurityPostgresAdapterTests
             var workerBuilder = new NpgsqlConnectionStringBuilder(connectionString)
             {
                 Username = workerLogin,
-                Password = workerPassword,
-                Pooling = false
+                Password = workerPassword
             };
             await using var workerDataSource = NpgsqlDataSource.Create(workerBuilder.ConnectionString);
             await using (var noRole = new NpgsqlConnection(workerBuilder.ConnectionString))
@@ -61,6 +61,17 @@ public sealed class AuditSecurityPostgresAdapterTests
                 await using var forbidden = new NpgsqlCommand(
                     $"SELECT state FROM {Q(sourceSchema)}.audit_outbox_delivery LIMIT 1;", noRole);
                 await Assert.ThrowsAsync<PostgresException>(() => forbidden.ExecuteScalarAsync());
+            }
+            await using (var roleBoundary = new NpgsqlConnection(workerBuilder.ConnectionString))
+            {
+                await roleBoundary.OpenAsync();
+                await using (var setRole = new NpgsqlCommand($"SET ROLE {Q(workerAclRole)};", roleBoundary))
+                    await setRole.ExecuteNonQueryAsync();
+                await using var forbiddenLedger = new NpgsqlCommand(
+                    $"SELECT event_id FROM {Q(auditSchema)}.events LIMIT 1;", roleBoundary);
+                await Assert.ThrowsAsync<PostgresException>(() => forbiddenLedger.ExecuteScalarAsync());
+                await using var resetRole = new NpgsqlCommand("RESET ROLE;", roleBoundary);
+                await resetRole.ExecuteNonQueryAsync();
             }
 
             var auditStore = new PostgresAuditEventStore(dataSource, auditSchema);
@@ -133,6 +144,27 @@ public sealed class AuditSecurityPostgresAdapterTests
             Assert.Equal(1L, await ScalarAsync(connectionString,
                 $"SELECT count(*) FROM {Q(sourceSchema)}.audit_outbox_events WHERE event_id=@id;", sourceEvent.EventId));
 
+            // After SET ROLE, the worker may SELECT immutable envelopes but cannot update them or EventId.
+            await using (var immutableGuard = new NpgsqlConnection(workerBuilder.ConnectionString))
+            {
+                await immutableGuard.OpenAsync();
+                await using (var setRole = new NpgsqlCommand($"SET ROLE {Q(workerAclRole)};", immutableGuard))
+                    await setRole.ExecuteNonQueryAsync();
+                await using var mutateEnvelope = new NpgsqlCommand(
+                    $"UPDATE {Q(sourceSchema)}.audit_outbox_events SET outcome_code='tampered' WHERE event_id=@id;",
+                    immutableGuard);
+                mutateEnvelope.Parameters.AddWithValue("id", sourceEvent.EventId);
+                await Assert.ThrowsAsync<PostgresException>(() => mutateEnvelope.ExecuteNonQueryAsync());
+                await using var mutateDeliveryIdentity = new NpgsqlCommand(
+                    $"UPDATE {Q(sourceSchema)}.audit_outbox_delivery SET event_id=@other WHERE event_id=@id;",
+                    immutableGuard);
+                mutateDeliveryIdentity.Parameters.AddWithValue("other", Guid.NewGuid());
+                mutateDeliveryIdentity.Parameters.AddWithValue("id", sourceEvent.EventId);
+                await Assert.ThrowsAsync<PostgresException>(() => mutateDeliveryIdentity.ExecuteNonQueryAsync());
+                await using var resetRole = new NpgsqlCommand("RESET ROLE;", immutableGuard);
+                await resetRole.ExecuteNonQueryAsync();
+            }
+
             await using (var duplicateConnection = new NpgsqlConnection(connectionString))
             {
                 await duplicateConnection.OpenAsync();
@@ -165,6 +197,29 @@ public sealed class AuditSecurityPostgresAdapterTests
             var noFurtherClaims = await outboxStore.ClaimBatchAsync(
                 AuditEventOutboxWorkerIdentity.LogicalIdentity, 10, TimeSpan.FromMinutes(1), CancellationToken.None);
             Assert.Empty(noFurtherClaims);
+
+            var expiringEvent = CreateSubmission(Guid.NewGuid(), streamId, "IdentityAccess");
+            await using (var sourceConnection = new NpgsqlConnection(connectionString))
+            {
+                await sourceConnection.OpenAsync();
+                await using var transaction = await sourceConnection.BeginTransactionAsync();
+                await InsertSourceFactAsync(sourceConnection, transaction, sourceSchema, expiringEvent.EventId);
+                await outboxStore.EnqueueAsync(sourceConnection, transaction, expiringEvent, CancellationToken.None);
+                await transaction.CommitAsync();
+            }
+
+            var expiringLease = Assert.Single(await outboxStore.ClaimBatchAsync(
+                AuditEventOutboxWorkerIdentity.LogicalIdentity, 10, TimeSpan.FromMilliseconds(100), CancellationToken.None));
+            var expiringReceipt = await ingestion.AppendAsync(expiringLease.Submission, CancellationToken.None);
+            await Task.Delay(TimeSpan.FromMilliseconds(250));
+            await Assert.ThrowsAsync<AuditEventOutboxLeaseLostException>(
+                () => outboxStore.MarkAcknowledgedAsync(expiringLease, expiringReceipt, CancellationToken.None));
+
+            var reclaimedLease = Assert.Single(await outboxStore.ClaimBatchAsync(
+                AuditEventOutboxWorkerIdentity.LogicalIdentity, 10, TimeSpan.FromMinutes(1), CancellationToken.None));
+            await Assert.ThrowsAsync<AuditEventOutboxLeaseLostException>(
+                () => outboxStore.MarkAcknowledgedAsync(expiringLease, expiringReceipt, CancellationToken.None));
+            await outboxStore.MarkAcknowledgedAsync(reclaimedLease, expiringReceipt, CancellationToken.None);
 
             Assert.True((await verifier.VerifyAsync(streamId, CancellationToken.None)).IsValid);
         }
