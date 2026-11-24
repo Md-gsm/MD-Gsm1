@@ -174,13 +174,16 @@ public sealed class PostgresAuditEventStore : IAuditEventStore
             }
 
             await using var clock = new NpgsqlCommand("SELECT clock_timestamp();", connection, transaction);
-            var databaseTimeValue = await clock.ExecuteScalarAsync(cancellationToken);
-            if (databaseTimeValue is not DateTimeOffset databaseTime)
+            await using var clockReader = await clock.ExecuteReaderAsync(cancellationToken);
+            if (!await clockReader.ReadAsync(cancellationToken))
                 throw new InvalidOperationException("PostgreSQL did not return a database timestamp.");
-            
+            var databaseTime = clockReader.GetDateTime(0);
+            if (databaseTime.Kind != DateTimeKind.Utc)
+                throw new InvalidOperationException("PostgreSQL clock_timestamp() was not returned as UTC.");
+
             _lockedState = new AuditAppendState(
                 new AuditStreamHead(streamId, sequence, headHash),
-                AuditEventCanonicalizer.NormalizeTimestamp(databaseTime));
+                AuditEventCanonicalizer.NormalizeTimestamp(new DateTimeOffset(databaseTime)));
             return _lockedState;
         }
 
