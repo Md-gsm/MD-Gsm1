@@ -55,3 +55,7 @@ public sealed record PartyRegistrationResult(string PartyId, bool Created);
 /// <summary>Raised when a unique identifier (for example a national identity number) is already registered. Carries no details by design.</summary>
 public sealed class DuplicatePartyIdentifierException()
     : Exception("A party with the same unique identifier is already registered.");
+
+/// <summary>Raised when an idempotency key is reused by a different authenticated actor.</summary>
+public sealed class IdempotencyKeyConflictException()
+    : Exception("The idempotency key is already bound to another authenticated actor.");
