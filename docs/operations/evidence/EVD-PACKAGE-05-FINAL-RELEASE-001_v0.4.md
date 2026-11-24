@@ -38,3 +38,8 @@ Positive accepted Posting Rules: 0; Posting Release NOT GRANTED. Finance 7C cano
 
 Decision: documentation candidate only; do not describe as owner-accepted final release until the explicit exact-SHA owner decision is recorded.
 **END — EVD-PACKAGE-05-FINAL-RELEASE-001 v0.4**
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. Any v3.0.3 references retained above identify the earlier source snapshot or the baseline used when this artifact was authored; they do not define current authority. Current decisions must conform to v3.0.4. This notice does not alter historical execution evidence or imply implementation, test PASS, independent acceptance, migration authorization or release.

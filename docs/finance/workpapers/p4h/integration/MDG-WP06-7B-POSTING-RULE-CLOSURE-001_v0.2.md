@@ -6,7 +6,7 @@
 | Document ID | MDG-WP06-7B-POSTING-RULE-CLOSURE-001 |
 | Version | 0.2 |
 | Classification | CONTROLLED RECONSTRUCTION — DISPOSITION / CLOSURE LEDGER |
-| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 |
+| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.4 (current); v3.0.3 historical |
 | Current inputs | 7B v0.2; 7C v0.4; 7D v0.2; Integrated v0.6 |
 | Owner change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 — OWNER APPROVED |
 | Decision overlays | OWN-7C-043; OWN-7C-004-R1; ADR-0017 |
@@ -168,3 +168,8 @@ This section supersedes conflicting historical authority statements. Accepted ar
 Integer monetary base is 1 IRR. Exact document net is rounded once at document total using AwayFromZero; maximum absolute rounding difference is 1 IRR per document. No per-row monetary threshold exists. O-65 / CHG-100 controls mixed-sign D/P/N allocation as stated in v3.0.3 P.4. O-09 is a separate high-value sales approval rule.
 
 The 39/39 event dispositions remain complete only at policy/disposition level. Accepted positive Posting Rules remain 0. Every FE remains POSTING_BLOCKED until the complete source event, trigger, RecognitionTime, both debit/credit sides, amount/cost basis, tax, canonical account eligibility, subledger/dimensions, PostingIdentity/idempotency, reversal, period, atomicity/retry, authorization/audit, test and evidence are complete. No fallback account or inferred recognition time is allowed. B-final remains OPEN; Posting Release NOT GRANTED.
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. v3.0.3 remains a historical snapshot and may be referenced only to describe prior source material or decisions. This notice does not change the COA source hierarchy, posting-rule status, test evidence, unresolved source gaps or release authorization recorded in this workpaper. Any detailed semantic dependency must be reconciled against v3.0.4 before implementation or Posting Release.

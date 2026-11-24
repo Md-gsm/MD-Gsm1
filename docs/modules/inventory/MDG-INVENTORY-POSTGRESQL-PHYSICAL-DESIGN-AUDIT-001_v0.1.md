@@ -190,3 +190,8 @@ This audit is subordinate to MDG-ARCH-MASTER-001 v3.0.3. It does not amend the m
 **No DDL, SQL, EF mapping, migration, database grant, API, runtime implementation, Posting Rule, Posting Release, production migration or Go-Live is authorized by this audit.** O-35 and all relevant PostgreSQL runtime evidence remain open until exact-SHA execution and review.
 
 **END — MDG-INVENTORY-POSTGRESQL-PHYSICAL-DESIGN-AUDIT-001 v0.1**
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. The v3.0.3 references in this dated review/evidence artifact identify the baseline actually reviewed or used when the artifact was produced; they are retained as historical provenance and are not silently rewritten. For current design decisions, v3.0.4 governs. Any unresolved section-level conflict or design dependency must be re-audited against v3.0.4 before implementation. This authority notice does not upgrade this artifact's review type, evidence strength, gate status or acceptance.

@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Register ID | MDG-SECURITY-STAGE-08-REGISTER-001 |
-| Version / Date | 2.8 / 2026-11-22 |
-| Supersedes | v2.7 |
+| Version / Date | 2.7 / 2026-11-22 |
+| Supersedes | v2.6 |
 | Package | PR #86 — open, non-Draft, unmerged |
 | Branch | `security/stage08-n3-adr0013-reconciliation` |
-| Documentation baseline before this successor | `2e3ae7f9fb5ff2acefc7eb49139d7812420099ff` |
+| Documentation baseline before this successor | `74dc74203e6563f5ed2ebbc11acc11180221f68a` |
 | O20-G evidence head (bounded CI proof) | `5f541e342e8b2cb02c6f88d816a137b5ab409224` |
 | O20-D evidence head (bounded CI proof) | `07ec5b2246ffb3c59299aa66f37942eb0fc823b3` |
 | Overall O-20 | OPEN |
@@ -57,31 +57,18 @@ This does not constitute a production-cluster scan or prove deployed production 
 
 ### 4.1 Owner-accepted policy
 
-The base owner-accepted decisions are carried forward and expanded by `MDG-SECURITY-O20E-DATA-OWNERSHIP-001 v0.3`:
+The owner-accepted decisions recorded in `MDG-SECURITY-O20E-DATA-OWNERSHIP-001 v0.2` remain:
 1. Organization owns Account-to-Branch and Account-to-Warehouse assignment facts.
 2. Employment by itself does not grant access; an explicit active assignment is required.
 3. Multiple active Branch and Warehouse assignments may coexist; each is individually auditable.
 4. Branch assignment does not imply Warehouse access; access to a Warehouse requires an explicit assignment to that exact Warehouse.
 
-The governing Master Architecture v3.0.3 and `OWN-INV-018 v1.1` place Branch/Warehouse/location master data and the Warehouse → Section → Shelf → Bin/StorageLocation hierarchy under Organization; Inventory owns stock facts and movement. IdentityAccess remains owner of Account, Credential, Session, Role and Permission. These are ownership/policy conclusions, not G1 approval.
-
-### 4.1A Additional owner decisions recorded on 2026-11-22
-
-Owner policy v0.3 records the following accepted outcomes:
-- Exactly one current Branch per Warehouse; controlled, audited reassignment with retained relationship history. The effect on existing Warehouse assignments after reassignment remains open.
-- BranchCode unique across Organization; WarehouseCode unique within current Branch; both required, normalized and not silently reusable after archive. Exact normalization/editability remains open.
-- Branch/Warehouse lifecycle vocabulary ACTIVE / INACTIVE / ARCHIVED; no physical deletion. Transition prerequisites remain open.
-- Assignment activation is immediate after approved server-side commit; no future-dated activation or automatic expiry; revocation is terminal; a later grant receives a new AssignmentId.
-- Self-assignment is prohibited for all actors, including the Product Owner. Non-owner assignment create/change/revoke commands require a second distinct authenticated approver before effect. The designated Product Owner may manage Branch/Warehouse assignments for any other account without second-person approval.
-- The Product Owner exception removes only the second-approver requirement. It does not permit impersonation, credential/session access or IdentityAccess account/permission mutation. Product Owner actions remain authenticated, reasoned and audited. Trusted server-side owner-principal binding is still a technical G1 prerequisite and must not be inferred from `super_admin`, a client claim, username or GitHub identity.
-- Exact active Warehouse assignment + active Warehouse/current Branch facts suffice for Warehouse scope; a separate parent Branch assignment is not additionally required. IdentityAccess permission remains mandatory.
-
-No item above authorizes runtime, DDL, migration, permissions, grants, production changes, G1 or merge.
+The governing Master Architecture v3.0.4 and `OWN-INV-018 v1.1` place Branch/Warehouse/location master data and the Warehouse → Section → Shelf → Bin/StorageLocation hierarchy under Organization; Inventory owns stock facts and movement. IdentityAccess remains owner of Account, Credential, Session, Role and Permission. These are ownership/policy conclusions, not G1 approval.
 
 ### 4.2 Controlled logical and physical design
 
-- Logical design: `MDG-ORGANIZATION-ASSIGNMENT-SCOPE-DESIGN-001 v0.2`.
-- Physical design: `MDG-ORGANIZATION-ASSIGNMENT-SCOPE-PHYSICAL-DESIGN-001 v0.2`, still a proposal and not implementation authorization.
+- Logical design: `MDG-ORGANIZATION-ASSIGNMENT-SCOPE-DESIGN-001 v0.1`.
+- Physical design: `MDG-ORGANIZATION-ASSIGNMENT-SCOPE-PHYSICAL-DESIGN-001 v0.1`, explicitly a proposal only.
 - The physical proposal describes candidate Organization persistence concepts, but does not authorize source module, schema, tables, DDL, migrations, seed, resolver, endpoint, database role/grant, reporting view or runtime.
 - `src/Modules/README.md` still requires G1 authorization before a module is introduced. The Organization directory does not exist in the inspected source tree.
 
@@ -97,29 +84,29 @@ The inventory also records an unrelated documentation/code discrepancy: API READ
 
 ## 5. O20-E — preliminary G1 readiness review
 
-`MDG-SECURITY-O20E-G1-READINESS-REVIEW-001 v0.2` is an updated internal preliminary cross-contract review, not an independent reviewer attestation and not an owner authorization.
+`MDG-SECURITY-O20E-G1-READINESS-REVIEW-001 v0.1` is an internal preliminary cross-contract review, not an independent reviewer attestation and not an owner authorization.
 
 **Disposition: NOT READY FOR G1.** The review found no basis to introduce Organization implementation until the following are resolved:
 
 | Design item | Current status | Closure required |
 |---|---|---|
-| PD-ORG-01 Warehouse-to-Branch relation | OWNER-ACCEPTED with bounded detail OPEN | Exactly one current Branch; controlled reassignment; retain history; decide existing assignment effect after reassignment |
-| PD-ORG-02 Branch/Warehouse codes | OWNER-ACCEPTED with bounded detail OPEN | BranchCode globally unique; WarehouseCode unique in current Branch; required, normalized and not reused after archive; exact algorithm/editability OPEN |
-| PD-ORG-03 master lifecycle | OWNER-ACCEPTED with bounded detail OPEN | ACTIVE/INACTIVE/ARCHIVED; no physical delete; transition prerequisites OPEN |
-| PD-ORG-04 assignment lifecycle | OWNER-ACCEPTED | Immediate activation; no future dating/automatic expiry; revocation terminal; regrant new AssignmentId |
-| PD-ORG-05 actor/reason/separation of duties | OWNER-ACCEPTED with technical binding OPEN | No self-assignment; non-owner requires distinct second approver; Product Owner may manage any other account without second approval; trusted owner binding OPEN |
+| PD-ORG-01 Warehouse-to-Branch cardinality/reassignment/history | OPEN — owner | Define cardinality, reassignment process, history and fate of existing Warehouse assignments |
+| PD-ORG-02 Branch/Warehouse codes | OPEN — owner/business | Define normalization, uniqueness scope, editability and reuse |
+| PD-ORG-03 master lifecycle | OPEN — owner/business | Define active/inactive/archive transitions and prerequisites |
+| PD-ORG-04 assignment lifecycle | OPEN — owner | Define effective dates, expiry and reactivation/new identity |
+| PD-ORG-05 actor/reason/separation of duties | OPEN — owner/security | Decide self-assignment, maker-checker and exact authorization rules |
 | PD-ORG-06 permission keys and role grants | OPEN — IdentityAccess/security + owner | Reconcile approved permission matrix with PermissionCatalog and publish versioned public principal/permission contracts |
-| PD-ORG-07 IdentityAccess scope composition | OWNER POLICY ACCEPTED; CONTRACT OPEN | Permission AND Organization assignment; IdentityAccess scope narrows only; publish compatible versioned contract |
+| PD-ORG-07 IdentityAccess scope composition | PARTIAL / IMPLEMENTATION BLOCKED | Enforce permission AND Organization assignment; IdentityAccess scope may narrow only; publish compatible versioned contract |
 | PD-ORG-08 AuditSecurity outbox/event contract | PARTIAL / OPEN | Publish/accept canonical event envelope, durable ACK, retry/quarantine, worker authority and retention |
 | PD-ORG-09 identifier generation | OPEN — Platform | Set Organization ID representation/generation policy; PartyId UUIDv7 alone is not a global rule |
 | PD-ORG-10 Unit of Work and cross-module lock order | OPEN — Platform/Application | Publish global Lock-Order Registry and prove revocation/write concurrency on PostgreSQL |
 | PD-ORG-11 assignment-history retention/legal hold | OPEN — owner/legal | Set retention, legal hold, archive and disposal policy |
 | PD-ORG-12 source RowScope inventory | CURRENT SNAPSHOT VERIFIED; FUTURE COVERAGE OPEN | Re-inventory and test every new source/query/report/export surface |
-| PD-ORG-13 Branch prerequisite for Warehouse scope | OWNER-ACCEPTED | No parent Branch assignment required when exact Warehouse assignment and active Warehouse/current Branch facts are valid |
+| PD-ORG-13 Branch prerequisite for Warehouse scope | OPEN — owner | Decide explicitly whether exact Warehouse assignment alone is sufficient or an active parent Branch assignment is also required |
 
-The updated readiness review records the owner decisions above and retains implementation blockers in the existing IdentityAccess integration: current `PermissionCatalog.cs` contains no `organization.*` keys and lacks some report permissions in the already approved policy matrix; `src/Modules/IdentityAccess/Contracts/README.md` says no runtime public contract is published. It also records that Master requires an explicit Lock-Order Registry and PostgreSQL concurrency evidence, and that AuditSecurity remains sole owner of canonical shared audit events.
+The readiness review records implementation blockers in the existing IdentityAccess integration: current `PermissionCatalog.cs` contains no `organization.*` keys and lacks some report permissions in the already approved policy matrix; `src/Modules/IdentityAccess/Contracts/README.md` says no runtime public contract is published. It also records that Master requires an explicit Lock-Order Registry and PostgreSQL concurrency evidence, and that AuditSecurity remains sole owner of canonical shared audit events.
 
-The review distinguishes accepted owner policy from open technical design. Remaining recommendations are options only and do not become implementation contracts without the accountable owner/platform/security acceptance.
+Any recommendations in the preliminary review are options only and do not become accepted policy without explicit owner/platform/security decisions.
 
 ## 6. O20-E gate state
 
@@ -127,11 +114,11 @@ The review distinguishes accepted owner policy from open technical design. Remai
 |---|---|
 | Organization Branch/Warehouse ownership | ESTABLISHED |
 | AccountBranchAssignment / AccountWarehouseAssignment ownership | OWNER-ACCEPTED |
-| Base and additional assignment policy decisions in O20E v0.3 | OWNER-ACCEPTED, including Product Owner second-approver exception |
-| Logical design | UPDATED v0.2 |
-| Physical design | PROPOSED v0.2; technical details/independent review open; not implementation-authorized |
+| Four assignment policy invariants | OWNER-ACCEPTED |
+| Logical design | DOCUMENTED |
+| Physical design | PROPOSED; not implementation-authorized |
 | Current repository source inventory | REVALIDATED snapshot at stated SHA |
-| Preliminary G1 readiness | NOT READY; owner decisions updated; cross-contract/technical blockers remain |
+| Preliminary G1 readiness | NOT READY |
 | Organization G1 authorization | NOT GRANTED |
 | Organization runtime/module/resolver | NOT IMPLEMENTED |
 | Schema/DDL/migration/seed | NOT CREATED / NOT AUTHORIZED |
@@ -148,11 +135,8 @@ The emergency identity's allow-list, independently authorized activation, bounde
 ## 8. Exact-source and checksum control
 
 This register is a controlled documentation successor within the existing PR #86 branch. The two newly recorded O20-E artifacts are:
-- Source inventory v0.2 SHA-256: `51611ab147dbe05c6f56380fea409b8ea6cd6b30717f64781189908a6f679d24`.
-- Owner policy v0.3 SHA-256: `e3c16c0794a776a656ec79282465e565825de3097396b1bb6288c8ceb36421b9`.
-- Logical design v0.2 SHA-256: `da95680e624ef01cc6069080204bd015dbcf06f4dd36c510ef590266827e1991`.
-- Physical design proposal v0.2 SHA-256: `aca2433e5e03cb667080fd322786464e8e05249ccf6f49c67fdde25d9ae21725`.
-- G1 readiness review v0.2 SHA-256: `50497d80f6bcae4a235f91fbe4f37ecae436a2c519b61491a6f6c3d1f1a54081`.
+- Source inventory v0.2 SHA-256: `51611ab147dbe05c6f56380fea409b8ea6cd6b30717f64781189908a6f679d24`; creation commit `16e5069dbe926ee62486b43cff83c0e02b0ce780`.
+- G1 readiness review v0.1 SHA-256: `2d32f53d3a3d37726204347101b908fe8bf1c2e45ab02bb30a122f4be7b1d36a`; creation commit `74dc74203e6563f5ed2ebbc11acc11180221f68a`.
 
 The corresponding entries and this register's own digest must be recorded in `SHA256SUMS.txt`. The checksum file is not self-hashed. CI on the eventual final documentation/checksum head must be retrieved and inspected before any exact-head PASS is claimed; no current-head all-workflow PASS is asserted by this register.
 
@@ -162,7 +146,7 @@ The corresponding entries and this register's own digest must be recorded in `SH
 |---|---|
 | O20-D | PASS — bounded disposable logical backup/isolated restore only |
 | O20-G | PASS — bounded disposable PostgreSQL 18.6 catalog/ACL inventory only |
-| O20-E | OPEN — owner policy v0.3 accepted; logical v0.2 / physical proposal v0.2 documented; G1 NOT READY; runtime and RowScope tests NOT RUN |
+| O20-E | OPEN — owner policy accepted; designs documented; G1 NOT READY; runtime and RowScope tests NOT RUN |
 | O20-F | OPEN — emergency allow-list lifecycle and evidence incomplete |
 | Overall O-20 | **OPEN** |
 
@@ -170,4 +154,11 @@ No new Organization module, schema, table, DDL, migration, seed, permission key,
 
 No new independent reviewer request is made. Per the existing sequencing direction, consolidated reviewer re-request is deferred until both O20-E and O20-F are complete. PR #86 remains open and unmerged.
 
-**END — MDG-SECURITY-STAGE-08-REGISTER-001 v2.8**
+**END — MDG-SECURITY-STAGE-08-REGISTER-001 v2.7**
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. All earlier Master versions, including v3.0.3, are historical snapshots only. This register remains authoritative only for its own defined subject matter and status dimensions; this authority update does not change any O-item, workpaper, security finding, implementation, test, evidence or gate status unless a separate explicit record does so.
+
+The current repository-level authority record is MDG-ARCH-BASELINE-REGISTRATION-001 v1.3. Historical records and earlier status statements are preserved as provenance and are superseded for current Master authority. No implementation, production credential, SQL/DDL, migration, activation, release or Go-Live is authorized by this notice.
