@@ -13,35 +13,13 @@ security:
   - opaqueBearer: []
 paths:
   /api/v2/persons:
-    get:
-      operationId: searchParties
-      summary: Search active parties by name or last four mobile digits
-      description: >-
-        A term is required: either a name of at least two characters or exactly four digits matching the end of a mobile number.
-        At most 10 results are returned and mobile numbers are masked (only the last two digits are visible).
-        Per-actor rate limiting remains a required policy for the future search endpoint; no search HTTP route is currently exposed.
-      parameters:
-        - in: query
-          name: q
-          required: true
-          schema: { type: string, minLength: 2, maxLength: 160 }
-        - in: query
-          name: limit
-          schema: { type: integer, minimum: 1, maximum: 10, default: 10 }
-      responses:
-        '200':
-          description: Party list
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/PartyListResponse' }
-        '401': { description: Missing, invalid, expired, or revoked opaque session token }
-        '403': { description: Authenticated user lacks Persons read permission }
     post:
       operationId: quickRegisterNaturalParty
       summary: Resolve or register a natural person
       description: >-
         Every natural-person creation path performs duplicate resolution. Requires persons.create and persons.read.
         Existing candidates require explicit selection unless ForceNew is set. Actor is derived from the validated server session.
+        Search/list HTTP is intentionally not exposed until persistent quotas and abuse-lock controls are approved and implemented.
       parameters:
         - in: header
           name: Idempotency-Key
