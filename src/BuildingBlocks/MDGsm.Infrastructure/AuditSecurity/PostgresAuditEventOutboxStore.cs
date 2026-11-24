@@ -119,7 +119,7 @@ public sealed class PostgresAuditEventOutboxStore : IAuditEventOutboxWriter, IAu
         if (leaseDuration <= TimeSpan.Zero || leaseDuration > TimeSpan.FromMinutes(15))
             throw new ArgumentOutOfRangeException(nameof(leaseDuration));
 
-        await using var connection = await _workerDataSource.OpenConnectionAsync(cancellationToken);
+        await using var connection = await OpenWorkerConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
         var candidates = new List<Guid>();
         await using (var select = new NpgsqlCommand($"""
