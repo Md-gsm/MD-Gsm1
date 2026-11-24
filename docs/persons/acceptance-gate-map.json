@@ -1,5 +1,5 @@
 {
-  "mapVersion": "1.1",
+  "mapVersion": "1.2",
   "sourceArchitecture": "MDGsm_Persons_Module_Architecture_Decision_and_Build_Spec_v1.1_FA",
   "criteria": [
     {
@@ -69,41 +69,41 @@
     {
       "id": "AC-39",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC39_AC40_AllExternalPartyIdConsumersAreRegisteredAndClassifiedExactlyOnce",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "All code-discovered PartyId consumers are registered"
     },
     {
       "id": "AC-40",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC39_AC40_AllExternalPartyIdConsumersAreRegisteredAndClassifiedExactlyOnce",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Every PartyId reference has exactly one merge classification"
     },
     {
       "id": "AC-41",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC41_FinanceMergeParticipantImplementsVersionedProtocolHooks",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Every participant implements versioned Prepare/Validate/Apply/Verify/Recovery contract"
     },
     {
       "id": "AC-42",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC42_preview_is_read_only_and_counts_transferable_finance_references",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Merge preview is read-only and counts active, historical, transferable and blocking references"
     },
     {
       "id": "AC-43",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC43_two_existing_finance_accounts_are_a_blocking_conflict_and_no_state_changes",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Unresolved blocking conflicts prevent execution"
     },
     {
@@ -155,10 +155,13 @@
       "expectedBehavior": "CI evidence contains commit, contract versions, schema fingerprint, gate/test counts, and no raw PII."
     }
   ],
-  "note": "AC-31..45 remain UNMAPPED. PR #50 has focused tests for portions of temporary retention and Party merge/Finance provisioning, but no criterion-by-criterion mapping is accepted. AC-46..49 are CI-policy/evidence tests only; they do not demonstrate runtime behavior for AC-31..45.",
+  "note": "AC-31..38 remain UNMAPPED pending full temporary-data lifecycle and PII evidence. AC-39..43 are mapped to explicit consumer registry/classification and Finance merge participant/preview/conflict tests. AC-44..45 remain UNMAPPED because complete combined concurrency/rollback/reconciliation and historical snapshot evidence is still incomplete. AC-46..49 are CI-policy/evidence tests only; they do not demonstrate the remaining runtime acceptance criteria.",
   "runtimeCoverageCaveat": {
-    "AC31toAC38": "Partial temporary workflow ciphertext store/retention worker; full criterion mapping and acceptance open.",
-    "AC39toAC45": "Partial transactional Party merge coordinator and Finance participant; consumer completeness, classification, participant protocol, preview/conflict behavior, atomicity and historical preservation not all proven.",
+    "AC31toAC38": "Partial temporary workflow ciphertext store/retention worker; exact expiry, purge, renewal, promotion, generic-search isolation and telemetry redaction criteria are not yet individually proven.",
+    "AC39toAC40": "Every external PartyId consumer is source-enumerated, registered exactly once and assigned one accepted merge classification; automated test plus the registry CI gate.",
+    "AC41": "The current Finance merge participant is checked against each versioned Preview/Prepare/Validate/Apply/Verify/Recover protocol hook. Future participants must be added to the registry and tested.",
+    "AC42toAC43": "Finance merge preview counts references without mutation and an unresolved dual-account conflict blocks execution.",
+    "AC44toAC45": "Focused atomicity, retry, rollback, concurrency and created-metadata tests exist, but complete acceptance for all references, historical snapshots and reconciliation remains open.",
     "AC46toAC49": "CI policy/evidence controls only; not runtime acceptance."
   }
 }
