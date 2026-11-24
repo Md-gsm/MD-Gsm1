@@ -49,3 +49,8 @@ Whole Package 5 owner acceptance of the final successor commit: PENDING.
 
 Conclusion: Package 5 is a version-controlled documentation/evidence candidate. It is not an owner-accepted final release until the exact-SHA owner decision and independent review are recorded.
 **END — EVD-FINANCE-INVENTORY-BUNDLE-004 v0.8**
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. Any v3.0.3 references retained above identify the earlier source snapshot or the baseline used when this artifact was authored; they do not define current authority. Current decisions must conform to v3.0.4. This notice does not alter historical execution evidence or imply implementation, test PASS, independent acceptance, migration authorization or release.
