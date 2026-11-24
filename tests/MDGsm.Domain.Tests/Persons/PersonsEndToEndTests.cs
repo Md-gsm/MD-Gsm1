@@ -405,7 +405,7 @@ public sealed class PersonsEndToEndTests
             AddressLine = null
         };
         var created = await scope.Repository.AddNaturalAsync(
-            request, Actor, Guid.CreateVersion7(), scope.Transaction, default);
+            request, Actor, Guid.CreateVersion7(), null, default);
         var details = await scope.Repository.GetAsync(
             created.PartyId, Actor, includeSensitive: false, scope.Transaction, default);
         Assert.NotNull(details);
