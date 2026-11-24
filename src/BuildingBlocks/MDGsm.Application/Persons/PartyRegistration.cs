@@ -16,6 +16,7 @@ public interface IPartyRegistrationCommon
     string? InternalNote { get; }
     PartyCommunicationPreferences CommunicationPreferences { get; }
     WorkClassification? WorkClassification { get; }
+    string CountryCode { get; }
 }
 
 public sealed record RegisterNaturalParty(
@@ -24,7 +25,8 @@ public sealed record RegisterNaturalParty(
     string? Province, string? City, string? PostalCode, string? AddressLine,
     PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,
     PartyCommunicationPreferences CommunicationPreferences,
-    WorkClassification? WorkClassification = null) : IPartyRegistrationCommon;
+    WorkClassification? WorkClassification = null,
+    string CountryCode = "IR") : IPartyRegistrationCommon;
 
 public sealed record RegisterLegalParty(
     string LegalName, string? LegalNationalId, string? EconomicCode, string? ResponsiblePersonName,
@@ -32,7 +34,8 @@ public sealed record RegisterLegalParty(
     string? Province, string? City, string? PostalCode, string? AddressLine,
     PartyAcquaintanceSource AcquaintanceSource, string? InternalNote,
     PartyCommunicationPreferences CommunicationPreferences,
-    WorkClassification? WorkClassification = null) : IPartyRegistrationCommon;
+    WorkClassification? WorkClassification = null,
+    string CountryCode = "IR") : IPartyRegistrationCommon;
 
 public sealed record PartyListItem(
     string PartyId, PartyType Type, string DisplayName, PartyBusinessRoles Roles,
