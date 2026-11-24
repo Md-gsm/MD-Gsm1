@@ -20,6 +20,11 @@ public sealed class PersonsApiContractTests
         Assert.DoesNotContain("FinancialProfile:", contract, StringComparison.Ordinal);
         Assert.DoesNotContain("creditLimitRial", contract, StringComparison.Ordinal);
         Assert.DoesNotContain("defaultDiscountPercent", contract, StringComparison.Ordinal);
+        Assert.Contains("PartyResponse:", contract, StringComparison.Ordinal);
+        Assert.Contains("workClassification:", contract, StringComparison.Ordinal);
+        Assert.DoesNotContain("address    PartyResponse:", contract, StringComparison.Ordinal);
+        Assert.DoesNotContain("\\n: { anyOf:", contract, StringComparison.Ordinal);
+        Assert.DoesNotContain("/api/v2/persons/quick/", contract, StringComparison.Ordinal);
     }
 
 
