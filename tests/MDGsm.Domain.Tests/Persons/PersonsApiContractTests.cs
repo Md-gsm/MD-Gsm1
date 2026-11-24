@@ -38,6 +38,19 @@ public sealed class PersonsApiContractTests
         Assert.Contains("HasPermissionAsync(accountId, \"persons.read\"", program, StringComparison.Ordinal);
     }
 
+
+    [Fact]
+    public void Party_detail_endpoint_maps_through_the_versioned_public_contract()
+    {
+        var root = FindRepositoryRoot();
+        var program = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
+        var mapper = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Persons", "PersonsRegistrationMapper.cs"));
+
+        Assert.Contains("Results.Ok(PersonsRegistrationMapper.Map(details))", program, StringComparison.Ordinal);
+        Assert.Contains("public static PartyResponse Map(PartyDetails details)", mapper, StringComparison.Ordinal);
+        Assert.Contains("PartyType.LegalPerson => \"LegalEntity\"", mapper, StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
