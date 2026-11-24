@@ -57,10 +57,10 @@ public sealed class PersonsEndToEndTests
     {
         await using var scope = await TestScope.OpenAsync();
         var registered = await scope.Repository.AddNaturalAsync(
-            NewNatural(null, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+            NewNatural(null, NewNationalId()), Actor, Guid.CreateVersion7(), null, default);
 
         var results = await scope.Repository.SearchAsync(
-            "علی رضایی", PartySearchLimits.MaxResults, Actor, scope.Transaction, default);
+            "علی رضایی", PartySearchLimits.MaxResults, Actor, default);
         Assert.Contains(results, item => item.PartyId == registered.PartyId);
 
         await scope.RollbackTransactionAsync();
@@ -326,21 +326,21 @@ public sealed class PersonsEndToEndTests
         await using var scope = await TestScope.OpenAsync();
         var suffix = Random.Shared.Next(1000, 9999).ToString();
         var mobile = "0912000" + suffix;                       // 11 digits, ends with the four-digit suffix
-        await scope.Repository.AddNaturalAsync(NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+        await scope.Repository.AddNaturalAsync(NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), null, default);
 
-        var bySuffix = await scope.Repository.SearchAsync(suffix, 10, scope.Transaction, default);
+        var bySuffix = await scope.Repository.SearchAsync(suffix, 10, Actor, default);
         var item = Assert.Single(bySuffix, x => x.DisplayName == PersianTestData.AliRezaeiCanonical);
         Assert.Equal(new string('*', 11) + suffix[^2..], item.MaskedPrimaryMobile);
 
-        var byArabicSpelling = await scope.Repository.SearchAsync(PersianTestData.AliArabicYeh, 10, scope.Transaction, default);
+        var byArabicSpelling = await scope.Repository.SearchAsync(PersianTestData.AliArabicYeh, 10, Actor, default);
         Assert.Contains(byArabicSpelling, x => x.DisplayName == PersianTestData.AliRezaeiCanonical);
 
-        var literalPercent = await scope.Repository.SearchAsync("%%", 10, scope.Transaction, default);
+        var literalPercent = await scope.Repository.SearchAsync("%%", 10, Actor, default);
         Assert.Empty(literalPercent);
 
-        await Assert.ThrowsAsync<ArgumentException>(() => scope.Repository.SearchAsync("", 10, scope.Transaction, default));
-        await Assert.ThrowsAsync<ArgumentException>(() => scope.Repository.SearchAsync("\u0639", 10, scope.Transaction, default));
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => scope.Repository.SearchAsync(PersianTestData.AliArabicYeh, 11, scope.Transaction, default));
+        await Assert.ThrowsAsync<ArgumentException>(() => scope.Repository.SearchAsync("", 10, Actor, default));
+        await Assert.ThrowsAsync<ArgumentException>(() => scope.Repository.SearchAsync("\u0639", 10, Actor, default));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => scope.Repository.SearchAsync(PersianTestData.AliArabicYeh, 11, Actor, default));
     }
 
     [Fact]
@@ -411,7 +411,7 @@ public sealed class PersonsEndToEndTests
         Assert.NotNull(details);
         Assert.Empty(details.Contacts);
         Assert.Null(details.PrimaryAddress);
-        var results = await scope.Repository.SearchAsync(PersianTestData.AliRezaeiCanonical, 10, scope.Transaction, default);
+        var results = await scope.Repository.SearchAsync(PersianTestData.AliRezaeiCanonical, 10, Actor, default);
         Assert.Null(Assert.Single(results).MaskedPrimaryMobile);
     }
 
