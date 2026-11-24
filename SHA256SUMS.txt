@@ -525,7 +525,7 @@ fe670fad99204e025ff59c68c2feddcd9bb401a70a83f77dabe44fb217792e7b  docs/finance/w
 ff25064382297016ee54d63ed102eee06dce4825256821b623804f81da7c75ac  src/BuildingBlocks/MDGsm.Infrastructure/IdentityAccess/PostgresIdentityAccessStores.cs
 ff71176b4c536b7e5fe5a32421a918af71d7e72a2a020baff75a670da7d41f3a  src/Modules/Accounting/Contracts/ModuleContractVersion.cs
 ff9ce8d87fb27233be69ce9e3be46474e09e44f68abfbd96bae6f8b621c7b4c1  docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.2.md
-921f5b4436a3a82a4bf3610ed7698160bfa1666a28f62aecae14aa7dcd30a81f  docs/architecture/MDG-ARCH-MASTER-001_v3.0.4.txt
+856f0910d1c28ed58922080a24056f2b3447fdc419dacb7a240dd449874df323  docs/architecture/MDG-ARCH-MASTER-001_v3.0.4.txt
 e91d67b014b4d06a9c7a87813205f48e1917f59900a7524329569b31e09fed05  docs/architecture/MDG-ARCH-BASELINE-REGISTRATION-001_v1.3.md
 d4278d61e1428faef03f308b3b7648e23d050b7e846a66708f56934b661158ef  docs/governance/MDG-PROJECT-AUTHORITY-CONTROL-001_v1.0.md
 b682d09b7e892e79b5cd9affa5b21c2ebff2128a20ac7f57b99fb7e0178d9679  docs/governance/MDG-OPEN-ISSUE-REGISTER-001_v1.6.md
