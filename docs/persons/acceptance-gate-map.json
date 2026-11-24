@@ -109,9 +109,9 @@
     {
       "id": "AC-44",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC44_MergeIsAtomicConcurrentAndIdempotentWithFailureRollback",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Merge is atomic, concurrency-safe and idempotent; failures leave no partial state"
     },
     {
@@ -155,13 +155,13 @@
       "expectedBehavior": "CI evidence contains commit, contract versions, schema fingerprint, gate/test counts, and no raw PII."
     }
   ],
-  "note": "AC-31..38 remain UNMAPPED pending full temporary-data lifecycle and PII evidence. AC-39..43 are mapped to explicit consumer registry/classification and Finance merge participant/preview/conflict tests. AC-44..45 remain UNMAPPED because complete combined concurrency/rollback/reconciliation and historical snapshot evidence is still incomplete. AC-46..49 are CI-policy/evidence tests only; they do not demonstrate the remaining runtime acceptance criteria.",
+  "note": "AC-31..38 remain UNMAPPED pending full temporary-data lifecycle and PII evidence. AC-39..44 are mapped to explicit consumer registry/classification and Finance merge participant/preview/conflict/atomicity tests. AC-45 remains UNMAPPED because the full historical snapshot and active-reference reconciliation evidence is still incomplete. AC-46..49 are CI-policy/evidence tests only; they do not demonstrate the remaining runtime acceptance criteria.",
   "runtimeCoverageCaveat": {
     "AC31toAC38": "Partial temporary workflow ciphertext store/retention worker; exact expiry, purge, renewal, promotion, generic-search isolation and telemetry redaction criteria are not yet individually proven.",
     "AC39toAC40": "Every external PartyId consumer is source-enumerated, registered exactly once and assigned one accepted merge classification; automated test plus the registry CI gate.",
     "AC41": "The current Finance merge participant is checked against each versioned Preview/Prepare/Validate/Apply/Verify/Recover protocol hook. Future participants must be added to the registry and tested.",
     "AC42toAC43": "Finance merge preview counts references without mutation and an unresolved dual-account conflict blocks execution.",
-    "AC44toAC45": "Focused atomicity, retry, rollback, concurrency and created-metadata tests exist, but complete acceptance for all references, historical snapshots and reconciliation remains open.",
+    "AC44toAC45": "AC-44 now runs a combined integration suite covering idempotent replay, injected failure rollback/recovery and concurrent same-source merge winner selection. AC-45 remains open: AccountId/created-at preservation is tested, but there is no full immutable ledger-history snapshot/reconciliation proof.",
     "AC46toAC49": "CI policy/evidence controls only; not runtime acceptance."
   }
 }
