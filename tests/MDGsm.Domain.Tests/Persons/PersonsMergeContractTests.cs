@@ -32,7 +32,9 @@ public sealed class PersonsMergeContractTests
         foreach (var consumer in consumers)
         {
             Assert.Equal(1, consumer.EnumerateObject().Count(property => property.Name == "mergeClassification"));
-            Assert.Contains(consumer.GetProperty("mergeClassification").GetString(), allowed);
+            var classification = consumer.GetProperty("mergeClassification").GetString();
+            Assert.False(string.IsNullOrWhiteSpace(classification));
+            Assert.Contains(classification!, allowed);
         }
 
         var referencePattern = new Regex(
