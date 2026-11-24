@@ -60,21 +60,21 @@ Before provisioning:
 
 ## 5. Product Owner identity resolution and adapter implementation update — 2026-11-24
 
-The previously open identity-name decision is resolved by selecting the previously approved conceptual worker identity \`audit-delivery-worker\`, with PostgreSQL LOGIN \`audit_delivery_worker\` and NOLOGIN ACL role \`mdgsm_audit_delivery_worker\`. This is a sixth logical operational identity in addition to the original five N.6 categories; it does not replace or broaden \`mdgsm_runtime\`. The required sole membership edge is SET-only (\`ADMIN FALSE\`, \`INHERIT FALSE\`, \`SET TRUE\`).
+The previously open identity-name decision is resolved by selecting the previously approved conceptual worker identity `audit-delivery-worker`, with PostgreSQL LOGIN `audit_delivery_worker` and NOLOGIN ACL role `mdgsm_audit_delivery_worker`. This is a sixth logical operational identity in addition to the original five N.6 categories; it does not replace or broaden `mdgsm_runtime`. The required sole membership edge is SET-only (`ADMIN FALSE`, `INHERIT FALSE`, `SET TRUE`).
 
 ### 5.1 Exact capability boundary
 
-The ACL is intended to grant only source-local Outbox access: SELECT on immutable \`audit_outbox_events\`, SELECT on \`audit_outbox_delivery\`, and column-scoped UPDATE on delivery metadata (state, attempts, next-attempt time, lease fields, worker claim, acknowledgement reference, failure/quarantine reason and timestamps). No immutable payload/EventId/digest update, INSERT, DELETE, TRUNCATE, DDL, business aggregate access, IdentityAccess credential/session access, canonical AuditSecurity ledger access, backup/reporting/migration access or role escalation is permitted.
+The ACL is intended to grant only source-local Outbox access: SELECT on immutable `audit_outbox_events`, SELECT on `audit_outbox_delivery`, and column-scoped UPDATE on delivery metadata (state, attempts, next-attempt time, lease fields, worker claim, acknowledgement reference, failure/quarantine reason and timestamps). No immutable payload/EventId/digest update, INSERT, DELETE, TRUNCATE, DDL, business aggregate access, IdentityAccess credential/session access, canonical AuditSecurity ledger access, backup/reporting/migration access or role escalation is permitted.
 
 The worker posts to the authenticated AuditSecurity API and records the matching durable receipt. It is not a direct canonical-ledger PostgreSQL writer. The API's database identity remains a separate unresolved Platform design item.
 
 ### 5.2 Adapter code now present on PR #92 branch
 
-- \`PostgresAuditEventStore\`: Npgsql append/read adapter. It initializes a missing stream head with the canonical genesis digest, locks the stream-head row FOR UPDATE, obtains PostgreSQL \`clock_timestamp()\` in the transaction, checks global EventId idempotency, inserts the immutable event record, advances the head with a sequence compare-and-swap and commits both writes atomically. Read snapshots use Repeatable Read.
-- \`PostgresAuditEventOutboxStore\`: source-schema-scoped adapter. Enqueue uses the caller's open Npgsql connection and transaction; it never begins or commits a second transaction. Immutable event envelope and mutable delivery metadata are stored separately. Worker claims use \`FOR UPDATE SKIP LOCKED\`, short committed leases and lease tokens; network delivery occurs after the claim transaction commits. ACK/retry/quarantine updates are conditional on the active lease.
-- \`AuditEventSubmissionCanonicalizer\`: Contracts-level v1 canonicalization/digest, tested against the existing Persian Unicode golden vector.
-- \`AuditEventOutboxDispatcher\`: at-least-once delivery, digest verification, bounded exponential retry, permanent rejection quarantine and durable-receipt matching.
-- \`HttpAuditEventIngestionClient\`: HTTP transport adapter; host must supply the authenticated handler/credential (for example platform-managed mTLS). No key or credential is embedded.
+- `PostgresAuditEventStore`: Npgsql append/read adapter. It initializes a missing stream head with the canonical genesis digest, locks the stream-head row FOR UPDATE, obtains PostgreSQL `clock_timestamp()` in the transaction, checks global EventId idempotency, inserts the immutable event record, advances the head with a sequence compare-and-swap and commits both writes atomically. Read snapshots use Repeatable Read.
+- `PostgresAuditEventOutboxStore`: source-schema-scoped adapter. Enqueue uses the caller's open Npgsql connection and transaction; it never begins or commits a second transaction. Immutable event envelope and mutable delivery metadata are stored separately. Worker claims use `FOR UPDATE SKIP LOCKED`, short committed leases and lease tokens; network delivery occurs after the claim transaction commits. ACK/retry/quarantine updates are conditional on the active lease.
+- `AuditEventSubmissionCanonicalizer`: Contracts-level v1 canonicalization/digest, tested against the existing Persian Unicode golden vector.
+- `AuditEventOutboxDispatcher`: at-least-once delivery, digest verification, bounded exponential retry, permanent rejection quarantine and durable-receipt matching.
+- `HttpAuditEventIngestionClient`: HTTP transport adapter; host must supply the authenticated handler/credential (for example platform-managed mTLS). No key or credential is embedded.
 - PostgreSQL disposable integration test and dispatcher/contract unit tests have been added. Their exact-head status is pending CI until a successful run reports them.
 
 ### 5.3 Deployment boundary

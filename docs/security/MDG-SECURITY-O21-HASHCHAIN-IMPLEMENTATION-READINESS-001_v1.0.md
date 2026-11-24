@@ -334,22 +334,22 @@ The proof still uses ephemeral test keys and local temporary checkpoint files. I
 
 ## 9. Repository implementation update — 2026-11-24
 
-This controlled successor supersedes earlier statements in this document that no AuditSecurity module or PostgreSQL adapter exists. The following code is now present on PR #92 branch \`security/o20-o21-final-closure\`:
+This controlled successor supersedes earlier statements in this document that no AuditSecurity module or PostgreSQL adapter exists. The following code is now present on PR #92 branch `security/o20-o21-final-closure`:
 
 1. Domain canonicalization, SHA-256 chain records, read-only verifier and RSA-PSS checkpoint format.
 2. Application append orchestration and source-independent ingestion contract.
-3. Npgsql \`PostgresAuditEventStore\` with stream-head row locking, database time, EventId idempotency, atomic event/head write, and Repeatable Read snapshot.
-4. Source-local \`PostgresAuditEventOutboxStore\`, whose enqueue uses the source transaction supplied by the caller, with independent immutable event and mutable delivery rows, lease claims, acknowledgement, retry and quarantine.
+3. Npgsql `PostgresAuditEventStore` with stream-head row locking, database time, EventId idempotency, atomic event/head write, and Repeatable Read snapshot.
+4. Source-local `PostgresAuditEventOutboxStore`, whose enqueue uses the source transaction supplied by the caller, with independent immutable event and mutable delivery rows, lease claims, acknowledgement, retry and quarantine.
 5. Contracts-level canonical intent digest and shared Outbox ports; dispatcher with at-least-once delivery; HTTP ingestion client whose authenticated handler must be supplied by the host.
 6. Disposable PostgreSQL adapter integration tests and unit tests for contract golden-vector parity and dispatcher outcome handling.
 
 ### 9.1 Migration reservation
 
-WG-0 has recorded \`0011 — database/migrations/0011_auditsecurity_canonical_ledger.sql\` as RESERVED in the PR #92 branch registry. It is scoped to the central canonical AuditSecurity stream-head and immutable event ledger only. No SQL file is created. It does not reserve or create source-module Outbox tables. The Migration runner currently requires a continuous sequence; 0009 (Accounting) and 0010 (IdentityAccess) remain earlier reserved slots and must be resolved through their own approved work before a later 0011 can be applied. No migration or production database change is authorized by the reservation itself.
+WG-0 has recorded `0011 — database/migrations/0011_auditsecurity_canonical_ledger.sql` as RESERVED in the PR #92 branch registry. It is scoped to the central canonical AuditSecurity stream-head and immutable event ledger only. No SQL file is created. It does not reserve or create source-module Outbox tables. The Migration runner currently requires a continuous sequence; 0009 (Accounting) and 0010 (IdentityAccess) remain earlier reserved slots and must be resolved through their own approved work before a later 0011 can be applied. No migration or production database change is authorized by the reservation itself.
 
 ### 9.2 Worker identity
 
-The logical identity is selected as \`audit-delivery-worker\`, PostgreSQL LOGIN \`audit_delivery_worker\`, and NOLOGIN ACL role \`mdgsm_audit_delivery_worker\`, with one SET-only membership edge and no direct canonical-ledger database access. Its only intended database capability is source-local Outbox delivery metadata. No production LOGIN, credential, certificate or grant is provisioned.
+The logical identity is selected as `audit-delivery-worker`, PostgreSQL LOGIN `audit_delivery_worker`, and NOLOGIN ACL role `mdgsm_audit_delivery_worker`, with one SET-only membership edge and no direct canonical-ledger database access. Its only intended database capability is source-local Outbox delivery metadata. No production LOGIN, credential, certificate or grant is provisioned.
 
 ### 9.3 Remaining acceptance gates
 

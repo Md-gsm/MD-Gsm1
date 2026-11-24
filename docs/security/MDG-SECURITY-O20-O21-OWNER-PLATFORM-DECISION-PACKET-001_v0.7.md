@@ -221,25 +221,25 @@ This packet creates no production Product Owner binding, schema/DDL/migration, p
 
 ## 10. Audit delivery worker identity binding — Product Owner direction, 2026-11-24
 
-This addendum resolves the identity-name and trust-boundary selection for the previously approved conceptual worker \`audit-delivery-worker\`. It does not provision or authorize a live PostgreSQL role, credential, grant, worker host, API listener or production delivery activation.
+This addendum resolves the identity-name and trust-boundary selection for the previously approved conceptual worker `audit-delivery-worker`. It does not provision or authorize a live PostgreSQL role, credential, grant, worker host, API listener or production delivery activation.
 
 ### 10.1 Identity selection
 
 | Layer | Canonical name | Classification |
 |---|---|---|
-| Logical operational identity | \`audit-delivery-worker\` | Sixth logical operational worker identity, separate from the original five N.6 categories |
-| PostgreSQL LOGIN | \`audit_delivery_worker\` | Dedicated non-interactive LOGIN principal; NOINHERIT and non-elevated |
-| PostgreSQL ACL role | \`mdgsm_audit_delivery_worker\` | NOLOGIN, NOINHERIT capability role; worker may enter it only through one SET-only membership |
+| Logical operational identity | `audit-delivery-worker` | Sixth logical operational worker identity, separate from the original five N.6 categories |
+| PostgreSQL LOGIN | `audit_delivery_worker` | Dedicated non-interactive LOGIN principal; NOINHERIT and non-elevated |
+| PostgreSQL ACL role | `mdgsm_audit_delivery_worker` | NOLOGIN, NOINHERIT capability role; worker may enter it only through one SET-only membership |
 
-The LOGIN-to-ACL membership must be exactly one edge with \`ADMIN FALSE\`, \`INHERIT FALSE\`, \`SET TRUE\`. The LOGIN has no useful application-table rights before \`SET ROLE\`; each connection must verify \`session_user = audit_delivery_worker\` and \`current_user = mdgsm_audit_delivery_worker\` after setup. Pool reset must clear role state and re-verify identity before reuse. No membership or privilege is granted to \`mdgsm_runtime\`, and its existing grants must not be broadened.
+The LOGIN-to-ACL membership must be exactly one edge with `ADMIN FALSE`, `INHERIT FALSE`, `SET TRUE`. The LOGIN has no useful application-table rights before `SET ROLE`; each connection must verify `session_user = audit_delivery_worker` and `current_user = mdgsm_audit_delivery_worker` after setup. Pool reset must clear role state and re-verify identity before reuse. No membership or privilege is granted to `mdgsm_runtime`, and its existing grants must not be broadened.
 
 ### 10.2 Exact source-Outbox capability
 
 The identity may operate only the explicitly registered source-module Outbox tables, in the configured source database/schema(s):
 
-- \`SELECT\` on immutable \`audit_outbox_events\` rows (event envelope, stable EventId, contract version and canonical intent digest);
-- \`SELECT\` on \`audit_outbox_delivery\`;
-- column-scoped \`UPDATE\` on delivery metadata only: state, attempts, next-attempt time, lease expiry/token, claimed-by identity, acknowledgement reference, last-failure code, quarantine reason/time and update timestamp.
+- `SELECT` on immutable `audit_outbox_events` rows (event envelope, stable EventId, contract version and canonical intent digest);
+- `SELECT` on `audit_outbox_delivery`;
+- column-scoped `UPDATE` on delivery metadata only: state, attempts, next-attempt time, lease expiry/token, claimed-by identity, acknowledgement reference, last-failure code, quarantine reason/time and update timestamp.
 
 It must not INSERT/UPDATE/DELETE/TRUNCATE immutable event rows; change EventId, intent digest or payload; delete Outbox or delivery rows; perform DDL/GRANT/role changes; access business aggregate tables, Organization/Branch/Warehouse data, IdentityAccess accounts/credentials/sessions/recovery material, canonical AuditSecurity event/stream-head tables, migration history, backup or reporting data; or assume runtime, migration, schema-owner, backup, reporting, emergency, anchor or other worker roles.
 
