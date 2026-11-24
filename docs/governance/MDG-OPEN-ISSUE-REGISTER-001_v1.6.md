@@ -5,8 +5,8 @@
 |---|---|
 | Document ID | MDG-OPEN-ISSUE-REGISTER-001 |
 | Version | 1.5 |
-| Status | CONTROLLED CANONICAL REGISTER — v3.0.4 SOLE CURRENT OWNER-ACCEPTED MASTER; v2.5 ARCHIVED |
-| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.4 — sole current owner-accepted Master; v2.5 archived |
+| Status | CONTROLLED CANONICAL REGISTER — v3.0.3 SOLE CURRENT OWNER-ACCEPTED MASTER; v2.5 ARCHIVED |
+| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 — sole current owner-accepted Master; v2.5 archived |
 | Scope | All canonical open-issue identifiers O-01 through O-65 |
 | Register revision date | 2026-11-21 |
 | Source branch | evidence/finance-inventory-bundle-004-20261120 (PR #81) |
@@ -50,7 +50,7 @@ An O-item may be marked **CLOSED** only when all applicable dimensions have expl
 
 ### 1.3 Current source authority and evidence boundaries
 
-- Architecture baseline: MDG-ARCH-MASTER-001 v3.0.4 — owner-accepted and repository-registered; v2.5 archived.
+- Architecture baseline: MDG-ARCH-MASTER-001 v3.0.3 — owner-accepted and repository-registered; v2.5 archived.
 - COA coding/GL authority: COA v1.2 master; COA v1.5 controlled supplementary reconstruction/crosswalk. COA v1.4 and v1.4 are not current supplementary authority.
 - Finance: current 7B/7C/7D controlled workpapers, Stage 04 workpaper, and the current Finance Document Register; historical audit snapshots remain historical.
 - Inventory: Stage 04 sales/returns/GRNI/CreditExposure design, Stage 05 equations/custody/stocktake, Stage 06 logical ERD, Stage 07 PostgreSQL physical design and Stage 08 security design are design artifacts, not proof of runtime acceptance.
@@ -98,7 +98,7 @@ Status columns are ordered Decision / Design / Implementation / Test / Evidence 
 | O-33 | API/CT registry, error catalog and paging contracts | Application + API Owners | C1 | B-final | ACCEPTED contract direction | PARTIAL | PARTIAL | Contract tests NOT VERIFIED | PARTIAL | OPEN | Versioned commands/queries, deterministic paging, stable error catalog and contract tests for all endpoints. |
 | O-34 | Two-layer idempotency retention | Platform + Finance | C1 | Gate C | RESOLVED policy: Request/API TTL only; posting identity/history permanent | PARTIAL | NOT VERIFIED | PoC/tests NOT RUN | PARTIAL | OPEN | Document replay window and operational retention; prove PostingIdentity/PostingRecord uniqueness survives TTL and no duplicate posting after cleanup. |
 | O-35 | Inventory conservation equations and stocktake cutoff/race model | Inventory | C0 | B-final | ACCEPTED principles; owner-directed WarehouseId watermark approved | PDS v0.4 + ERD v0.3 + Cross-Module Contract v1.1 prepared; independent review and source-owner acceptance pending | NOT VERIFIED | PD-T-001..048 and WarehouseId watermark/race/replay/tie-out PostgreSQL tests NOT RUN | PARTIAL | OPEN | Verify per-WarehouseId contiguous counter, no-op projection cursor, multi-Warehouse atomicity, per-observation stocktake vector, zero-gap rollback/replay and exact ledger tie-out on PostgreSQL 18; independent exact-SHA acceptance remains required. |
-| O-36 | Reservation TTL for Sales and Repair lifecycle | Sales + Repair + Inventory | C1 | B-final | OWNER RESOLVED 2026-11-20: Sales default 24h from server-confirmed reservation, configurable/versioned and snapshotted; Repair has no automatic TTL | PARTIAL — ERD v0.3/PDS v0.4/Cross-Module Contract v1.1 prepared; v3.0.4 crosswalk and source-owner reconciliation pending | NOT VERIFIED | RSV-01..12 NOT RUN on PostgreSQL/runtime | PARTIAL | OPEN | Implement server-created expiry snapshot; test policy change only affects new reservations, exact expiry boundary, lock-wait race, Worker-offline ATP exclusion and idempotent partial consume/release/expire. |
+| O-36 | Reservation TTL for Sales and Repair lifecycle | Sales + Repair + Inventory | C1 | B-final | OWNER RESOLVED 2026-11-20: Sales default 24h from server-confirmed reservation, configurable/versioned and snapshotted; Repair has no automatic TTL | PARTIAL — ERD v0.3/PDS v0.4/Cross-Module Contract v1.1 prepared; v3.0.3 crosswalk and source-owner reconciliation pending | NOT VERIFIED | RSV-01..12 NOT RUN on PostgreSQL/runtime | PARTIAL | OPEN | Implement server-created expiry snapshot; test policy change only affects new reservations, exact expiry boundary, lock-wait race, Worker-offline ATP exclusion and idempotent partial consume/release/expire. |
 | O-37 | Catalog entities, ConditionGrade and group hierarchy | Catalog | C1 | B-final | ACCEPTED direction | PARTIAL | NOT VERIFIED | NOT RUN | PARTIAL | OPEN | Logical ERD, maximum three group levels, cycle prevention, history preservation and grade-sensitive pricing tests. |
 | O-38 | GRNI receive-before-invoice/invoice-before-receipt/sellability | Purchasing + Finance | C0 | B-final | ACCEPTED ownership/account boundaries | DESIGN SPECIFIED in Stage 04 | NOT VERIFIED | Stage 04 cases defined; runtime tests NOT RUN | PARTIAL | OPEN | Ownership truth table, 2103/110805/physical-stock distinction and executable receipt/invoice/sellability cases. |
 | O-39 | LandedCost shared expense allocation/materiality | Purchasing + Finance | C1 | B-final | PARTIAL | PARTIAL | NOT VERIFIED | NOT RUN | PARTIAL | OPEN | Direct attribution, allocation basis per cost type, authoritative materiality source and numeric test vectors. |
@@ -172,7 +172,7 @@ This summary is derived from the 65 detailed rows and must not be maintained as 
 
 ## 6. Source documents reviewed for this revision
 
-- Owner-supplied candidate package: `MDG-Gsm-v3.0.4-Registration-Candidate-Package(1).zip`; Master Markdown SHA-256 `731779b815e4200a522ee168f51f6db4becf2034b290b8e5f0d8a4e0406b1fec`. It was registered in `main` through PR #71; the explicit owner acceptance dated 2026-11-20 supersedes the intake-time candidate status.
+- Owner-supplied candidate package: `MDG-Gsm-v3.0.3-Registration-Candidate-Package(1).zip`; Master Markdown SHA-256 `731779b815e4200a522ee168f51f6db4becf2034b290b8e5f0d8a4e0406b1fec`. It was registered in `main` through PR #71; the explicit owner acceptance dated 2026-11-20 supersedes the intake-time candidate status.
 - `docs/finance/workpapers/p4h/MDG-WP06-DOCUMENT-REGISTER-001_v0.7.md` — finance register and current Stage 04 overlay; historical cover metadata requires the v0.8 update.
 - `docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-AUDIT-CLOSURE-001_v0.2.md` — O-01 bounded closure and unresolved design/test gaps.
 - `docs/finance/workpapers/p4h/integration/MDG-WP06-7B-7C-7D-CROSS-AUDIT-001_v0.3.md` — historical cross-audit; not a live status register.
@@ -224,21 +224,21 @@ Exceeding either budget or failing any consistency check requires rollback, pres
 ### Version history
 - v1.2 — registers OWN-INV-019 v1.0, D-15 policy closure, O-64-SCOPE, and controlled successor designs/tests for O-35/O-36/O-64. v1.1 is retained as historical snapshot.
 
-## 9. v3.0.4 candidate provenance correction — 2026-11-20
+## 9. v3.0.3 candidate provenance correction — 2026-11-20
 
-The owner supplied the `MDG-Gsm-v3.0.4-Registration-Candidate-Package(1).zip` package. Its internal SHA256 manifest was verified: all 11 payload files matched their listed hashes. Master Markdown SHA-256 is `731779b815e4200a522ee168f51f6db4becf2034b290b8e5f0d8a4e0406b1fec`; Master DOCX SHA-256 is `c9e7b79bae83935bc7adbe473da5f3263005112abd4e3d74cd671c52a9647df3`; Master PDF SHA-256 is `c29074f7bc0a5b32e2deacd07bc1036f54f28637ace95b982056f4c383ad8998`.
+The owner supplied the `MDG-Gsm-v3.0.3-Registration-Candidate-Package(1).zip` package. Its internal SHA256 manifest was verified: all 11 payload files matched their listed hashes. Master Markdown SHA-256 is `731779b815e4200a522ee168f51f6db4becf2034b290b8e5f0d8a4e0406b1fec`; Master DOCX SHA-256 is `c9e7b79bae83935bc7adbe473da5f3263005112abd4e3d74cd671c52a9647df3`; Master PDF SHA-256 is `c29074f7bc0a5b32e2deacd07bc1036f54f28637ace95b982056f4c383ad8998`.
 
-The supplied package's original README/header described v3.0.4 as a candidate. The subsequent explicit owner acceptance dated 2026-11-20 and repository registration through PR #71 supersede that intake-time status. v3.0.4 is now the sole current Master; v2.5 is archived. This OIR records v3.0.4 as the accepted current Master baseline. The earlier v1.2 wording that labelled v3.0.4 as already accepted is corrected by this v1.4 successor; v1.2 remains a historical snapshot.
+The supplied package's original README/header described v3.0.3 as a candidate. The subsequent explicit owner acceptance dated 2026-11-20 and repository registration through PR #71 supersede that intake-time status. v3.0.3 is now the sole current Master; v2.5 is archived. This OIR records v3.0.3 as the accepted current Master baseline. The earlier v1.2 wording that labelled v3.0.3 as already accepted is corrected by this v1.4 successor; v1.2 remains a historical snapshot.
 
 PR #82's CR-ARCH-INV-OWNER-FOLLOWUP-001 v0.2 records the detailed artifact provenance, archive hash and acceptance boundary. No architecture baseline promotion or implementation/release authorization is implied.
 
 ### Version history
-- v1.4 — records the owner acceptance and repository registration of v3.0.4; v2.5 is archived. v1.2 is retained as historical snapshot.
+- v1.4 — records the owner acceptance and repository registration of v3.0.3; v2.5 is archived. v1.2 is retained as historical snapshot.
 
 
 ## 10. Architecture baseline acceptance and archive correction — 2026-11-21
 
-This v1.4 successor incorporates `MDG-ARCH-BASELINE-REGISTRATION-001 v1.0`. The sole current Master is MDG-ARCH-MASTER-001 v3.0.4, explicitly owner-accepted on 2026-11-20 and repository-registered through PR #71. MDG-ARCH-MASTER-001 v2.5 is archived historical material only. Any prior status in this register calling v3.0.4 a candidate or v2.5 the last accepted baseline is superseded. This does not promote implementation, test, evidence or gate status: O-35, O-36 and O-64 remain open as recorded; FE-08 remains blocked; D-15 operational cutover budgets remain unset.
+This v1.4 successor incorporates `MDG-ARCH-BASELINE-REGISTRATION-001 v1.0`. The sole current Master is MDG-ARCH-MASTER-001 v3.0.3, explicitly owner-accepted on 2026-11-20 and repository-registered through PR #71. MDG-ARCH-MASTER-001 v2.5 is archived historical material only. Any prior status in this register calling v3.0.3 a candidate or v2.5 the last accepted baseline is superseded. This does not promote implementation, test, evidence or gate status: O-35, O-36 and O-64 remain open as recorded; FE-08 remains blocked; D-15 operational cutover budgets remain unset.
 
 
 ## 11. Version 1.5 — register metadata and integration-state correction — 2026-11-21
