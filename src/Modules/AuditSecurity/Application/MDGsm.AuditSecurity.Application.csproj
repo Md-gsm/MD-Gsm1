@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>MDGsm.AuditSecurity.Application</AssemblyName>
+    <RootNamespace>MDGsm.AuditSecurity.Application</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Domain\MDGsm.AuditSecurity.Domain.csproj" />
+    <ProjectReference Include="..\Contracts\MDGsm.AuditSecurity.Contracts.csproj" />
+  </ItemGroup>
+</Project>
