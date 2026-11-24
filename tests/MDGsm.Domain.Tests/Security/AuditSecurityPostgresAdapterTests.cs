@@ -339,7 +339,10 @@ public sealed class AuditSecurityPostgresAdapterTests
             PASSWORD '{password}';
             """);
         await ExecuteAsync(cs, $"GRANT {Q(aclRole)} TO {Q(login)} WITH ADMIN FALSE, INHERIT FALSE, SET TRUE;");
-        await ExecuteAsync(cs, $"GRANT CONNECT ON DATABASE {Q(new NpgsqlConnectionStringBuilder(cs).Database)} TO {Q(login)};");
+        var databaseName = new NpgsqlConnectionStringBuilder(cs).Database;
+        if (string.IsNullOrWhiteSpace(databaseName))
+            throw new InvalidOperationException("The disposable PostgreSQL database name is required.");
+        await ExecuteAsync(cs, $"GRANT CONNECT ON DATABASE {Q(databaseName)} TO {Q(login)};");
         await ExecuteAsync(cs, $"GRANT USAGE ON SCHEMA {Q(schema)} TO {Q(aclRole)};");
         await ExecuteAsync(cs, $"GRANT SELECT ON {Q(schema)}.audit_outbox_events TO {Q(aclRole)};");
         await ExecuteAsync(cs, $"GRANT SELECT ON {Q(schema)}.audit_outbox_delivery TO {Q(aclRole)};");
