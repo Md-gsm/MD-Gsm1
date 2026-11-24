@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using MDGsm.Client;
+using MDGsm.Host.Client;
 using MDGsm.Persons.Contracts;
 using Xunit;
 
