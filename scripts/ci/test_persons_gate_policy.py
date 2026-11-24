@@ -81,6 +81,28 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaises(gates.GateFailure):
                 gates.run_retention(dst)
 
+    def test_missing_merge_classification_fails_registry_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            registry_path = dst / "docs/persons/consumer-registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["registeredConsumers"][0].pop("mergeClassification", None)
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "mergeClassification"):
+                gates.run_registry(dst)
+
+    def test_duplicate_merge_consumer_registration_fails_registry_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            registry_path = dst / "docs/persons/consumer-registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["registeredConsumers"].append(dict(registry["registeredConsumers"][0]))
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "Duplicate PartyId consumer registrations"):
+                gates.run_registry(dst)
+
     def test_unknown_partyid_consumer_fails_registry_gate(self):
         with tempfile.TemporaryDirectory() as tmp:
             dst = Path(tmp) / "repo"
