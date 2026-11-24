@@ -4,8 +4,4 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Modules\Persons\Contracts\MDGsm.Persons.Contracts.csproj" />
-    <ProjectReference Include="..\..\Modules\IdentityAccess\Contracts\MDGsm.IdentityAccess.Contracts.csproj" />
-  </ItemGroup>
 </Project>
