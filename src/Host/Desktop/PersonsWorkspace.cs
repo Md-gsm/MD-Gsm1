@@ -600,7 +600,9 @@ public partial class MainWindow
         }
         catch (ApiClientException ex)
         {
-            PersonsResultText.Text = GetPersonsErrorMessage(ex);
+            PersonsResultText.Text = ex.StatusCode == HttpStatusCode.Forbidden
+                ? "حساب فعلی مجوز persons.read برای مشاهده جزئیات این شخص را ندارد."
+                : GetPersonsErrorMessage(ex);
             if (ex.StatusCode == HttpStatusCode.Unauthorized)
             {
                 ClearPersonsSession();
