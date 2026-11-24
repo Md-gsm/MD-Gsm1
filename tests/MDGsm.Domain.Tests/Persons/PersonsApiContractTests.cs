@@ -22,6 +22,19 @@ public sealed class PersonsApiContractTests
         Assert.DoesNotContain("defaultDiscountPercent", contract, StringComparison.Ordinal);
     }
 
+
+    [Fact]
+    public void Natural_and_legal_write_routes_are_feature_gated_and_permission_checked()
+    {
+        var root = FindRepositoryRoot();
+        var program = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
+        Assert.Contains("app.MapPost(\"/api/v2/persons\"", program, StringComparison.Ordinal);
+        Assert.Contains("app.MapPost(\"/api/v2/persons/legal\"", program, StringComparison.Ordinal);
+        Assert.Contains("Persons:WriteApiEnabled", program, StringComparison.Ordinal);
+        Assert.Contains("HasPermissionAsync(accountId, \"persons.create\"", program, StringComparison.Ordinal);
+        Assert.Contains("IdempotencyKeyConflictException", program, StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
