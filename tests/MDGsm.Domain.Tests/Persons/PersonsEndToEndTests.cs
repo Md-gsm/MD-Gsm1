@@ -83,10 +83,16 @@ public sealed class PersonsEndToEndTests
     [Trait("Category", "Integration")]
     public async Task Quick_registration_candidate_disclosure_is_audited_even_when_the_business_transaction_rolls_back()
     {
-        await using var scope = await TestScope.OpenAsync();
+        PartyRegistrationResult first;
         const string mobile = "09125550129";
-        var first = await scope.Repository.AddNaturalAsync(
-            NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+        await using (var seedScope = await TestScope.OpenAsync())
+        {
+            first = await seedScope.Repository.AddNaturalAsync(
+                NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), seedScope.Transaction, default);
+            await seedScope.CommitTransactionAsync();
+        }
+
+        await using var scope = await TestScope.OpenAsync();
         var differentName = NewNatural(mobile, NewNationalId()) with
         {
             GivenName = "سارا",
@@ -561,12 +567,19 @@ public sealed class PersonsEndToEndTests
             Repository = new PostgresPartyRepository(dataSource, new AllowSensitivePartyDataAuthorizer());
         }
 
-        private bool _transactionRolledBack;
+        private bool _transactionCompleted;
         public NpgsqlDataSource DataSource => _dataSource;
+
+        public async Task CommitTransactionAsync()
+        {
+            await Transaction.CommitAsync();
+            _transactionCompleted = true;
+        }
+
         public async Task RollbackTransactionAsync()
         {
             await Transaction.RollbackAsync();
-            _transactionRolledBack = true;
+            _transactionCompleted = true;
         }
         public NpgsqlConnection Connection { get; }
         public NpgsqlTransaction Transaction { get; }
@@ -593,7 +606,7 @@ public sealed class PersonsEndToEndTests
 
         public async ValueTask DisposeAsync()
         {
-            if (!_transactionRolledBack) await Transaction.RollbackAsync();
+            if (!_transactionCompleted) await Transaction.RollbackAsync();
             await Transaction.DisposeAsync();
             await Connection.DisposeAsync();
             await _dataSource.DisposeAsync();
