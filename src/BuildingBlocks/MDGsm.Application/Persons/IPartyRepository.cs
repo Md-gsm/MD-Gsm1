@@ -50,7 +50,7 @@ public interface IPartyRepository
     /// A term is required, at most <see cref="PartySearchLimits.MaxResults"/> results are returned, mobile numbers are masked,
     /// and every returned PartyId is written to the append-only access audit under the server-derived actor.
     /// </summary>
-    Task<IReadOnlyList<PartyListItem>> SearchAsync(string term, int limit, string actorId, DbTransaction? transaction, CancellationToken cancellationToken);
+    Task<IReadOnlyList<PartyListItem>> SearchAsync(string term, int limit, string actorId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Reads one party. Every read is recorded in the append-only access audit with <paramref name="actorId"/>.
