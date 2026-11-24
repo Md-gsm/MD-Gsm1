@@ -15,7 +15,7 @@
       "path": "src/Host/Api/Program.cs",
       "contractVersion": "Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
-      "purpose": "Protected GET party-details endpoint; actor identity comes from validated IdentityAccess session context."
+      "purpose": "Protected GET party-details and feature-gated natural/legal registration endpoints; actor identity comes from validated IdentityAccess session context."
     },
     {
       "module": "Finance",
