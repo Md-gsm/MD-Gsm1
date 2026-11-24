@@ -107,3 +107,8 @@ The following acceptance scenarios remain acceptance specifications. The existin
 O-20, O-21, O-45 and O-46 remain OPEN at their full acceptance level. N.3 policy option D is recorded, but the canonical SYSTEM_MANAGER role mapping and global one-session implementation remain blocked by the O-25/code mismatch; see N.3 crosswalk v0.3. O-20/O-21/O-45 disposable test scopes have PASS evidence on SHA `7ef35cca…`, not full release acceptance. SEC-T-001..036 are NOT RUN / NOT PASS. No code, SQL, DDL, migration, grant, production credential, runtime feature activation, production listener, audit purge, G1 activation, Posting Release or Go-Live is authorized.
 
 **END — MDG-SECURITY-STAGE-08-RECONCILIATION-001 v0.5**
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. The v3.0.3 references in this dated review/evidence artifact identify the baseline actually reviewed or used when the artifact was produced; they are retained as historical provenance and are not silently rewritten. For current design decisions, v3.0.4 governs. Any unresolved section-level conflict or design dependency must be re-audited against v3.0.4 before implementation. This authority notice does not upgrade this artifact's review type, evidence strength, gate status or acceptance.

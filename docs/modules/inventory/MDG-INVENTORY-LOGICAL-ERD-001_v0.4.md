@@ -5,8 +5,8 @@
 | Document ID | MDG-INVENTORY-LOGICAL-ERD-001 |
 | Version | 0.4 |
 | Status | CONTROLLED LOGICAL DESIGN SUCCESSOR — OWNER DECISIONS INCORPORATED — INDEPENDENT REVIEW PENDING |
-| Governing architecture baseline | **MDG-ARCH-MASTER-001 v3.0.3 — owner-accepted; v2.5 archived** |
-| Current architecture baseline | **MDG-ARCH-MASTER-001 v3.0.3 — owner-accepted and registered; v2.5 archived** |
+| Governing architecture baseline | **MDG-ARCH-MASTER-001 v3.0.4 — sole current owner-accepted Master; v3.0.3 historical** |
+| Current architecture baseline | **MDG-ARCH-MASTER-001 v3.0.4 — owner-accepted and registered; v3.0.3 historical** |
 | Governing inventory design | MDG-INVENTORY-STAGE-05-EQUATIONS-CUSTODY-STOCKTAKE-001 v0.1 |
 | Supersedes | INVENTORY-ERD-DATA-DICTIONARY-001 v0.1 as current ERD proposal; historical copy retained |
 | Scope | Logical entities, ownership, relationships, keys, invariants, projection boundaries and test traceability |
@@ -14,7 +14,7 @@
 
 ## 1. Purpose and authority
 
-This v0.4 successor carries forward logical ERD v0.3 and incorporates the owner's controlled follow-up decisions. The current governing Master is v3.0.3, owner-accepted and registered; v2.5 is archived. Independent design review, physical-schema authorization, implementation, tests and release remain separate gates.
+This v0.4 successor carries forward logical ERD v0.3 and incorporates the owner's controlled follow-up decisions. The current governing Master is v3.0.4, owner-accepted and registered; v3.0.3 and v2.5 are historical. Independent design review, physical-schema authorization, implementation, tests and release remain separate gates.
 
 The Stage 05 contract controls quantity equations, movement semantics, Custody, Section transfer, stocktake watermark/replay, valuation boundaries, negative-stock behavior and release constraints. This successor proposal uses the supplied v3.0.3 candidate semantics together with Stage 05 v0.1 as design inputs; it does not promote v3.0.3 above the last formally accepted v2.5 baseline.
 
@@ -325,3 +325,7 @@ ERD v0.3 is a controlled logical-design successor only. Independent review, Cata
 ## Baseline authority alignment — 0.4 successor, 2026-11-21
 
 This controlled successor aligns the document's governing architecture reference with MDG-ARCH-MASTER-001 v3.0.3, the sole current owner-accepted and repository-registered Master. MDG-ARCH-MASTER-001 v2.5 is archived historical material only. This alignment does not imply independent technical review, module-owner acceptance, implementation, test execution, evidence acceptance, migration authorization, Posting Release or Go-Live.
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. v3.0.3 is a superseded historical snapshot and must not be cited as the current governing baseline. References above that describe prior v3.0.3 design inputs, review dates or evidence remain historical facts; they do not override v3.0.4. Any section-specific semantic dependency must be checked against v3.0.4 before implementation. This authority alignment does not change this document's own acceptance, implementation, test, evidence, security-gate or release status.

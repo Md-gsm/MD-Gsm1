@@ -102,3 +102,8 @@ The following are acceptance specifications, NOT RUN:
 این تصمیم فقط سیاست را تعیین می‌کند. پیاده‌سازی آن به تعریف دقیق role identity، تراکنش اتمیک PostgreSQL، تست رقابت چند API instance، بازبینی مستقل و مجوز مرحله‌ای جداگانه نیاز دارد.
 
 **END — MDG-ARCH-N3-ADR-0013-RECONCILIATION-001 v0.3**
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. Any v3.0.3 references retained above identify the earlier source snapshot or the baseline used when this artifact was authored; they do not define current authority. Current decisions must conform to v3.0.4. This notice does not alter historical execution evidence or imply implementation, test PASS, independent acceptance, migration authorization or release.

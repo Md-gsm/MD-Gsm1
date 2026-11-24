@@ -6,8 +6,8 @@
 | Document ID | MDG-INVENTORY-CROSS-MODULE-TECHNICAL-CONTRACT-001 |
 | Version / Date | 1.2 / 2026-11-20 |
 | Status | OWNER DECISIONS APPROVED — CONTROLLED DESIGN SUCCESSOR — CROSS-OWNER ACCEPTANCE / BASELINE RECONCILIATION PENDING |
-| Governing architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 — owner-accepted and registered; v2.5 archived |
-| Current architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 — owner-accepted and registered; v2.5 archived |
+| Governing architecture baseline | MDG-ARCH-MASTER-001 v3.0.4 — sole current owner-accepted Master; v3.0.3 historical |
+| Current architecture baseline | MDG-ARCH-MASTER-001 v3.0.4 — owner-accepted and registered; v3.0.3 historical |
 | References | OWN-INV-019 v1.0; Inventory Logical ERD v0.3; PostgreSQL Physical Design v0.4; Stage 05 v0.1; owner answer package 2026-11-20 |
 | Execution / tests | NOT IMPLEMENTED / NOT VERIFIED; ALL TESTS NOT RUN |
 
@@ -51,7 +51,7 @@ No monetary threshold. Limit is in Variant Base UOM. Check aggregates eligible O
 | Threshold authority | Older INV-EVT-012 / OWN-INV-018 wording: System Manager | GENERAL_MANAGER only within owner-approved assigned WarehouseId×VariantId scope; scope change requires owner approval + Audit; SYSTEM_MANAGER/Emergency denied; Serial/IMEI never negative | O-64-SCOPE owner decision recorded in OWN-INV-019; source-event successor and server enforcement/tests required |
 | Retry attention | PDS v0.3: exhausted retries become QUARANTINED | Attention non-terminal; retry continues | Successor separates attention flag from delivery state |
 
-The v3.0.3 Master is the sole current owner-accepted and registered architecture baseline; v2.5 is archived. This v1.2 successor changes only baseline authority references. Consumer-owner acceptance, independent review, implementation, test PASS, evidence acceptance, gate closure and release remain separate. No executable change follows from this table.
+The v3.0.4 Master is the sole current owner-accepted and registered architecture baseline; v3.0.3 and v2.5 are historical. This v1.2 successor changes only baseline authority references. Consumer-owner acceptance, independent review, implementation, test PASS, evidence acceptance, gate closure and release remain separate. No executable change follows from this table.
 
 ## 3. Catalog contract
 
@@ -223,3 +223,7 @@ PDS v0.4, ERD v0.3, source-event proposal v0.3 and the test specification v1.1 a
 ## Baseline authority alignment — 1.2 successor, 2026-11-21
 
 This controlled successor aligns the document's governing architecture reference with MDG-ARCH-MASTER-001 v3.0.3, the sole current owner-accepted and repository-registered Master. MDG-ARCH-MASTER-001 v2.5 is archived historical material only. This alignment does not imply independent technical review, module-owner acceptance, implementation, test execution, evidence acceptance, migration authorization, Posting Release or Go-Live.
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. v3.0.3 is a superseded historical snapshot and must not be cited as the current governing baseline. References above that describe prior v3.0.3 design inputs, review dates or evidence remain historical facts; they do not override v3.0.4. Any section-specific semantic dependency must be checked against v3.0.4 before implementation. This authority alignment does not change this document's own acceptance, implementation, test, evidence, security-gate or release status.

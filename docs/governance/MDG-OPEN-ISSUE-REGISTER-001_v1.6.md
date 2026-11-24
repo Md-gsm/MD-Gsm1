@@ -5,8 +5,8 @@
 |---|---|
 | Document ID | MDG-OPEN-ISSUE-REGISTER-001 |
 | Version | 1.5 |
-| Status | CONTROLLED CANONICAL REGISTER — v3.0.3 SOLE CURRENT OWNER-ACCEPTED MASTER; v2.5 ARCHIVED |
-| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 — sole current owner-accepted Master; v2.5 archived |
+| Status | CONTROLLED CANONICAL REGISTER — v3.0.4 SOLE CURRENT OFFICIAL MASTER; v3.0.3 HISTORICAL; v2.5 ARCHIVED |
+| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.4 — sole current owner-accepted Master; v3.0.3 historical; v2.5 archived |
 | Scope | All canonical open-issue identifiers O-01 through O-65 |
 | Register revision date | 2026-11-21 |
 | Source branch | evidence/finance-inventory-bundle-004-20261120 (PR #81) |
@@ -50,7 +50,7 @@ An O-item may be marked **CLOSED** only when all applicable dimensions have expl
 
 ### 1.3 Current source authority and evidence boundaries
 
-- Architecture baseline: MDG-ARCH-MASTER-001 v3.0.3 — owner-accepted and repository-registered; v2.5 archived.
+- Architecture baseline: MDG-ARCH-MASTER-001 v3.0.4 — owner-accepted and repository-registered; v3.0.3 is historical; v2.5 archived.
 - COA coding/GL authority: COA v1.2 master; COA v1.5 controlled supplementary reconstruction/crosswalk. COA v1.4 and v1.4 are not current supplementary authority.
 - Finance: current 7B/7C/7D controlled workpapers, Stage 04 workpaper, and the current Finance Document Register; historical audit snapshots remain historical.
 - Inventory: Stage 04 sales/returns/GRNI/CreditExposure design, Stage 05 equations/custody/stocktake, Stage 06 logical ERD, Stage 07 PostgreSQL physical design and Stage 08 security design are design artifacts, not proof of runtime acceptance.

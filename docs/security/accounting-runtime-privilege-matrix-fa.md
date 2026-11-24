@@ -3,7 +3,7 @@
 شناسه: MDG-ACC-SEC-PRIV-001  
 نسخه: 0.1  
 وضعیت: طراحی اجرایی پیشنهادی برای بازبینی؛ هنوز هیچ grant واقعی روی schema دائمی Accounting اعمال نشده است.  
-والد: MDG-ARCH-MASTER-001 v3.0.3 / MDG-ADR-0018  
+والد: MDG-ARCH-MASTER-001 v3.0.4 / MDG-ADR-0018  
 دامنه: Accounting core persistence
 
 ## 1. اصول
@@ -71,3 +71,8 @@ PoC مستقل PostgreSQL 18 در مسیر `tests/MDGsm.Domain.Tests/Accounting/
 ## 6. موارد خارج از مجوز
 
 این ماتریس به‌تنهایی مجوز ایجاد schema، migration، seed، import COA، API، Posting writer، دوره مالی عملیاتی یا اتصال ماژول‌های دیگر نیست. Migration 0009 همچنان RESERVED و SQL NOT AUTHORIZED باقی می‌ماند.
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. Any v3.0.3 references retained above identify the earlier source snapshot or the baseline used when this artifact was authored; they do not define current authority. Current decisions must conform to v3.0.4. This notice does not alter historical execution evidence or imply implementation, test PASS, independent acceptance, migration authorization or release.

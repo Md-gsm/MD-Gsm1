@@ -3,7 +3,7 @@
 شناسه: MDG-ACC-OPS-REC-001  
 نسخه: 0.1  
 وضعیت: رویه عملیاتی پیشنهادی؛ اجرای عملیاتی Accounting مجاز نشده است.  
-والد: MDG-ARCH-MASTER-001 v3.0.3 / MDG-ADR-0018 / MDG-ACC-PDS-001
+والد: MDG-ARCH-MASTER-001 v3.0.4 / MDG-ADR-0018 / MDG-ACC-PDS-001
 
 ## 1. اصل غیرقابل‌مذاکره
 
@@ -74,4 +74,9 @@
 
 ## 8. کنترل تغییر
 
-هر تغییر در این رویه باید با بررسی هم‌زمان امنیت، صحت مالی، مالکیت داده، runner فعلی و قابلیت آزمون انجام شود. تغییر در معماری مرجع v3.0.3 یا اعطای مجوز SQL/Migration 0009 از این سند استنتاج نمی‌شود.
+هر تغییر در این رویه باید با بررسی هم‌زمان امنیت، صحت مالی، مالکیت داده، runner فعلی و قابلیت آزمون انجام شود. تغییر در معماری مرجع v3.0.4 یا اعطای مجوز SQL/Migration 0009 از این سند استنتاج نمی‌شود.
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. Any v3.0.3 references retained above identify the earlier source snapshot or the baseline used when this artifact was authored; they do not define current authority. Current decisions must conform to v3.0.4. This notice does not alter historical execution evidence or imply implementation, test PASS, independent acceptance, migration authorization or release.

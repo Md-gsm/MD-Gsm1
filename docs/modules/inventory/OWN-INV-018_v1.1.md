@@ -7,7 +7,7 @@
 | Status | APPROVED — BUSINESS OWNER POLICY |
 | Decision date | 2026-11-18 |
 | Scope | INV-EVT-001 through INV-EVT-018; D-213; D-215 |
-| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 — sole current Master; v2.5 archived historical reference |
+| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.4 — sole current Master; v3.0.3 historical; v2.5 archived historical reference |
 | Related policy | OWN-FE-01-02-001 v1.0 |
 | Execution status | NOT_VERIFIED |
 | Test status | NOT_RUN |
@@ -73,7 +73,12 @@ This decision is binding for architecture decomposition, data ownership, contrac
 
 This v1.1 successor changes document-control metadata only. The 18 owner-approved Inventory policy dispositions and their scope are unchanged from v1.0.
 
-- Governing architecture baseline: **MDG-ARCH-MASTER-001 v3.0.3**.
-- MDG-ARCH-MASTER-001 v2.5 is archived historical material only and is not the current baseline.
+- Governing architecture baseline: **MDG-ARCH-MASTER-001 v3.0.4**; v3.0.3 is historical.
+- MDG-ARCH-MASTER-001 v3.0.3 and v2.5 are historical material only and are not current baselines.
 - This metadata alignment does not convert the policy into implemented or runtime-verified behavior. Execution remains NOT_VERIFIED, tests remain NOT_RUN where not otherwise evidenced, and operational release remains NOT_GRANTED.
 - Read this file with the current successors: Inventory Stage 05, Logical ERD v0.3, PostgreSQL Physical Design v0.4, Cross-Module Technical Contract v1.1 and Test Specification v1.1. Older v0.x proposals remain historical where superseded.
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. Any v3.0.3 references retained above identify the earlier source snapshot or the baseline used when this artifact was authored; they do not define current authority. Current decisions must conform to v3.0.4. This notice does not alter historical execution evidence or imply implementation, test PASS, independent acceptance, migration authorization or release.
