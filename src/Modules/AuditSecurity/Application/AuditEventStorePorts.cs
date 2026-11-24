@@ -104,5 +104,6 @@ public interface IImmutableAuditCheckpointAnchor
     /// </summary>
     Task<AuditCheckpointAnchorReceipt> WriteImmutableAsync(
         AuditCheckpointEnvelope envelope,
+        string? expectedPreviousReference,
         CancellationToken cancellationToken);
 }

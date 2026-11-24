@@ -44,11 +44,12 @@ public sealed class PostgresAuditEventStore : IAuditEventStore
         {
             transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
             await using var ensure = new NpgsqlCommand($"""
-                INSERT INTO {_schema}.stream_heads (audit_stream_id)
-                VALUES (@stream_id)
+                INSERT INTO {_schema}.stream_heads (audit_stream_id, last_sequence, head_hash)
+                VALUES (@stream_id, 0, @genesis_hash)
                 ON CONFLICT (audit_stream_id) DO NOTHING;
                 """, connection, transaction);
             ensure.Parameters.AddWithValue("stream_id", auditStreamId);
+            ensure.Parameters.AddWithValue("genesis_hash", AuditEventCanonicalizer.GenesisHash);
             await ensure.ExecuteNonQueryAsync(cancellationToken);
             return new AppendTransaction(connection, transaction, _schema, auditStreamId);
         }
@@ -173,8 +174,10 @@ public sealed class PostgresAuditEventStore : IAuditEventStore
             }
 
             await using var clock = new NpgsqlCommand("SELECT clock_timestamp();", connection, transaction);
-            var databaseTime = await clock.ExecuteScalarAsync(cancellationToken) as DateTimeOffset?
-                ?? throw new InvalidOperationException("PostgreSQL did not return a database timestamp.");
+            var databaseTimeValue = await clock.ExecuteScalarAsync(cancellationToken);
+            if (databaseTimeValue is not DateTimeOffset databaseTime)
+                throw new InvalidOperationException("PostgreSQL did not return a database timestamp.");
+            
             _lockedState = new AuditAppendState(
                 new AuditStreamHead(streamId, sequence, headHash),
                 AuditEventCanonicalizer.NormalizeTimestamp(databaseTime));

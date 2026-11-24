@@ -79,7 +79,9 @@ public sealed class AuditCheckpointPublisher(
             envelope, envelope.Payload.KeyId, trustedKey.Value.Span))
             throw new InvalidOperationException("The signed checkpoint could not be verified against a trusted key.");
 
-        var receipt = await anchor.WriteImmutableAsync(envelope, cancellationToken);
+        // The anchor must perform conditional append against the exact reference we read.
+        // This prevents two concurrent publishers from creating competing checkpoint branches.
+        var receipt = await anchor.WriteImmutableAsync(envelope, previousReference, cancellationToken);
         var expectedReference = AuditCheckpointCanonicalizer.ComputeReference(envelope);
         if (!receipt.ImmutableRetentionConfirmed
             || !string.Equals(receipt.ImmutableObjectReference, expectedReference, StringComparison.OrdinalIgnoreCase))
