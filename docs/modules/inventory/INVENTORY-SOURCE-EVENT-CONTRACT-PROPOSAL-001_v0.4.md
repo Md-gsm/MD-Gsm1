@@ -5,13 +5,13 @@
 | Document ID | INVENTORY-SOURCE-EVENT-CONTRACT-PROPOSAL-001 |
 | Version | 0.4 |
 | Status | OWNER-DECISION SUCCESSOR — TECHNICAL OWNER ACCEPTANCE / BASELINE RECONCILIATION REQUIRED |
-| Authority | OWN-INV-018 v1.0 (remaining decisions); OWN-INV-019 v1.0 (follow-up decisions); OWN-FE-01-02-001 v1.0; MDG-ARCH-MASTER-001 v3.0.3 (sole current owner-accepted and repository-registered Master; v2.5 archived) |
+| Authority | OWN-INV-018 v1.0 (remaining decisions); OWN-INV-019 v1.0 (follow-up decisions); OWN-FE-01-02-001 v1.0; MDG-ARCH-MASTER-001 v3.0.4 (sole current owner-accepted and repository-registered Master; v3.0.3 historical) |
 | Supersedes | v0.2 for the explicit owner-decision amendments in OWN-INV-019 and correction of ATP to the v3.0.3/Stage 05 rule; v0.1/v0.2 retained as historical snapshots |
 
 ## 1. Authority and scope
 
 Data ownership classification: STK-01 — Inventory. Cross-module source-line keys include SalesLineId and RepairServiceLineId; these are immutable references, not Inventory-owned source records.
-This v0.4 successor retains the owner-approved INV-EVT-001..018 dispositions and aligns its governing architecture reference to the owner-accepted and repository-registered MDG-ARCH-MASTER-001 v3.0.3. v2.5 is archived historical material only. It resolves D-213 and D-215. Business policy is approved; technical contracts remain subject to acceptance by all named module owners. This is not an executable schema, migration, runtime contract, Posting Rule or release.
+This v0.4 successor retains the owner-approved INV-EVT-001..018 dispositions and aligns its governing architecture reference to the owner-accepted and repository-registered MDG-ARCH-MASTER-001 v3.0.4. v3.0.3 and v2.5 are historical material only. It resolves D-213 and D-215. Business policy is approved; technical contracts remain subject to acceptance by all named module owners. This is not an executable schema, migration, runtime contract, Posting Rule or release.
 
 ## 2. Ownership
 Inventory exclusively owns on-hand quantities, committed movement ledger, reservations/releases, allocations, picking, transfers and in-transit custody, physical returns/inspection/disposition, stocktakes/adjustments, valuation/cost layers/True-up, tracking identity and stock reporting. All writes pass through Inventory contracts. No other module may write Inventory tables, balances, movements, status or valuation.
@@ -82,3 +82,7 @@ No SQL, DDL, EF mapping, migration, GRANT/REVOKE, API/runtime/worker code, Inven
 ## Baseline authority alignment — 0.4 successor, 2026-11-21
 
 This controlled successor aligns the document's governing architecture reference with MDG-ARCH-MASTER-001 v3.0.3, the sole current owner-accepted and repository-registered Master. MDG-ARCH-MASTER-001 v2.5 is archived historical material only. This alignment does not imply independent technical review, module-owner acceptance, implementation, test execution, evidence acceptance, migration authorization, Posting Release or Go-Live.
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. Any v3.0.3 references retained above identify the earlier source snapshot or the baseline used when this artifact was authored; they do not define current authority. Current decisions must conform to v3.0.4. This notice does not alter historical execution evidence or imply implementation, test PASS, independent acceptance, migration authorization or release.
