@@ -14,6 +14,40 @@ public sealed class PersonsApiClient(HttpClient httpClient)
         PropertyNameCaseInsensitive = true
     };
 
+    /// <summary>Reads a Party through the masked, non-sensitive detail representation.</summary>
+    public async Task<PartyResponse> GetPartyAsync(
+        string accessToken,
+        string partyId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(accessToken);
+        if (!Guid.TryParse(partyId, out var parsedPartyId) || parsedPartyId == Guid.Empty)
+            throw new ArgumentException("A valid PartyId is required.", nameof(partyId));
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get, $"api/v2/persons/{parsedPartyId:D}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+            throw await IdentityAccessApiClient.CreateExceptionAsync(response, cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            var party = await response.Content.ReadFromJsonAsync<PartyResponse>(
+                JsonOptions, cancellationToken).ConfigureAwait(false);
+            if (party is null || !Guid.TryParse(party.PartyId, out var responsePartyId) ||
+                responsePartyId != parsedPartyId || string.IsNullOrWhiteSpace(party.PartyType) ||
+                string.IsNullOrWhiteSpace(party.DisplayName) || party.Contacts is null)
+                throw new InvalidDataException("Persons returned an incomplete Party detail response.");
+            return party;
+        }
+        catch (JsonException)
+        {
+            throw new InvalidDataException("Persons returned an invalid Party detail response.");
+        }
+    }
+
     public Task<PartyQuickRegistrationResponse> QuickRegisterNaturalAsync(
         string accessToken,
         Guid operationId,
