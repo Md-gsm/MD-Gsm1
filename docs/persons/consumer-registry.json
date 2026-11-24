@@ -1,5 +1,5 @@
 {
-  "registryVersion": "1.5",
+  "registryVersion": "1.6",
   "module": "Persons",
   "ownerPaths": [
     "src/Modules/Persons",
@@ -16,7 +16,8 @@
       "contractVersion": "Finance.Schema/1.0; Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
       "purpose": "Finance-owned one-to-one Party subledger account identity; no balance or ledger data.",
-      "mergeClassification": "TRANSFER_ACTIVE_REFERENCE"
+      "mergeClassification": "PERSISTED_ACTIVE_REFERENCE",
+      "mergeParticipant": false
     },
     {
       "module": "ApiHost",
@@ -24,7 +25,8 @@
       "contractVersion": "Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
       "purpose": "Maps versioned Persons API registration and quick-registration response contracts to application commands and responses; transports PartyId and masked duplicate candidates without owning Party data.",
-      "mergeClassification": "NON_PERSISTENT_TRANSPORT"
+      "mergeClassification": "NON_PERSISTENT_TRANSPORT",
+      "mergeParticipant": false
     },
     {
       "module": "ApiHost",
@@ -32,7 +34,8 @@
       "contractVersion": "Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
       "purpose": "Protected GET Party details and canonical feature-gated natural/legal registration routes. All writes perform duplicate resolution, require persons.read and persons.create, and derive actor from a validated IdentityAccess session.",
-      "mergeClassification": "NON_PERSISTENT_TRANSPORT"
+      "mergeClassification": "NON_PERSISTENT_TRANSPORT",
+      "mergeParticipant": false
     },
     {
       "module": "HostClient",
@@ -40,7 +43,8 @@
       "contractVersion": "Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
       "purpose": "Authenticated HTTP adapter transports opaque PartyId path/query values and versioned masked Party detail/quick-registration contracts; it does not own Party data or authorize sensitive reads.",
-      "mergeClassification": "NON_PERSISTENT_TRANSPORT"
+      "mergeClassification": "NON_PERSISTENT_TRANSPORT",
+      "mergeParticipant": false
     },
     {
       "module": "DesktopHost",
@@ -48,7 +52,8 @@
       "contractVersion": "Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
       "purpose": "WPF client uses opaque PartyId only to present authenticated quick-registration outcomes and masked duplicate candidates; it does not own Party records or perform persistence.",
-      "mergeClassification": "NON_PERSISTENT_TRANSPORT"
+      "mergeClassification": "NON_PERSISTENT_TRANSPORT",
+      "mergeParticipant": false
     },
     {
       "module": "Finance",
@@ -56,7 +61,8 @@
       "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
       "purpose": "Published reference to Finance-owned Party account identity.",
-      "mergeClassification": "TRANSFER_ACTIVE_REFERENCE"
+      "mergeClassification": "CONTRACT_ONLY_REFERENCE",
+      "mergeParticipant": false
     },
     {
       "module": "Finance",
@@ -64,7 +70,8 @@
       "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
       "purpose": "Finance participant for controlled Party merge; preserves ledger history and blocks dual-account conflicts.",
-      "mergeClassification": "TRANSFER_ACTIVE_REFERENCE"
+      "mergeClassification": "PERSISTED_ACTIVE_REFERENCE",
+      "mergeParticipant": true
     },
     {
       "module": "Finance",
@@ -72,7 +79,8 @@
       "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
       "purpose": "Transaction-bound idempotent provisioning of Finance-owned Party account identity.",
-      "mergeClassification": "TRANSFER_ACTIVE_REFERENCE"
+      "mergeClassification": "PERSISTED_ACTIVE_REFERENCE",
+      "mergeParticipant": false
     }
   ],
   "registryPolicy": {
@@ -89,9 +97,16 @@
       "person_id"
     ],
     "allowedMergeClassifications": [
-      "TRANSFER_ACTIVE_REFERENCE",
+      "PERSISTED_ACTIVE_REFERENCE",
+      "CONTRACT_ONLY_REFERENCE",
       "NON_PERSISTENT_TRANSPORT"
-    ]
+    ],
+    "mergeClassificationDefinitions": {
+      "PERSISTED_ACTIVE_REFERENCE": "The source persists an active PartyId reference; its owning module must declare an explicit merge participant or a blocking disposition.",
+      "CONTRACT_ONLY_REFERENCE": "The source publishes a typed PartyId reference but does not persist a runtime row; the contract itself is not rewritten by merge.",
+      "NON_PERSISTENT_TRANSPORT": "The source only transports PartyId in an authenticated request/response or transient UI state; it has no persisted reference to transfer."
+    },
+    "mergeParticipantRegistrationRequired": true
   },
   "plannedNotYetImplemented": [
     {
