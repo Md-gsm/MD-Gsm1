@@ -36,6 +36,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = this;
+        InitializePersonsWorkspace();
         SeedReceptionRows();
         SeedDashboardStatistics();
 
