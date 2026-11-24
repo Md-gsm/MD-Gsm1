@@ -26,7 +26,10 @@ public sealed class AuditSecurityPostgresAdapterTests
             throw new InvalidOperationException("The marked disposable PostgreSQL integration connection string is required.");
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
         Assert.Contains(builder.Host, new[] { "127.0.0.1", "localhost", "::1" });
-        Assert.Matches("^mdgsm_identityaccess_disposable_[0-9]+_[0-9]+$", builder.Database);
+        var databaseName = builder.Database;
+        if (string.IsNullOrWhiteSpace(databaseName))
+            throw new InvalidOperationException("The disposable PostgreSQL database name is required.");
+        Assert.Matches("^mdgsm_identityaccess_disposable_[0-9]+_[0-9]+$", databaseName);
 
         await using (var guard = new NpgsqlConnection(connectionString))
         {
@@ -229,6 +232,8 @@ public sealed class AuditSecurityPostgresAdapterTests
             await cleanup.OpenAsync();
             await using var command = new NpgsqlCommand(
                 $"DROP SCHEMA IF EXISTS {Q(sourceSchema)} CASCADE; DROP SCHEMA IF EXISTS {Q(auditSchema)} CASCADE; " +
+                $"REVOKE CONNECT ON DATABASE {Q(databaseName)} FROM {Q(workerLogin)}; " +
+                $"REVOKE {Q(workerAclRole)} FROM {Q(workerLogin)}; " +
                 $"DROP ROLE IF EXISTS {Q(workerLogin)}; DROP ROLE IF EXISTS {Q(workerAclRole)};", cleanup);
             await command.ExecuteNonQueryAsync();
         }
