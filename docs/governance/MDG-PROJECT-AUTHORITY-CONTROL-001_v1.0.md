@@ -41,10 +41,15 @@ Other user accounts remain recoverable/resettable only under Product Owner autho
 
 ## 4. Repository reconciliation scope
 
-The controlled registration vehicle is PR #94, branch docs/official-master-v3.0.3-20261124. The current baseline registration is v1.3. The following current successor registers are included in this reconciliation:
+The controlled registration vehicle is PR #94, branch docs/official-master-v3.0.3-20261124. The current baseline registration is v1.3. The following current successor records are included in this reconciliation:
 - MDG-OPEN-ISSUE-REGISTER-001 v1.6
 - MDG-WP06-DOCUMENT-REGISTER-001 v2.1
 - MDG-SECURITY-STAGE-08-REGISTER-001 v2.8
+- CR-ARCH-IDENTITYACCESS-BOOTSTRAP-OWNER-001 v0.3 (CHG-101)
+- MDG-IDENTITYACCESS-MODULE-BASELINE-001 v1.2
+- MDG-SECURITY-O46-BOOTSTRAP-RECOVERY-AUDIT-001 v0.6
+- MDG-SECURITY-O46-BOOTSTRAP-OWNER-DECISION-001 v0.2
+- MDG-SECURITY-O46-BOOTSTRAP-TRUST-BOUNDARY-PROPOSAL-001 v0.3
 
 The root README points to this authority control and the governing Master. Further active-document references must be audited and reconciled before the project can be described as fully synchronized. Historical snapshots remain unchanged.
 
