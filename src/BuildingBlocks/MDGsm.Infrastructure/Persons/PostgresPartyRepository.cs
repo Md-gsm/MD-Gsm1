@@ -133,6 +133,16 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             var candidates = forceNew
                 ? Array.Empty<PartyQuickRegistrationCandidate>()
                 : await FindMobileCandidatesAsync(connection, transaction, normalizedMobile, cancellationToken);
+            if (candidates.Count > 0)
+            {
+                // Candidate names and masked contact values are disclosed to the caller.
+                // Persist the access evidence independently before returning any candidate data.
+                await AppendSearchAuditAsync(
+                    candidates.Select(candidate => Guid.Parse(candidate.PartyId)).ToArray(),
+                    actor,
+                    cancellationToken);
+            }
+
             if (!string.IsNullOrWhiteSpace(selectedPartyId))
             {
                 var selected = candidates.SingleOrDefault(x =>
