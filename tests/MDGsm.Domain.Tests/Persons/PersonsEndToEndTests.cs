@@ -22,6 +22,35 @@ public sealed class PersonsEndToEndTests
         Assert.DoesNotContain("BankCardLastFour", properties);
     }
 
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Natural_registration_persists_the_address_country_code()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var request = NewNatural(null, NewNationalId()) with { CountryCode = "US" };
+        var registered = await scope.Repository.AddNaturalAsync(
+            request, Actor, Guid.CreateVersion7(), scope.Transaction, default);
+        await using var command = new NpgsqlCommand(
+            "SELECT country_code FROM persons_addresses WHERE party_id = @party AND is_primary;",
+            scope.Connection, scope.Transaction);
+        command.Parameters.AddWithValue("party", Guid.Parse(registered.PartyId));
+        Assert.Equal("US", (string?)await command.ExecuteScalarAsync());
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Registration_operation_key_cannot_be_replayed_by_a_different_actor()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var operationId = Guid.CreateVersion7();
+        await scope.Repository.AddNaturalAsync(
+            NewNatural(null, NewNationalId()), Actor, operationId, scope.Transaction, default);
+        await Assert.ThrowsAsync<IdempotencyKeyConflictException>(() =>
+            scope.Repository.AddNaturalAsync(
+                NewNatural(null, NewNationalId()), "another-ci-user", operationId, scope.Transaction, default));
+    }
+
     private const string Actor = "ci-test-user";
 
     [Fact]
