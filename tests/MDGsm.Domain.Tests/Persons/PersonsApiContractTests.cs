@@ -24,20 +24,28 @@ public sealed class PersonsApiContractTests
 
 
     [Fact]
-    public void Natural_and_legal_write_routes_are_feature_gated_and_permission_checked()
+    public void Canonical_natural_and_legal_write_routes_always_use_duplicate_resolution()
     {
         var root = FindRepositoryRoot();
         var program = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
+        var openApi = File.ReadAllText(Path.Combine(root, "docs", "persons", "contracts", "persons.openapi.yaml"));
+
         Assert.Contains("app.MapPost(\"/api/v2/persons\"", program, StringComparison.Ordinal);
         Assert.Contains("app.MapPost(\"/api/v2/persons/legal\"", program, StringComparison.Ordinal);
+        Assert.Contains("QuickRegisterNaturalPartyRequest request", program, StringComparison.Ordinal);
+        Assert.Contains("QuickRegisterLegalPartyRequest request", program, StringComparison.Ordinal);
+        Assert.Contains("QuickRegisterNaturalAsync", program, StringComparison.Ordinal);
+        Assert.Contains("QuickRegisterLegalAsync", program, StringComparison.Ordinal);
         Assert.Contains("Persons:WriteApiEnabled", program, StringComparison.Ordinal);
         Assert.Contains("HasPermissionAsync(accountId, \"persons.create\"", program, StringComparison.Ordinal);
-        Assert.Contains("IdempotencyKeyConflictException", program, StringComparison.Ordinal);
-        Assert.Contains("app.MapPost(\"/api/v2/persons/quick/natural\"", program, StringComparison.Ordinal);
-        Assert.Contains("app.MapPost(\"/api/v2/persons/quick/legal\"", program, StringComparison.Ordinal);
         Assert.Contains("HasPermissionAsync(accountId, \"persons.read\"", program, StringComparison.Ordinal);
+        Assert.DoesNotContain("parties.AddNaturalAsync", program, StringComparison.Ordinal);
+        Assert.DoesNotContain("parties.AddLegalAsync", program, StringComparison.Ordinal);
+        Assert.DoesNotContain("/api/v2/persons/quick/natural", program, StringComparison.Ordinal);
+        Assert.DoesNotContain("/api/v2/persons/quick/legal", program, StringComparison.Ordinal);
+        Assert.Contains("#/components/schemas/QuickRegisterNaturalPartyRequest", openApi, StringComparison.Ordinal);
+        Assert.Contains("#/components/schemas/QuickRegisterLegalPartyRequest", openApi, StringComparison.Ordinal);
     }
-
 
     [Fact]
     public void Party_detail_endpoint_maps_through_the_versioned_public_contract()
