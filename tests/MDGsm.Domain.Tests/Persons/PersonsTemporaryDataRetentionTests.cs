@@ -50,10 +50,11 @@ public sealed class PersonsTemporaryDataRetentionTests
 
         Assert.True(store.CallCount >= 2);
         Assert.Equal(
-            "temporary_workflow_retention_sweep_failed:InvalidOperationException",
+            TemporaryWorkflowRetentionFailureCode.SweepFailed,
             Assert.Single(alert.FailureCodes));
         var logText = string.Join(Environment.NewLine, logger.Messages);
-        Assert.Contains("FailureCode=temporary_workflow_retention_sweep_failed:InvalidOperationException", logText);
+        Assert.Contains("FailureCode=SweepFailed", logText);
+        Assert.Contains("FailureType=InvalidOperationException", logText);
         Assert.Contains("AlertFailureType=InvalidOperationException", logText);
         Assert.DoesNotContain(TransientFailureThenSuccessRetentionStore.PrivatePayloadSentinel, logText);
         Assert.DoesNotContain(FailingRetentionAlert.PrivateAlertSentinel, logText);
@@ -126,9 +127,11 @@ public sealed class PersonsTemporaryDataRetentionTests
     private sealed class FailingRetentionAlert : ITemporaryWorkflowRetentionAlert
     {
         public const string PrivateAlertSentinel = "PRIVATE-CONTACT-PII-SENTINEL-ALERT";
-        public List<string> FailureCodes { get; } = [];
+        public List<TemporaryWorkflowRetentionFailureCode> FailureCodes { get; } = [];
 
-        public Task NotifyFailureAsync(string failureCode, CancellationToken cancellationToken)
+        public Task NotifyFailureAsync(
+            TemporaryWorkflowRetentionFailureCode failureCode,
+            CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             FailureCodes.Add(failureCode);
