@@ -925,11 +925,47 @@
                         <Border Background="#FFFFFF" BorderBrush="#FDE68A" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,7">
                           <DockPanel>
                             <Button DockPanel.Dock="Left" Content="انتخاب این شخص" Tag="{Binding}" Click="SelectPersonCandidateButton_Click"
-                                    Background="#B45309" Foreground="#FFFFFF" BorderBrush="#B45309" Padding="12,6"/>
+                                    Background="#B45309" Foreground="#FFFFFF" BorderBrush="#B45309" Padding="12,6">
+                              <Button.Style>
+                                <Style TargetType="Button">
+                                  <Setter Property="IsEnabled" Value="True"/>
+                                  <Style.Triggers>
+                                    <DataTrigger Binding="{Binding PartyIsActive}" Value="False">
+                                      <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsMerged}" Value="True">
+                                      <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding HasActiveMobile}" Value="False">
+                                      <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                  </Style.Triggers>
+                                </Style>
+                              </Button.Style>
+                            </Button>
                             <StackPanel>
                               <TextBlock Text="{Binding DisplayName}" Foreground="#1F2937" FontWeight="SemiBold"/>
                               <TextBlock Text="{Binding PartyType}" Foreground="#64748B" FontSize="12.5"/>
                               <TextBlock Text="{Binding MaskedMobile}" Foreground="#64748B" FontSize="12.5"/>
+                              <TextBlock Text="این مورد قابل انتخاب نیست (ادغام‌شده، غیرفعال یا بدون موبایل فعال)." Foreground="#B91C1C" FontSize="12"
+                                         TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                  <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                      <DataTrigger Binding="{Binding PartyIsActive}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                      </DataTrigger>
+                                      <DataTrigger Binding="{Binding IsMerged}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                      </DataTrigger>
+                                      <DataTrigger Binding="{Binding HasActiveMobile}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                      </DataTrigger>
+                                    </Style.Triggers>
+                                  </Style>
+                                </TextBlock.Style>
+                              </TextBlock>
                             </StackPanel>
                           </DockPanel>
                         </Border>
