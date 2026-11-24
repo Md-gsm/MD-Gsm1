@@ -192,8 +192,14 @@ components:
         email: { type: [string, 'null'], format: email }
         address: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
         communication: { $ref: '#/components/schemas/CommunicationPreferences' }
-        acquaintanceSource: { type: [string, 'null'] }
+        acquaintanceSource:
+          type: [string, 'null']
+          enum: [Unknown, PersonalReferral, ExistingCustomer, Online, Advertisement, WalkIn, Other, null]
         internalNote: { type: [string, 'null'], maxLength: 2000 }
+        workClassification:
+          type: [string, 'null']
+          enum: [Staff, Employee, Technician, null]
+          description: Applies only to a natural person with the Colleague role.
     CreateLegalPartyRequest:
       type: object
       required: [legalName, roles]
@@ -210,7 +216,16 @@ components:
         alternateMobile: { type: [string, 'null'] }
         landline: { type: [string, 'null'] }
         email: { type: [string, 'null'], format: email }
-        address    PartyResponse:
+        address: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
+        communication: { $ref: '#/components/schemas/CommunicationPreferences' }
+        acquaintanceSource:
+          type: [string, 'null']
+          enum: [Unknown, PersonalReferral, ExistingCustomer, Online, Advertisement, WalkIn, Other, null]
+        internalNote: { type: [string, 'null'], maxLength: 2000 }
+        workClassification:
+          type: [string, 'null']
+          description: Must be null for a legal entity; the server rejects any non-empty value.
+    PartyResponse:
       type: object
       required: [partyId, partyType, displayName, roles, contacts, createdAtUtc, sensitiveFieldsIncluded]
       properties:
@@ -237,10 +252,6 @@ components:
         createdAtUtc: { type: string, format: date-time }
         sensitiveFieldsIncluded: { type: boolean }
         workClassification: { type: [string, 'null'] }
-: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
-        communication: { $ref: '#/components/schemas/CommunicationPreferences' }
-        acquaintanceSource: { type: [string, 'null'] }
-        internalNote: { type: [string, 'null'], maxLength: 2000 }
     PartyListResponse:
       type: object
       required: [items, limit, hasMore]
