@@ -29,7 +29,7 @@
       "path": "src/Host/Api/Program.cs",
       "contractVersion": "Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
-      "purpose": "Protected GET party-details plus feature-gated natural/legal create and quick-registration endpoints; actor identity comes from validated IdentityAccess session context. Quick registration requires both persons.read and persons.create."
+      "purpose": "Protected GET Party details and canonical feature-gated natural/legal registration routes. All writes perform duplicate resolution, require persons.read and persons.create, and derive actor from a validated IdentityAccess session."
     },
     {
       "module": "HostClient",
