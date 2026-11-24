@@ -79,6 +79,23 @@ public sealed class PersonsEndToEndTests
         Assert.Equal(1L, (long)(await auditCommand.ExecuteScalarAsync())!);
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Quick_registration_operation_key_cannot_be_replayed_by_a_different_actor()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var operationId = Guid.CreateVersion7();
+        var registration = NewNatural(null, NewNationalId());
+        var created = await scope.Repository.QuickRegisterNaturalAsync(
+            registration, Actor, operationId, forceNew: true, selectedPartyId: null,
+            scope.Transaction, default);
+        Assert.Equal(PartyQuickRegistrationOutcome.Created, created.Outcome);
+        await Assert.ThrowsAsync<IdempotencyKeyConflictException>(() =>
+            scope.Repository.QuickRegisterNaturalAsync(
+                registration, "another-ci-user", operationId, forceNew: true, selectedPartyId: null,
+                scope.Transaction, default));
+    }
+
     private const string Actor = "ci-test-user";
 
     [Fact]
