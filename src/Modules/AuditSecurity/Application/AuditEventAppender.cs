@@ -25,6 +25,7 @@ public sealed class AuditEventAppender(
             throw new AuditEventMetadataRejectedException(reasonCode);
 
         var intentDigest = AuditEventCanonicalizer.ComputeIntentDigest(intent);
+        var intentDigestHex = Convert.ToHexString(intentDigest);
         await using var transaction = await store.BeginAppendTransactionAsync(
             intent.AuditStreamId, cancellationToken);
 
@@ -47,7 +48,8 @@ public sealed class AuditEventAppender(
                     existing.Sequence,
                     Convert.ToHexString(existing.EventHash.Span),
                     true,
-                    ModuleContractVersion.Current);
+                    ModuleContractVersion.Current,
+                    intentDigestHex);
             }
 
             throw new AuditEventConflictException(
@@ -72,7 +74,8 @@ public sealed class AuditEventAppender(
             record.Sequence,
             Convert.ToHexString(record.EventHash.Span),
             false,
-            ModuleContractVersion.Current);
+            ModuleContractVersion.Current,
+            intentDigestHex);
     }
 }
 
@@ -87,24 +90,25 @@ public sealed class AuditEventIngestionContractAdapter(AuditEventAppender append
         if (!string.Equals(submission.ContractVersion, ModuleContractVersion.Current, StringComparison.Ordinal))
             throw new NotSupportedException("Unsupported AuditSecurity ingestion contract version.");
 
+        var normalized = AuditEventSubmissionCanonicalizer.NormalizeAndValidate(submission);
         var intent = new AuditEventIntent(
-            submission.EventId,
-            submission.AuditStreamId,
-            submission.SchemaVersion,
-            submission.CanonicalizationVersion,
-            submission.HashAlgorithmCode,
-            submission.EventTypeCode,
-            submission.OccurredAtUtc,
-            submission.ActorTypeCode,
-            submission.ActorId,
-            submission.SubjectTypeCode,
-            submission.SubjectId,
-            submission.SourceModuleCode,
-            submission.SourceEventId,
-            submission.CorrelationId,
-            submission.CausationId,
-            submission.OutcomeCode,
-            submission.Metadata);
+            normalized.EventId,
+            normalized.AuditStreamId,
+            normalized.SchemaVersion,
+            normalized.CanonicalizationVersion,
+            normalized.HashAlgorithmCode,
+            normalized.EventTypeCode,
+            normalized.OccurredAtUtc,
+            normalized.ActorTypeCode,
+            normalized.ActorId,
+            normalized.SubjectTypeCode,
+            normalized.SubjectId,
+            normalized.SourceModuleCode,
+            normalized.SourceEventId,
+            normalized.CorrelationId,
+            normalized.CausationId,
+            normalized.OutcomeCode,
+            normalized.Metadata);
 
         return appender.AppendAsync(intent, cancellationToken);
     }

@@ -25,13 +25,19 @@ public sealed record AuditEventSubmission(
     IReadOnlyDictionary<string, string> Metadata,
     string ContractVersion);
 
+/// <summary>
+/// Durable ingestion receipt. IntentDigestHex binds the acknowledgement to the exact
+/// canonical source intent; it is not, by itself, a cryptographic signature.
+/// The ingestion channel must authenticate the AuditSecurity service endpoint.
+/// </summary>
 public sealed record AuditAppendReceipt(
     Guid EventId,
     Guid AuditStreamId,
     long Sequence,
     string EventHashHex,
     bool Duplicate,
-    string ContractVersion);
+    string ContractVersion,
+    string IntentDigestHex = "");
 
 public interface IAuditEventIngestionContract
 {
