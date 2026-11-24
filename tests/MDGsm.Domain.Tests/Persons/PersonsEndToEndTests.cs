@@ -51,6 +51,34 @@ public sealed class PersonsEndToEndTests
                 NewNatural(null, NewNationalId()), "another-ci-user", operationId, scope.Transaction, default));
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Search_results_are_audited_even_when_the_business_transaction_rolls_back()
+    {
+        await using var scope = await TestScope.OpenAsync();
+        var registered = await scope.Repository.AddNaturalAsync(
+            NewNatural(null, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+
+        var results = await scope.Repository.SearchAsync(
+            "علی رضایی", PartySearchLimits.MaxResults, Actor, scope.Transaction, default);
+        Assert.Contains(results, item => item.PartyId == registered.PartyId);
+
+        await scope.RollbackTransactionAsync();
+
+        var auditConnectionString = new NpgsqlConnectionStringBuilder(scope.DataSource.ConnectionString)
+        {
+            Pooling = false
+        }.ConnectionString;
+        await using var auditConnection = new NpgsqlConnection(auditConnectionString);
+        await auditConnection.OpenAsync();
+        await using var auditCommand = new NpgsqlCommand(
+            "SELECT count(*) FROM persons_access_audit WHERE party_id = @party AND actor = @actor AND action = 'search';",
+            auditConnection);
+        auditCommand.Parameters.AddWithValue("party", Guid.Parse(registered.PartyId));
+        auditCommand.Parameters.AddWithValue("actor", Actor);
+        Assert.Equal(1L, (long)(await auditCommand.ExecuteScalarAsync())!);
+    }
+
     private const string Actor = "ci-test-user";
 
     [Fact]
