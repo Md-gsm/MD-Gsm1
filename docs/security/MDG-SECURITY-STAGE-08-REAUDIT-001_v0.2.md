@@ -49,3 +49,8 @@ Existing Gate D evidence for eight logical restore PoCs and 36 IdentityAccess in
 | Independent reviewer attestation | PENDING |
 
 **END — MDG-SECURITY-STAGE-08-REAUDIT-001 v0.2**
+
+
+## Current Architecture Master authority — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. The v3.0.3 references in this dated review/evidence artifact identify the baseline actually reviewed or used when the artifact was produced; they are retained as historical provenance and are not silently rewritten. For current design decisions, v3.0.4 governs. Any unresolved section-level conflict or design dependency must be re-audited against v3.0.4 before implementation. This authority notice does not upgrade this artifact's review type, evidence strength, gate status or acceptance.
