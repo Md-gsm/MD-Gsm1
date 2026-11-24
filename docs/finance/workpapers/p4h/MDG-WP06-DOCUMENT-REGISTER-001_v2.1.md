@@ -6,9 +6,9 @@
 | Document ID | MDG-WP06-DOCUMENT-REGISTER-001 |
 | Version | 2.0 |
 | Classification | CONTROLLED REGISTER / IMPLEMENTATION STATUS |
-| Status | CONTROLLED REGISTER — v3.0.3 SOLE CURRENT OWNER-ACCEPTED MASTER; v2.5 ARCHIVED |
+| Status | CONTROLLED REGISTER — v3.0.4 SOLE CURRENT OFFICIAL MASTER; v3.0.3 HISTORICAL; v2.5 ARCHIVED |
 | Supersedes | v1.9; prior versions retained as immutable historical snapshots |
-| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.3 — sole current owner-accepted Master; v2.5 archived |
+| Architecture baseline | MDG-ARCH-MASTER-001 v3.0.4 — sole current owner-accepted Master; v3.0.3 historical; v2.5 archived |
 | Change control | CR-ARCH-O01-REPLACEMENT-ACCEPTANCE-001 v0.1 |
 | PR status | #66 MERGED; #70 MERGED; #71 MERGED; #72 CLOSED AS SUPERSEDED; #73 MERGED; #82 MERGED (`538eebd2dfa5644e97902cc8abaecbe976e6a046`); #83 MERGED (`971194111d49a7ed1f624e3ba64a7d776f729a08`); #81 OPEN — refreshed Package 5 evidence candidate; exact-head CI/review pending |
 | Branch | Package base: main at `971194111d49a7ed1f624e3ba64a7d776f729a08`; evidence candidate branch: `evidence/finance-inventory-bundle-004-20261120` (PR #81) |
@@ -17,7 +17,7 @@
 
 ## 1. Authority hierarchy
 
-1. MDG-ARCH-MASTER-001 v3.0.3 is the sole current owner-accepted and repository-registered Master baseline. v2.5, v2.6, v3.0 and v3.0.1 are archived historical references only. Independent technical review, implementation, tests, evidence, legal clearance and release gates remain independent and retain their recorded statuses.
+1. MDG-ARCH-MASTER-001 v3.0.4 is the sole current owner-accepted and repository-registered Master baseline. v3.0.3, v2.5, v2.6, v3.0 and v3.0.1 are historical references only. Independent technical review, implementation, tests, evidence, legal clearance and release gates remain independent and retain their recorded statuses.
 2. Accepted owner decisions and ADRs control explicit dispositions and constraints.
 3. COA v1.2 is the master document and primary authority for account coding and General Ledger rules.
 4. COA v1.5 is the controlled supplementary reconstruction/crosswalk based on v1.2; v1.4 is historical/superseded for current supplementary authority.
