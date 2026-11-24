@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Document ID | MDG-IDENTITYACCESS-MODULE-BASELINE-001 |
-| Version / Date | 1.2 / 2026-11-23 |
-| Status | **IDENTITYACCESS MODULE-OWNER ACCEPTED BASELINE — OWNER PROFILE CONTRACT ACCEPTED; FINGERPRINT PROPOSAL PENDING REVIEW; IMPLEMENTATION AND RELEASE GATES OPEN** |
+| Version / Date | 1.2 / 2026-11-24 |
+| Status | **IDENTITYACCESS MODULE-OWNER ACCEPTED BASELINE — O-46 OWNER BOOTSTRAP DECISIONS RECONCILED; IMPLEMENTATION AND RELEASE GATES OPEN** |
 | Module owner | `Md-gsm` (also Product Owner; one existing person/account) |
 | Independent reviewer | `mrdeljoe4` (existing reviewer; no project membership expansion) |
 | Public contract assembly | `src/Modules/IdentityAccess/Contracts` |
@@ -114,7 +114,6 @@ The later explicit Product Owner decision in `MDG-SECURITY-O46-BOOTSTRAP-OWNER-D
 - No fixed, guessable, shared, embedded or reusable bootstrap credential is allowed. There is no second owner-creation path. If the original owner AccountId cannot be securely recovered, privileged Product Owner operations fail closed; recovery may restore only the same AccountId.
 - Owner-policy decisions above are accepted. However, the threat review, runtime design, schema/migration reservation, deployment-principal boundary, seed/role review, implementation, PostgreSQL evidence, secret-sentinel scans, independent review and release gates remain open. No production credential, listener, migration, seed, role or feature activation is authorized by this baseline.
 
-
 #### Initial Product Owner profile contract (O-46 accepted)
 
 The initial Product Owner profile collected by the trusted local Setup Wizard is exactly:
@@ -125,7 +124,16 @@ The initial Product Owner profile collected by the trusted local Setup Wizard is
 
 No phone/mobile field is collected or required in this bootstrap flow; the existing `phone_e164` remains untouched. Email remains a contact/recovery channel and is not a login identifier. The Owner claim sets `is_bootstrap_account=true` and `must_change_password=false`; it does not create roles, permissions, sessions or business data. Email/display-name validation must use reviewed IdentityAccess validators; no additional trimming, case folding or Unicode policy is invented here.
 
-The proposed v1 claim fingerprint is the domain-separated SHA-256 binary envelope described in `MDG-SECURITY-O46-CHALLENGE-ISSUANCE-PROTOCOL-PROPOSAL-001_v0.4.md`. If accepted, its persisted form will be 32 bytes and its version will be 1. The algorithm remains a technical proposal pending Product Owner/independent review, shared test vectors and a restart-safe strategy for preserving the exact salted password-hash output across uncertain commits. The fingerprint binds InstallationId, SetupOperationId, AccountId, normalized username, validated display_name, validated email, password_hash_version and the exact final stored password-hash output; it excludes plaintext password, challenge material and secrets. Shared test vectors remain a technical acceptance gate.
+#### Fingerprint v1 owner acceptance — 2026-11-24
+
+The Product Owner has approved Fingerprint v1 as the canonical payload-fingerprint contract. The v1 envelope is domain-separated and version-tagged; it encodes InstallationId, SetupOperationId and AccountId as UUID bytes in RFC 4122 byte order; normalized username, validated display_name and validated email as strict UTF-8 length-prefixed fields; and the exact final persisted versioned/salted password-hash output together with its hasher version. SHA-256 produces the 32-byte fingerprint. Plaintext password, raw challenge, verifier digest, operator SID, private keys and transport secrets are excluded.
+
+This is approval of the algorithm and serialization contract only. Cross-language golden vectors, parser/length/overflow and Unicode edge-case tests, restart-safe preservation of the exact password-hash output, adversarial tests and independent review remain mandatory before implementation acceptance.
+
+#### Windows SID policy owner approval — 2026-11-24
+
+The Product Owner has approved the previously presented policy for handling the same Windows SID across multiple Windows/RDP logon sessions. This approval is policy-level only; implementation must encode the approved session-identity rule exactly and must not treat SID equality alone as proof that two logon sessions are the same session. The precise allow/deny rule and its logon-session identity tuple must be carried into the controlled IPC contract and executable tests before implementation is accepted. No SID enrollment, IPC implementation or service activation is authorized by this approval.
+
 ### 5.6 Roles and permissions
 
 - The accepted role vocabulary is: `super_admin`, `manager`, `receptionist`, `technician`, `warehouse`, `salesperson`, `purchaser`, `cashier`, `accountant`, `viewer`.
@@ -192,6 +200,21 @@ The owner-accepted route is exclusively the server-local Wizard using the accept
 
 **Successor note:** This v1.1 baseline supersedes v1.0 for the initial Product Owner bootstrap/first-login policy only. All other v1.0 contract boundaries and non-acceptances remain unchanged unless explicitly reconciled above.
 
-**Successor note:** This v1.2 baseline preserves all v1.1 decisions and adds only the accepted three-field initial Owner profile contract; the fingerprint serialization is a proposal pending review.
+**END — MDG-GSM IdentityAccess Module Baseline v1.1**
 
-**END — MDG-GSM IdentityAccess Module Baseline v1.2**
+
+## Product Owner authority and recovery amendment — 2026-11-24
+
+The Product Owner has designated **MDG-ARCH-MASTER-001 v3.0.4** as the sole current, accepted, official and governing Architecture/Accounting Master. Earlier v3.0.3-only authority statements in prior records are historical and superseded by baseline registration v1.3 and project authority control v1.0.
+
+The Product Owner's recovery decision is now explicit:
+1. The initial Product Owner identity and binding are immutable. Recovery may restore only the original AccountId and may not create a second owner, replacement, transfer or successor.
+2. Owner recovery has two alternative methods: (a) a recovery code chosen by the Product Owner in the initial Setup Wizard, with only a securely salted/versioned verifier/hash persisted and bounded attempts/audit; or (b) a single-use Email OTP sent to the verified owner email.
+3. The Product Owner's recovery does not require approval by the Product Owner account itself. Recovery of ordinary user accounts remains under Product Owner authority.
+4. The product uses one centrally managed Google/Gmail sender account owned by MD-Gsm. Store customers enter only the recipient email address and do not configure SMTP, sender mailbox credentials or OAuth. The central sender account and authorization are created/configured during final release preparation, not customer setup.
+5. Sender credentials/tokens must not be embedded in distributed binaries, source control or store databases. A protected central sending component/service, secure transport, OAuth/API authorization, token custody, delivery monitoring, abuse controls and privacy/retention rules remain design, implementation and test gates. The owner-defined recovery code remains independent of email-service availability.
+6. This policy decision does not authorize a live Gmail account, OAuth client/secret, production sender service, runtime endpoint, database migration, grant, activation or Go-Live.
+
+This amendment changes owner-policy and architecture authority only. All implementation, schema reservation, technical threat review, exact-head tests, independent review and release gates remain independently open unless separately evidenced.
+
+**END — MDG-IDENTITYACCESS-MODULE-BASELINE-001_v1.2.md**
