@@ -378,7 +378,22 @@ def run_architecture(root: Path) -> None:
 
 def run_registry(root: Path) -> None:
     reg = load_json(root / "docs/persons/consumer-registry.json")
-    registered = {str(x.get("path", "")).replace("\\", "/") for x in reg.get("registeredConsumers", [])}
+    consumers = reg.get("registeredConsumers", [])
+    registered_paths = [str(x.get("path", "")).replace("\\", "/") for x in consumers]
+    if len(registered_paths) != len(set(registered_paths)):
+        duplicates = sorted(path for path in set(registered_paths) if registered_paths.count(path) > 1)
+        raise GateFailure(f"Duplicate PartyId consumer registrations: {duplicates}")
+    registered = set(registered_paths)
+    policy = reg.get("registryPolicy", {})
+    allowed_classifications = set(policy.get("allowedMergeClassifications", []))
+    if not allowed_classifications:
+        raise GateFailure("Consumer registry must declare its allowed merge classifications.")
+    for consumer in consumers:
+        classification = consumer.get("mergeClassification")
+        if classification not in allowed_classifications:
+            raise GateFailure(
+                f"PartyId consumer must have exactly one allowed mergeClassification: {consumer.get('path')}"
+            )
     owner_paths = [str(x).replace("\\", "/").rstrip("/") for x in reg.get("ownerPaths", [])]
     found = set()
     owner_paths.extend(["database/migrations/persons"])
