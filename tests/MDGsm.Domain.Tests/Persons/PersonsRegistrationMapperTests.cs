@@ -1,4 +1,5 @@
 using MDGsm.Api.Persons;
+using MDGsm.Application.Persons;
 using MDGsm.Domain.Persons;
 using MDGsm.Persons.Contracts;
 using Xunit;
@@ -61,5 +62,55 @@ public sealed class PersonsRegistrationMapperTests
             "شرکت نمونه", null, null, null, ["Customer"], null, null, null, null, null,
             new PartyCommunicationPreferencesContract(true, true, false), null, null, "Technician");
         Assert.Throws<ArgumentException>(() => PersonsRegistrationMapper.Map(request));
+    }
+
+    [Fact]
+    public void Quick_registration_maps_legal_person_to_the_published_LegalEntity_value()
+    {
+        var candidate = new PartyQuickRegistrationCandidate(
+            Guid.CreateVersion7().ToString("D"), PartyType.LegalPerson, "شرکت نمونه",
+            PartyBusinessRoles.Customer, true, false, true, "0912•••1234");
+        var result = new PartyQuickRegistrationResult(
+            PartyQuickRegistrationOutcome.SelectionRequired, null, false, [candidate]);
+
+        var response = PersonsRegistrationMapper.Map(result);
+
+        Assert.Equal("LegalEntity", Assert.Single(response.Candidates).PartyType);
+    }
+
+    [Fact]
+    public void Party_details_mapping_preserves_safe_masks_and_omits_sensitive_fields()
+    {
+        var created = DateTimeOffset.Parse("2026-11-24T18:00:00Z");
+        var details = new PartyDetails(
+            Guid.CreateVersion7().ToString("D"),
+            PartyType.LegalPerson,
+            "شرکت نمونه",
+            PartyBusinessRoles.Customer | PartyBusinessRoles.Colleague,
+            "*********01",
+            null,
+            "***",
+            [new ContactPointDto("Mobile", "0912•••1234", true, false)],
+            new AddressDto("IR", "تهران", "تهران", "********90", "***"),
+            null,
+            null,
+            null,
+            created,
+            false,
+            null);
+
+        var response = PersonsRegistrationMapper.Map(details);
+
+        Assert.Equal("LegalEntity", response.PartyType);
+        Assert.Equal(["Customer", "Colleague"], response.Roles);
+        Assert.Equal("*********01", response.NationalIdentifier);
+        Assert.Null(response.EconomicCode);
+        Assert.Equal("***", response.ResponsiblePersonName);
+        Assert.Equal("0912•••1234", Assert.Single(response.Contacts).Value);
+        Assert.Equal("********90", response.PrimaryAddress!.PostalCode);
+        Assert.Equal("***", response.PrimaryAddress.AddressLine);
+        Assert.Null(response.Communication);
+        Assert.Null(response.AcquaintanceSource);
+        Assert.False(response.SensitiveFieldsIncluded);
     }
 }
