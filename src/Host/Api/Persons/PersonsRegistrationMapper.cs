@@ -35,6 +35,24 @@ public static class PersonsRegistrationMapper
             request.Address?.CountryCode ?? "IR");
     }
 
+    public static PartyQuickRegistrationResponse Map(PartyQuickRegistrationResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        return new PartyQuickRegistrationResponse(
+            result.Outcome.ToString(), result.PartyId, result.Created,
+            result.Candidates.Select(candidate => new PartyQuickRegistrationCandidateContract(
+                candidate.PartyId, candidate.Type.ToString(), candidate.DisplayName, ToRoleNames(candidate.Roles),
+                candidate.PartyIsActive, candidate.IsMerged, candidate.HasActiveMobile, candidate.MaskedMobile)).ToArray());
+    }
+
+    private static IReadOnlyList<string> ToRoleNames(PartyBusinessRoles roles)
+    {
+        var names = new List<string>(2);
+        if ((roles & PartyBusinessRoles.Customer) == PartyBusinessRoles.Customer) names.Add("Customer");
+        if ((roles & PartyBusinessRoles.Colleague) == PartyBusinessRoles.Colleague) names.Add("Colleague");
+        return names;
+    }
+
     private static PartyCommunicationPreferences MapCommunication(
         PartyCommunicationPreferencesContract? communication) =>
         communication is null
