@@ -1,11 +1,8 @@
 {
-  "registryVersion": "1.7",
+  "registryVersion": "1.8",
   "module": "Persons",
   "ownerPaths": [
     "src/Modules/Persons",
-    "src/BuildingBlocks/MDGsm.Domain/Persons",
-    "src/BuildingBlocks/MDGsm.Application/Persons",
-    "src/BuildingBlocks/MDGsm.Infrastructure/Persons",
     "database/migrations/persons",
     "database/migrations/0008_persons_party_merge.sql",
     "database/migrations/0012_persons_workflow_promotion_results.sql",

@@ -43,6 +43,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDGsm.Accounting.Domain", "src\Modules\Accounting\Domain\MDGsm.Accounting.Domain.csproj", "{A7B2C301-7C1D-4C55-9F10-000000000011}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDGsm.Accounting.Application", "src\Modules\Accounting\Application\MDGsm.Accounting.Application.csproj", "{A7B2C301-7C1D-4C55-9F10-000000000012}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDGsm.Host.Client", "src\Host\Client\MDGsm.Host.Client.csproj", "{A7B2C301-7C1D-4C55-9F10-000000000013}"
 EndProject
 Global
