@@ -18,7 +18,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
+if (args.Length > 0 && string.Equals(args[0], "--provision-persons-workflow-key", StringComparison.Ordinal))
+{
+    if (args.Length != 3)
+        throw new ArgumentException("Expected the protected key path and service name for one-time provisioning.");
+    if (!OperatingSystem.IsWindows())
+        throw new PlatformNotSupportedException("Persons workflow key provisioning is Windows-only.");
+
+    WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKeyForService(args[1], args[2]);
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseWindowsService(options =>
+    options.ServiceName = WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ApiServiceName);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Services.AddProblemDetails();
