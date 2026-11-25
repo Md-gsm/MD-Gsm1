@@ -162,7 +162,8 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("Uninstall-MDGsmApiService.ps1", iss);
         Assert.Contains("NT AUTHORITY\\LocalService", serviceScript);
         Assert.Contains("sidtype", serviceScript);
-        Assert.Contains("ProvisionNewKeyForService", serviceScript);
+        Assert.Contains("--provision-persons-workflow-key", serviceScript);
+        Assert.Contains("ProvisionNewKeyForService", apiProgram);
         Assert.Contains("ProgramData", serviceScript);
         Assert.Contains("UseWindowsService", apiProgram);
         Assert.Contains("Microsoft.Extensions.Hosting.WindowsServices", apiProject);
@@ -181,7 +182,8 @@ public sealed class PersonsPreviewInstallerTests
         var provider = File.ReadAllText(Path.Combine(root, "src", "BuildingBlocks", "MDGsm.Infrastructure", "Persons", "WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.cs"));
 
         Assert.Contains("FileMode.CreateNew", provider);
-        Assert.Contains("ProvisionNewKeyForService", installScript);
+        Assert.Contains("--provision-persons-workflow-key", installScript);
+        Assert.Contains("ProvisionNewKeyForService", provider);
         Assert.Contains("existing Persons key directory has no key file", installScript);
         Assert.Contains("LocalSystem", installScript);
         Assert.DoesNotContain("Remove-Item -LiteralPath $keyDirectory", uninstallScript);
