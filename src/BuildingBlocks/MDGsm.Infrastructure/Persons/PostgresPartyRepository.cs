@@ -88,6 +88,13 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             throw new ArgumentException("forceNew and selectedPartyId cannot be used together.", nameof(selectedPartyId));
         if (confirmDistinctParty && !forceNew)
             throw new ArgumentException("Distinct-party confirmation requires the explicit ForceNew choice.", nameof(confirmDistinctParty));
+        Guid? selectedPartyGuid = null;
+        if (!string.IsNullOrWhiteSpace(selectedPartyId))
+        {
+            if (!Guid.TryParse(selectedPartyId, out var parsedSelectedPartyId) || parsedSelectedPartyId == Guid.Empty)
+                throw new ArgumentException("A valid selected PartyId is required.", nameof(selectedPartyId));
+            selectedPartyGuid = parsedSelectedPartyId;
+        }
         var actor = RequireActor(actorId);
 
         // Lock order is always OperationId first, then normalized mobile. This makes retries stable
@@ -149,8 +156,9 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
 
             if (!string.IsNullOrWhiteSpace(selectedPartyId))
             {
+                var normalizedSelectedPartyId = selectedPartyGuid!.Value.ToString("D");
                 var selected = candidates.SingleOrDefault(x =>
-                    string.Equals(x.PartyId, selectedPartyId, StringComparison.OrdinalIgnoreCase));
+                    string.Equals(x.PartyId, normalizedSelectedPartyId, StringComparison.OrdinalIgnoreCase));
                 if (selected is null || !selected.PartyIsActive || selected.IsMerged ||
                     (normalizedMobile is not null && !selected.HasActiveMobile) || selected.Type != requestedType)
                     throw new InvalidOperationException("The selected Party is not an active candidate of the requested identity type.");
