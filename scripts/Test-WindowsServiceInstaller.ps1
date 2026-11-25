@@ -73,13 +73,15 @@ function Get-ServiceFailureDiagnostics([string] $Phase) {
     $eventStart = (Get-Date).AddMinutes(-10)
     foreach ($logName in @('System', 'Application')) {
         try {
-            $events = Get-WinEvent -FilterHashtable @{ LogName = $logName; StartTime = $eventStart } -ErrorAction Stop |
-                Where-Object {
-                    $_.ProviderName -match 'Service Control Manager|\.NET Runtime|Application Error' -or
-                    $_.Message -match 'MDGsmApi|MD-Gsm'
-                } |
+            # Capture all recent warnings/errors, regardless of provider/source name.
+            # EventLog provider source names can differ across Windows/.NET versions.
+            $events = Get-WinEvent -FilterHashtable @{
+                LogName = $logName
+                StartTime = $eventStart
+                Level = @(1, 2, 3)
+            } -ErrorAction Stop |
                 Sort-Object TimeCreated -Descending |
-                Select-Object -First 12
+                Select-Object -First 30
             if ($events.Count -gt 0) {
                 $sections.Add("Recent $logName events:")
                 foreach ($event in $events) {
@@ -138,6 +140,18 @@ function Assert-ServiceReady([string] $Phase) {
         $payload = $response.Content | ConvertFrom-Json
         if ($payload.product -ne 'MD-Gsm' -or $payload.status -ne 'alive' -or $payload.scope -ne 'process-liveness-only') {
             throw "The liveness endpoint did not return the expected MD-Gsm process identity payload."
+        }
+
+        # Compare a second lightweight route using the same middleware pipeline.
+        $systemResponse = Invoke-WebRequest -UseBasicParsing -SkipHttpErrorCheck -Uri 'http://127.0.0.1:5080/api/v1/system/info' -TimeoutSec 5
+        if ($systemResponse.StatusCode -ne 200) {
+            $systemBody = [string]$systemResponse.Content
+            if ($systemBody.Length -gt 2048) { $systemBody = $systemBody.Substring(0, 2048) }
+            throw "The independent system-info route returned HTTP $($systemResponse.StatusCode): $systemBody"
+        }
+        $systemPayload = $systemResponse.Content | ConvertFrom-Json
+        if ($systemPayload.data.product -ne 'MD-Gsm') {
+            throw "The independent system-info route did not identify MD-Gsm."
         }
 
         $listeners = @(Get-NetTCPConnection -LocalPort 5080 -State Listen -ErrorAction Stop)
