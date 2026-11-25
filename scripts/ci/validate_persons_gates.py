@@ -322,7 +322,7 @@ def run_architecture(root: Path) -> None:
         project = projects[relative_path]
         tree = ET.parse(project)
         actual_refs = {
-            Path(node.attrib.get("Include", "").replace("\\", "/")).stem
+            Path(node.attrib.get("Include", "").replace(chr(92), "/").split("/")[-1]).stem
             for node in tree.iter()
             if node.tag.endswith("ProjectReference")
         }
