@@ -184,6 +184,22 @@ $systemSid = (Get-AccountSid 'NT AUTHORITY\SYSTEM').Value
 Assert-ProtectedAcl -Path $keyDirectory -ServiceSid $serviceSid.Value -SystemSid $systemSid -IsDirectory $true
 Assert-ProtectedAcl -Path $keyFile -ServiceSid $serviceSid.Value -SystemSid $systemSid -IsDirectory $false
 
+$script:setupStage = 'register Windows Application Event Log source'
+$eventSource = 'MDGsm.Api'
+Write-SetupLog ("Ensuring Application Event Log source exists: " + $eventSource)
+if ([System.Diagnostics.EventLog]::SourceExists($eventSource)) {
+    $eventLogName = [System.Diagnostics.EventLog]::LogNameFromSourceName($eventSource, '.')
+    if ($eventLogName -ne 'Application') {
+        throw "The MDGsm.Api event source is already registered to an unexpected Windows event log."
+    }
+    Write-SetupLog 'Application Event Log source already exists.'
+} else {
+    # Setup is elevated; never ask the LocalService runtime identity to create
+    # machine-wide Event Log registry entries or scan protected channels.
+    [System.Diagnostics.EventLog]::CreateEventSource($eventSource, 'Application')
+    Write-SetupLog 'Application Event Log source was created by elevated Setup.'
+}
+
 $script:setupStage = 'validate service account and start service'
 Write-SetupLog 'Validating configured LocalService account before requesting service start.'
 $service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
