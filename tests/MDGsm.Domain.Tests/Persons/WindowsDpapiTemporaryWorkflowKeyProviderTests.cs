@@ -29,7 +29,7 @@ public sealed class WindowsDpapiTemporaryWorkflowKeyProviderTests
             finally { CryptographicOperations.ZeroMemory(key); }
 
             Assert.ThrowsAny<Exception>(() =>
-                WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(path));
+                WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(path, CurrentTestSid()));
             Assert.Equal(before, await File.ReadAllBytesAsync(path));
             CryptographicOperations.ZeroMemory(before);
         }
