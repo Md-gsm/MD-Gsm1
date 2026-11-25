@@ -7,44 +7,90 @@ $installDirectory = Join-Path $env:ProgramFiles 'MD-Gsm'
 $keyDirectory = Join-Path $env:ProgramData 'MD-Gsm\Keys\Persons\MDGsmApi'
 $keyFile = Join-Path $keyDirectory 'workflow-key.dpapi'
 
-if (-not (Test-Path -LiteralPath $InstallerPath -PathType Leaf)) { throw "Installer file not found." }
+if (-not (Test-Path -LiteralPath $InstallerPath -PathType Leaf)) {
+    throw 'Installer file not found.'
+}
 if (Test-Path -LiteralPath $keyDirectory) {
-    throw "The hosted Windows runner is expected to be clean; refusing to reuse existing ProgramData key storage."
+    throw 'The hosted Windows runner is expected to be clean; refusing to reuse existing ProgramData key storage.'
 }
 
-Write-Host '== Install the system-wide package =='
 $resolvedInstaller = (Resolve-Path -LiteralPath $InstallerPath).Path
-$installerLog = Join-Path $env:TEMP 'MD-Gsm-Setup-install.log'
-if (Test-Path -LiteralPath $installerLog) { Remove-Item -LiteralPath $installerLog -Force }
-$installerArguments = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /LOG="' + $installerLog + '"'
-$installerProcess = Start-Process -FilePath $resolvedInstaller -ArgumentList $installerArguments -Wait -PassThru
-if ($null -eq $installerProcess -or $installerProcess.ExitCode -ne 0) {
-    $logTail = if (Test-Path -LiteralPath $installerLog) {
-        (Get-Content -LiteralPath $installerLog -Tail 80) -join [Environment]::NewLine
-    } else {
-        'Inno Setup did not create an installation log.'
+$uninstaller = Join-Path $installDirectory 'unins000.exe'
+
+function Invoke-SystemInstaller([string] $Phase) {
+    $log = Join-Path $env:TEMP ("MD-Gsm-Setup-" + $Phase + ".log")
+    if (Test-Path -LiteralPath $log) { Remove-Item -LiteralPath $log -Force }
+    $arguments = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR="' +
+        $installDirectory + '" /LOG="' + $log + '"'
+    $process = Start-Process -FilePath $resolvedInstaller -ArgumentList $arguments -Wait -PassThru
+    if ($null -eq $process -or $process.ExitCode -ne 0) {
+        $tail = if (Test-Path -LiteralPath $log) {
+            (Get-Content -LiteralPath $log -Tail 80) -join [Environment]::NewLine
+        } else {
+            'Inno Setup did not create an installation log.'
+        }
+        $code = if ($null -eq $process) { 'no-process-result' } else { [string]$process.ExitCode }
+        throw ("Installer phase '" + $Phase + "' failed with exit code " + $code + "." +
+            [Environment]::NewLine + $tail)
     }
-    $exitCode = if ($null -eq $installerProcess) { 'no-process-result' } else { [string]$installerProcess.ExitCode }
-    throw ('The system-wide installer failed with exit code ' + $exitCode + '. Inno Setup log:' + [Environment]::NewLine + $logTail)
+    if (-not (Test-Path -LiteralPath $log -PathType Leaf)) {
+        throw "Installer phase '$Phase' returned success without an Inno Setup log."
+    }
+    Write-Host ("PASS: installer phase '" + $Phase + "' completed with exit code " + $process.ExitCode)
 }
-if (-not (Test-Path -LiteralPath $installerLog)) {
-    throw 'Inno Setup returned success but did not create its expected installation log.'
-}
-Write-Host ('Inno Setup completed with exit code ' + $installerProcess.ExitCode + '. Log: ' + $installerLog)
 
-if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'MDGsm.Desktop.exe'))) { throw "Desktop is not under Program Files\MD-Gsm." }
-if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'Api\MDGsm.Api.exe'))) { throw "API is not under Program Files\MD-Gsm\Api." }
+function Assert-ServiceReady([string] $Phase) {
+    $service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
+    if ($null -eq $service -or $service.State -ne 'Running') {
+        throw "MDGsmApi is not running after phase '$Phase'."
+    }
+    if ($service.StartName -ne 'NT AUTHORITY\LocalService') {
+        throw "MDGsmApi is not running as LocalService after phase '$Phase'."
+    }
+    $response = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:5080/health/live' -TimeoutSec 5
+    if ($response.StatusCode -ne 200) {
+        throw "MDGsmApi liveness failed after phase '$Phase'."
+    }
+    Write-Host ("PASS: MDGsmApi is running as LocalService after phase '" + $Phase + "'.")
+}
+
+function Invoke-SystemUninstaller([string] $Phase) {
+    if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
+        throw "Inno Setup uninstaller was not found during phase '$Phase'."
+    }
+    $process = Start-Process -FilePath $uninstaller -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -Wait -PassThru
+    if ($null -eq $process -or $process.ExitCode -ne 0) {
+        $code = if ($null -eq $process) { 'no-process-result' } else { [string]$process.ExitCode }
+        throw "Uninstaller phase '$Phase' failed with exit code $code."
+    }
+
+    $deadline = (Get-Date).AddSeconds(30)
+    do {
+        Start-Sleep -Milliseconds 500
+        $service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
+    } while ($null -ne $service -and (Get-Date) -lt $deadline)
+    if ($null -ne $service) { throw "Windows service registration remains after uninstall phase '$Phase'." }
+    if (Test-Path -LiteralPath $installDirectory) { throw "Program Files directory remains after uninstall phase '$Phase'." }
+    Write-Host ("PASS: service and Program Files removed during phase '" + $Phase + "'.")
+}
+
+Write-Host '== Initial system-wide installation =='
+Invoke-SystemInstaller 'initial-install'
+
+if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'MDGsm.Desktop.exe') -PathType Leaf)) {
+    throw 'Desktop executable is not under Program Files\MD-Gsm.'
+}
+if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'Api\MDGsm.Api.exe') -PathType Leaf)) {
+    throw 'API executable is not under Program Files\MD-Gsm\Api.'
+}
 if (-not (Test-Path -LiteralPath $keyDirectory -PathType Container)) {
-    throw "The Persons key directory was not created under ProgramData."
-}
-if (-not (Test-Path -LiteralPath $keyFile -PathType Leaf)) {
-    throw "The DPAPI key file was not created under ProgramData."
+    throw 'The Persons key directory was not created under ProgramData.'
 }
 
-# The elevated Setup script performs the exact two-principal DACL verification
-# before it starts the service. This outer test deliberately proves that the
-# non-service runner cannot read key bytes, while the service startup validator
-# proves that the intended service identity can read and unprotect those bytes.
+# The setup identity must not read the file. The installer itself verifies the
+# exact file and directory DACLs before starting the service; service startup
+# validates successful DPAPI unprotection under NT SERVICE\MDGsmApi.
+Assert-ServiceReady 'initial-install'
 $unexpectedKeyRead = $false
 $keyBytes = $null
 try {
@@ -52,54 +98,33 @@ try {
     $unexpectedKeyRead = $true
 }
 catch [System.UnauthorizedAccessException] {
-    # Expected: the test identity is not the API service SID or LocalSystem.
+    # Expected: the test identity is not NT SERVICE\MDGsmApi or LocalSystem.
 }
 finally {
     if ($null -ne $keyBytes) {
-        [System.Security.Cryptography.CryptographicOperations]::ZeroMemory($keyBytes)
+        [System.Array]::Clear($keyBytes, 0, $keyBytes.Length)
     }
 }
 if ($unexpectedKeyRead) {
-    throw "The non-service installer/test identity can read the protected Persons key file."
+    throw 'The non-service installer/test identity can read the protected Persons key file.'
 }
 
-$service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
-if ($null -eq $service -or $service.State -ne 'Running') { throw "The installed API Windows service is not running." }
-if ($service.StartName -ne 'NT AUTHORITY\LocalService') { throw "The API service is not running as LocalService." }
+Write-Host '== Repair by rerunning the actual system-wide installer =='
+Invoke-SystemInstaller 'repair'
+Assert-ServiceReady 'repair'
 
-# Reaching this point means Setup's Assert-ProtectedAcl checks for both the
-# directory and key file passed, and the API's startup validator unprotected
-# the key while running under NT SERVICE\MDGsmApi.
-
-Write-Host '== Run service installer again (repair simulation) =='
-& (Join-Path $installDirectory 'Install-MDGsmApiService.ps1') -InstallDirectory $installDirectory
-if ($LASTEXITCODE -ne 0) { throw "Repair simulation failed." }
-if (-not (Test-Path -LiteralPath $keyDirectory -PathType Container) -or
-    -not (Test-Path -LiteralPath $keyFile -PathType Leaf)) {
-    throw "Repair removed the existing protected Persons key instead of preserving it."
+Write-Host '== Uninstall and verify key-directory preservation =='
+Invoke-SystemUninstaller 'first-uninstall'
+if (-not (Test-Path -LiteralPath $keyDirectory -PathType Container)) {
+    throw 'Uninstall removed the protected Persons key directory from ProgramData.'
 }
 
-$service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
-if ($null -eq $service -or $service.State -ne 'Running') { throw "The API service did not restart after repair." }
+Write-Host '== Reinstall after uninstall to prove the existing DPAPI key was preserved =='
+# If the key file was deleted, Install-MDGsmApiService.ps1 sees the existing
+# directory and fails closed instead of silently provisioning a replacement.
+Invoke-SystemInstaller 'post-uninstall-reinstall'
+Assert-ServiceReady 'post-uninstall-reinstall'
 
-Write-Host '== Uninstall while preserving ProgramData key =='
-$uninstaller = Join-Path $installDirectory 'unins000.exe'
-if (-not (Test-Path -LiteralPath $uninstaller)) { throw "Inno Setup uninstaller is missing." }
-& $uninstaller /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
-if ($LASTEXITCODE -ne 0) { throw "Uninstaller returned exit code $LASTEXITCODE." }
-
-$deadline = (Get-Date).AddSeconds(20)
-do {
-    Start-Sleep -Milliseconds 500
-    $service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
-} while ($null -ne $service -and (Get-Date) -lt $deadline)
-if ($null -ne $service) { throw "Windows service registration remains after uninstall." }
-if (Test-Path -LiteralPath $installDirectory) { throw "Program Files installation directory remains after uninstall." }
-# Uninstall must leave the protected key file in ProgramData. Do not
-# inspect its DACL or contents as the non-service test identity.
-if (-not (Test-Path -LiteralPath $keyDirectory -PathType Container) -or
-    -not (Test-Path -LiteralPath $keyFile -PathType Leaf)) {
-    throw "Uninstall removed the protected Persons key from ProgramData."
-}
-
-Write-Host 'PASS: Program Files install, LocalService service SID, DPAPI startup read, repair ACL preservation, and uninstall key preservation.'
+Write-Host '== Final cleanup of the disposable Windows runner =='
+Invoke-SystemUninstaller 'final-cleanup'
+Write-Host 'PASS: Program Files install, service SID/DPAPI startup, non-service read denial, repair, uninstall key preservation, and post-uninstall reinstall.'
