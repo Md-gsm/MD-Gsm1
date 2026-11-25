@@ -83,6 +83,12 @@ public sealed class WindowsDpapiTemporaryWorkflowKeyProviderTests
     {
         if (!Directory.Exists(directory))
             return;
+        foreach (var file in Directory.EnumerateFiles(directory))
+        {
+            var fileSecurity = new FileInfo(file).GetAccessControl();
+            fileSecurity.SetAccessRuleProtection(isProtected: false, preserveInheritance: false);
+            new FileInfo(file).SetAccessControl(fileSecurity);
+        }
         var security = new DirectoryInfo(directory).GetAccessControl();
         security.SetAccessRuleProtection(isProtected: false, preserveInheritance: false);
         new DirectoryInfo(directory).SetAccessControl(security);
