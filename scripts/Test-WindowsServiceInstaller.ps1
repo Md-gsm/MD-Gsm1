@@ -34,9 +34,12 @@ Write-Host ('Inno Setup completed with exit code ' + $installerProcess.ExitCode 
 
 if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'MDGsm.Desktop.exe'))) { throw "Desktop is not under Program Files\MD-Gsm." }
 if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'Api\MDGsm.Api.exe'))) { throw "API is not under Program Files\MD-Gsm\Api." }
-if (-not (Test-Path -LiteralPath $keyFile -PathType Leaf)) { throw "The DPAPI key was not provisioned under ProgramData." }
-if (Get-ChildItem -LiteralPath $keyDirectory -Recurse -File | Where-Object { $_.Extension -in '.exe','.dll' }) {
-    throw "Executable application files must not be installed under ProgramData."
+# Setup/admin is deliberately not allowed to read the protected key. Inspect only
+# the security descriptors; the API's hosted startup validator proves actual read/unprotect.
+$keyDirectoryAclBeforeRepair = Get-Acl -LiteralPath $keyDirectory
+$keyFileAclBeforeRepair = Get-Acl -LiteralPath $keyFile
+if (-not $keyDirectoryAclBeforeRepair.AreAccessRulesProtected -or -not $keyFileAclBeforeRepair.AreAccessRulesProtected) {
+    throw "The Persons key directory and file must both have protected DACLs."
 }
 
 $service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
@@ -57,13 +60,18 @@ foreach ($path in @($keyDirectory, $keyFile)) {
         throw "Only the service-specific SID and LocalSystem may have access to $path."
     }
 }
-$keyHashBeforeRepair = (Get-FileHash -LiteralPath $keyFile -Algorithm SHA256).Hash
+$directorySddlBeforeRepair = $keyDirectoryAclBeforeRepair.Sddl
+$fileSddlBeforeRepair = $keyFileAclBeforeRepair.Sddl
 
 Write-Host '== Run service installer again (repair simulation) =='
 & (Join-Path $installDirectory 'Install-MDGsmApiService.ps1') -InstallDirectory $installDirectory
 if ($LASTEXITCODE -ne 0) { throw "Repair simulation failed." }
-$keyHashAfterRepair = (Get-FileHash -LiteralPath $keyFile -Algorithm SHA256).Hash
-if ($keyHashBeforeRepair -ne $keyHashAfterRepair) { throw "Repair replaced or modified the DPAPI key file." }
+$keyDirectoryAclAfterRepair = Get-Acl -LiteralPath $keyDirectory
+$keyFileAclAfterRepair = Get-Acl -LiteralPath $keyFile
+if ($directorySddlBeforeRepair -ne $keyDirectoryAclAfterRepair.Sddl -or
+    $fileSddlBeforeRepair -ne $keyFileAclAfterRepair.Sddl) {
+    throw "Repair changed the protected Persons key DACL."
+}
 
 $service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
 if ($null -eq $service -or $service.State -ne 'Running') { throw "The API service did not restart after repair." }
@@ -81,8 +89,13 @@ do {
 } while ($null -ne $service -and (Get-Date) -lt $deadline)
 if ($null -ne $service) { throw "Windows service registration remains after uninstall." }
 if (Test-Path -LiteralPath $installDirectory) { throw "Program Files installation directory remains after uninstall." }
-if (-not (Test-Path -LiteralPath $keyFile -PathType Leaf)) { throw "Uninstall removed the protected ProgramData key." }
-$keyHashAfterUninstall = (Get-FileHash -LiteralPath $keyFile -Algorithm SHA256).Hash
-if ($keyHashBeforeRepair -ne $keyHashAfterUninstall) { throw "Uninstall modified the ProgramData key." }
+# Use the security descriptor as the existence check: the setup identity must
+# remain unable to open key contents after application uninstall.
+$keyFileAclAfterUninstall = Get-Acl -LiteralPath $keyFile
+$keyDirectoryAclAfterUninstall = Get-Acl -LiteralPath $keyDirectory
+if ($fileSddlBeforeRepair -ne $keyFileAclAfterUninstall.Sddl -or
+    $directorySddlBeforeRepair -ne $keyDirectoryAclAfterUninstall.Sddl) {
+    throw "Uninstall removed or modified the protected ProgramData key security objects."
+}
 
-Write-Host 'PASS: Program Files install, LocalService service SID, DPAPI startup read, repair no-overwrite, and uninstall key preservation.'
+Write-Host 'PASS: Program Files install, LocalService service SID, DPAPI startup read, repair ACL preservation, and uninstall key preservation.'
