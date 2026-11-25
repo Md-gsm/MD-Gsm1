@@ -102,6 +102,7 @@ public partial class MainWindow
         PersonsPreviewView.Visibility = Visibility.Visible;
         PersonsResultPanel.Visibility = Visibility.Collapsed;
         PersonsCandidatesPanel.Visibility = Visibility.Collapsed;
+        ConfirmDistinctPartyButton.Visibility = Visibility.Collapsed;
         PersonsRetryPanel.Visibility = Visibility.Collapsed;
         PersonsMessageText.Text = string.Empty;
         UpdatePersonsAuthenticationView();
@@ -431,6 +432,33 @@ public partial class MainWindow
     private async void PersonsRetryButton_Click(object sender, RoutedEventArgs e) =>
         await SendPendingQuickRegistrationAsync();
 
+    private async void ConfirmDistinctPartyButton_Click(object sender, RoutedEventArgs e)
+    {
+        var pending = _pendingQuickRegistration;
+        if (pending is null) return;
+
+        if (pending.IsNatural)
+        {
+            var request = ((QuickRegisterNaturalPartyRequest)pending.Request) with { ConfirmDistinctParty = true };
+            _pendingQuickRegistration = pending with
+            {
+                Request = request,
+                PayloadFingerprint = JsonSerializer.Serialize(request, PersonsJsonOptions)
+            };
+        }
+        else
+        {
+            var request = ((QuickRegisterLegalPartyRequest)pending.Request) with { ConfirmDistinctParty = true };
+            _pendingQuickRegistration = pending with
+            {
+                Request = request,
+                PayloadFingerprint = JsonSerializer.Serialize(request, PersonsJsonOptions)
+            };
+        }
+
+        await SendPendingQuickRegistrationAsync();
+    }
+
     private async void SelectPersonCandidateButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement element ||
@@ -453,6 +481,7 @@ public partial class MainWindow
 
         PersonsResultPanel.Visibility = Visibility.Visible;
         PersonsCandidatesPanel.Visibility = Visibility.Collapsed;
+        ConfirmDistinctPartyButton.Visibility = Visibility.Collapsed;
         PersonsRetryPanel.Visibility = Visibility.Collapsed;
         PersonsCandidates.Clear();
         PersonsResultText.Text = "در حال ارسال درخواست به سرور...";
@@ -486,8 +515,14 @@ public partial class MainWindow
             switch (result.Outcome)
             {
                 case "SelectionRequired":
-                    PersonsResultText.Text = "موارد مشابه پیدا شدند. یکی از آن‌ها را انتخاب کنید.";
+                    var forceNew = pending.IsNatural
+                        ? ((QuickRegisterNaturalPartyRequest)pending.Request).ForceNew
+                        : ((QuickRegisterLegalPartyRequest)pending.Request).ForceNew;
+                    PersonsResultText.Text = forceNew
+                        ? "موارد مشابه پیدا شدند. پس از بررسی، می‌توانید ساخت هویت مستقل را صریحاً تأیید کنید یا یکی از اشخاص موجود را انتخاب کنید."
+                        : "موارد مشابه پیدا شدند. یکی از آن‌ها را انتخاب کنید.";
                     PersonsCandidatesPanel.Visibility = Visibility.Visible;
+                    ConfirmDistinctPartyButton.Visibility = forceNew ? Visibility.Visible : Visibility.Collapsed;
                     foreach (var candidate in result.Candidates)
                         PersonsCandidates.Add(candidate);
                     break;
@@ -636,6 +671,7 @@ public partial class MainWindow
         PersonsMessageText.Text = "پاسخ ثبت یا تطبیق از سرور دریافت شد.";
         NaturalForceNewCheckBox.IsChecked = false;
         LegalForceNewCheckBox.IsChecked = false;
+        ConfirmDistinctPartyButton.Visibility = Visibility.Collapsed;
     }
 
     private static string GetPersonsErrorMessage(ApiClientException exception)
