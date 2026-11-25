@@ -20,7 +20,7 @@ public sealed class WindowsDpapiTemporaryWorkflowKeyProviderTests
         var path = Path.Combine(directory, "workflow-key.dpapi");
         try
         {
-            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(path);
+            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(path, CurrentTestSid());
             var before = await File.ReadAllBytesAsync(path);
             var provider = new WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(path);
             var key = await provider.GetKeyAsync(
@@ -81,8 +81,8 @@ public sealed class WindowsDpapiTemporaryWorkflowKeyProviderTests
         {
             var firstPath = Path.Combine(firstDirectory, "workflow-key.dpapi");
             var secondPath = Path.Combine(secondDirectory, "workflow-key.dpapi");
-            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(firstPath);
-            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(secondPath);
+            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(firstPath, CurrentTestSid());
+            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(secondPath, CurrentTestSid());
 
             var first = await new WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(firstPath)
                 .GetKeyAsync(WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.KeyVersion, CancellationToken.None);
@@ -111,7 +111,7 @@ public sealed class WindowsDpapiTemporaryWorkflowKeyProviderTests
         var path = Path.Combine(directory, "workflow-key.dpapi");
         try
         {
-            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(path);
+            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(path, CurrentTestSid());
             var bytes = await File.ReadAllBytesAsync(path);
             bytes[^1] ^= 0x01;
 
@@ -148,6 +148,48 @@ public sealed class WindowsDpapiTemporaryWorkflowKeyProviderTests
             new WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(
                 Path.Combine(Path.GetTempPath(), "outside-approved-root.dpapi")));
     }
+
+    [Fact]
+    public void Provisioned_file_and_directory_acl_are_protected_and_include_only_reader_and_system()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        var directory = CreateIsolatedDirectory();
+        var path = Path.Combine(directory, "workflow-key.dpapi");
+        var readerSid = CurrentTestSid();
+        var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+        try
+        {
+            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(path, readerSid);
+
+            var fileAcl = new FileInfo(path).GetAccessControl();
+            var directoryAcl = new DirectoryInfo(directory).GetAccessControl();
+            Assert.True(fileAcl.AreAccessRulesProtected);
+            Assert.True(directoryAcl.AreAccessRulesProtected);
+
+            var expected = new[] { readerSid.Value, systemSid.Value }.OrderBy(value => value, StringComparer.Ordinal).ToArray();
+            var fileSids = fileAcl.GetAccessRules(true, false, typeof(SecurityIdentifier))
+                .Cast<FileSystemAccessRule>()
+                .Select(rule => ((SecurityIdentifier)rule.IdentityReference).Value)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray();
+            var directorySids = directoryAcl.GetAccessRules(true, false, typeof(SecurityIdentifier))
+                .Cast<FileSystemAccessRule>()
+                .Select(rule => ((SecurityIdentifier)rule.IdentityReference).Value)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray();
+
+            Assert.Equal(expected, fileSids);
+            Assert.Equal(expected, directorySids);
+        }
+        finally { Cleanup(directory); }
+    }
+
+    private static SecurityIdentifier CurrentTestSid() =>
+        WindowsIdentity.GetCurrent().User
+        ?? throw new InvalidOperationException("The Windows test identity has no SID.");
 
     private static string CreateIsolatedDirectory()
     {
