@@ -157,6 +157,10 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("DefaultDirName={autopf}\\MD-Gsm", iss);
         Assert.Contains("DisableDirPage=yes", iss);
         Assert.Contains("PrivilegesRequired=admin", iss);
+        Assert.Contains("ArchitecturesAllowed=x64compatible", iss);
+        Assert.Contains("ArchitecturesInstallIn64BitMode=x64compatible", iss);
+        Assert.DoesNotContain("#pragma codepage", iss); // Inno Setup 6.3+ reads UTF-8 scripts directly; this is not a valid ISPP pragma.
+        Assert.Contains("RunOnceId: \"MDGsmApiServiceCleanup\"", iss);
         Assert.Contains("DestDir: \"{app}\\Api\"", iss);
         Assert.Contains("MDGsm.Desktop.exe", iss);
         Assert.Contains("Install-MDGsmApiService.ps1", iss);
