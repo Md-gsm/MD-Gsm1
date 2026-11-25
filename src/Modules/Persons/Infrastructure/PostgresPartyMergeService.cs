@@ -29,7 +29,7 @@ public sealed record PartyMergeResult(
 /// in stable module-name order and may not commit or use another connection. Historical snapshots
 /// remain immutable; only explicitly classified active references may be transferred.
 /// </summary>
-public sealed class PostgresPartyMergeService
+public sealed class PostgresPartyMergeService : IPartyMergeCoordinator
 {
     public const string ProtocolVersion = "1.0";
     private readonly NpgsqlDataSource _dataSource;

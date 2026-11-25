@@ -1,8 +1,8 @@
-using MDGsm.Application.Persons;
+using MDGsm.Persons.Application;
 using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Domain;
 
-namespace MDGsm.Infrastructure.Persons;
+namespace MDGsm.Infrastructure.IdentityAccess;
 
 /// <summary>Delegates promotion permissions to the canonical IdentityAccess permission store.</summary>
 public sealed class IdentityAccessPersonsWorkflowPromotionAuthorizer(
