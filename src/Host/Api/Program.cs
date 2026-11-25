@@ -35,6 +35,10 @@ builder.Host.UseWindowsService(options =>
     options.ServiceName = WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ApiServiceName);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+// Windows Service console output is not a reliable diagnostic sink. Mirror
+// application errors to the standard Windows Application event log.
+if (OperatingSystem.IsWindows())
+    builder.Logging.AddEventLog();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddMdGsmPersistence(builder.Configuration);
@@ -416,7 +420,7 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
         var requestId = httpContext.TraceIdentifier;
-        logger.LogError("Unhandled API exception. RequestId={RequestId}; ExceptionType={ExceptionType}", requestId, exception.GetType().Name);
+        logger.LogError(exception, "Unhandled API exception. RequestId={RequestId}", requestId);
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
         httpContext.Response.ContentType = "application/problem+json";
         var problem = new ProblemDetails
