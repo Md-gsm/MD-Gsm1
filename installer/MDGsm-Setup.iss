@@ -1,4 +1,3 @@
-#pragma codepage 65001
 #ifndef PublishDir
   #define PublishDir AddBackslash(SourcePath) + "..\artifacts\windows-publish\desktop"
 #endif
@@ -25,8 +24,8 @@ DisableDirPage=yes
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
-ArchitecturesAllowed=x64
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir={#OutputDir}
 OutputBaseFilename=MD-Gsm-Setup-v0.3.0
 Compression=lzma2
@@ -124,4 +123,4 @@ begin
 end;
 
 [UninstallRun]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\Uninstall-MDGsmApiService.ps1"" -ServiceName ""MDGsmApi"""; Flags: runhidden waituntilterminated
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\Uninstall-MDGsmApiService.ps1"" -ServiceName ""MDGsmApi"""; RunOnceId: "MDGsmApiServiceCleanup"; Flags: runhidden waituntilterminated
