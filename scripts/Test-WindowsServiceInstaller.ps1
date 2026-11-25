@@ -39,21 +39,83 @@ function Invoke-SystemInstaller([string] $Phase) {
     Write-Host ("PASS: installer phase '" + $Phase + "' completed with exit code " + $process.ExitCode)
 }
 
+function Get-ServiceFailureDiagnostics([string] $Phase) {
+    $sections = [System.Collections.Generic.List[string]]::new()
+    $service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
+    if ($null -eq $service) {
+        $sections.Add("Win32_Service: MDGsmApi registration not found.")
+    } else {
+        $sections.Add("Win32_Service details:")
+        $sections.Add(($service | Select-Object Name, State, Status, StartName, StartMode, ProcessId,
+            ExitCode, ServiceSpecificExitCode, PathName | Format-List | Out-String))
+    }
+
+    $scExe = Join-Path $env:windir 'System32\sc.exe'
+    $sections.Add("sc.exe queryex:")
+    $sections.Add((& $scExe queryex $serviceName 2>&1 | Out-String))
+    $sections.Add("sc.exe qc:")
+    $sections.Add((& $scExe qc $serviceName 2>&1 | Out-String))
+
+    $eventStart = (Get-Date).AddMinutes(-10)
+    foreach ($logName in @('System', 'Application')) {
+        try {
+            $events = Get-WinEvent -FilterHashtable @{ LogName = $logName; StartTime = $eventStart } -ErrorAction Stop |
+                Where-Object {
+                    $_.ProviderName -match 'Service Control Manager|\.NET Runtime|Application Error' -or
+                    $_.Message -match 'MDGsmApi|MD-Gsm'
+                } |
+                Sort-Object TimeCreated -Descending |
+                Select-Object -First 12
+            if ($events.Count -gt 0) {
+                $sections.Add("Recent $logName events:")
+                foreach ($event in $events) {
+                    $message = [string]$event.Message
+                    if ($message.Length -gt 3000) { $message = $message.Substring(0, 3000) }
+                    $sections.Add(("{0:o} [{1}] EventId={2} Level={3}{4}{5}" -f
+                        $event.TimeCreated, $event.ProviderName, $event.Id, $event.LevelDisplayName,
+                        [Environment]::NewLine, $message))
+                }
+            } else {
+                $sections.Add("No matching recent events in $logName.")
+            }
+        } catch {
+            $sections.Add("Could not read $logName event log: $($_.Exception.Message)")
+        }
+    }
+
+    $setupLog = Join-Path $env:TEMP ("MD-Gsm-Setup-" + $Phase + ".log")
+    if (Test-Path -LiteralPath $setupLog -PathType Leaf) {
+        $sections.Add("Inno Setup log tail:")
+        $sections.Add((Get-Content -LiteralPath $setupLog -Tail 50 | Out-String))
+    }
+
+    return ($sections -join [Environment]::NewLine)
+}
+
 function Assert-ServiceReady([string] $Phase) {
     $service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
     if ($null -eq $service -or $service.State -ne 'Running') {
-        throw "MDGsmApi is not running after phase '$Phase'."
+        $diagnostics = Get-ServiceFailureDiagnostics $Phase
+        Write-Host ("SERVICE FAILURE DIAGNOSTICS after phase '$Phase':" + [Environment]::NewLine + $diagnostics)
+        throw "MDGsmApi is not running after phase '$Phase'. See service state, exit codes, SCM/.NET events, and installer log above."
     }
     if ($service.StartName -ne 'NT AUTHORITY\LocalService') {
+        $diagnostics = Get-ServiceFailureDiagnostics $Phase
+        Write-Host ("SERVICE IDENTITY DIAGNOSTICS after phase '$Phase':" + [Environment]::NewLine + $diagnostics)
         throw "MDGsmApi is not running as LocalService after phase '$Phase'."
     }
-    $response = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:5080/health/live' -TimeoutSec 5
-    if ($response.StatusCode -ne 200) {
-        throw "MDGsmApi liveness failed after phase '$Phase'."
+    try {
+        $response = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:5080/health/live' -TimeoutSec 5
+        if ($response.StatusCode -ne 200) {
+            throw "Unexpected HTTP status $($response.StatusCode)."
+        }
+    } catch {
+        $diagnostics = Get-ServiceFailureDiagnostics $Phase
+        Write-Host ("SERVICE LIVENESS DIAGNOSTICS after phase '$Phase':" + [Environment]::NewLine + $diagnostics)
+        throw "MDGsmApi liveness failed after phase '$Phase': $($_.Exception.Message)"
     }
-    Write-Host ("PASS: MDGsmApi is running as LocalService after phase '" + $Phase + "'.")
+    Write-Host ("PASS: MDGsmApi is running as LocalService after phase '$Phase'.")
 }
-
 function Invoke-SystemUninstaller([string] $Phase) {
     if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
         throw "Inno Setup uninstaller was not found during phase '$Phase'."
