@@ -56,7 +56,7 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
             "SELECT lifecycle_status FROM persons_temporary_workflows WHERE workflow_record_id = @id;", workflowId));
         Assert.Equal(0L, await ScalarAsync(dataSource,
             "SELECT count(*) FROM persons_outbox_events WHERE aggregate_id = @id AND event_type = 'PartyMerged';",
-            Guid.Parse(first.PartyId!));
+            Guid.Parse(first.PartyId!)));
 
         await Assert.ThrowsAsync<TemporaryWorkflowAlreadyPromotedException>(() =>
             service.PromoteAsync(NewCommand(workflowId, Guid.CreateVersion7(), createNew: true), default));
