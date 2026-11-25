@@ -22,7 +22,7 @@ public interface ITemporaryWorkflowPayloadProtector
 
 public interface ITemporaryWorkflowEncryptionKeyProvider
 {
-    ValueTask<ReadOnlyMemory<byte>> GetKeyAsync(string keyVersion, CancellationToken cancellationToken);
+    ValueTask<byte[]> GetKeyAsync(string keyVersion, CancellationToken cancellationToken);
 }
 
 public interface IPersonsWorkflowPromotionAuthorizer
