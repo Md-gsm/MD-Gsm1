@@ -72,6 +72,8 @@ CREATE RULE persons_temp_promotions_no_delete AS
 
 REVOKE UPDATE, DELETE, TRUNCATE
     ON persons_temporary_workflow_promotions FROM PUBLIC;
+REVOKE ALL
+    ON persons_temporary_workflow_promotions FROM PUBLIC;
 
 COMMENT ON TABLE persons_temporary_workflow_promotions IS
     'PII-free, append-only AC-37 promotion tombstones. Stores identifiers and outcome only; no workflow payload or personal attributes.';
