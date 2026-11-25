@@ -30,10 +30,10 @@ public interface IPartyRepository
     /// Ambiguous or different-name matches require explicit selection; forceNew is an explicit override.
     /// </summary>
     Task<PartyQuickRegistrationResult> QuickRegisterNaturalAsync(RegisterNaturalParty request, string actorId,
-        Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken);
+        Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken, bool confirmDistinctParty = false);
 
     Task<PartyQuickRegistrationResult> QuickRegisterLegalAsync(RegisterLegalParty request, string actorId,
-        Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken);
+        Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken, bool confirmDistinctParty = false);
 
     /// <summary>
     /// Registers a natural person idempotently by <paramref name="operationId"/> (V1: OperationId only, no payload comparison).
