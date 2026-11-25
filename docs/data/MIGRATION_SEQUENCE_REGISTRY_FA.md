@@ -32,7 +32,11 @@
 | 0007 | `database/migrations/0007_persons_temporary_workflows.sql` | Persons | VERIFIED_DISPOSABLE | main |
 | 0008 | `database/migrations/0008_persons_party_merge.sql` | Persons | VERIFIED_DISPOSABLE | main |
 | 0009 | `database/migrations/0009_accounting_core.sql` | Accounting | RESERVED — SQL NOT AUTHORIZED YET | Issue #69؛ WG-0 PR #70 merged to main at `b8c672cb70dcb2b274f43f118ac08b2eea8438c5`; scope محدود به COA metadata، fiscal periods، journal header/lines، posting identity/idempotency و audit linkage؛ بدون tax یا external module posting |
-| 0010+ | — | تخصیص‌نیافته | UNALLOCATED | تا ثبت درخواست رزرو استفاده نشود |
+| 0010 | `database/migrations/0010_identityaccess_owner_bootstrap.sql` | IdentityAccess | RESERVED — SQL NOT AUTHORIZED | Issue #93؛ PR #92 (`security/o20-o21-final-closure`)؛ WG-0 reservation decision 2026-11-24؛ schema-only: سه جدول bootstrap مربوط به IdentityAccess به‌همراه constraints/indexes و ستون nullable `identity.accounts.display_name` با CHECK محدود به bootstrap؛ بدون routine، role، grant، credential، seed یا runtime activation |
+| 0011 | `database/migrations/0011_auditsecurity_canonical_ledger.sql` | AuditSecurity / Platform | RESERVED — SQL NOT AUTHORIZED | PR #92؛ reservation commit `51f28acc3da0590c8f2ae25e360450a0f44cb081`؛ 2026-11-24؛ stream heads، immutable canonical event records، unique constraints برای EventId و (AuditStreamId, StreamSequence)، شاخص‌های لازم و guard عدم UPDATE/DELETE؛ بدون source-module Outbox، checkpoint/anchor، role/LOGIN، credential، grant، operational routine یا runtime activation |
+| 0012 | `database/migrations/0012_persons_workflow_promotion_results.sql` | Persons | RESERVED — SQL NOT AUTHORIZED | Issue #100؛ PR #96؛ 2026-11-25؛ نتیجه Promotion و Tombstone حداقلی و بدون PII: WorkflowId، OperationId یکتا، ActorId، PartyId، زمان UTC، Existing/Created و نسخه قرارداد؛ append-only |
+| 0013 | `database/migrations/0013_persons_outbox.sql` | Persons | RESERVED — SQL NOT AUTHORIZED | Issue #97 و #100؛ PR #96؛ 2026-11-25؛ Outbox منبع Persons فقط برای PartyRegistered بدون PII، همراه رکورد اولیه Delivery اتمیک؛ retry با همان EventId؛ بدون PartyMerged |
+| 0014+ | — | تخصیص‌نیافته | UNALLOCATED | تا ثبت درخواست رزرو استفاده نشود |
 
 ## فرم رزرو الزامی
 
@@ -47,3 +51,9 @@
 - در صورت لغو: علت، تأیید WG-0 و شواهد عدم ادغام/عدم اعمال.
 
 **وضعیت در 2026-11-18:** رزرو 0009 از طریق PR #70 در `main` ادغام شده و شماره به‌طور رسمی برای Accounting رزرو است. این فقط مجوز نگهداری slot رزروشده است؛ فایل SQL ایجاد نشده و `SQL NOT AUTHORIZED YET` باقی می‌ماند. نوشتن Migration 0009 نیازمند پذیرش طراحی فیزیکی، رفع پیش‌نیازهای ثبت‌شده و مجوز صریح جداگانه مالک پروژه است.
+
+
+**همگام‌سازی WG-0 در 2026-11-25:** رزروهای 0010 (IdentityAccess) و 0011 (AuditSecurity / Platform) که پیش‌تر در شاخه PR #92 ثبت شده بودند، بدون ادغام PR #92 و بدون انتقال سایر تغییرات آن، در رجیستری جاری `main` منعکس شدند. هر دو ردیف صرفاً `RESERVED — SQL NOT AUTHORIZED` هستند؛ فایل‌های SQL متناظر ایجاد نشده‌اند و هیچ مجوزی برای نوشتن یا اجرای SQL/DDL، تخصیص Principal/Grant، فعال‌سازی runtime یا production صادر نمی‌شود. شماره 0012 به بعد همچنان تخصیص‌نیافته است.
+
+
+**رزرو WG-0 در 2026-11-25 برای AC-37:** پس از تأیید صریح مالک در Issue #100، شماره‌های 0012 و 0013 در همین PR #96 به‌ترتیب برای نتیجه/Tombstone فرایند Promotion و Outbox منبع Persons رزرو شدند. این رزروها صرفاً شماره‌گذاری هستند؛ SQL فقط در محدوده مصوب Issue #100 نوشته می‌شود. هیچ Migration اجرا نمی‌شود و هیچ مجوزی برای اعمال در دیتابیس واقعی، Principal/Grant، runtime یا production صادر نشده است.
