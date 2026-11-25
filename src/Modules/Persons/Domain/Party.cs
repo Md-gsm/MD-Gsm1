@@ -1,4 +1,4 @@
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 /// <summary>
 /// Shared identity root for natural persons and legal entities.

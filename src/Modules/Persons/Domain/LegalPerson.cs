@@ -1,4 +1,4 @@
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 /// <summary>Legal-entity identity attributes. Registration identifiers are a separately validated concern.</summary>
 public sealed class LegalPerson : Party

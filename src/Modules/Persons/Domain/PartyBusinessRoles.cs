@@ -1,4 +1,4 @@
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 /// <summary>
 /// Commercial relationship flags. One party may be both a customer and a colleague.
