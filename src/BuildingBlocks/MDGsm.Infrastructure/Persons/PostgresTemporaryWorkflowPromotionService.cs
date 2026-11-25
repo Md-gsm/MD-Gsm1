@@ -22,7 +22,6 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
     private const string PromotePermission = "persons.workflow.promote";
     private const string ReadPermission = "persons.read";
     private const string CreatePermission = "persons.create";
-    private const string UpdatePermission = "persons.update";
     private const string PartyRegisteredContractVersion = "1.0";
 
     public async Task<TemporaryWorkflowPromotionPreview> PreviewAsync(
@@ -85,7 +84,7 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
         await RequirePermissionAsync(command.ActorId, PromotePermission, cancellationToken);
         await RequirePermissionAsync(command.ActorId, ReadPermission, cancellationToken);
         await RequirePermissionAsync(command.ActorId,
-            command.CreateNewParty ? CreatePermission : UpdatePermission, cancellationToken);
+            command.CreateNewParty ? CreatePermission : ReadPermission, cancellationToken);
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
