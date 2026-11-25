@@ -64,7 +64,7 @@ public sealed class PersonsApiContractTests
     {
         var root = FindRepositoryRoot();
         var program = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
-        var mapper = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Persons", "PersonsRegistrationMapper.cs"));
+        var mapper = File.ReadAllText(Path.Combine(root, "src", "Modules", "Persons", "Application", "PersonsRegistrationMapper.cs"));
 
         Assert.Contains("Results.Ok(PersonsRegistrationMapper.Map(details))", program, StringComparison.Ordinal);
         Assert.Contains("public static PartyResponse Map(PartyDetails details)", mapper, StringComparison.Ordinal);
