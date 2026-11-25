@@ -2,13 +2,11 @@ using System.Net.Http.Headers;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using MDGsm.Api.Security;
-using MDGsm.Api.Persons;
 using MDGsm.Application.Contracts;
 using MDGsm.Persons.Application;
 using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Contracts;
 using MDGsm.IdentityAccess.Domain;
-using MDGsm.Persons.Domain;
 using MDGsm.Infrastructure.IdentityAccess;
 using MDGsm.Finance.Contracts;
 using MDGsm.Finance.Infrastructure.Accounts;
@@ -397,18 +395,7 @@ if (workflowPromotionApiEnabled)
             var result = await promotion.PromoteAsync(new TemporaryWorkflowPromotionCommand(
                 workflowRecordId, operationId, actor.AccountId, request.SelectedPartyId,
                 request.CreateNewParty, request.ConfirmDistinctParty, Guid.CreateVersion7()), cancellationToken);
-            var candidates = result.Candidates.Select(candidate => new PartyQuickRegistrationCandidateContract(
-                candidate.PartyId,
-                candidate.Type == PartyType.NaturalPerson ? "NaturalPerson" : "LegalEntity",
-                candidate.DisplayName,
-                new[]
-                {
-                    (candidate.Roles & PartyBusinessRoles.Customer) == PartyBusinessRoles.Customer ? "Customer" : null,
-                    (candidate.Roles & PartyBusinessRoles.Colleague) == PartyBusinessRoles.Colleague ? "Colleague" : null
-                }.Where(role => role is not null).Select(role => role!).ToArray(),
-                candidate.PartyIsActive, candidate.IsMerged, candidate.HasActiveMobile, candidate.MaskedMobile)).ToArray();
-            return Results.Ok(new TemporaryWorkflowPromotionResponse(
-                result.Outcome.ToString(), result.PartyId, result.Created, result.Replayed, candidates));
+            return Results.Ok(PersonsRegistrationMapper.Map(result));
         }
         catch (UnauthorizedAccessException)
         {

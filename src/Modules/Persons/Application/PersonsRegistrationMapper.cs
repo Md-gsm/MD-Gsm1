@@ -1,8 +1,9 @@
 using MDGsm.Persons.Application;
 using MDGsm.Persons.Domain;
 using MDGsm.Persons.Contracts;
+using MDGsm.Persons.Application;
 
-namespace MDGsm.Api.Persons;
+namespace MDGsm.Persons.Application;
 
 /// <summary>Strictly maps versioned HTTP registration contracts to application commands.</summary>
 public static class PersonsRegistrationMapper
@@ -77,6 +78,23 @@ public static class PersonsRegistrationMapper
             details.CreatedAtUtc,
             details.SensitiveFieldsIncluded,
             details.WorkClassification?.ToString());
+    }
+
+    /// <summary>Maps AC-37 promotion output to the published versioned response contract.</summary>
+    public static TemporaryWorkflowPromotionResponse Map(TemporaryWorkflowPromotionResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        var candidates = result.Candidates.Select(candidate => new PartyQuickRegistrationCandidateContract(
+            candidate.PartyId,
+            ToContractPartyType(candidate.Type),
+            candidate.DisplayName,
+            ToRoleNames(candidate.Roles),
+            candidate.PartyIsActive,
+            candidate.IsMerged,
+            candidate.HasActiveMobile,
+            candidate.MaskedMobile)).ToArray();
+        return new TemporaryWorkflowPromotionResponse(
+            result.Outcome.ToString(), result.PartyId, result.Created, result.Replayed, candidates);
     }
 
     private static string ToContractPartyType(PartyType type) => type switch

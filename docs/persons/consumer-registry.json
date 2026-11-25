@@ -20,15 +20,6 @@
     },
     {
       "module": "ApiHost",
-      "path": "src/Host/Api/Persons/PersonsRegistrationMapper.cs",
-      "contractVersion": "Persons.Contracts/2.0",
-      "mergeProtocolVersion": "1.0",
-      "purpose": "Maps versioned Persons API registration and quick-registration response contracts to application commands and responses; transports PartyId and masked duplicate candidates without owning Party data.",
-      "mergeClassification": "NON_PERSISTENT_TRANSPORT",
-      "mergeParticipant": false
-    },
-    {
-      "module": "ApiHost",
       "path": "src/Host/Api/Program.cs",
       "contractVersion": "Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
