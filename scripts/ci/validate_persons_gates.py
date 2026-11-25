@@ -269,21 +269,27 @@ def run_architecture(root: Path) -> None:
     expected_projects = {
         "BuildingBlocks/MDGsm.Domain/MDGsm.Domain.csproj": set(),
         "BuildingBlocks/MDGsm.Application/MDGsm.Application.csproj": {"MDGsm.Domain"},
-        # Shared Infrastructure may implement module-owned application ports through
-        # explicitly enumerated references; this is an inward dependency only.
         "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {
-            "MDGsm.Application", "MDGsm.IdentityAccess.Application", "MDGsm.Persons.Contracts"
+            "MDGsm.Application", "MDGsm.IdentityAccess.Application"
         },
         "BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj": set(),
         "Host/Api/MDGsm.Api.csproj": {
             "MDGsm.Application", "MDGsm.Infrastructure",
-            "MDGsm.Persons.Contracts", "MDGsm.IdentityAccess.Contracts",
+            "MDGsm.Persons.Contracts", "MDGsm.Persons.Application", "MDGsm.Persons.Infrastructure",
+            "MDGsm.IdentityAccess.Contracts", "MDGsm.IdentityAccess.Application", "MDGsm.IdentityAccess.Domain",
             "MDGsm.RepairOperations.Contracts", "MDGsm.Finance.Contracts", "MDGsm.Finance",
         },
         "Host/Client/MDGsm.Host.Client.csproj": {
             "MDGsm.Client", "MDGsm.IdentityAccess.Contracts", "MDGsm.Persons.Contracts",
         },
         "Host/Desktop/MDGsm.Desktop.csproj": {"MDGsm.Client", "MDGsm.Host.Client"},
+        "Modules/Persons/Domain/MDGsm.Persons.Domain.csproj": set(),
+        "Modules/Persons/Application/MDGsm.Persons.Application.csproj": {
+            "MDGsm.Persons.Domain", "MDGsm.Persons.Contracts"
+        },
+        "Modules/Persons/Infrastructure/MDGsm.Persons.Infrastructure.csproj": {
+            "MDGsm.Persons.Domain", "MDGsm.Persons.Application", "MDGsm.Persons.Contracts"
+        },
     }
     modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance", "Accounting")
     for module in modules:
@@ -346,6 +352,9 @@ def run_architecture(root: Path) -> None:
         root / "src/Host/Desktop/README.md",
         root / "src/Modules/README.md",
         root / "src/Modules/Persons/Contracts/README.md",
+        root / "src/Modules/Persons/Domain/README.md",
+        root / "src/Modules/Persons/Application/README.md",
+        root / "src/Modules/Persons/Infrastructure/README.md",
         root / "src/Modules/IdentityAccess/Contracts/README.md",
         root / "src/Modules/RepairOperations/Contracts/README.md",
         root / "src/Modules/Finance/Contracts/README.md",
@@ -374,7 +383,28 @@ def run_architecture(root: Path) -> None:
         if (project_root / old_root).exists():
             raise GateFailure(f"Flat legacy project directory remains under src/: {old_root}")
 
-    print("PASS: modular project inventory, Host/BuildingBlocks dependency graph, isolated Contracts assemblies, and source boundaries.")
+    db_migrator = root / "tools/MDGsm.DbMigrator/MDGsm.DbMigrator.csproj"
+    if not db_migrator.exists():
+        raise GateFailure("DbMigrator project is missing.")
+    db_migrator_refs = {
+        Path(node.attrib.get("Include", "").replace("\\\\", "/")).stem
+        for node in ET.parse(db_migrator).iter()
+        if node.tag.endswith("ProjectReference")
+    }
+    if db_migrator_refs != {"MDGsm.Infrastructure", "MDGsm.Persons.Infrastructure"}:
+        raise GateFailure(f"DbMigrator must reference the shared and Persons migration assemblies: {sorted(db_migrator_refs)}")
+
+    legacy_persons_dirs = (
+        "BuildingBlocks/MDGsm.Domain/Persons",
+        "BuildingBlocks/MDGsm.Application/Persons",
+        "BuildingBlocks/MDGsm.Infrastructure/Persons",
+    )
+    for relative_dir in legacy_persons_dirs:
+        legacy_dir = project_root / relative_dir
+        if legacy_dir.exists() and any(legacy_dir.rglob("*.cs")):
+            raise GateFailure(f"Persons implementation remains in transitional BuildingBlocks path: {relative_dir}")
+
+    print("PASS: modular project inventory, three-layer Persons boundary, Host/DbMigrator composition, isolated Contracts assemblies, and source boundaries.")
 
 def run_registry(root: Path) -> None:
     reg = load_json(root / "docs/persons/consumer-registry.json")

@@ -1,11 +1,11 @@
 {
-  "registryVersion": "1.7",
+  "registryVersion": "1.8",
   "module": "Persons",
   "ownerPaths": [
-    "src/Modules/Persons",
-    "src/BuildingBlocks/MDGsm.Domain/Persons",
-    "src/BuildingBlocks/MDGsm.Application/Persons",
-    "src/BuildingBlocks/MDGsm.Infrastructure/Persons",
+    "src/Modules/Persons/Domain",
+    "src/Modules/Persons/Application",
+    "src/Modules/Persons/Infrastructure",
+    "src/Modules/Persons/Contracts",
     "database/migrations/persons",
     "database/migrations/0008_persons_party_merge.sql",
     "database/migrations/0012_persons_workflow_promotion_results.sql",
@@ -22,11 +22,11 @@
       "mergeParticipant": false
     },
     {
-      "module": "ApiHost",
-      "path": "src/Host/Api/Persons/PersonsRegistrationMapper.cs",
+      "module": "Persons.Application",
+      "path": "src/Modules/Persons/Application/PersonsRegistrationMapper.cs",
       "contractVersion": "Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
-      "purpose": "Maps versioned Persons API registration and quick-registration response contracts to application commands and responses; transports PartyId and masked duplicate candidates without owning Party data.",
+      "purpose": "Maps published Persons API contracts to module Application commands and maps module read/registration/promotion results back to published contracts; it does not own Party persistence.",
       "mergeClassification": "NON_PERSISTENT_TRANSPORT",
       "mergeParticipant": false
     },

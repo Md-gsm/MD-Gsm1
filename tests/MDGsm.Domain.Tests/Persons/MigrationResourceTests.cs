@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using MDGsm.Infrastructure.Persistence;
+using MDGsm.Persons.Infrastructure;
 using Xunit;
 
 namespace MDGsm.Domain.Tests.Persons;
@@ -17,6 +19,21 @@ public sealed class MigrationResourceTests
             .ToArray();
 
         Assert.NotEmpty(files);
+        var expectedResources = files
+            .Select(path => "MDGsm.Migrations." + Path.GetFileName(path))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+        var actualResources = new[]
+            {
+                typeof(DatabaseMigrationRunner).Assembly,
+                typeof(PersonsInfrastructureAssemblyMarker).Assembly
+            }
+            .SelectMany(assembly => assembly.GetManifestResourceNames())
+            .Where(name => name.StartsWith("MDGsm.Migrations.", StringComparison.Ordinal))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+        Assert.Equal(expectedResources, actualResources);
+
         var names = files.Select(Path.GetFileName).ToArray();
         Assert.Equal(names.Length, names.Distinct(StringComparer.OrdinalIgnoreCase).Count());
 
