@@ -33,6 +33,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
                 "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorkflowRetentionWorker.cs",
                 "database/migrations/0007_persons_temporary_workflows.sql",
                 "database/migrations/0012_persons_workflow_promotion_results.sql",
+                "src/BuildingBlocks/MDGsm.Infrastructure/Persons/PostgresTemporaryWorkflowPromotionService.cs",
             ):
                 target = dst / relative
                 if target.exists():
@@ -43,6 +44,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
                 "\\n".join(
                     line for line in registration_text.splitlines()
                     if "PostgresTemporaryWorkflowStore" not in line
+                    and "PostgresTemporaryWorkflowPromotionService" not in line
                     and "TemporaryWorkflowRetentionWorker" not in line
                 ) + "\\n",
                 encoding="utf-8",
