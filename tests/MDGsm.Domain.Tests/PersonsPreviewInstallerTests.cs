@@ -155,6 +155,7 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("dotnet publish $apiProject", buildScript);
         Assert.Contains("ISCC.exe", buildScript);
         Assert.Contains("DefaultDirName={autopf}\\MD-Gsm", iss);
+        Assert.Contains("DisableDirPage=yes", iss);
         Assert.Contains("PrivilegesRequired=admin", iss);
         Assert.Contains("DestDir: \"{app}\\Api\"", iss);
         Assert.Contains("MDGsm.Desktop.exe", iss);
@@ -169,6 +170,9 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("Test-KeyProvisionedMarker", serviceScript);
         Assert.Contains("Set-KeyProvisionedMarker", serviceScript);
         Assert.Contains("Restore-ServiceState", serviceScript);
+        Assert.Contains("refusing to remove or take over that service", serviceScript);
+        Assert.Contains("refusing to reconfigure an unexpected service", serviceScript);
+        Assert.Contains("Rollback restored the pre-install Running state and loopback API health", serviceScript);
         var keyProvider = File.ReadAllText(Path.Combine(root, "src", "BuildingBlocks", "MDGsm.Infrastructure", "Persons", "WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.cs"));
         Assert.Contains("ValidateKeyStorageForCurrentService", keyProvider);
         Assert.Contains("ValidateProtectedKeyStorage", keyProvider);

@@ -21,6 +21,7 @@ AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
 AppComments=Controlled Windows installation candidate. API service uses LocalService and a service-specific SID. Persons promotion remains feature-gated; no database migration is executed.
 DefaultDirName={autopf}\MD-Gsm
+DisableDirPage=yes
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin

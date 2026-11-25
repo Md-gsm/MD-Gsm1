@@ -140,6 +140,11 @@ function Restore-ServiceState {
 
     if (-not [bool]$state.ServiceExisted) {
         if ($null -ne $service) {
+            $actualExe = Get-ConfiguredExecutable ([string]$service.PathName)
+            if ($service.StartName -ne $serviceAccount -or
+                -not [string]::Equals($actualExe, [System.IO.Path]::GetFullPath($apiExe), [System.StringComparison]::OrdinalIgnoreCase)) {
+                throw "Rollback found an unexpected MDGsmApi service identity; refusing to remove or take over that service."
+            }
             if ($service.State -ne 'Stopped') {
                 Invoke-Sc @('stop', $serviceName)
                 Wait-ServiceState 'Stopped' 30
@@ -151,6 +156,14 @@ function Restore-ServiceState {
     } else {
         $startup = Get-StartupArgument ([string]$state.StartMode)
         $priorPath = [string]$state.PathName
+        if ($null -ne $service) {
+            $priorExecutable = Get-ConfiguredExecutable $priorPath
+            $currentExecutable = Get-ConfiguredExecutable ([string]$service.PathName)
+            if ($service.StartName -ne [string]$state.StartName -or
+                -not [string]::Equals($currentExecutable, $priorExecutable, [System.StringComparison]::OrdinalIgnoreCase)) {
+                throw "Rollback found that the pre-existing MDGsmApi registration was replaced; refusing to reconfigure an unexpected service."
+            }
+        }
         if (-not $priorPath.StartsWith([string][char]34)) {
             $priorPath = [string][char]34 + $priorPath + [string][char]34
         }
@@ -168,7 +181,8 @@ function Restore-ServiceState {
                 Invoke-Sc @('start', $serviceName)
                 Wait-ServiceState 'Running' 40
             }
-            Write-SetupLog 'Rollback restored the pre-install Running state.'
+            Wait-ApiLiveness
+            Write-SetupLog 'Rollback restored the pre-install Running state and loopback API health.'
         } else {
             if ($service.State -ne 'Stopped') {
                 Invoke-Sc @('stop', $serviceName)
