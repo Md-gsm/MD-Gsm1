@@ -29,6 +29,37 @@ CREATE TABLE persons_temporary_workflow_promotions (
         ON DELETE RESTRICT
 );
 
+CREATE TABLE persons_temporary_workflow_access_audit (
+    audit_id uuid PRIMARY KEY,
+    workflow_record_id uuid NOT NULL
+        REFERENCES persons_temporary_workflows (workflow_record_id) ON DELETE RESTRICT,
+    operation_id uuid,
+    actor_id varchar(128) NOT NULL CHECK (btrim(actor_id) <> ''),
+    action varchar(32) NOT NULL
+        CHECK (action IN ('preview', 'promotion_attempt', 'promotion_succeeded', 'promotion_rejected', 'replay')),
+    outcome_code varchar(40) NOT NULL CHECK (btrim(outcome_code) <> ''),
+    correlation_id uuid,
+    occurred_at_utc timestamptz NOT NULL
+);
+
+CREATE INDEX ix_persons_workflow_access_audit_workflow
+    ON persons_temporary_workflow_access_audit (workflow_record_id, occurred_at_utc);
+CREATE INDEX ix_persons_workflow_access_audit_actor
+    ON persons_temporary_workflow_access_audit (actor_id, occurred_at_utc);
+
+CREATE RULE persons_workflow_access_audit_no_update AS
+    ON UPDATE TO persons_temporary_workflow_access_audit DO INSTEAD NOTHING;
+CREATE RULE persons_workflow_access_audit_no_delete AS
+    ON DELETE TO persons_temporary_workflow_access_audit DO INSTEAD NOTHING;
+
+REVOKE UPDATE, DELETE, TRUNCATE
+    ON persons_temporary_workflow_access_audit FROM PUBLIC;
+REVOKE ALL
+    ON persons_temporary_workflow_access_audit FROM PUBLIC;
+
+COMMENT ON TABLE persons_temporary_workflow_access_audit IS
+    'Append-only, PII-free access and decision audit for temporary workflow preview and AC-37 promotion. Outcome codes only; never stores payload content.';
+
 CREATE INDEX ix_persons_temp_promotions_actor_completed
     ON persons_temporary_workflow_promotions (actor_id, completed_at_utc);
 
