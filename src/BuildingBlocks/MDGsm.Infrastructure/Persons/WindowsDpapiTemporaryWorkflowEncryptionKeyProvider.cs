@@ -143,10 +143,8 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         var approvedRoot = Path.GetFullPath(Path.Combine(programData, "MD-Gsm", "Keys", "Persons")) +
                            Path.DirectorySeparatorChar;
         var fullPath = Path.GetFullPath(value);
-        if (!fullPath.StartsWith(approvedRoot, StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(Path.GetDirectoryName(fullPath), approvedRoot.TrimEnd(Path.DirectorySeparatorChar),
-                StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("The DPAPI key path must be directly under the approved ProgramData Persons key directory.");
+        if (!fullPath.StartsWith(approvedRoot, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("The DPAPI key path must be under the approved ProgramData Persons key directory.");
         return fullPath;
     }
 }
