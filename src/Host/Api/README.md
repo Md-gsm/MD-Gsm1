@@ -20,3 +20,14 @@ The API host is the server-side boundary for persistence, database connections, 
 - `POST /api/v1/identity/password/change` requires the issued Bearer token. A session marked `MustChangePassword` can call only this endpoint; all Persons routes return 403 until the password is changed. Password change increments credential version and revokes every existing session, so the client must log in again.
 - The HTTP login route is disabled unless `IdentityAccess:HttpLoginEnabled=true` is explicitly set. The default is disabled. This is a feature gate, not production authorization: no production listener, TLS topology, production migration, permission seed, bootstrap credential, or G1 activation is enabled by this change.
 - The disposable PostgreSQL HTTP end-to-end test starts the real API host, obtains a token over HTTP, verifies forced-change restriction, changes the password, proves the old token is revoked, logs in again, and reaches the protected Persons permission boundary.
+
+ 
+## Windows API service installation boundary (PR #96 candidate)
+
+- Desktop files are installed under C:\\Program Files\\MD-Gsm\\ and the API host under C:\\Program Files\\MD-Gsm\\Api\\.
+- The API runs as Windows Service MDGsmApi, logon account NT AUTHORITY\\LocalService, with SCM service SID NT SERVICE\\MDGsmApi enabled.
+- Only that service SID can read the DPAPI-protected Persons workflow key. LocalSystem retains Full Control for OS-level maintenance. Setup's interactive administrator is not granted runtime access.
+- Key material is stored separately under C:\\ProgramData\\MD-Gsm\\Keys\\Persons\\MDGsmApi\\. ProgramData is not an application installation directory.
+- API startup validates that the running service identity can read and unprotect the configured key. Missing, malformed, or inaccessible key material fails closed.
+- Repair never re-provisions an existing key. Uninstall removes the service and Program Files application but intentionally preserves ProgramData key material.
+- This candidate binds only to loopback HTTP on port 5080, has no database configured by the installer, and does not enable Persons promotion, Persons writes, IdentityAccess login, database migrations, or production/G1 behavior.
