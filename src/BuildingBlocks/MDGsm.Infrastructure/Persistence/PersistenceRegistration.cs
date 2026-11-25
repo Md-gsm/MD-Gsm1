@@ -24,6 +24,12 @@ public static class PersistenceRegistration
   services.AddSingleton<ITemporaryWorkflowRetentionAlert,StructuredLogTemporaryWorkflowRetentionAlert>();
   services.AddHostedService<TemporaryWorkflowRetentionWorker>();
   services.AddScoped<IPartySensitiveDataAuthorizer,IdentityAccessPartySensitiveDataAuthorizer>();
+  services.AddScoped<IPersonsWorkflowPromotionAuthorizer,IdentityAccessPersonsWorkflowPromotionAuthorizer>();
+  if (services.Any(descriptor => descriptor.ServiceType == typeof(ITemporaryWorkflowEncryptionKeyProvider)))
+  {
+   services.AddScoped<ITemporaryWorkflowPayloadProtector,AesGcmTemporaryWorkflowPayloadProtector>();
+   services.AddScoped<ITemporaryWorkflowPromotionService,PostgresTemporaryWorkflowPromotionService>();
+  }
   services.AddScoped<PostgresIdentityAccessStores>();
   services.AddScoped<IAccountStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<ISessionStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
