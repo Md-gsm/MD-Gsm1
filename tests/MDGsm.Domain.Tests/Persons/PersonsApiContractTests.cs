@@ -71,6 +71,35 @@ public sealed class PersonsApiContractTests
         Assert.Contains("PartyType.LegalPerson => \"LegalEntity\"", mapper, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Database_backed_persons_routes_are_only_registered_when_persistence_dependencies_exist()
+    {
+        var root = FindRepositoryRoot();
+        var program = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
+
+        Assert.Contains("var personsPersistenceAvailable =", program, StringComparison.Ordinal);
+        Assert.Contains("typeof(NpgsqlDataSource)", program, StringComparison.Ordinal);
+        Assert.Contains("typeof(IRolePermissionStore)", program, StringComparison.Ordinal);
+        Assert.Contains("typeof(IPartyRepository)", program, StringComparison.Ordinal);
+
+        var guardStart = program.IndexOf("if (personsPersistenceAvailable)", StringComparison.Ordinal);
+        var naturalCreate = program.IndexOf("app.MapPost(\"/api/v2/persons\"", StringComparison.Ordinal);
+        var legalCreate = program.IndexOf("app.MapPost(\"/api/v2/persons/legal\"", StringComparison.Ordinal);
+        var partyRead = program.IndexOf("app.MapGet(\"/api/v2/persons/{partyId}\"", StringComparison.Ordinal);
+        var promotionRoutes = program.IndexOf("// Promotion routes", StringComparison.Ordinal);
+
+        Assert.True(guardStart >= 0 && naturalCreate > guardStart,
+            "The natural-person route must be inside the persistence-availability guard.");
+        Assert.True(legalCreate > naturalCreate && legalCreate < promotionRoutes,
+            "The legal-person route must be inside the persistence-availability guard.");
+        Assert.True(partyRead > legalCreate && partyRead < promotionRoutes,
+            "The party-detail route must be inside the persistence-availability guard.");
+
+        Assert.Contains("[FromServices] NpgsqlDataSource dataSource", program, StringComparison.Ordinal);
+        Assert.Contains("[FromServices] IRolePermissionStore permissions", program, StringComparison.Ordinal);
+        Assert.Contains("[FromServices] IPartyRepository parties", program, StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
