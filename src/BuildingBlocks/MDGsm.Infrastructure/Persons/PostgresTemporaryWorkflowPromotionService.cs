@@ -1,5 +1,7 @@
 using System.Data;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text.Json;
 using MDGsm.Application.Persons;
 using Npgsql;
 using NpgsqlTypes;
@@ -32,23 +34,36 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
-        var row = await LockWorkflowAsync(connection, transaction, workflowRecordId, cancellationToken);
-        EnsureOwnedAndOpen(row, actorId);
-        var payload = await ReadPayloadAsync(connection, transaction, workflowRecordId, cancellationToken);
-        var decoded = await DecodeAsync(workflowRecordId, payload, cancellationToken);
-        var preview = new TemporaryWorkflowPromotionPreview(
-            workflowRecordId,
-            decoded.SchemaVersion,
-            decoded.PartyType == MDGsm.Domain.Persons.PartyType.NaturalPerson ? "NaturalPerson" : "LegalEntity",
-            decoded.DisplayName,
-            decoded.MaskedPrimaryMobile,
-            decoded.HasNationalIdentifier,
-            decoded.HasAddress,
-            row.ExpiresAtUtc);
-        await InsertAuditAsync(connection, transaction, workflowRecordId, null, actorId,
-            "preview", "previewed", correlationId, timeProvider.GetUtcNow(), cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        return preview;
+        var workflowExists = false;
+        try
+        {
+            var row = await LockWorkflowAsync(connection, transaction, workflowRecordId, cancellationToken);
+            workflowExists = true;
+            EnsureOwnedAndOpen(row, actorId);
+            var payload = await ReadPayloadAsync(connection, transaction, workflowRecordId, cancellationToken);
+            var decoded = await DecodeAsync(workflowRecordId, payload, cancellationToken);
+            var preview = new TemporaryWorkflowPromotionPreview(
+                workflowRecordId,
+                decoded.SchemaVersion,
+                decoded.PartyType == MDGsm.Domain.Persons.PartyType.NaturalPerson ? "NaturalPerson" : "LegalEntity",
+                decoded.DisplayName,
+                decoded.MaskedPrimaryMobile,
+                decoded.HasNationalIdentifier,
+                decoded.HasAddress,
+                row.ExpiresAtUtc);
+            await InsertAuditAsync(connection, transaction, workflowRecordId, null, actorId,
+                "preview", "previewed", correlationId, timeProvider.GetUtcNow(), cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return preview;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            if (workflowExists)
+                await AppendAuditAsync(workflowRecordId, null, actorId, "promotion_rejected",
+                    "preview_failed", correlationId, timeProvider.GetUtcNow(), cancellationToken);
+            throw;
+        }
     }
 
     public async Task<TemporaryWorkflowPromotionResult> PromoteAsync(
@@ -58,7 +73,8 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
         ValidateActorAndWorkflow(command.WorkflowRecordId, command.ActorId);
         if (command.OperationId == Guid.Empty)
             throw new ArgumentException("A non-empty OperationId is required.", nameof(command));
-        if (command.CreateNewParty == !string.IsNullOrWhiteSpace(command.SelectedPartyId))
+        if ((command.CreateNewParty && !string.IsNullOrWhiteSpace(command.SelectedPartyId)) ||
+            (!command.CreateNewParty && string.IsNullOrWhiteSpace(command.SelectedPartyId)))
             throw new ArgumentException("Choose exactly one explicit path: selected Party or new Party.", nameof(command));
         if (command.ConfirmDistinctParty && !command.CreateNewParty)
             throw new ArgumentException("Distinct-party confirmation applies only to explicit new-Party creation.", nameof(command));
@@ -73,8 +89,12 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
+        var workflowExists = false;
         try
         {
+            var workflow = await LockWorkflowAsync(
+                connection, transaction, command.WorkflowRecordId, cancellationToken);
+            workflowExists = true;
             var replay = await FindExistingTombstoneAsync(
                 connection, transaction, command.WorkflowRecordId, command.OperationId, cancellationToken);
             if (replay is not null)
@@ -100,8 +120,6 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
                 throw new IdempotencyKeyConflictException();
             }
 
-            var workflow = await LockWorkflowAsync(
-                connection, transaction, command.WorkflowRecordId, cancellationToken);
             EnsureOwnedAndOpen(workflow, command.ActorId);
             var encryptedPayload = await ReadPayloadAsync(
                 connection, transaction, command.WorkflowRecordId, cancellationToken);
@@ -175,9 +193,10 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
                 catch (InvalidOperationException) { }
             }
 
-            await AppendAuditAsync(command.WorkflowRecordId, command.OperationId, command.ActorId,
-                "promotion_rejected", MapFailureCode(exception), command.CorrelationId,
-                timeProvider.GetUtcNow(), cancellationToken);
+            if (workflowExists)
+                await AppendAuditAsync(command.WorkflowRecordId, command.OperationId, command.ActorId,
+                    "promotion_rejected", MapFailureCode(exception), command.CorrelationId,
+                    timeProvider.GetUtcNow(), cancellationToken);
             throw;
         }
     }
@@ -194,12 +213,12 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
         if (actorId == Guid.Empty) throw new UnauthorizedAccessException("A validated actor is required.");
     }
 
-    private static void EnsureOwnedAndOpen(WorkflowRow row, Guid actorId)
+    private void EnsureOwnedAndOpen(WorkflowRow row, Guid actorId)
     {
         if (!string.Equals(row.CreatedBy, actorId.ToString("D"), StringComparison.OrdinalIgnoreCase))
             throw new TemporaryWorkflowOwnershipException();
         if (!string.Equals(row.LifecycleStatus, "open", StringComparison.Ordinal) ||
-            row.ExpiresAtUtc <= DateTimeOffset.UtcNow)
+            row.ExpiresAtUtc <= timeProvider.GetUtcNow())
             throw new TemporaryWorkflowUnavailableException();
     }
 
