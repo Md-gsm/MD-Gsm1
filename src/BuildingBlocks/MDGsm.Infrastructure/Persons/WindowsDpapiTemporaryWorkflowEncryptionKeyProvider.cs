@@ -72,19 +72,6 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         var directory = Path.GetDirectoryName(path)!;
         Directory.CreateDirectory(directory);
 
-        var directorySecurity = new DirectorySecurity();
-        directorySecurity.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-        var apiSid = WindowsIdentity.GetCurrent().User
-            ?? throw new InvalidOperationException("The setup process has no Windows SID.");
-        var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
-        directorySecurity.AddAccessRule(new FileSystemAccessRule(
-            apiSid, FileSystemRights.ReadAndExecute, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
-            PropagationFlags.None, AccessControlType.Allow));
-        directorySecurity.AddAccessRule(new FileSystemAccessRule(
-            systemSid, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
-            PropagationFlags.None, AccessControlType.Allow));
-        new DirectoryInfo(directory).SetAccessControl(directorySecurity);
-
         var key = RandomNumberGenerator.GetBytes(32);
         byte[]? protectedKey = null;
         byte[]? file = null;
@@ -118,6 +105,19 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
                     throw new CryptographicException("Provisioned key verification failed.");
             }
             finally { CryptographicOperations.ZeroMemory(verified); }
+
+            var directorySecurity = new DirectorySecurity();
+            directorySecurity.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+            var apiSid = WindowsIdentity.GetCurrent().User
+                ?? throw new InvalidOperationException("The setup process has no Windows SID.");
+            var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+            directorySecurity.AddAccessRule(new FileSystemAccessRule(
+                apiSid, FileSystemRights.ReadAndExecute, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                PropagationFlags.None, AccessControlType.Allow));
+            directorySecurity.AddAccessRule(new FileSystemAccessRule(
+                systemSid, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                PropagationFlags.None, AccessControlType.Allow));
+            new DirectoryInfo(directory).SetAccessControl(directorySecurity);
         }
         catch
         {
