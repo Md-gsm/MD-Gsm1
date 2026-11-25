@@ -213,7 +213,8 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("An existing installation did not attest its protected key during Prepare", installScript);
         Assert.Contains("one-time provisioning skipped", installScript);
         Assert.DoesNotContain("Test-Path -LiteralPath $keyFile", installScript);
-        Assert.Contains("LocalSystem", installScript);
+        Assert.Contains("The DPAPI blob remains under ProgramData and is never read by Setup", installScript);
+        Assert.Contains("WellKnownSidType.LocalSystemSid", provider);
         Assert.DoesNotContain("Remove-Item -LiteralPath $keyDirectory", uninstallScript);
         Assert.DoesNotContain("WorkflowEncryption", uninstallScript);
         Assert.Contains("did not reach Stopped state", uninstallScript);
