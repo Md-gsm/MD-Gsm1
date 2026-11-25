@@ -65,6 +65,57 @@ paths:
         '409': { description: Cross-actor idempotency replay or invalid selected candidate }
         '422': { description: Validation failure }
         '503': { description: Persons write API is disabled }
+  /api/v2/persons/workflows/{workflowRecordId}/promotion-preview:
+    get:
+      operationId: previewTemporaryWorkflowPromotion
+      summary: Preview an owned temporary workflow before promotion
+      description: >-
+        Requires a validated session, persons.workflow.promote and persons.read. Returns a minimal preview;
+        it does not promote or expose ciphertext. The route is mapped only when Persons:WorkflowPromotionApiEnabled
+        is explicitly true and an approved ITemporaryWorkflowEncryptionKeyProvider is registered. Default false.
+      parameters:
+        - in: path
+          name: workflowRecordId
+          required: true
+          schema: { type: string, format: uuid }
+      x-feature-flag: Persons:WorkflowPromotionApiEnabled
+      responses:
+        '200': { description: Safe preview of the authenticated workflow payload }
+        '403': { description: Missing promotion or read permission }
+        '404': { description: Workflow unavailable or not owned by the actor }
+        '422': { description: Payload authentication or validation failed }
+  /api/v2/persons/workflows/{workflowRecordId}/promote:
+    post:
+      operationId: promoteTemporaryWorkflow
+      summary: Atomically promote a temporary workflow into a Party
+      description: >-
+        Requires persons.workflow.promote plus persons.create for a new Party or persons.update for an existing Party,
+        and persons.read for duplicate review. Exactly one of CreateNewParty or SelectedPartyId must be supplied.
+        ForceNew does not bypass duplicate checks; ConfirmDistinctParty is required after candidate review.
+        Party creation/selection, workflow closure, payload deletion, PII-free tombstone, and PartyRegistered Outbox
+        (new Party only) commit atomically. Same ActorId and OperationId replays the stored result; another OperationId
+        after success is rejected. Route is disabled by default pending key custody and explicit host activation.
+      parameters:
+        - in: path
+          name: workflowRecordId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TemporaryWorkflowPromotionRequest' }
+      x-feature-flag: Persons:WorkflowPromotionApiEnabled
+      responses:
+        '200': { description: Created, existing Party selected, duplicate review required, or replay result }
+        '403': { description: Missing permission }
+        '404': { description: Workflow not found or not owned by actor }
+        '409': { description: Already promoted, idempotency conflict, or unavailable workflow }
+        '422': { description: Invalid request or encrypted payload }
   /api/v2/persons/{partyId}:
     get:
       operationId: getParty
@@ -118,6 +169,36 @@ components:
         forceNew: { type: boolean, default: false }
         selectedPartyId: { type: string, format: uuid, nullable: true }
         confirmDistinctParty: { type: boolean, default: false, description: Requires an explicit reviewed ForceNew decision when duplicate candidates exist. }
+    TemporaryWorkflowPromotionRequest:
+      type: object
+      required: [createNewParty]
+      properties:
+        createNewParty: { type: boolean, description: Explicit choice to create a new Party; mutually exclusive with selectedPartyId. }
+        selectedPartyId: { type: [string, 'null'], format: uuid, description: Explicitly selected existing PartyId. }
+        confirmDistinctParty: { type: boolean, default: false, description: Required only after duplicate candidates are displayed and the user confirms a distinct new Party. }
+    TemporaryWorkflowPromotionPreview:
+      type: object
+      required: [workflowRecordId, payloadSchemaVersion, partyType, displayName, hasNationalIdentifier, hasAddress, expiresAtUtc]
+      properties:
+        workflowRecordId: { type: string, format: uuid }
+        payloadSchemaVersion: { type: integer }
+        partyType: { type: string, enum: [NaturalPerson, LegalEntity] }
+        displayName: { type: string }
+        maskedPrimaryMobile: { type: [string, 'null'] }
+        hasNationalIdentifier: { type: boolean }
+        hasAddress: { type: boolean }
+        expiresAtUtc: { type: string, format: date-time }
+    TemporaryWorkflowPromotionResponse:
+      type: object
+      required: [outcome, created, replayed, candidates]
+      properties:
+        outcome: { type: string, enum: [Created, Existing, DuplicateReviewRequired, Replayed] }
+        partyId: { type: [string, 'null'], format: uuid }
+        created: { type: boolean }
+        replayed: { type: boolean }
+        candidates:
+          type: array
+          items: { $ref: '#/components/schemas/PartyQuickRegistrationCandidate' }
     PartyQuickRegistrationCandidate:
       type: object
       required: [partyId, partyType, displayName, roles, partyIsActive, isMerged, hasActiveMobile, maskedMobile]
