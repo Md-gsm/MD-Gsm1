@@ -66,7 +66,7 @@ public sealed class WindowsDpapiTemporaryWorkflowKeyProviderTests
             return;
 
         Assert.Throws<InvalidOperationException>(() =>
-            new WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(Path.GetTempFileName()));
+            new WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(Path.Combine(Path.GetTempPath(), "outside-approved-root.dpapi")));
     }
 
     private static string CreateIsolatedDirectory()
