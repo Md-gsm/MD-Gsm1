@@ -99,6 +99,10 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         if (File.Exists(path))
             throw new IOException("A Persons workflow key already exists; provisioning never overwrites it.");
 
+        // Restrict the directory before the protected blob is written. This closes
+        // the inherited-ProgramData-ACL window during first-time provisioning.
+        SetDirectoryAcl(directory, setupSid, systemSid, FileSystemRights.Modify);
+
         var key = RandomNumberGenerator.GetBytes(32);
         byte[]? protectedKey = null;
         byte[]? file = null;
