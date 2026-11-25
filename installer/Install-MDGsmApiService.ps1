@@ -58,7 +58,7 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 
 $existingService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
 if ($null -eq $existingService) {
-    Invoke-Sc @('create', $serviceName, 'binPath=', $quotedApiExe, 'start=', 'auto', 'obj=', $serviceAccount, 'DisplayName=', 'MD-Gsm API')
+    Invoke-Sc @('create', $serviceName, 'binPath=', $quotedApiExe, 'start=', 'auto', 'obj=', $serviceAccount, 'DisplayName=', '"MD-Gsm API"')
 } else {
     if ($existingService.State -eq 'Running') {
         Invoke-Sc @('stop', $serviceName)
@@ -69,7 +69,7 @@ if ($null -eq $existingService) {
         } while ($existingService.State -ne 'Stopped' -and (Get-Date) -lt $deadline)
         if ($existingService.State -ne 'Stopped') { throw "The existing MD-Gsm API service did not stop for repair." }
     }
-    Invoke-Sc @('config', $serviceName, 'binPath=', $quotedApiExe, 'start=', 'auto', 'obj=', $serviceAccount, 'DisplayName=', 'MD-Gsm API')
+    Invoke-Sc @('config', $serviceName, 'binPath=', $quotedApiExe, 'start=', 'auto', 'obj=', $serviceAccount, 'DisplayName=', '"MD-Gsm API"')
 }
 
 Invoke-Sc @('sidtype', $serviceName, 'unrestricted')
