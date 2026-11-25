@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using MDGsm.Application.Persons;
 using MDGsm.Infrastructure.Persons;
@@ -5,6 +6,7 @@ using Xunit;
 
 namespace MDGsm.Domain.Tests.Persons;
 
+[SupportedOSPlatform("windows")]
 public sealed class WindowsDpapiTemporaryWorkflowKeyProviderTests
 {
     [Fact]
