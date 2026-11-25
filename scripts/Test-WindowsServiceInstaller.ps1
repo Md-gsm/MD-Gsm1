@@ -13,8 +13,24 @@ if (Test-Path -LiteralPath $keyDirectory) {
 }
 
 Write-Host '== Install the system-wide package =='
-& $InstallerPath /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-
-if ($LASTEXITCODE -ne 0) { throw "The system-wide installer returned exit code $LASTEXITCODE." }
+$resolvedInstaller = (Resolve-Path -LiteralPath $InstallerPath).Path
+$installerLog = Join-Path $env:TEMP 'MD-Gsm-Setup-install.log'
+if (Test-Path -LiteralPath $installerLog) { Remove-Item -LiteralPath $installerLog -Force }
+$installerArguments = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /LOG="' + $installerLog + '"'
+$installerProcess = Start-Process -FilePath $resolvedInstaller -ArgumentList $installerArguments -Wait -PassThru
+if ($null -eq $installerProcess -or $installerProcess.ExitCode -ne 0) {
+    $logTail = if (Test-Path -LiteralPath $installerLog) {
+        (Get-Content -LiteralPath $installerLog -Tail 80) -join [Environment]::NewLine
+    } else {
+        'Inno Setup did not create an installation log.'
+    }
+    $exitCode = if ($null -eq $installerProcess) { 'no-process-result' } else { [string]$installerProcess.ExitCode }
+    throw ('The system-wide installer failed with exit code ' + $exitCode + '. Inno Setup log:' + [Environment]::NewLine + $logTail)
+}
+if (-not (Test-Path -LiteralPath $installerLog)) {
+    throw 'Inno Setup returned success but did not create its expected installation log.'
+}
+Write-Host ('Inno Setup completed with exit code ' + $installerProcess.ExitCode + '. Log: ' + $installerLog)
 
 if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'MDGsm.Desktop.exe'))) { throw "Desktop is not under Program Files\MD-Gsm." }
 if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'Api\MDGsm.Api.exe'))) { throw "API is not under Program Files\MD-Gsm\Api." }
