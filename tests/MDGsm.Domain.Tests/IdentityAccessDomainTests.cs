@@ -18,6 +18,14 @@ public sealed class IdentityAccessDomainTests
   Assert.False(PermissionCatalog.RoleHasPermission(RoleCatalog.Manager,"identity.credentials.reset"));
   Assert.False(PermissionCatalog.RoleHasPermission(RoleCatalog.Manager,"system.settings.manage"));
  }
+ [Fact] public void WorkflowPromotionPermission_IsCataloguedAndDenyByDefaultOutsideSuperAdmin()
+ {
+  const string permission = "persons.workflow.promote";
+  Assert.True(PermissionCatalog.IsKnown(permission));
+  Assert.True(PermissionCatalog.RoleHasPermission(RoleCatalog.SuperAdmin, permission));
+  Assert.All(RoleCatalog.All.Where(role => role != RoleCatalog.SuperAdmin),
+   role => Assert.False(PermissionCatalog.RoleHasPermission(role, permission)));
+ }
  [Fact] public void PermissionMatrix_DoesNotUseWildcard()
  {
   Assert.DoesNotContain("*",PermissionCatalog.Catalog);
