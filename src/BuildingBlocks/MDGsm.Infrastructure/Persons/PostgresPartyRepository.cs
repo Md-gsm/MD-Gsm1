@@ -47,32 +47,32 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
 
     public Task<PartyQuickRegistrationResult> QuickRegisterNaturalAsync(
         RegisterNaturalParty request, string actorId, Guid operationId, bool forceNew,
-        string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken)
+        string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken, bool confirmDistinctParty = false)
     {
         ArgumentNullException.ThrowIfNull(request);
         PartyRegistrationRules.ValidateRoles(request.Roles);
         PartyRegistrationRules.ValidateWorkClassification(PartyType.NaturalPerson, request.Roles, request.WorkClassification);
         return QuickRegisterAsync(request, PartyType.NaturalPerson,
             PersianText.Normalize($"{request.GivenName} {request.FamilyName}"),
-            actorId, operationId, forceNew, selectedPartyId, transaction,
+            actorId, operationId, forceNew, selectedPartyId, confirmDistinctParty, transaction,
             () => AddNaturalAsync(request, actorId, operationId, transaction, cancellationToken), cancellationToken);
     }
 
     public Task<PartyQuickRegistrationResult> QuickRegisterLegalAsync(
         RegisterLegalParty request, string actorId, Guid operationId, bool forceNew,
-        string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken)
+        string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken, bool confirmDistinctParty = false)
     {
         ArgumentNullException.ThrowIfNull(request);
         PartyRegistrationRules.ValidateRoles(request.Roles);
         PartyRegistrationRules.ValidateWorkClassification(PartyType.LegalPerson, request.Roles, request.WorkClassification);
         return QuickRegisterAsync(request, PartyType.LegalPerson, PersianText.Normalize(request.LegalName),
-            actorId, operationId, forceNew, selectedPartyId, transaction,
+            actorId, operationId, forceNew, selectedPartyId, confirmDistinctParty, transaction,
             () => AddLegalAsync(request, actorId, operationId, transaction, cancellationToken), cancellationToken);
     }
 
     private async Task<PartyQuickRegistrationResult> QuickRegisterAsync(
         IPartyRegistrationCommon request, PartyType requestedType, string requestedName,
-        string actorId, Guid operationId, bool forceNew, string? selectedPartyId,
+        string actorId, Guid operationId, bool forceNew, string? selectedPartyId, bool confirmDistinctParty,
         DbTransaction ambientTransaction, Func<Task<PartyRegistrationResult>> create,
         CancellationToken cancellationToken)
     {
@@ -86,6 +86,8 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             throw new ArgumentException("A non-empty OperationId is required for quick registration.", nameof(operationId));
         if (forceNew && !string.IsNullOrWhiteSpace(selectedPartyId))
             throw new ArgumentException("forceNew and selectedPartyId cannot be used together.", nameof(selectedPartyId));
+        if (confirmDistinctParty && !forceNew)
+            throw new ArgumentException("Distinct-party confirmation requires the explicit ForceNew choice.", nameof(confirmDistinctParty));
         var actor = RequireActor(actorId);
 
         // Lock order is always OperationId first, then normalized mobile. This makes retries stable
@@ -117,22 +119,24 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             ? null
             : PartyContactPoint.Mobile(request.PrimaryMobile).Value;
 
-        if (normalizedMobile is null && !string.IsNullOrWhiteSpace(selectedPartyId))
-            throw new ArgumentException("Selecting an existing Party requires a mobile number to validate the candidate.", nameof(selectedPartyId));
-
+        IReadOnlyList<PartyQuickRegistrationCandidate> candidates = Array.Empty<PartyQuickRegistrationCandidate>();
         if (normalizedMobile is not null)
         {
-            // forceNew still takes the same lock so it cannot race with an ordinary quick registration.
-            await using (var mobileLock = new NpgsqlCommand(
-                "SELECT pg_advisory_xact_lock(hashtextextended(@key, 0));", connection, transaction))
-            {
-                mobileLock.Parameters.AddWithValue("key", "persons-mobile:" + normalizedMobile);
-                await mobileLock.ExecuteScalarAsync(cancellationToken);
-            }
+            // ForceNew is never a duplicate-check bypass. It still serializes on the mobile key
+            // and returns candidates until the user explicitly confirms a distinct Party.
+            await using var mobileLock = new NpgsqlCommand(
+                "SELECT pg_advisory_xact_lock(hashtextextended(@key, 0));", connection, transaction);
+            mobileLock.Parameters.AddWithValue("key", "persons-mobile:" + normalizedMobile);
+            await mobileLock.ExecuteScalarAsync(cancellationToken);
+            candidates = await FindMobileCandidatesAsync(connection, transaction, normalizedMobile, cancellationToken);
+        }
+        else if (!string.IsNullOrWhiteSpace(selectedPartyId))
+        {
+            candidates = await FindPartyCandidateByIdAsync(connection, transaction, selectedPartyId, cancellationToken);
+        }
 
-            var candidates = forceNew
-                ? Array.Empty<PartyQuickRegistrationCandidate>()
-                : await FindMobileCandidatesAsync(connection, transaction, normalizedMobile, cancellationToken);
+        if (candidates.Count > 0)
+        {
             if (candidates.Count > 0)
             {
                 // Candidate names and masked contact values are disclosed to the caller.
@@ -147,7 +151,8 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             {
                 var selected = candidates.SingleOrDefault(x =>
                     string.Equals(x.PartyId, selectedPartyId, StringComparison.OrdinalIgnoreCase));
-                if (selected is null || !selected.PartyIsActive || selected.IsMerged || !selected.HasActiveMobile || selected.Type != requestedType)
+                if (selected is null || !selected.PartyIsActive || selected.IsMerged ||
+                    (normalizedMobile is not null && !selected.HasActiveMobile) || selected.Type != requestedType)
                     throw new InvalidOperationException("The selected Party is not an active candidate of the requested identity type.");
                 await AddBusinessRolesAsync(connection, transaction, Guid.Parse(selected.PartyId), request, actor, cancellationToken);
                 await RecordQuickOperationAsync(connection, transaction, operationId, Guid.Parse(selected.PartyId), actor, cancellationToken);
@@ -155,7 +160,15 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
                     selected.PartyId, false, candidates);
             }
 
-            if (candidates.Count > 0)
+            if (forceNew)
+            {
+                if (!confirmDistinctParty)
+                    return new PartyQuickRegistrationResult(PartyQuickRegistrationOutcome.SelectionRequired,
+                        null, false, candidates);
+                await AppendDuplicateOverrideAuditAsync(
+                    candidates.Select(candidate => Guid.Parse(candidate.PartyId)).ToArray(), actor, cancellationToken);
+            }
+            else
             {
                 if (candidates.Count == 1)
                 {
@@ -210,6 +223,36 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
                 reader.GetBoolean(4), reader.GetBoolean(5), reader.GetBoolean(6),
                 PartyIdentifiers.MaskPhone(normalizedMobile)));
         return results;
+    }
+
+    private static async Task<IReadOnlyList<PartyQuickRegistrationCandidate>> FindPartyCandidateByIdAsync(
+        NpgsqlConnection connection, NpgsqlTransaction transaction, string partyId,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(partyId, out var id) || id == Guid.Empty)
+            throw new ArgumentException("A valid selected PartyId is required.", nameof(partyId));
+        await using var command = new NpgsqlCommand("""
+            SELECT p.party_id, p.party_type, p.business_roles,
+                   CASE WHEN p.party_type = 1 THEN concat_ws(' ', p.given_name, p.family_name) ELSE p.legal_name END,
+                   p.is_active, (p.merged_into_party_id IS NOT NULL),
+                   (SELECT c.value FROM persons_contact_points c
+                    WHERE c.party_id = p.party_id AND c.kind = 1 AND c.is_active
+                    ORDER BY c.is_primary DESC, c.created_at_utc, c.contact_point_id LIMIT 1)
+            FROM persons p
+            WHERE p.party_id = @party;
+            """, connection, transaction);
+        command.Parameters.AddWithValue("party", id);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken)) return Array.Empty<PartyQuickRegistrationCandidate>();
+        var mobile = reader.IsDBNull(6) ? null : reader.GetString(6);
+        return
+        [
+            new PartyQuickRegistrationCandidate(
+                reader.GetGuid(0).ToString("D"), (PartyType)reader.GetInt16(1),
+                reader.GetString(3), (PartyBusinessRoles)reader.GetInt16(2),
+                reader.GetBoolean(4), reader.GetBoolean(5), mobile is not null,
+                mobile is null ? string.Empty : PartyIdentifiers.MaskPhone(mobile))
+        ];
     }
 
     private static async Task AddBusinessRolesAsync(
@@ -595,6 +638,31 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
         await auditTransaction.CommitAsync(cancellationToken);
+    }
+
+    private async Task AppendDuplicateOverrideAuditAsync(
+        IReadOnlyList<Guid> partyIds, string actor, CancellationToken cancellationToken)
+    {
+        var distinctPartyIds = partyIds.Distinct().ToArray();
+        if (distinctPartyIds.Length == 0) return;
+        var auditConnectionString = new NpgsqlConnectionStringBuilder(dataSource.ConnectionString)
+        {
+            Pooling = false
+        }.ConnectionString;
+        await using var connection = new NpgsqlConnection(auditConnectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        foreach (var partyId in distinctPartyIds)
+        {
+            await using var command = new NpgsqlCommand(
+                "INSERT INTO persons_access_audit (audit_id, party_id, actor, action, sensitive_included) VALUES (@audit, @party, @actor, 'force-new-confirmed', false);",
+                connection, transaction);
+            command.Parameters.AddWithValue("audit", Guid.CreateVersion7());
+            command.Parameters.AddWithValue("party", partyId);
+            command.Parameters.AddWithValue("actor", actor);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+        await transaction.CommitAsync(cancellationToken);
     }
 
     private async Task AppendReadAuditAsync(Guid partyId, string actor, bool sensitive, CancellationToken cancellationToken)
