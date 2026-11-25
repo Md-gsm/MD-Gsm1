@@ -45,6 +45,9 @@ public sealed class PersonsApiContractTests
         Assert.Contains("QuickRegisterLegalAsync", program, StringComparison.Ordinal);
         Assert.Contains("request.ConfirmDistinctParty", program, StringComparison.Ordinal);
         Assert.Contains("confirmDistinctParty", openApi, StringComparison.Ordinal);
+        Assert.Contains("/api/v2/persons/workflows/{workflowRecordId}/promote", openApi, StringComparison.Ordinal);
+        Assert.Contains("Persons:WorkflowPromotionApiEnabled", openApi, StringComparison.Ordinal);
+        Assert.Contains("ITemporaryWorkflowEncryptionKeyProvider", program, StringComparison.Ordinal);
         Assert.Contains("Persons:WriteApiEnabled", program, StringComparison.Ordinal);
         Assert.Contains("HasPermissionAsync(accountId, \"persons.create\"", program, StringComparison.Ordinal);
         Assert.Contains("HasPermissionAsync(accountId, \"persons.read\"", program, StringComparison.Ordinal);
