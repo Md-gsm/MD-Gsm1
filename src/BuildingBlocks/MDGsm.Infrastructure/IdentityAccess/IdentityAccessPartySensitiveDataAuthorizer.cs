@@ -1,4 +1,4 @@
-using MDGsm.Application.Persons;
+using MDGsm.Persons.Application;
 using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Domain;
 

@@ -15,6 +15,9 @@ public static class PersonsInfrastructureRegistration
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
+        if (OperatingSystem.IsWindows())
+            services.AddSingleton<ITemporaryWorkflowKeyProvisioner, WindowsDpapiTemporaryWorkflowKeyProvisioner>();
+
         var workflowKeyPath = configuration[WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ConfigurationKey];
         if (OperatingSystem.IsWindows() && !string.IsNullOrWhiteSpace(workflowKeyPath))
         {

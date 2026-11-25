@@ -1,28 +1,10 @@
 using System.Data;
+using MDGsm.Persons.Application;
 using MDGsm.Persons.Contracts;
 using Npgsql;
 using NpgsqlTypes;
 
 namespace MDGsm.Persons.Infrastructure;
-
-public sealed record PartyMergePreview(
-    Guid SourcePartyId,
-    Guid TargetPartyId,
-    IReadOnlyList<PartyMergeParticipantPreview> Participants,
-    long ActiveReferences,
-    long TransferableReferences,
-    long HistoricalReferences,
-    long BlockingConflicts)
-{
-    public bool CanMerge => BlockingConflicts == 0;
-}
-
-public sealed record PartyMergeResult(
-    Guid OperationId,
-    Guid SourcePartyId,
-    Guid TargetPartyId,
-    bool Replayed,
-    DateTimeOffset CompletedAtUtc);
 
 /// <summary>
 /// Coordinates all registered consumers in one PostgreSQL transaction. Participants are invoked

@@ -112,7 +112,7 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         }
     }
 
-    public const string ApiServiceName = "MDGsmApi";
+    public const string ApiServiceName = PersonsApiServiceIdentity.ApiServiceName;
 
     /// <summary>
     /// Setup resolves the service SID after creating the Windows service and enabling its SID type.
