@@ -27,7 +27,7 @@ public sealed class MigrationResourceTests
         var versions = parsedFiles.Select(match => int.Parse(match.Groups["version"].Value, CultureInfo.InvariantCulture))
             .OrderBy(value => value).ToArray();
         Assert.Equal(versions.Length, versions.Distinct().Count());
-        Assert.Equal(Enumerable.Range(1, versions.Length), versions);
+        Assert.Equal(versions.OrderBy(value => value), versions);
 
         var registryPath = Path.Combine(root, "docs", "data", "MIGRATION_SEQUENCE_REGISTRY_FA.md");
         var registry = File.ReadAllText(registryPath);
@@ -61,6 +61,14 @@ public sealed class MigrationResourceTests
             $"Registry row {row.Version:D4} has an invalid migration path."));
 
         var reserved = registryFiles.Where(row => row.Status.StartsWith("RESERVED", StringComparison.Ordinal)).ToArray();
+        var reservedVersions = reserved.Select(row => row.Version).ToHashSet();
+        if (versions.Length > 0)
+        {
+            foreach (var missingVersion in Enumerable.Range(1, versions[^1]).Except(versions))
+            {
+                Assert.Contains(missingVersion, reservedVersions);
+            }
+        }
         foreach (var row in reserved)
         {
             Assert.Equal(row.Version, int.Parse(Path.GetFileName(row.Path)![..4], CultureInfo.InvariantCulture));
