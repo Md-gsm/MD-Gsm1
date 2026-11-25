@@ -88,6 +88,7 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         var key = RandomNumberGenerator.GetBytes(32);
         byte[]? protectedKey = null;
         byte[]? file = null;
+        var createdByThisCall = false;
         try
         {
             protectedKey = ProtectedData.Protect(key, Entropy, DataProtectionScope.LocalMachine);
@@ -97,6 +98,7 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
             using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None,
                        4096, FileOptions.WriteThrough))
             {
+                createdByThisCall = true;
                 stream.Write(file);
                 stream.Flush(flushToDisk: true);
             }
@@ -121,7 +123,7 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         {
             // Never delete/replace a pre-existing file. If this invocation created a file
             // but failed before verification, remove only that just-created artifact.
-            if (file is not null && File.Exists(path))
+            if (createdByThisCall && File.Exists(path))
                 File.Delete(path);
             throw;
         }
