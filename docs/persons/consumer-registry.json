@@ -2,6 +2,7 @@
   "registryVersion": "1.8",
   "module": "Persons",
   "ownerPaths": [
+    "src/Modules/Persons",
     "src/Modules/Persons/Domain",
     "src/Modules/Persons/Application",
     "src/Modules/Persons/Infrastructure",
