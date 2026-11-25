@@ -7,6 +7,7 @@ using MDGsm.Application.Persons;
 using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Contracts;
 using MDGsm.IdentityAccess.Domain;
+using MDGsm.Domain.Persons;
 using MDGsm.Infrastructure.IdentityAccess;
 using MDGsm.Infrastructure.Persons;
 using MDGsm.Finance.Contracts;
@@ -286,6 +287,110 @@ app.MapGet("/api/v2/persons/{partyId}", async (
         return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 });
+
+// Promotion routes are absent unless both an explicit API flag and an approved
+// encryption-key provider are supplied by the host. The repository does not invent
+// or configure key custody, and the default flag is false.
+var workflowPromotionApiEnabled =
+    builder.Configuration.GetValue<bool>("Persons:WorkflowPromotionApiEnabled") &&
+    builder.Services.Any(descriptor => descriptor.ServiceType == typeof(ITemporaryWorkflowPromotionService));
+
+if (workflowPromotionApiEnabled)
+{
+    app.MapGet("/api/v2/persons/workflows/{workflowRecordId:guid}/promotion-preview", async (
+        Guid workflowRecordId,
+        IAuthenticatedActorContext actor,
+        ITemporaryWorkflowPromotionService promotion,
+        CancellationToken cancellationToken) =>
+    {
+        try
+        {
+            var preview = await promotion.PreviewAsync(
+                workflowRecordId, actor.AccountId, Guid.CreateVersion7(), cancellationToken);
+            return Results.Ok(preview);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Results.StatusCode(StatusCodes.Status403Forbidden);
+        }
+        catch (TemporaryWorkflowOwnershipException)
+        {
+            return Results.NotFound();
+        }
+        catch (TemporaryWorkflowUnavailableException)
+        {
+            return Results.NotFound();
+        }
+        catch (TemporaryWorkflowPayloadException)
+        {
+            return Results.UnprocessableEntity(new { error = "temporary_workflow_payload_invalid" });
+        }
+    });
+
+    app.MapPost("/api/v2/persons/workflows/{workflowRecordId:guid}/promote", async (
+        Guid workflowRecordId,
+        TemporaryWorkflowPromotionRequest request,
+        HttpContext context,
+        IAuthenticatedActorContext actor,
+        ITemporaryWorkflowPromotionService promotion,
+        CancellationToken cancellationToken) =>
+    {
+        if (!Guid.TryParse(context.Request.Headers["Idempotency-Key"].ToString(), out var operationId) ||
+            operationId == Guid.Empty)
+            return Results.BadRequest(new { error = "idempotency_key_required" });
+
+        try
+        {
+            var result = await promotion.PromoteAsync(new TemporaryWorkflowPromotionCommand(
+                workflowRecordId, operationId, actor.AccountId, request.SelectedPartyId,
+                request.CreateNewParty, request.ConfirmDistinctParty, Guid.CreateVersion7()), cancellationToken);
+            var candidates = result.Candidates.Select(candidate => new PartyQuickRegistrationCandidateContract(
+                candidate.PartyId,
+                candidate.Type == PartyType.NaturalPerson ? "NaturalPerson" : "LegalEntity",
+                candidate.DisplayName,
+                new[]
+                {
+                    (candidate.Roles & PartyBusinessRoles.Customer) == PartyBusinessRoles.Customer ? "Customer" : null,
+                    (candidate.Roles & PartyBusinessRoles.Colleague) == PartyBusinessRoles.Colleague ? "Colleague" : null
+                }.Where(role => role is not null).Select(role => role!).ToArray(),
+                candidate.PartyIsActive, candidate.IsMerged, candidate.HasActiveMobile, candidate.MaskedMobile)).ToArray();
+            return Results.Ok(new TemporaryWorkflowPromotionResponse(
+                result.Outcome.ToString(), result.PartyId, result.Created, result.Replayed, candidates));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Results.StatusCode(StatusCodes.Status403Forbidden);
+        }
+        catch (TemporaryWorkflowOwnershipException)
+        {
+            return Results.NotFound();
+        }
+        catch (TemporaryWorkflowUnavailableException)
+        {
+            return Results.Conflict(new { error = "temporary_workflow_unavailable" });
+        }
+        catch (TemporaryWorkflowAlreadyPromotedException)
+        {
+            return Results.Conflict(new { error = "temporary_workflow_already_promoted" });
+        }
+        catch (TemporaryWorkflowPayloadException)
+        {
+            return Results.UnprocessableEntity(new { error = "temporary_workflow_payload_invalid" });
+        }
+        catch (IdempotencyKeyConflictException)
+        {
+            return Results.Conflict(new { error = "idempotency_key_conflict" });
+        }
+        catch (DuplicatePartyIdentifierException)
+        {
+            return Results.Conflict(new { error = "duplicate_party_identifier" });
+        }
+        catch (ArgumentException)
+        {
+            return Results.UnprocessableEntity(new { error = "validation_failed" });
+        }
+    });
+}
 
 app.Lifetime.ApplicationStopped.Register(() => logger.LogInformation("MD-Gsm API stopped."));
 app.Run();
