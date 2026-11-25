@@ -197,6 +197,8 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("workflow-key.dpapi", integrationScript);
         Assert.Contains("unins000.exe", integrationScript);
         Assert.Contains("Level = @(1, 2, 3)", integrationScript);
+        Assert.Contains("Event property data:", integrationScript);
+        Assert.Contains("$event.ToXml()", integrationScript);
         Assert.Contains("/api/v1/system/info", integrationScript);
         Assert.Contains("ReadAllBytes($keyFile)", integrationScript);
         Assert.Contains("ReadAllBytes($keyFile)", integrationScript);
