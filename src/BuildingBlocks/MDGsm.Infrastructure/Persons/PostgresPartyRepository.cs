@@ -135,9 +135,11 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
             candidates = await FindPartyCandidateByIdAsync(connection, transaction, selectedPartyId, cancellationToken);
         }
 
+        if (!string.IsNullOrWhiteSpace(selectedPartyId) && candidates.Count == 0)
+            throw new InvalidOperationException("The selected Party does not exist or is not an eligible candidate.");
+
         if (candidates.Count > 0)
         {
-            if (candidates.Count > 0)
             {
                 // Candidate names and masked contact values are disclosed to the caller.
                 // Persist the access evidence independently before returning any candidate data.
