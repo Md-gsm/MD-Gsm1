@@ -1,10 +1,10 @@
 using System.Data.Common;
-using MDGsm.Application.Persons;
-using MDGsm.Domain.Persons;
+using MDGsm.Persons.Application;
+using MDGsm.Persons.Domain;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace MDGsm.Infrastructure.Persons;
+namespace MDGsm.Persons.Infrastructure;
 
 /// <summary>
 /// PostgreSQL implementation for Persons registration and read operations.

@@ -3,7 +3,7 @@ using MDGsm.Persons.Contracts;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace MDGsm.Infrastructure.Persons;
+namespace MDGsm.Persons.Infrastructure;
 
 public sealed record PartyMergePreview(
     Guid SourcePartyId,

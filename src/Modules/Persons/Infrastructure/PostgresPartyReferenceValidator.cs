@@ -3,7 +3,7 @@ using MDGsm.Persons.Contracts;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace MDGsm.Infrastructure.Persons;
+namespace MDGsm.Persons.Infrastructure;
 
 /// <summary>
 /// Transitional Persons-owned PostgreSQL adapter. It validates and share-locks an active Party

@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
-using MDGsm.Application.Persons;
+using MDGsm.Persons.Application;
 
-namespace MDGsm.Infrastructure.Persons;
+namespace MDGsm.Persons.Infrastructure;
 
 /// <summary>
 /// AES-256-GCM adapter for temporary workflow payloads. Key custody is deliberately

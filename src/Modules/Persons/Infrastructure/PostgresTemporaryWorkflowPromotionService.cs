@@ -2,11 +2,11 @@ using System.Data;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.Json;
-using MDGsm.Application.Persons;
+using MDGsm.Persons.Application;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace MDGsm.Infrastructure.Persons;
+namespace MDGsm.Persons.Infrastructure;
 
 /// <summary>
 /// Executes AC-37 in one PostgreSQL transaction. The key provider is deliberately external;
