@@ -1,4 +1,4 @@
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 /// <summary>Legal form of a party; distinct from its commercial roles.</summary>
 public enum PartyType
