@@ -172,8 +172,8 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("ProgramData", serviceScript);
         Assert.Contains("UseWindowsService", apiProgram);
         Assert.Contains("AddEventLog", apiProgram);
-        Assert.Contains('settings.SourceName = "MDGsm.Api"', apiProgram);
-        Assert.Contains('[System.Diagnostics.EventLog]::CreateEventSource($eventSource, \'Application\')', serviceScript);
+        Assert.Contains("settings.SourceName = \"MDGsm.Api\"", apiProgram);
+        Assert.Contains("[System.Diagnostics.EventLog]::CreateEventSource($eventSource, 'Application')", serviceScript);
         Assert.Contains("StackTrace={StackTrace}", apiProgram);
         Assert.Contains("Microsoft.Extensions.Hosting.WindowsServices", apiProject);
         Assert.DoesNotContain("Preview-only", iss);
