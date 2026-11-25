@@ -32,6 +32,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
                 "src/BuildingBlocks/MDGsm.Infrastructure/Persons/PostgresTemporaryWorkflowStore.cs",
                 "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorkflowRetentionWorker.cs",
                 "database/migrations/0007_persons_temporary_workflows.sql",
+                "database/migrations/0012_persons_workflow_promotion_results.sql",
             ):
                 target = dst / relative
                 if target.exists():
