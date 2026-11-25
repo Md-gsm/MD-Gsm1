@@ -90,6 +90,18 @@ function Get-ServiceFailureDiagnostics([string] $Phase) {
                     $sections.Add(("{0:o} [{1}] EventId={2} Level={3}{4}{5}" -f
                         $event.TimeCreated, $event.ProviderName, $event.Id, $event.LevelDisplayName,
                         [Environment]::NewLine, $message))
+
+                    # Some EventLog providers emit an EventId=0 record whose
+                    # localized Message is empty. Preserve its structured data.
+                    if ([string]::IsNullOrWhiteSpace($message) -and
+                        $event.ProviderName -match 'Application|MD-Gsm|\.NET Runtime') {
+                        $properties = @($event.Properties | ForEach-Object { [string]$_.Value }) -join ' | '
+                        if ($properties.Length -gt 3000) { $properties = $properties.Substring(0, 3000) }
+                        $sections.Add("Event property data: " + $properties)
+                        $eventXml = [string]$event.ToXml()
+                        if ($eventXml.Length -gt 6000) { $eventXml = $eventXml.Substring(0, 6000) }
+                        $sections.Add("Event XML: " + $eventXml)
+                    }
                 }
             } else {
                 $sections.Add("No matching recent events in $logName.")
