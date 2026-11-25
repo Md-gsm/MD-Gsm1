@@ -1,4 +1,5 @@
 using MDGsm.Infrastructure.Persistence;
+using MDGsm.Persons.Infrastructure;
 
 if (args.Any(argument => argument is "--help" or "-h"))
 {
@@ -44,7 +45,8 @@ try
         connectionString,
         requireDisposableMarker: !allowUnmarkedDatabase,
         migrationLoginRole: migrationLoginRole,
-        schemaOwnerRole: schemaOwnerRole);
+        schemaOwnerRole: schemaOwnerRole,
+        additionalMigrationAssemblies: new[] { typeof(PersonsInfrastructureAssemblyMarker).Assembly });
 
     Console.WriteLine(
         $"PASS: migration run completed; database={result.DatabaseName}; sessionLogin={migrationLoginRole}; effectiveOwner={schemaOwnerRole}; " +

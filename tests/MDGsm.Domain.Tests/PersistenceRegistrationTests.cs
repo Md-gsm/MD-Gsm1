@@ -1,5 +1,5 @@
-using MDGsm.Application.Persons;
-using MDGsm.Infrastructure.Persons;
+using MDGsm.Persons.Application;
+using MDGsm.Persons.Infrastructure;
 using MDGsm.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -39,6 +39,7 @@ public sealed class PersistenceRegistrationTests
         var services = new ServiceCollection();
 
         services.AddMdGsmPersistence(configuration);
+        services.AddPersonsPersistence(configuration);
 
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(ITemporaryWorkflowEncryptionKeyProvider));
         Assert.Contains(services, descriptor =>
@@ -58,9 +59,10 @@ public sealed class PersistenceRegistrationTests
         var services = new ServiceCollection();
 
         services.AddMdGsmPersistence(configuration);
+        services.AddPersonsPersistence(configuration);
 
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MdGsmDbContext));
-        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MDGsm.Application.Persons.IPartySensitiveDataAuthorizer));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IPartyRepository));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MDGsm.IdentityAccess.Application.ISessionIdentityResolver));
         Assert.Contains(services, descriptor =>
             descriptor.ServiceType == typeof(PostgresTemporaryWorkflowStore) &&

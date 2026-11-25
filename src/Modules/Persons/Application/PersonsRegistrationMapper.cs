@@ -1,8 +1,7 @@
-using MDGsm.Application.Persons;
-using MDGsm.Domain.Persons;
+using MDGsm.Persons.Domain;
 using MDGsm.Persons.Contracts;
 
-namespace MDGsm.Api.Persons;
+namespace MDGsm.Persons.Application;
 
 /// <summary>Strictly maps versioned HTTP registration contracts to application commands.</summary>
 public static class PersonsRegistrationMapper
@@ -33,6 +32,22 @@ public static class PersonsRegistrationMapper
             ParseEnum(request.AcquaintanceSource, PartyAcquaintanceSource.Unknown),
             request.InternalNote, MapCommunication(request.Communication), null,
             request.Address?.CountryCode ?? "IR");
+    }
+
+    public static TemporaryWorkflowPromotionResponse Map(TemporaryWorkflowPromotionResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        var candidates = result.Candidates.Select(candidate => new PartyQuickRegistrationCandidateContract(
+            candidate.PartyId,
+            ToContractPartyType(candidate.Type),
+            candidate.DisplayName,
+            ToRoleNames(candidate.Roles),
+            candidate.PartyIsActive,
+            candidate.IsMerged,
+            candidate.HasActiveMobile,
+            candidate.MaskedMobile)).ToArray();
+        return new TemporaryWorkflowPromotionResponse(
+            result.Outcome.ToString(), result.PartyId, result.Created, result.Replayed, candidates);
     }
 
     public static PartyQuickRegistrationResponse Map(PartyQuickRegistrationResult result)

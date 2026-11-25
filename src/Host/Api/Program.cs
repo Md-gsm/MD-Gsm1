@@ -4,13 +4,12 @@ using Npgsql;
 using MDGsm.Api.Security;
 using MDGsm.Api.Persons;
 using MDGsm.Application.Contracts;
-using MDGsm.Application.Persons;
+using MDGsm.Persons.Application;
 using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Contracts;
 using MDGsm.IdentityAccess.Domain;
-using MDGsm.Domain.Persons;
 using MDGsm.Infrastructure.IdentityAccess;
-using MDGsm.Infrastructure.Persons;
+using MDGsm.Persons.Infrastructure;
 using MDGsm.Finance.Contracts;
 using MDGsm.Finance.Infrastructure.Accounts;
 using MDGsm.Persons.Contracts;
@@ -53,6 +52,9 @@ if (OperatingSystem.IsWindows())
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddMdGsmPersistence(builder.Configuration);
+builder.Services.AddPersonsPersistence(builder.Configuration);
+builder.Services.AddScoped<IPartySensitiveDataAuthorizer, IdentityAccessPartySensitiveDataAuthorizer>();
+builder.Services.AddScoped<IPersonsWorkflowPromotionAuthorizer, IdentityAccessPersonsWorkflowPromotionAuthorizer>();
 builder.Services.AddSingleton<IAccessTokenFactory, OpaqueAccessTokenFactory>();
 builder.Services.AddSingleton<IPasswordHasher, PlatformPasswordHasher>();
 // Construct the HMAC key lazily. The login endpoint explicitly returns 503 when
@@ -68,7 +70,6 @@ builder.Services.AddScoped<IAuthenticatedActorContext, HttpAuthenticatedActorCon
 builder.Services.AddScoped<IFinanceActorContext, AuthenticatedFinanceActorContext>();
 builder.Services.AddScoped<PostgresPartyAccountProvisioner>();
 builder.Services.AddScoped<IPartyMergeParticipant, PostgresPartyAccountMergeParticipant>();
-builder.Services.AddScoped<PostgresPartyMergeService>();
 
 // The database-backed Persons endpoints must not be added to the endpoint data
 // source unless their complete persistence/authorization dependency set exists.
@@ -393,18 +394,7 @@ if (workflowPromotionApiEnabled)
             var result = await promotion.PromoteAsync(new TemporaryWorkflowPromotionCommand(
                 workflowRecordId, operationId, actor.AccountId, request.SelectedPartyId,
                 request.CreateNewParty, request.ConfirmDistinctParty, Guid.CreateVersion7()), cancellationToken);
-            var candidates = result.Candidates.Select(candidate => new PartyQuickRegistrationCandidateContract(
-                candidate.PartyId,
-                candidate.Type == PartyType.NaturalPerson ? "NaturalPerson" : "LegalEntity",
-                candidate.DisplayName,
-                new[]
-                {
-                    (candidate.Roles & PartyBusinessRoles.Customer) == PartyBusinessRoles.Customer ? "Customer" : null,
-                    (candidate.Roles & PartyBusinessRoles.Colleague) == PartyBusinessRoles.Colleague ? "Colleague" : null
-                }.Where(role => role is not null).Select(role => role!).ToArray(),
-                candidate.PartyIsActive, candidate.IsMerged, candidate.HasActiveMobile, candidate.MaskedMobile)).ToArray();
-            return Results.Ok(new TemporaryWorkflowPromotionResponse(
-                result.Outcome.ToString(), result.PartyId, result.Created, result.Replayed, candidates));
+            return Results.Ok(PersonsRegistrationMapper.Map(result));
         }
         catch (UnauthorizedAccessException)
         {

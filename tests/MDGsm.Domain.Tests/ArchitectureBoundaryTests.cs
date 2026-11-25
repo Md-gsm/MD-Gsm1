@@ -81,20 +81,44 @@ public sealed class ArchitectureBoundaryTests
     }
 
     [Fact]
-    public void Persons_internal_placement_is_explicitly_transitional_and_blocked_before_g1()
+    public void Persons_internals_are_owned_by_three_independent_module_projects()
     {
         var root = FindSolutionRoot();
-        var manifest = File.ReadAllText(Path.Combine(root, "docs", "persons", "persons-module-manifest.json"));
-        var adr = File.ReadAllText(Path.Combine(root, "docs", "decisions", "0014-persons-module-ownership.md"));
+        var solution = File.ReadAllText(Path.Combine(root, "MDGsm.sln"));
+        var domain = "src/Modules/Persons/Domain/MDGsm.Persons.Domain.csproj";
+        var application = "src/Modules/Persons/Application/MDGsm.Persons.Application.csproj";
+        var infrastructure = "src/Modules/Persons/Infrastructure/MDGsm.Persons.Infrastructure.csproj";
+        foreach (var relative in new[] { domain, application, infrastructure })
+        {
+            Assert.True(File.Exists(Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar))));
+            Assert.Contains(relative.Replace('/', '\\'), solution);
+        }
 
-        Assert.Contains("\"personsInternalCodePlacement\": \"TRANSITIONAL_BUILDINGBLOCKS_PER_ADR_0014\"", manifest);
-        Assert.Contains("پیش از G1 authorization", adr, StringComparison.OrdinalIgnoreCase);
+        AssertReferences(root, domain);
+        AssertReferences(root, application,
+            "..\\Domain\\MDGsm.Persons.Domain.csproj",
+            "..\\Contracts\\MDGsm.Persons.Contracts.csproj");
+        AssertReferences(root, infrastructure,
+            "..\\Domain\\MDGsm.Persons.Domain.csproj",
+            "..\\Application\\MDGsm.Persons.Application.csproj",
+            "..\\Contracts\\MDGsm.Persons.Contracts.csproj");
 
-        var personsRoot = Path.Combine(root, "src", "Modules", "Persons");
-        var implementationFiles = Directory.EnumerateFiles(personsRoot, "*.cs", SearchOption.AllDirectories)
-            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}Contracts{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .ToArray();
-        Assert.Empty(implementationFiles);
+        foreach (var oldPath in new[]
+        {
+            "src/BuildingBlocks/MDGsm.Domain/Persons",
+            "src/BuildingBlocks/MDGsm.Application/Persons",
+            "src/BuildingBlocks/MDGsm.Infrastructure/Persons"
+        })
+        {
+            if (Directory.Exists(Path.Combine(root, oldPath.Replace('/', Path.DirectorySeparatorChar))))
+            {
+                Assert.Empty(Directory.EnumerateFiles(
+                    Path.Combine(root, oldPath.Replace('/', Path.DirectorySeparatorChar)), "*.cs", SearchOption.AllDirectories));
+            }
+        }
+
+        var infrastructureProject = File.ReadAllText(Path.Combine(root, infrastructure.Replace('/', Path.DirectorySeparatorChar)));
+        Assert.Contains("MDGsm.Migrations.%(Filename)%(Extension)", infrastructureProject);
     }
 
     [Fact]

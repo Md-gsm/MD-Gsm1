@@ -18,6 +18,9 @@
     <ProjectReference Include="..\..\src\BuildingBlocks\MDGsm.Client\MDGsm.Client.csproj" />
     <ProjectReference Include="..\..\src\Host\Client\MDGsm.Host.Client.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\MDGsm.Infrastructure\MDGsm.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Persons\Domain\MDGsm.Persons.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Persons\Application\MDGsm.Persons.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Persons\Infrastructure\MDGsm.Persons.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Host\Api\MDGsm.Api.csproj" />
     <ProjectReference Include="..\..\src\Modules\IdentityAccess\Domain\MDGsm.IdentityAccess.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\IdentityAccess\Application\MDGsm.IdentityAccess.Application.csproj" />

@@ -1,6 +1,6 @@
 using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Domain;
-using MDGsm.Infrastructure.IdentityAccess;
+using MDGsm.Api.Persons;
 using Xunit;
 
 namespace MDGsm.Domain.Tests.IdentityAccess;
