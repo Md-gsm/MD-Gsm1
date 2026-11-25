@@ -22,15 +22,6 @@
       "mergeParticipant": false
     },
     {
-      "module": "Persons.Application",
-      "path": "src/Modules/Persons/Application/PersonsRegistrationMapper.cs",
-      "contractVersion": "Persons.Contracts/2.0",
-      "mergeProtocolVersion": "1.0",
-      "purpose": "Maps published Persons API contracts to module Application commands and maps module read/registration/promotion results back to published contracts; it does not own Party persistence.",
-      "mergeClassification": "NON_PERSISTENT_TRANSPORT",
-      "mergeParticipant": false
-    },
-    {
       "module": "ApiHost",
       "path": "src/Host/Api/Program.cs",
       "contractVersion": "Persons.Contracts/2.0",
