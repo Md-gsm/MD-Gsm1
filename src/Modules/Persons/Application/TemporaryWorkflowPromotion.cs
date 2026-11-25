@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MDGsm.Domain.Persons;
+using MDGsm.Persons.Domain;
 
-namespace MDGsm.Application.Persons;
+namespace MDGsm.Persons.Application;
 
 public interface ITemporaryWorkflowPromotionService
 {

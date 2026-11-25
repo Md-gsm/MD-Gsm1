@@ -1,6 +1,6 @@
-using MDGsm.Domain.Persons;
+using MDGsm.Persons.Domain;
 
-namespace MDGsm.Application.Persons;
+namespace MDGsm.Persons.Application;
 
 public interface IPartyRegistrationCommon
 {
