@@ -125,6 +125,8 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
                 connection, transaction, command.WorkflowRecordId, cancellationToken);
             var decoded = await DecodeAsync(command.WorkflowRecordId, encryptedPayload, cancellationToken);
             var now = timeProvider.GetUtcNow();
+            await InsertAuditAsync(connection, transaction, command.WorkflowRecordId, command.OperationId,
+                command.ActorId, "promotion_attempt", "started", command.CorrelationId, now, cancellationToken);
 
             PartyQuickRegistrationResult registration;
             if (decoded.Registration is RegisterNaturalParty natural)
@@ -150,7 +152,7 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
             {
                 await transaction.RollbackAsync(cancellationToken);
                 await AppendAuditAsync(command.WorkflowRecordId, command.OperationId, command.ActorId,
-                    "promotion_rejected", "duplicate_review_required", command.CorrelationId, now, cancellationToken);
+                    "promotion_attempt", "duplicate_review_required", command.CorrelationId, now, cancellationToken);
                 return new TemporaryWorkflowPromotionResult(
                     TemporaryWorkflowPromotionOutcome.DuplicateReviewRequired, null, false, false,
                     registration.Candidates);
