@@ -466,7 +466,36 @@ public partial class MainWindow
             _pendingQuickRegistration is null)
             return;
 
-        _pendingQuickRegistration = _pendingQuickRegistration with { SelectedPartyId = candidate.PartyId };
+        var pending = _pendingQuickRegistration;
+        if (pending is null) return;
+        if (pending.IsNatural)
+        {
+            var request = ((QuickRegisterNaturalPartyRequest)pending.Request) with
+            {
+                ForceNew = false,
+                ConfirmDistinctParty = false
+            };
+            _pendingQuickRegistration = pending with
+            {
+                Request = request,
+                PayloadFingerprint = JsonSerializer.Serialize(request, PersonsJsonOptions),
+                SelectedPartyId = candidate.PartyId
+            };
+        }
+        else
+        {
+            var request = ((QuickRegisterLegalPartyRequest)pending.Request) with
+            {
+                ForceNew = false,
+                ConfirmDistinctParty = false
+            };
+            _pendingQuickRegistration = pending with
+            {
+                Request = request,
+                PayloadFingerprint = JsonSerializer.Serialize(request, PersonsJsonOptions),
+                SelectedPartyId = candidate.PartyId
+            };
+        }
         await SendPendingQuickRegistrationAsync();
     }
 
