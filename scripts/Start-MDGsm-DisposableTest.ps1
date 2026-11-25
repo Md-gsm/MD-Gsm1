@@ -74,8 +74,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Application migration runner failed. Database '$dbName' is retained for inspection." }
 
     $history = & $PsqlPath -h $PostgresHost -p "$PostgresPort" -U $AdminUser -d $dbName -t -A -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;"
-    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '1|1') { throw "Migration history verification failed. Found: $history. Database '$dbName' is retained." }
-    Write-Host "PASS: application migration runner recorded version 1 in $dbName" -ForegroundColor Green
+    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '10|13') { throw "Migration history verification failed. Found: $history. Database '$dbName' is retained." }
+    Write-Host "PASS: application migration runner recorded 10 migrations through version 13 in $dbName" -ForegroundColor Green
     $env:ASPNETCORE_URLS = $apiUrl
     Write-Host 'Starting API with the new disposable database connection...'
     $api = Start-Process -FilePath 'dotnet' -ArgumentList @('run', '--project', ('"' + $ApiProjectPath + '"'), '--no-launch-profile') -PassThru -WindowStyle Hidden
