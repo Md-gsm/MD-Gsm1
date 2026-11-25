@@ -183,7 +183,7 @@ app.MapPost("/api/v2/persons", async (
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var result = await parties.QuickRegisterNaturalAsync(
             registration, actor.AccountId.ToString("D"), operationId, request.ForceNew, request.SelectedPartyId,
-            transaction, cancellationToken);
+            transaction, cancellationToken, request.ConfirmDistinctParty);
         await transaction.CommitAsync(cancellationToken);
         var response = PersonsRegistrationMapper.Map(result);
         return result.Created
@@ -232,7 +232,7 @@ app.MapPost("/api/v2/persons/legal", async (
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var result = await parties.QuickRegisterLegalAsync(
             registration, actor.AccountId.ToString("D"), operationId, request.ForceNew, request.SelectedPartyId,
-            transaction, cancellationToken);
+            transaction, cancellationToken, request.ConfirmDistinctParty);
         await transaction.CommitAsync(cancellationToken);
         var response = PersonsRegistrationMapper.Map(result);
         return result.Created
