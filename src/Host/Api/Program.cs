@@ -420,7 +420,7 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
         var requestId = httpContext.TraceIdentifier;
-        logger.LogError(exception, "Unhandled API exception. RequestId={RequestId}", requestId);
+        logger.LogError("Unhandled API exception. RequestId={RequestId}; ExceptionType={ExceptionType}; HResult={HResult}; StackTrace={StackTrace}", requestId, exception.GetType().FullName, exception.HResult, exception.StackTrace);
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
         httpContext.Response.ContentType = "application/problem+json";
         var problem = new ProblemDetails
