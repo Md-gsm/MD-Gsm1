@@ -50,6 +50,32 @@ CREATE TABLE persons_outbox_deliveries (
     )
 );
 
+-- A committed event must always have its initial delivery record. The deferred
+-- constraint permits both inserts in either order inside one transaction, but rejects
+-- an event-only commit and therefore prevents lost initial delivery intent.
+CREATE FUNCTION persons_outbox_require_initial_delivery()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM persons_outbox_deliveries
+        WHERE event_id = NEW.event_id
+    ) THEN
+        RAISE EXCEPTION 'Persons Outbox event % has no initial delivery record', NEW.event_id
+            USING ERRCODE = '23514';
+    END IF;
+    RETURN NULL;
+END;
+$;
+
+CREATE CONSTRAINT TRIGGER trg_persons_outbox_initial_delivery_required
+AFTER INSERT ON persons_outbox_events
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW
+EXECUTE FUNCTION persons_outbox_require_initial_delivery();
+
 CREATE INDEX ix_persons_outbox_delivery_due
     ON persons_outbox_deliveries (next_attempt_at_utc, event_id)
     WHERE delivery_status = 'pending';
