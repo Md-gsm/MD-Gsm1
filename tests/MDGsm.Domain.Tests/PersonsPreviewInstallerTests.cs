@@ -142,17 +142,53 @@ public sealed class PersonsPreviewInstallerTests
     }
 
     [Fact]
-    public void Windows_installer_uses_self_contained_publish_and_does_not_call_python()
+    public void Windows_installer_uses_program_files_and_installs_api_as_a_local_service()
     {
         var root = FindSolutionRoot();
         var buildScript = File.ReadAllText(Path.Combine(root, "scripts", "Build-Windows-Installer.ps1"));
-        var iss = File.ReadAllText(Path.Combine(root, "installer", "MDGsm-Persons-Preview.iss"));
+        var iss = File.ReadAllText(Path.Combine(root, "installer", "MDGsm-Setup.iss"));
+        var serviceScript = File.ReadAllText(Path.Combine(root, "installer", "Install-MDGsmApiService.ps1"));
+        var apiProject = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "MDGsm.Api.csproj"));
+        var apiProgram = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
 
         Assert.Contains("--runtime win-x64 --self-contained true", buildScript);
+        Assert.Contains("dotnet publish $apiProject", buildScript);
         Assert.Contains("ISCC.exe", buildScript);
+        Assert.Contains("DefaultDirName={autopf}\\MD-Gsm", iss);
+        Assert.Contains("PrivilegesRequired=admin", iss);
+        Assert.Contains("DestDir: \"{app}\\Api\"", iss);
         Assert.Contains("MDGsm.Desktop.exe", iss);
+        Assert.Contains("Install-MDGsmApiService.ps1", iss);
+        Assert.Contains("Uninstall-MDGsmApiService.ps1", iss);
+        Assert.Contains("NT AUTHORITY\\LocalService", serviceScript);
+        Assert.Contains("sidtype", serviceScript);
+        Assert.Contains("ProvisionNewKeyForService", serviceScript);
+        Assert.Contains("ProgramData", serviceScript);
+        Assert.Contains("UseWindowsService", apiProgram);
+        Assert.Contains("Microsoft.Extensions.Hosting.WindowsServices", apiProject);
+        Assert.DoesNotContain("Preview-only", iss);
         Assert.False(buildScript.Contains("python.exe", StringComparison.OrdinalIgnoreCase));
         Assert.False(buildScript.Contains("python scripts", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Windows_service_installer_repair_and_uninstall_preserve_programdata_key()
+    {
+        var root = FindSolutionRoot();
+        var installScript = File.ReadAllText(Path.Combine(root, "installer", "Install-MDGsmApiService.ps1"));
+        var uninstallScript = File.ReadAllText(Path.Combine(root, "installer", "Uninstall-MDGsmApiService.ps1"));
+        var integrationScript = File.ReadAllText(Path.Combine(root, "scripts", "Test-WindowsServiceInstaller.ps1"));
+        var provider = File.ReadAllText(Path.Combine(root, "src", "BuildingBlocks", "MDGsm.Infrastructure", "Persons", "WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.cs"));
+
+        Assert.Contains("FileMode.CreateNew", provider);
+        Assert.Contains("ProvisionNewKeyForService", installScript);
+        Assert.Contains("existing Persons key directory has no key file", installScript);
+        Assert.Contains("LocalSystem", installScript);
+        Assert.DoesNotContain("Remove-Item -LiteralPath $keyDirectory", uninstallScript);
+        Assert.Contains("workflow-key.dpapi", integrationScript);
+        Assert.Contains("unins000.exe", integrationScript);
+        Assert.Contains("SHA256", integrationScript);
+        Assert.Contains("NT SERVICE", integrationScript);
     }
 
     private static string FindSolutionRoot()
