@@ -48,6 +48,7 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#ApiPublishDir}\*"; DestDir: "{app}\Api"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourcePath}\Install-MDGsmApiService.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourcePath}\Install-MDGsmApiService.ps1"; Flags: dontcopy
 Source: "{#SourcePath}\Uninstall-MDGsmApiService.ps1"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
@@ -55,7 +56,19 @@ Name: "{group}\نرم‌افزار جامع مدیریت و حسابداری ت�
 Name: "{autodesktop}\نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Code]
-procedure RunApiServiceSetup();
+var
+  ServiceStatePath: String;
+  ServiceSetupScriptPath: String;
+
+function InitializeSetup(): Boolean;
+begin
+  ServiceStatePath := ExpandConstant('{tmp}\MD-Gsm-MDGsmApi-ServiceState.json');
+  ServiceSetupScriptPath := ExpandConstant('{tmp}\Install-MDGsmApiService.ps1');
+  ExtractTemporaryFile('Install-MDGsmApiService.ps1');
+  Result := True;
+end;
+
+procedure RunApiServicePhase(const Phase: String);
 var
   ResultCode: Integer;
   PowerShellPath: String;
@@ -63,18 +76,50 @@ var
 begin
   PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
   Parameters := '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
-    ExpandConstant('{app}\Install-MDGsmApiService.ps1') + '" -InstallDirectory "' +
-    ExpandConstant('{app}') + '"';
+    ServiceSetupScriptPath + '" -InstallDirectory "' + ExpandConstant('{app}') +
+    '" -ServiceStatePath "' + ServiceStatePath + '" -Phase "' + Phase + '"';
   if not Exec(PowerShellPath, Parameters, ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
-    RaiseException('Could not start the MD-Gsm API service setup script.');
+    RaiseException('Could not start the MD-Gsm API service setup phase: ' + Phase);
   if ResultCode <> 0 then
-    RaiseException('MD-Gsm API service setup failed. The installation was not completed.');
+    RaiseException('MD-Gsm API service setup phase failed: ' + Phase);
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  // Runs before Inno Setup checks/terminates processes using files to be replaced.
+  // Stop MDGsmApi deliberately here, not through implicit Restart Manager behavior.
+  RunApiServicePhase('Prepare');
+  Result := '';
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
-    RunApiServiceSetup();
+    RunApiServicePhase('Install');
+end;
+
+procedure DeinitializeSetup();
+var
+  ResultCode: Integer;
+  PowerShellPath: String;
+  Parameters: String;
+begin
+  // If Setup exits or raises after Prepare, restore the original service state.
+  // A successful Install phase removes this state record, making this a no-op.
+  if (ServiceStatePath <> '') and FileExists(ServiceStatePath) then
+  begin
+    PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
+    Parameters := '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
+      ServiceSetupScriptPath + '" -InstallDirectory "' + ExpandConstant('{app}') +
+      '" -ServiceStatePath "' + ServiceStatePath + '" -Phase "Restore"';
+    if Exec(PowerShellPath, Parameters, ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    begin
+      if ResultCode <> 0 then
+        Log('WARNING: API service state restore phase failed with exit code ' + IntToStr(ResultCode));
+    end
+    else
+      Log('WARNING: Could not start API service state restore phase after Setup termination.');
+  end;
 end;
 
 [UninstallRun]

@@ -1,26 +1,28 @@
 [CmdletBinding()]
-param([Parameter(Mandatory = $true)][string] $InstallDirectory)
+param(
+    [Parameter(Mandatory = $true)][string] $InstallDirectory,
+    [Parameter(Mandatory = $true)][string] $ServiceStatePath,
+    [ValidateSet('Prepare', 'Install', 'Restore')][string] $Phase = 'Install'
+)
 
 $ErrorActionPreference = 'Stop'
 $serviceName = 'MDGsmApi'
 $serviceAccount = 'NT AUTHORITY\LocalService'
 $apiExe = Join-Path $InstallDirectory 'Api\MDGsm.Api.exe'
-$keyDirectory = Join-Path $env:ProgramData 'MD-Gsm\Keys\Persons\MDGsmApi'
-$keyFile = Join-Path $keyDirectory 'workflow-key.dpapi'
 $scExe = Join-Path $env:windir 'System32\sc.exe'
 $quotedApiExe = [string]([char]34) + $apiExe + [char]34
+$keyFile = Join-Path (Join-Path $env:ProgramData 'MD-Gsm\Keys\Persons\MDGsmApi') 'workflow-key.dpapi'
+$keyMarkerPath = 'HKLM:\SOFTWARE\MD-Gsm\Persons\WorkflowEncryption'
+$keyMarkerName = 'Provisioned'
 
 $script:setupLogPath = Join-Path $env:TEMP 'MD-Gsm-ApiServiceSetup.log'
 $script:setupStage = 'initializing'
-$serviceExistedAtStart = $false
-$serviceWasRunningAtStart = $false
-$serviceCreatedDuringSetup = $false
-$keyDirectoryCreatedDuringSetup = $false
 try {
-    Set-Content -LiteralPath $script:setupLogPath -Value ("{0:o} setup script started" -f (Get-Date)) -Encoding UTF8
+    Set-Content -LiteralPath $script:setupLogPath -Value ("{0:o} setup script started; phase={1}" -f (Get-Date), $Phase) -Encoding UTF8
 } catch {
-    # Continue with installation; the original operational failure remains authoritative.
+    # Continue with installation; logging must not mask the operational result.
 }
+
 function Write-SetupLog([string] $Message) {
     try {
         Add-Content -LiteralPath $script:setupLogPath -Value ("{0:o} [{1}] {2}" -f (Get-Date), $script:setupStage, $Message) -Encoding UTF8
@@ -40,294 +42,312 @@ function Invoke-Sc([string[]] $Arguments) {
     }
 }
 
-function Get-AccountSid([string] $AccountName) {
-    return ([System.Security.Principal.NTAccount]::new($AccountName)).Translate(
-        [System.Security.Principal.SecurityIdentifier])
+function Get-ServiceRecord {
+    return Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
 }
 
-function Assert-ProtectedAcl([string] $Path, [string] $ServiceSid, [string] $SystemSid, [bool] $IsDirectory) {
-    # Use .NET Framework FileInfo/DirectoryInfo APIs directly. Avoid loading
-    # PowerShell's security module during Setup because its type data can already
-    # be registered by the installer host.
-    $accessSections = [System.Security.AccessControl.AccessControlSections]::Access
-    if ($IsDirectory) {
-        $acl = ([System.IO.DirectoryInfo]::new($Path)).GetAccessControl($accessSections)
-    } else {
-        $acl = ([System.IO.FileInfo]::new($Path)).GetAccessControl($accessSections)
-    }
+function Wait-ServiceState([string] $ExpectedState, [int] $TimeoutSeconds = 40) {
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    do {
+        $service = Get-ServiceRecord
+        if ($null -eq $service) {
+            if ($ExpectedState -eq 'Absent') { return }
+            throw "MDGsmApi service registration disappeared while waiting for state '$ExpectedState'."
+        }
+        if ($service.State -eq $ExpectedState) { return }
+        Start-Sleep -Milliseconds 500
+    } while ((Get-Date) -lt $deadline)
+    $service = Get-ServiceRecord
+    $actual = if ($null -eq $service) { 'Absent' } else { $service.State }
+    throw "MDGsmApi did not reach '$ExpectedState' state; current state is '$actual'."
+}
 
-    Write-SetupLog ("ACL inspected through .NET: Path=$Path; Protected=$($acl.AreAccessRulesProtected)")
-    if (-not $acl.AreAccessRulesProtected) {
-        throw "The protected ACL flag is missing on the Persons workflow key location."
+function Get-StartupArgument([string] $StartMode) {
+    switch ($StartMode) {
+        'Auto' { return 'auto' }
+        'Manual' { return 'demand' }
+        'Disabled' { return 'disabled' }
+        default { throw "Unsupported existing MDGsmApi startup mode '$StartMode'." }
     }
+}
 
-    # Include explicit and inherited ACEs. A protected DACL must contain exactly
-    # two allow rules: the dedicated API service SID and LocalSystem.
-    $allRules = @($acl.GetAccessRules(
-        $true,
-        $true,
-        [System.Security.Principal.SecurityIdentifier]))
-    foreach ($entry in $allRules) {
-        Write-SetupLog ("ACL ACE: SID=$($entry.IdentityReference.Value); Type=$($entry.AccessControlType); Rights=$($entry.FileSystemRights); Inheritance=$($entry.InheritanceFlags); Propagation=$($entry.PropagationFlags); Inherited=$($entry.IsInherited)")
+function Get-ConfiguredExecutable([string] $PathName) {
+    $value = $PathName.Trim()
+    if ($value.StartsWith([string][char]34)) {
+        $closingQuote = $value.IndexOf([char]34, 1)
+        if ($closingQuote -lt 2 -or $value.Substring($closingQuote + 1).Trim().Length -ne 0) {
+            throw "The existing MDGsmApi service has an unexpected command line."
+        }
+        $value = $value.Substring(1, $closingQuote - 1)
     }
+    return [System.IO.Path]::GetFullPath($value)
+}
 
-    if ($allRules.Count -ne 2) {
-        throw "The protected Persons workflow DACL must contain exactly two ACEs and no inherited or additional entries."
+function Read-ServiceState {
+    if (-not [System.IO.File]::Exists($ServiceStatePath)) {
+        throw "The installer service-state record is missing; refusing to guess the pre-install service state."
     }
-    if (@($allRules | Where-Object { $_.IsInherited }).Count -ne 0) {
-        throw "The protected Persons workflow DACL must not contain inherited ACEs."
+    $json = [System.IO.File]::ReadAllText($ServiceStatePath, [System.Text.Encoding]::UTF8)
+    $state = $json | ConvertFrom-Json
+    if ($state.SchemaVersion -ne 1 -or $null -eq $state.ServiceExisted -or $null -eq $state.WasRunning) {
+        throw "The installer service-state record is invalid."
     }
-    $rules = @($allRules | Where-Object {
-        $_.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow
-    })
-    if ($rules.Count -ne 2) {
-        throw "The Persons workflow key DACL must contain only allow rules for the service SID and LocalSystem."
-    }
+    return $state
+}
 
-    $ruleSids = @($rules | ForEach-Object {
-        $_.IdentityReference.Value
-    } | Sort-Object -Unique)
-    $expectedSids = @($ServiceSid, $SystemSid) | Sort-Object -Unique
-    if (($ruleSids -join ',') -ne ($expectedSids -join ',')) {
-        throw "The Persons workflow key ACL contains an unexpected principal."
+function Write-ServiceState($State) {
+    $parent = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($ServiceStatePath))
+    if (-not [System.IO.Directory]::Exists($parent)) {
+        [System.IO.Directory]::CreateDirectory($parent) | Out-Null
     }
+    $json = $State | ConvertTo-Json -Depth 4
+    [System.IO.File]::WriteAllText(
+        [System.IO.Path]::GetFullPath($ServiceStatePath),
+        $json,
+        [System.Text.UTF8Encoding]::new($false))
+}
 
-    $serviceRule = $rules | Where-Object {
-        $_.IdentityReference.Value -eq $ServiceSid
-    } | Select-Object -First 1
-    if ($null -eq $serviceRule) {
-        throw "The API service SID has no key access rule."
-    }
+function Test-KeyProvisionedMarker {
+    if (-not (Test-Path -LiteralPath $keyMarkerPath)) { return $false }
+    $marker = Get-ItemProperty -LiteralPath $keyMarkerPath -Name $keyMarkerName -ErrorAction SilentlyContinue
+    return ($null -ne $marker -and [int]$marker.$keyMarkerName -eq 1)
+}
 
-    $systemRule = $rules | Where-Object {
-        $_.IdentityReference.Value -eq $SystemSid
-    } | Select-Object -First 1
-    if ($null -eq $systemRule) {
-        throw "The LocalSystem principal has no key-management access rule."
-    }
-    $systemFullControl = [int][System.Security.AccessControl.FileSystemRights]::FullControl
-    if (([int]$systemRule.FileSystemRights -band $systemFullControl) -ne $systemFullControl) {
-        throw "The LocalSystem principal must retain FullControl on the protected Persons key location."
-    }
+function Set-KeyProvisionedMarker {
+    New-Item -Path $keyMarkerPath -Force | Out-Null
+    New-ItemProperty -LiteralPath $keyMarkerPath -Name $keyMarkerName -PropertyType DWord -Value 1 -Force | Out-Null
+    Write-SetupLog 'Non-secret HKLM key-provisioned marker was committed. The DPAPI blob remains under ProgramData and is never read by Setup.'
+}
 
-    $rights = [int]$serviceRule.FileSystemRights
-    $writeRights = [int](
-        [System.Security.AccessControl.FileSystemRights]::WriteData -bor
-        [System.Security.AccessControl.FileSystemRights]::AppendData -bor
-        [System.Security.AccessControl.FileSystemRights]::WriteAttributes -bor
-        [System.Security.AccessControl.FileSystemRights]::WriteExtendedAttributes -bor
-        [System.Security.AccessControl.FileSystemRights]::Delete -bor
-        [System.Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor
-        [System.Security.AccessControl.FileSystemRights]::ChangePermissions -bor
-        [System.Security.AccessControl.FileSystemRights]::TakeOwnership
-    )
-    if ($IsDirectory) {
-        $required = [int][System.Security.AccessControl.FileSystemRights]::ReadAndExecute
-        if (($rights -band $required) -ne $required -or ($rights -band $writeRights) -ne 0) {
-            throw "The API service SID must have read/execute-only access to the protected key directory."
+function Wait-ApiLiveness {
+    $healthUri = 'http://127.0.0.1:5080/health/live'
+    $deadline = (Get-Date).AddSeconds(30)
+    $healthy = $false
+    while (-not $healthy -and (Get-Date) -lt $deadline) {
+        try {
+            $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUri -TimeoutSec 3
+            $healthy = ($response.StatusCode -eq 200)
+        } catch {
+            Start-Sleep -Milliseconds 500
+        }
+    }
+    if (-not $healthy) { throw "MDGsmApi did not return HTTP 200 from its loopback liveness endpoint." }
+}
+
+function Restore-ServiceState {
+    $state = Read-ServiceState
+    $service = Get-ServiceRecord
+
+    if (-not [bool]$state.ServiceExisted) {
+        if ($null -ne $service) {
+            if ($service.State -ne 'Stopped') {
+                Invoke-Sc @('stop', $serviceName)
+                Wait-ServiceState 'Stopped' 30
+            }
+            Invoke-Sc @('delete', $serviceName)
+            Wait-ServiceState 'Absent' 30
+            Write-SetupLog 'Rollback removed MDGsmApi because no service existed before Setup.'
         }
     } else {
-        $required = [int][System.Security.AccessControl.FileSystemRights]::ReadData
-        if (($rights -band $required) -ne $required -or ($rights -band $writeRights) -ne 0) {
-            throw "The API service SID must have read-only access to the protected key file."
+        $startup = Get-StartupArgument ([string]$state.StartMode)
+        $priorPath = [string]$state.PathName
+        if (-not $priorPath.StartsWith([string][char]34)) {
+            $priorPath = [string][char]34 + $priorPath + [string][char]34
         }
+        if ($null -eq $service) {
+            Invoke-Sc @('create', $serviceName, 'binPath=', $priorPath, 'start=', $startup, 'obj=', $serviceAccount, 'DisplayName=', ('"' + [string]$state.DisplayName + '"'))
+            Write-SetupLog 'Rollback restored the pre-existing MDGsmApi service registration.'
+        } else {
+            Invoke-Sc @('config', $serviceName, 'binPath=', $priorPath, 'start=', $startup, 'obj=', $serviceAccount, 'DisplayName=', ('"' + [string]$state.DisplayName + '"'))
+        }
+        Invoke-Sc @('sidtype', $serviceName, 'unrestricted')
+
+        $service = Get-ServiceRecord
+        if ([bool]$state.WasRunning) {
+            if ($service.State -ne 'Running') {
+                Invoke-Sc @('start', $serviceName)
+                Wait-ServiceState 'Running' 40
+            }
+            Write-SetupLog 'Rollback restored the pre-install Running state.'
+        } else {
+            if ($service.State -ne 'Stopped') {
+                Invoke-Sc @('stop', $serviceName)
+                Wait-ServiceState 'Stopped' 30
+            }
+            Write-SetupLog 'Rollback restored the pre-install Stopped state.'
+        }
+    }
+
+    Remove-Item -LiteralPath $ServiceStatePath -Force -ErrorAction Stop
+}
+
+function Invoke-PreparePhase {
+    $script:setupStage = 'capture pre-install service state'
+    Write-SetupLog 'Capturing MDGsmApi service identity and state before any Program Files replacement.'
+    $service = Get-ServiceRecord
+    $state = [ordered]@{
+        SchemaVersion = 1
+        ServiceExisted = ($null -ne $service)
+        WasRunning = ($null -ne $service -and $service.State -eq 'Running')
+        StartMode = if ($null -ne $service) { [string]$service.StartMode } else { 'Auto' }
+        StartName = if ($null -ne $service) { [string]$service.StartName } else { $serviceAccount }
+        PathName = if ($null -ne $service) { [string]$service.PathName } else { $quotedApiExe }
+        DisplayName = if ($null -ne $service) { [string]$service.DisplayName } else { 'MD-Gsm API' }
+    }
+
+    if ($null -ne $service) {
+        if ($service.StartName -ne $serviceAccount) {
+            throw "An existing MDGsmApi registration uses an unapproved logon account; Setup will not take it over."
+        }
+        $actualExe = Get-ConfiguredExecutable ([string]$service.PathName)
+        if (-not [string]::Equals($actualExe, [System.IO.Path]::GetFullPath($apiExe), [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "An existing MDGsmApi registration points to an unexpected executable; Setup will not take it over."
+        }
+        if ($service.StartMode -notin @('Auto', 'Manual', 'Disabled')) {
+            throw "An existing MDGsmApi registration has an unsupported startup mode."
+        }
+    }
+    Write-ServiceState $state
+
+    # Legacy installations created before the marker existed are attested by
+    # starting the already-registered service and requiring its own startup key
+    # validation plus loopback health. Setup never probes the protected file.
+    if ($null -ne $service -and -not (Test-KeyProvisionedMarker)) {
+        $script:setupStage = 'attest existing key through the service identity'
+        if ($service.State -ne 'Running') {
+            Invoke-Sc @('start', $serviceName)
+            Wait-ServiceState 'Running' 40
+        }
+        Wait-ApiLiveness
+        Set-KeyProvisionedMarker
+        Write-SetupLog 'Existing key was attested by the API service before repair; provisioning will remain disabled.'
+    }
+
+    $service = Get-ServiceRecord
+    if ($null -ne $service -and $service.State -ne 'Stopped') {
+        $script:setupStage = 'stop service before file replacement'
+        Invoke-Sc @('stop', $serviceName)
+        Wait-ServiceState 'Stopped' 30
+    }
+    Write-SetupLog 'Prepare phase completed; MDGsmApi is stopped before Inno Setup replaces Program Files files.'
+}
+
+function Invoke-InstallPhase {
+    $state = Read-ServiceState
+    $serviceExistedAtStart = [bool]$state.ServiceExisted
+
+    try {
+        $script:setupStage = 'validate installation and elevation'
+        Write-SetupLog 'Validating API executable and elevated setup identity.'
+        if (-not (Test-Path -LiteralPath $apiExe -PathType Leaf)) {
+            throw "The API executable was not found under the selected Program Files installation."
+        }
+        $principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+        if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+            throw "The MD-Gsm service installer must run elevated."
+        }
+
+        $script:setupStage = 'create or configure Windows service'
+        $existingService = Get-ServiceRecord
+        if ($serviceExistedAtStart) {
+            if ($null -eq $existingService) {
+                throw "The pre-existing MDGsmApi registration disappeared between Prepare and Install."
+            }
+            if ($existingService.State -ne 'Stopped') {
+                throw "MDGsmApi was not stopped by the Prepare phase before file replacement."
+            }
+            Invoke-Sc @('config', $serviceName, 'binPath=', $quotedApiExe, 'start=', 'auto', 'obj=', $serviceAccount, 'DisplayName=', '"MD-Gsm API"')
+        } else {
+            if ($null -ne $existingService) {
+                throw "An unexpected MDGsmApi service appeared after the Prepare phase."
+            }
+            Invoke-Sc @('create', $serviceName, 'binPath=', $quotedApiExe, 'start=', 'auto', 'obj=', $serviceAccount, 'DisplayName=', '"MD-Gsm API"')
+        }
+
+        $script:setupStage = 'configure service SID and recovery policy'
+        Write-SetupLog 'Configuring service SID, description, and recovery actions.'
+        Invoke-Sc @('sidtype', $serviceName, 'unrestricted')
+        Invoke-Sc @('description', $serviceName, 'MD-Gsm local API. Runs as LocalService with a dedicated service SID.')
+        Invoke-Sc @('failure', $serviceName, 'reset=', '86400', 'actions=', 'restart/5000/restart/15000/restart/60000')
+
+        $script:setupStage = 'provision or preserve DPAPI key'
+        if (-not (Test-KeyProvisionedMarker)) {
+            if ($serviceExistedAtStart) {
+                throw "An existing installation did not attest its protected key during Prepare; refusing to provision or replace it."
+            }
+            Write-SetupLog 'No trusted key-provisioned marker exists on first installation; invoking one-time provisioning.'
+            $provisionOutput = & $apiExe '--provision-persons-workflow-key' $keyFile $serviceName 2>&1
+            $provisionExitCode = $LASTEXITCODE
+            foreach ($line in @($provisionOutput)) {
+                Write-SetupLog ('Provisioning output: ' + [string]$line)
+            }
+            Write-SetupLog ('Provisioning exit code: ' + $provisionExitCode)
+            if ($provisionExitCode -ne 0) {
+                throw "One-time DPAPI key provisioning failed; the key was not replaced."
+            }
+            # Set the marker immediately after FileMode.CreateNew provisioning succeeds.
+            # If startup later fails, a retry must validate the existing key, never replace it.
+            Set-KeyProvisionedMarker
+        } else {
+            Write-SetupLog 'Existing DPAPI key-provisioned marker found; one-time provisioning skipped. The service will validate the protected blob and DACL at startup.'
+        }
+
+        $script:setupStage = 'validate service account and start service'
+        $service = Get-ServiceRecord
+        if ($service.StartName -ne $serviceAccount) {
+            throw "MDGsmApi is not configured to run as the approved LocalService account."
+        }
+        Write-SetupLog 'Requesting MDGsmApi start through Service Control Manager.'
+        Invoke-Sc @('start', $serviceName)
+        Wait-ServiceState 'Running' 40
+
+        $script:setupStage = 'verify loopback API liveness'
+        Wait-ApiLiveness
+        Write-SetupLog 'Installation completed successfully; service running and loopback liveness verified.'
+        Remove-Item -LiteralPath $ServiceStatePath -Force -ErrorAction Stop
+        Write-Host 'MD-Gsm API service is running as LocalService with the MDGsmApi service SID.'
+        Write-Host 'The DPAPI key remains under ProgramData; Setup did not read the protected key file.'
+    } catch {
+        $originalFailure = $_
+        Write-SetupLog ("FATAL: " + $originalFailure.Exception.ToString())
+        Write-SetupLog ("FATAL category: " + [string]$originalFailure.CategoryInfo)
+        Write-SetupLog ("FATAL script stack: " + [string]$originalFailure.ScriptStackTrace)
+        try {
+            $script:setupStage = 'restore pre-install service state'
+            Restore-ServiceState
+        } catch {
+            Write-SetupLog ("Rollback failed; original installation error is preserved. Rollback error: " + $_.Exception.ToString())
+        }
+        throw
     }
 }
 
 try {
-$script:setupStage = 'validate installation and elevation'
-Write-SetupLog 'Validating API executable and elevated setup identity.'
-if (-not (Test-Path -LiteralPath $apiExe -PathType Leaf)) { throw "The API executable was not found under the selected Program Files installation." }
-$principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
-if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw "The MD-Gsm service installer must run elevated." }
-
-$script:setupStage = 'create or configure Windows service'
-Write-SetupLog 'Checking whether MDGsmApi service already exists.'
-$existingService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
-$serviceExistedAtStart = ($null -ne $existingService)
-$serviceWasRunningAtStart = ($null -ne $existingService -and $existingService.State -eq 'Running')
-if ($null -eq $existingService) {
-    Invoke-Sc @('create', $serviceName, 'binPath=', $quotedApiExe, 'start=', 'auto', 'obj=', $serviceAccount, 'DisplayName=', '"MD-Gsm API"')
-    $serviceCreatedDuringSetup = $true
-} else {
-    if ($existingService.State -eq 'Running') {
-        Invoke-Sc @('stop', $serviceName)
-        $deadline = (Get-Date).AddSeconds(30)
-        do {
-            Start-Sleep -Milliseconds 500
-            $existingService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
-        } while ($existingService.State -ne 'Stopped' -and (Get-Date) -lt $deadline)
-        if ($existingService.State -ne 'Stopped') { throw "The existing MD-Gsm API service did not stop for repair." }
-    }
-    Invoke-Sc @('config', $serviceName, 'binPath=', $quotedApiExe, 'start=', 'auto', 'obj=', $serviceAccount, 'DisplayName=', '"MD-Gsm API"')
-}
-
-$script:setupStage = 'configure service SID and recovery policy'
-Write-SetupLog 'Configuring service SID, description, and recovery actions.'
-Invoke-Sc @('sidtype', $serviceName, 'unrestricted')
-Invoke-Sc @('description', $serviceName, 'MD-Gsm local API. Runs as LocalService with a dedicated service SID.')
-Invoke-Sc @('failure', $serviceName, 'reset=', '86400', 'actions=', 'restart/5000/restart/15000/restart/60000')
-
-$script:setupStage = 'provision or preserve DPAPI key'
-Write-SetupLog 'Checking ProgramData key directory existence without reading key bytes.'
-$directoryExisted = Test-Path -LiteralPath $keyDirectory -PathType Container
-if ($directoryExisted -and -not (Test-Path -LiteralPath $keyFile -PathType Leaf)) {
-    throw "The existing Persons key directory has no key file. Refusing to generate a replacement key."
-}
-if (-not $directoryExisted) {
-    New-Item -ItemType Directory -Path $keyDirectory -Force | Out-Null
-    $keyDirectoryCreatedDuringSetup = $true
-    Write-SetupLog 'Starting one-time explicit DPAPI key provisioning for MDGsmApi service SID.'
-    $provisionOutput = & $apiExe '--provision-persons-workflow-key' $keyFile $serviceName 2>&1
-    $provisionExitCode = $LASTEXITCODE
-    foreach ($line in @($provisionOutput)) { Write-SetupLog ('Provisioning output: ' + [string]$line) }
-    Write-SetupLog ('Provisioning exit code: ' + $provisionExitCode)
-    if ($provisionExitCode -ne 0) { throw "One-time DPAPI key provisioning failed; the key was not replaced." }
-}
-
-$script:setupStage = 'validate service and key ACLs'
-Write-SetupLog 'Resolving service and SYSTEM SIDs, then validating protected directory and key ACLs.'
-$serviceSid = ([System.Security.Principal.NTAccount]::new("NT SERVICE\$serviceName")).Translate([System.Security.Principal.SecurityIdentifier])
-$systemSid = (Get-AccountSid 'NT AUTHORITY\SYSTEM').Value
-Assert-ProtectedAcl -Path $keyDirectory -ServiceSid $serviceSid.Value -SystemSid $systemSid -IsDirectory $true
-Assert-ProtectedAcl -Path $keyFile -ServiceSid $serviceSid.Value -SystemSid $systemSid -IsDirectory $false
-
-$script:setupStage = 'register Windows Application Event Log source'
-$eventSource = 'MDGsm.Api'
-Write-SetupLog ("Ensuring Application Event Log source exists: " + $eventSource)
-if ([System.Diagnostics.EventLog]::SourceExists($eventSource)) {
-    $eventLogName = [System.Diagnostics.EventLog]::LogNameFromSourceName($eventSource, '.')
-    if ($eventLogName -ne 'Application') {
-        throw "The MDGsm.Api event source is already registered to an unexpected Windows event log."
-    }
-    Write-SetupLog 'Application Event Log source already exists.'
-} else {
-    # Setup is elevated; never ask the LocalService runtime identity to create
-    # machine-wide Event Log registry entries or scan protected channels.
-    [System.Diagnostics.EventLog]::CreateEventSource($eventSource, 'Application')
-    Write-SetupLog 'Application Event Log source was created by elevated Setup.'
-}
-
-$script:setupStage = 'validate service account and start service'
-Write-SetupLog 'Validating configured LocalService account before requesting service start.'
-$service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
-if ($service.StartName -ne $serviceAccount) { throw "MDGsmApi is not configured to run as the approved LocalService account." }
-Write-SetupLog 'Requesting MDGsmApi start through Service Control Manager.'
-Invoke-Sc @('start', $serviceName)
-Write-SetupLog 'SCM start command returned success.'
-
-$deadline = (Get-Date).AddSeconds(40)
-do {
-    Start-Sleep -Milliseconds 500
-    $service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
-} while ($service.State -ne 'Running' -and (Get-Date) -lt $deadline)
-if ($service.State -ne 'Running') { Write-SetupLog ("Service state after wait: " + $service.State + "; Win32ExitCode=" + $service.ExitCode + "; ServiceSpecificExitCode=" + $service.ServiceSpecificExitCode); throw "MDGsmApi did not reach Running state. Key access or service startup validation may have failed." }
-
-$script:setupStage = 'verify loopback API liveness'
-Write-SetupLog 'Service reached Running; waiting for loopback liveness endpoint.'
-$healthUri = 'http://127.0.0.1:5080/health/live'
-$healthy = $false
-$deadline = (Get-Date).AddSeconds(25)
-$script:healthFailureLogged = $false
-while (-not $healthy -and (Get-Date) -lt $deadline) {
-    try {
-        $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUri -TimeoutSec 2
-        $healthy = ($response.StatusCode -eq 200)
-    } catch {
-        if (-not $script:healthFailureLogged) {
-            $httpResponse = $_.Exception.Response
-            if ($null -ne $httpResponse) {
-                try {
-                    $statusCode = [int]$httpResponse.StatusCode
-                    $responseStream = $httpResponse.GetResponseStream()
-                    $reader = [System.IO.StreamReader]::new($responseStream)
-                    try { $responseBody = $reader.ReadToEnd() } finally { $reader.Dispose() }
-                    if ($responseBody.Length -gt 2048) { $responseBody = $responseBody.Substring(0, 2048) }
-                    Write-SetupLog ("Liveness HTTP response: Status=$statusCode; Body=$responseBody")
-                } catch {
-                    Write-SetupLog ("Could not read liveness HTTP error response: " + $_.Exception.Message)
-                }
-            } else {
-                Write-SetupLog ("Liveness connection exception: " + $_.Exception.ToString())
+    switch ($Phase) {
+        'Prepare' {
+            try {
+                Invoke-PreparePhase
+                exit 0
+            } catch {
+                Write-SetupLog ("PREPARE FATAL: " + $_.Exception.ToString())
+                throw
             }
-            $script:healthFailureLogged = $true
         }
-        Start-Sleep -Milliseconds 500
+        'Restore' {
+            try {
+                $script:setupStage = 'restore service after interrupted Setup'
+                Restore-ServiceState
+                Write-SetupLog 'Setup interruption rollback completed.'
+                exit 0
+            } catch {
+                Write-SetupLog ("RESTORE FATAL: " + $_.Exception.ToString())
+                throw
+            }
+        }
+        'Install' {
+            Invoke-InstallPhase
+        }
     }
-}
-if (-not $healthy) { throw "MDGsmApi started but its loopback liveness endpoint did not respond." }
-
-Write-SetupLog 'Installation completed successfully; service running and loopback liveness verified.'
-Write-Host 'MD-Gsm API service is running as LocalService with the MDGsmApi service SID.'
-Write-Host 'The DPAPI key is outside Program Files and remains unchanged during repair.'
-
-
 } catch {
-    Write-SetupLog ("FATAL: " + $_.Exception.ToString())
-    Write-SetupLog ("FATAL category: " + [string]$_.CategoryInfo)
-    Write-SetupLog ("FATAL script stack: " + [string]$_.ScriptStackTrace)
-
-    # Roll back only resources created or started by this invocation. Never
-    # delete a pre-existing service or any provisioned/protected DPAPI key.
-    if ($serviceCreatedDuringSetup) {
-        try {
-            $rollbackService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
-            if ($null -ne $rollbackService -and $rollbackService.State -ne 'Stopped') {
-                $rollbackOutput = & $scExe stop $serviceName 2>&1
-                $rollbackExitCode = $LASTEXITCODE
-                Write-SetupLog ("Rollback service stop exit code: " + $rollbackExitCode)
-                foreach ($line in @($rollbackOutput)) { Write-SetupLog ("Rollback SCM output: " + [string]$line) }
-                if ($rollbackExitCode -eq 0) {
-                    $rollbackDeadline = (Get-Date).AddSeconds(30)
-                    do {
-                        Start-Sleep -Milliseconds 500
-                        $rollbackService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
-                    } while ($null -ne $rollbackService -and $rollbackService.State -ne 'Stopped' -and (Get-Date) -lt $rollbackDeadline)
-                }
-            }
-
-            $rollbackService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
-            if ($null -ne $rollbackService -and $rollbackService.State -eq 'Stopped') {
-                & $scExe delete $serviceName | Out-Null
-                if ($LASTEXITCODE -eq 0) {
-                    Write-SetupLog 'Rollback removed the service created by this failed setup.'
-                } else {
-                    Write-SetupLog ("Rollback could not delete the new service; sc.exe exit code: " + $LASTEXITCODE)
-                }
-            } elseif ($null -ne $rollbackService) {
-                Write-SetupLog ("Rollback left the newly created service registered because it did not stop; state=" + $rollbackService.State)
-            }
-        } catch {
-            Write-SetupLog ("Rollback of newly created service failed: " + $_.Exception.Message)
-        }
-    } elseif ($serviceExistedAtStart) {
-        try {
-            $rollbackService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
-            if ($null -ne $rollbackService -and $serviceWasRunningAtStart -and $rollbackService.State -eq 'Stopped') {
-                & $scExe start $serviceName | Out-Null
-                Write-SetupLog ("Rollback restored the pre-existing service to Running; sc.exe exit code: " + $LASTEXITCODE)
-            } elseif ($null -ne $rollbackService -and -not $serviceWasRunningAtStart -and $rollbackService.State -eq 'Running') {
-                & $scExe stop $serviceName | Out-Null
-                Write-SetupLog ("Rollback restored the pre-existing service to Stopped; sc.exe exit code: " + $LASTEXITCODE)
-            }
-        } catch {
-            Write-SetupLog ("Rollback of pre-existing service state failed: " + $_.Exception.Message)
-        }
-    }
-
-    if ($keyDirectoryCreatedDuringSetup -and -not (Test-Path -LiteralPath $keyFile -PathType Leaf)) {
-        try {
-            $remainingKeyItems = @(Get-ChildItem -LiteralPath $keyDirectory -Force -ErrorAction Stop)
-            if ($remainingKeyItems.Count -eq 0) {
-                Remove-Item -LiteralPath $keyDirectory -Force -ErrorAction Stop
-                Write-SetupLog 'Removed the empty key directory created by this failed setup; no key material existed.'
-            } else {
-                Write-SetupLog 'Preserved the setup-created key directory because it contains entries or could not be proven empty.'
-            }
-        } catch {
-            Write-SetupLog ("Could not clean up the empty setup-created key directory: " + $_.Exception.Message)
-        }
-    }
-
     throw
 }
