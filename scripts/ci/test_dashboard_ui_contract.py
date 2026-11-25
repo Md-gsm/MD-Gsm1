@@ -82,7 +82,7 @@ class DashboardUiContractTests(unittest.TestCase):
         self.assertIn('#pragma codepage 65001', installer)
         self.assertIn('#define AppName "نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل"', installer)
         self.assertIn('OutputBaseFilename=MD-Gsm-Persons-Preview-Setup-v0.2.10', installer)
-        self.assertIn('MD-Gsm-Persons-Preview-Setup-v0.2.10.exe', build_script)
+        self.assertIn('MD-Gsm-Setup-v0.3.0.exe', build_script)
 
 
     def test_dashboard_background_is_exact_requested_slate(self):
