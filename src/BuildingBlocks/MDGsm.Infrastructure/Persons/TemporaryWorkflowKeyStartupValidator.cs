@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using MDGsm.Application.Persons;
 using Microsoft.Extensions.Hosting;
@@ -8,6 +9,7 @@ namespace MDGsm.Infrastructure.Persons;
 /// <summary>
 /// Verifies the configured DPAPI key under the actual API process identity before startup completes.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public sealed class TemporaryWorkflowKeyStartupValidator(
     WindowsDpapiTemporaryWorkflowEncryptionKeyProvider keyProvider,
     ILogger<TemporaryWorkflowKeyStartupValidator> logger) : IHostedService

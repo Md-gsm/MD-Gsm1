@@ -183,6 +183,39 @@ public sealed class WindowsDpapiTemporaryWorkflowKeyProviderTests
 
             Assert.Equal(expected, fileSids);
             Assert.Equal(expected, directorySids);
+            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ValidateProtectedKeyStorage(
+                path, readerSid, readerSid);
+            Assert.Equal(readerSid.Value,
+                ((SecurityIdentifier)fileAcl.GetOwner(typeof(SecurityIdentifier))!).Value);
+            Assert.Equal(readerSid.Value,
+                ((SecurityIdentifier)directoryAcl.GetOwner(typeof(SecurityIdentifier))!).Value);
+        }
+        finally { Cleanup(directory); }
+    }
+
+    [Fact]
+    public void Protected_storage_validator_rejects_an_additional_principal()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        var directory = CreateIsolatedDirectory();
+        var path = Path.Combine(directory, "workflow-key.dpapi");
+        var readerSid = CurrentTestSid();
+        var everyoneSid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
+        try
+        {
+            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(path, readerSid);
+            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ValidateProtectedKeyStorage(
+                path, readerSid, readerSid);
+
+            var fileSecurity = new FileInfo(path).GetAccessControl();
+            fileSecurity.AddAccessRule(new FileSystemAccessRule(
+                everyoneSid, FileSystemRights.Read, AccessControlType.Allow));
+            new FileInfo(path).SetAccessControl(fileSecurity);
+
+            Assert.Throws<InvalidOperationException>(() =>
+                WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ValidateProtectedKeyStorage(
+                    path, readerSid, readerSid));
         }
         finally { Cleanup(directory); }
     }

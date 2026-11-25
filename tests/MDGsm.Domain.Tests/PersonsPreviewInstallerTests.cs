@@ -163,16 +163,29 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("NT AUTHORITY\\LocalService", serviceScript);
         Assert.Contains("sidtype", serviceScript);
         Assert.Contains("--provision-persons-workflow-key", serviceScript);
-        Assert.Contains(".GetAccessControl($accessSections)", serviceScript);
-        Assert.Contains(".GetAccessRules(", serviceScript);
         Assert.DoesNotContain("Get-Acl", serviceScript);
-        Assert.Contains("The LocalSystem principal must retain FullControl", serviceScript);
-        Assert.Contains("DACL must not contain inherited ACEs", serviceScript);
-        Assert.Contains("$serviceCreatedDuringSetup", serviceScript);
-        Assert.Contains("Rollback removed the service created by this failed setup", serviceScript);
-        Assert.Contains("$keyDirectoryCreatedDuringSetup", serviceScript);
-        Assert.Contains("no key material existed", serviceScript);
+        Assert.DoesNotContain("Test-Path -LiteralPath $keyFile", serviceScript);
+        Assert.Contains("[ValidateSet('Prepare', 'Install', 'Restore')]", serviceScript);
+        Assert.Contains("Test-KeyProvisionedMarker", serviceScript);
+        Assert.Contains("Set-KeyProvisionedMarker", serviceScript);
+        Assert.Contains("Restore-ServiceState", serviceScript);
+        var keyProvider = File.ReadAllText(Path.Combine(root, "src", "BuildingBlocks", "MDGsm.Infrastructure", "Persons", "WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.cs"));
+        Assert.Contains("ValidateKeyStorageForCurrentService", keyProvider);
+        Assert.Contains("ValidateProtectedKeyStorage", keyProvider);
+        Assert.Contains("GetOwner(typeof(SecurityIdentifier))", keyProvider);
+        Assert.Contains("SetOwner(ownerSid)", keyProvider);
+        Assert.Contains("SeRestorePrivilege", keyProvider);
+        Assert.Contains("WellKnownSidType.LocalServiceSid", keyProvider);
+        Assert.Contains("identity.Groups.Contains(serviceSid)", keyProvider);
+        Assert.Contains("GetAccessRules(", keyProvider);
         Assert.Contains("ProvisionNewKeyForService", apiProgram);
+        var keyStartupValidator = File.ReadAllText(Path.Combine(root, "src", "BuildingBlocks", "MDGsm.Infrastructure", "Persons", "TemporaryWorkflowKeyStartupValidator.cs"));
+        Assert.Contains("ValidateKeyStorageForCurrentService", keyStartupValidator);
+        Assert.Contains("[SupportedOSPlatform(\"windows\")]", keyStartupValidator);
+        Assert.Contains("CloseApplications=yes", iss);
+        Assert.Contains("function PrepareToInstall", iss);
+        Assert.Contains("RunApiServicePhase('Install')", iss);
+        Assert.Contains("Phase \"Restore\"", iss);
         Assert.Contains("ProgramData", serviceScript);
         Assert.Contains("UseWindowsService", apiProgram);
         Assert.Contains("AddEventLog", apiProgram);
@@ -200,6 +213,7 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("existing Persons key directory has no key file", installScript);
         Assert.Contains("LocalSystem", installScript);
         Assert.DoesNotContain("Remove-Item -LiteralPath $keyDirectory", uninstallScript);
+        Assert.DoesNotContain("WorkflowEncryption", uninstallScript);
         Assert.Contains("did not reach Stopped state", uninstallScript);
         Assert.Contains("workflow-key.dpapi", integrationScript);
         Assert.Contains("unins000.exe", integrationScript);
@@ -214,6 +228,11 @@ public sealed class PersonsPreviewInstallerTests
         Assert.DoesNotContain("Get-FileHash -LiteralPath $keyFile", integrationScript);
         Assert.DoesNotContain("Get-Acl -LiteralPath $keyFile", integrationScript);
         Assert.DoesNotContain("Test-Path -LiteralPath $keyFile", integrationScript);
+        Assert.DoesNotContain("Test-Path -LiteralPath $keyDirectory", integrationScript);
+        Assert.Contains("rollback-restored-running", integrationScript);
+        Assert.Contains("rollback-restored-stopped", integrationScript);
+        Assert.Contains("one-time provisioning skipped", integrationScript);
+        Assert.Contains("Assert-KeyProvisionedMarker", integrationScript);
         Assert.Contains("NT SERVICE", integrationScript);
     }
 

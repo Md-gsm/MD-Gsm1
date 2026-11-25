@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
@@ -17,6 +20,54 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
     public const string KeyVersion = "dpapi-localmachine-v1";
     private static readonly byte[] Entropy = Encoding.UTF8.GetBytes("MD-Gsm/Persons/TemporaryWorkflow/DPAPI/v1");
     private static readonly byte[] Header = Encoding.ASCII.GetBytes("MDGSPWK1");
+
+    private const uint TokenAdjustPrivileges = 0x0020;
+    private const uint TokenQuery = 0x0008;
+    private const uint SePrivilegeEnabled = 0x0002;
+    private const int ErrorNotAllAssigned = 1300;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Luid
+    {
+        public uint LowPart;
+        public int HighPart;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct LuidAndAttributes
+    {
+        public Luid Luid;
+        public uint Attributes;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct TokenPrivileges
+    {
+        public uint PrivilegeCount;
+        public LuidAndAttributes Privileges;
+    }
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool OpenProcessToken(IntPtr processHandle, uint desiredAccess, out IntPtr tokenHandle);
+
+    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool LookupPrivilegeValue(string? systemName, string name, out Luid luid);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool AdjustTokenPrivileges(
+        IntPtr tokenHandle,
+        [MarshalAs(UnmanagedType.Bool)] bool disableAllPrivileges,
+        ref TokenPrivileges newState,
+        uint bufferLength,
+        out TokenPrivileges previousState,
+        out uint returnLength);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool CloseHandle(IntPtr handle);
     private readonly string keyFilePath;
 
     [SupportedOSPlatform("windows")]
@@ -163,7 +214,7 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
                     cleanupSecurity.SetOwner(setupSid);
                     cleanupSecurity.AddAccessRule(new FileSystemAccessRule(setupSid, FileSystemRights.FullControl, AccessControlType.Allow));
                     cleanupSecurity.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, AccessControlType.Allow));
-                    new FileInfo(path).SetAccessControl(cleanupSecurity);
+                    ApplyWithRestorePrivilege(() => new FileInfo(path).SetAccessControl(cleanupSecurity));
                     File.Delete(path);
                 }
             }
@@ -294,7 +345,7 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         security.SetOwner(ownerSid);
         security.AddAccessRule(new FileSystemAccessRule(runtimeServiceSid, FileSystemRights.Read, AccessControlType.Allow));
         security.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, AccessControlType.Allow));
-        new FileInfo(path).SetAccessControl(security);
+        ApplyWithRestorePrivilege(() => new FileInfo(path).SetAccessControl(security));
     }
 
     [SupportedOSPlatform("windows")]
@@ -314,7 +365,68 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         security.AddAccessRule(new FileSystemAccessRule(
             systemSid, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
             PropagationFlags.None, AccessControlType.Allow));
-        new DirectoryInfo(directory).SetAccessControl(security);
+        ApplyWithRestorePrivilege(() => new DirectoryInfo(directory).SetAccessControl(security));
+    }
+
+    /// <summary>
+    /// Setting the owner to LocalSystem requires SeRestorePrivilege. Administrators
+    /// normally receive that privilege disabled; enable it only for the ACL write,
+    /// then restore the process token's previous privilege state.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    private static void ApplyWithRestorePrivilege(Action apply)
+    {
+        ArgumentNullException.ThrowIfNull(apply);
+        using var process = Process.GetCurrentProcess();
+        if (!OpenProcessToken(process.Handle, TokenAdjustPrivileges | TokenQuery, out var token))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open the setup process token to set key-storage ownership.");
+
+        try
+        {
+            if (!LookupPrivilegeValue(null, "SeRestorePrivilege", out var luid))
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not resolve SeRestorePrivilege.");
+
+            var requested = new TokenPrivileges
+            {
+                PrivilegeCount = 1,
+                Privileges = new LuidAndAttributes { Luid = luid, Attributes = SePrivilegeEnabled }
+            };
+            if (!AdjustTokenPrivileges(
+                    token, false, ref requested, (uint)Marshal.SizeOf<TokenPrivileges>(),
+                    out var previous, out _))
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not enable SeRestorePrivilege.");
+
+            if (Marshal.GetLastWin32Error() == ErrorNotAllAssigned)
+                throw new UnauthorizedAccessException("The elevated Setup identity does not hold SeRestorePrivilege; refusing to assign LocalSystem ownership.");
+
+            Exception? applyFailure = null;
+            try
+            {
+                apply();
+            }
+            catch (Exception exception)
+            {
+                applyFailure = exception;
+            }
+
+            var previousState = previous;
+            if (!AdjustTokenPrivileges(
+                    token, false, ref previousState, (uint)Marshal.SizeOf<TokenPrivileges>(),
+                    out _, out _))
+            {
+                var restoreFailure = new Win32Exception(Marshal.GetLastWin32Error(), "Could not restore the setup process privilege state.");
+                if (applyFailure is not null)
+                    throw new AggregateException("The key-storage ACL write failed and SeRestorePrivilege could not be restored.", applyFailure, restoreFailure);
+                throw restoreFailure;
+            }
+
+            if (applyFailure is not null)
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(applyFailure).Throw();
+        }
+        finally
+        {
+            _ = CloseHandle(token);
+        }
     }
 
     [SupportedOSPlatform("windows")]

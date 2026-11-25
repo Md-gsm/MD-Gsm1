@@ -4,18 +4,42 @@ param([Parameter(Mandatory = $true)][string] $InstallerPath)
 $ErrorActionPreference = 'Stop'
 $serviceName = 'MDGsmApi'
 $installDirectory = Join-Path $env:ProgramFiles 'MD-Gsm'
-$keyDirectory = Join-Path $env:ProgramData 'MD-Gsm\Keys\Persons\MDGsmApi'
-$keyFile = Join-Path $keyDirectory 'workflow-key.dpapi'
+$keyFile = Join-Path (Join-Path $env:ProgramData 'MD-Gsm\Keys\Persons\MDGsmApi') 'workflow-key.dpapi'
+$keyMarkerPath = 'HKLM:\SOFTWARE\MD-Gsm\Persons\WorkflowEncryption'
+$keyMarkerName = 'Provisioned'
+$serviceSetupScript = Join-Path $installDirectory 'Install-MDGsmApiService.ps1'
+$serviceStatePath = Join-Path $env:TEMP 'MD-Gsm-Service-Rollback-Test.json'
+$powerShell51 = Join-Path $env:windir 'System32\WindowsPowerShell\v1.0\powershell.exe'
 
 if (-not (Test-Path -LiteralPath $InstallerPath -PathType Leaf)) {
     throw 'Installer file not found.'
 }
-if (Test-Path -LiteralPath $keyDirectory) {
-    throw 'The hosted Windows runner is expected to be clean; refusing to reuse existing ProgramData key storage.'
+$initialMarker = Get-ItemProperty -LiteralPath $keyMarkerPath -Name $keyMarkerName -ErrorAction SilentlyContinue
+if ($null -ne $initialMarker -and [int]$initialMarker.$keyMarkerName -eq 1) {
+    throw 'The hosted Windows runner is expected to be clean; refusing to reuse a prior key-provisioned marker.'
 }
 
 $resolvedInstaller = (Resolve-Path -LiteralPath $InstallerPath).Path
 $uninstaller = Join-Path $installDirectory 'unins000.exe'
+
+function Invoke-ServiceSetupPhase([string] $Phase) {
+    if (-not (Test-Path -LiteralPath $serviceSetupScript -PathType Leaf)) {
+        throw "The service setup script is missing while testing phase '$Phase'."
+    }
+    $output = & $powerShell51 -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $serviceSetupScript -InstallDirectory $installDirectory -ServiceStatePath $serviceStatePath -Phase $Phase 2>&1
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+        throw ("Service setup phase '$Phase' failed with exit code $exitCode." + [Environment]::NewLine + ($output -join [Environment]::NewLine))
+    }
+    Write-Host ("PASS: service setup phase '$Phase' completed.")
+}
+
+function Assert-KeyProvisionedMarker([string] $Phase) {
+    $marker = Get-ItemProperty -LiteralPath $keyMarkerPath -Name $keyMarkerName -ErrorAction SilentlyContinue
+    if ($null -eq $marker -or [int]$marker.$keyMarkerName -ne 1) {
+        throw "The non-secret key-provisioned registry marker is missing after phase '$Phase'."
+    }
+}
 
 function Invoke-SystemInstaller([string] $Phase) {
     $log = Join-Path $env:TEMP ("MD-Gsm-Setup-" + $Phase + ".log")
@@ -206,9 +230,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'MDGsm.Desktop.exe
 if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'Api\MDGsm.Api.exe') -PathType Leaf)) {
     throw 'API executable is not under Program Files\MD-Gsm\Api.'
 }
-if (-not (Test-Path -LiteralPath $keyDirectory -PathType Container)) {
-    throw 'The Persons key directory was not created under ProgramData.'
-}
+Assert-KeyProvisionedMarker 'initial-install'
 
 # The setup identity must not read the file. The installer itself verifies the
 # exact file and directory DACLs before starting the service; service startup
@@ -232,22 +254,56 @@ if ($unexpectedKeyRead) {
     throw 'The non-service installer/test identity can read the protected Persons key file.'
 }
 
+Write-Host '== Verify explicit Prepare/Restore preserves the prior Running state =='
+Invoke-ServiceSetupPhase 'Prepare'
+$preparedService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
+if ($null -eq $preparedService -or $preparedService.State -ne 'Stopped') {
+    throw 'Prepare did not stop the running service before file replacement.'
+}
+Invoke-ServiceSetupPhase 'Restore'
+Assert-ServiceReady 'rollback-restored-running'
+
+Write-Host '== Verify explicit Prepare/Restore preserves a deliberately Stopped service =='
+$scExe = Join-Path $env:windir 'System32\sc.exe'
+& $scExe stop $serviceName | Out-Null
+if ($LASTEXITCODE -ne 0) { throw 'Could not stop MDGsmApi for the stopped-state rollback test.' }
+$stopDeadline = (Get-Date).AddSeconds(30)
+do {
+    Start-Sleep -Milliseconds 500
+    $stoppedService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
+} while ($stoppedService.State -ne 'Stopped' -and (Get-Date) -lt $stopDeadline)
+if ($stoppedService.State -ne 'Stopped') { throw 'MDGsmApi did not stop for the stopped-state rollback test.' }
+Invoke-ServiceSetupPhase 'Prepare'
+Invoke-ServiceSetupPhase 'Restore'
+$restoredService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
+if ($null -eq $restoredService -or $restoredService.State -ne 'Stopped') {
+    throw 'Rollback did not preserve the pre-install Stopped service state.'
+}
+& $scExe start $serviceName | Out-Null
+if ($LASTEXITCODE -ne 0) { throw 'Could not restart MDGsmApi after the stopped-state rollback test.' }
+Assert-ServiceReady 'rollback-restored-stopped'
+
 Write-Host '== Repair by rerunning the actual system-wide installer =='
 Invoke-SystemInstaller 'repair'
 Assert-ServiceReady 'repair'
+Assert-KeyProvisionedMarker 'repair'
 
 Write-Host '== Uninstall and verify key-directory preservation =='
 Invoke-SystemUninstaller 'first-uninstall'
-if (-not (Test-Path -LiteralPath $keyDirectory -PathType Container)) {
-    throw 'Uninstall removed the protected Persons key directory from ProgramData.'
-}
+Assert-KeyProvisionedMarker 'first-uninstall'
 
 Write-Host '== Reinstall after uninstall to prove the existing DPAPI key was preserved =='
 # If the key file was deleted, Install-MDGsmApiService.ps1 sees the existing
 # directory and fails closed instead of silently provisioning a replacement.
 Invoke-SystemInstaller 'post-uninstall-reinstall'
 Assert-ServiceReady 'post-uninstall-reinstall'
+Assert-KeyProvisionedMarker 'post-uninstall-reinstall'
+$setupLogAfterReinstall = Join-Path $env:TEMP 'MD-Gsm-ApiServiceSetup.log'
+if (-not (Test-Path -LiteralPath $setupLogAfterReinstall -PathType Leaf) -or
+    -not (Get-Content -LiteralPath $setupLogAfterReinstall -Raw).Contains('Existing DPAPI key-provisioned marker found; one-time provisioning skipped.')) {
+    throw 'Reinstall did not prove that the existing ProgramData key was reused without provisioning.'
+}
 
 Write-Host '== Final cleanup of the disposable Windows runner =='
 Invoke-SystemUninstaller 'final-cleanup'
-Write-Host 'PASS: Program Files install, service SID/DPAPI startup, non-service read denial, repair, uninstall key preservation, and post-uninstall reinstall.'
+Write-Host 'PASS: Program Files install, service-token owner/DACL/DPAPI validation, non-service read denial, Running and Stopped rollback restoration, repair, uninstall marker preservation, and post-uninstall reinstall without reprovisioning.'
