@@ -158,7 +158,7 @@ app.MapPost("/api/v1/identity/logout", async (
 
 
 // Every public create path performs duplicate resolution. There is intentionally no
-// lower-level HTTP route that can bypass the quick-registration decision or ForceNew audit.
+// lower-level HTTP route that can bypass the quick-registration decision or ForceNew validation.
 app.MapPost("/api/v2/persons", async (
     QuickRegisterNaturalPartyRequest request, HttpContext context, IConfiguration configuration,
     NpgsqlDataSource dataSource, IAuthenticatedActorContext actor, IRolePermissionStore permissions,
