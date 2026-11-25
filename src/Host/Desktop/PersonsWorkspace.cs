@@ -475,6 +475,7 @@ public partial class MainWindow
                 ForceNew = false,
                 ConfirmDistinctParty = false
             };
+            NaturalForceNewCheckBox.IsChecked = false;
             _pendingQuickRegistration = pending with
             {
                 Request = request,
@@ -489,6 +490,7 @@ public partial class MainWindow
                 ForceNew = false,
                 ConfirmDistinctParty = false
             };
+            LegalForceNewCheckBox.IsChecked = false;
             _pendingQuickRegistration = pending with
             {
                 Request = request,
