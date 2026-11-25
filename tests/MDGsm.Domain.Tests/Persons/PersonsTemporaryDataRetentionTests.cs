@@ -61,6 +61,23 @@ public sealed class PersonsTemporaryDataRetentionTests
     }
 
     [Fact]
+    public async Task AC38_structured_retention_alert_accepts_only_closed_failure_code_and_emits_no_payload()
+    {
+        var logger = new CapturingLogger<StructuredLogTemporaryWorkflowRetentionAlert>();
+        var alert = new StructuredLogTemporaryWorkflowRetentionAlert(logger);
+
+        await alert.NotifyFailureAsync(
+            TemporaryWorkflowRetentionFailureCode.SweepFailed,
+            CancellationToken.None);
+
+        var logText = string.Join(Environment.NewLine, logger.Messages);
+        Assert.Contains("FailureCode=SweepFailed", logText);
+        Assert.DoesNotContain(TransientFailureThenSuccessRetentionStore.PrivatePayloadSentinel, logText);
+        Assert.DoesNotContain(FailingRetentionAlert.PrivateAlertSentinel, logText);
+        Assert.DoesNotContain("raw payload", logText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void AC33_renewal_never_extends_beyond_absolute_thirty_day_age()
     {
         var record = TemporaryWorkflowRetention.Create(Guid.NewGuid(), Created);
