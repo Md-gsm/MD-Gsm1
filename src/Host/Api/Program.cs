@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using Microsoft.Extensions.Hosting;
 using Npgsql;
 using MDGsm.Api.Security;
 using MDGsm.Api.Persons;
