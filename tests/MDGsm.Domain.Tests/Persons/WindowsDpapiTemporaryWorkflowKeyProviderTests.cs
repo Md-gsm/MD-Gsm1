@@ -67,6 +67,61 @@ public sealed class WindowsDpapiTemporaryWorkflowKeyProviderTests
     }
 
     [Fact]
+    public async Task Two_installations_receive_independent_keys()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        var firstDirectory = CreateIsolatedDirectory();
+        var secondDirectory = CreateIsolatedDirectory();
+        try
+        {
+            var firstPath = Path.Combine(firstDirectory, "workflow-key.dpapi");
+            var secondPath = Path.Combine(secondDirectory, "workflow-key.dpapi");
+            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(firstPath);
+            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(secondPath);
+
+            var first = await new WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(firstPath)
+                .GetKeyAsync(WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.KeyVersion, CancellationToken.None);
+            var second = await new WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(secondPath)
+                .GetKeyAsync(WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.KeyVersion, CancellationToken.None);
+            try { Assert.False(CryptographicOperations.FixedTimeEquals(first, second)); }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(first);
+                CryptographicOperations.ZeroMemory(second);
+            }
+        }
+        finally
+        {
+            Cleanup(firstDirectory);
+            Cleanup(secondDirectory);
+        }
+    }
+
+    [Fact]
+    public async Task Corrupted_protected_blob_fails_closed()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        var directory = CreateIsolatedDirectory();
+        var path = Path.Combine(directory, "workflow-key.dpapi");
+        try
+        {
+            WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(path);
+            var bytes = await File.ReadAllBytesAsync(path);
+            bytes[^1] ^= 0x01;
+            await File.WriteAllBytesAsync(path, bytes);
+            CryptographicOperations.ZeroMemory(bytes);
+
+            var provider = new WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(path);
+            await Assert.ThrowsAsync<TemporaryWorkflowPayloadException>(async () =>
+                await provider.GetKeyAsync(
+                    WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.KeyVersion, CancellationToken.None));
+        }
+        finally { Cleanup(directory); }
+    }
+
+    [Fact]
     public void Path_outside_programdata_persons_key_root_is_rejected()
     {
         if (!OperatingSystem.IsWindows()) return;
