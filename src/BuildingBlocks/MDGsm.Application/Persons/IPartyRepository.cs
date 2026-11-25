@@ -27,7 +27,7 @@ public interface IPartyRepository
 {
     /// <summary>
     /// Resolves an existing party by normalized mobile inside a caller-owned transaction.
-    /// Ambiguous or different-name matches require explicit selection; forceNew is an explicit override.
+    /// Ambiguous or different-name matches require explicit selection; forceNew is an explicit choice but never bypasses candidate review; a separate confirmation is required when candidates exist.
     /// </summary>
     Task<PartyQuickRegistrationResult> QuickRegisterNaturalAsync(RegisterNaturalParty request, string actorId,
         Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken, bool confirmDistinctParty = false);
