@@ -1,8 +1,8 @@
-using MDGsm.Application.Persons;
+using MDGsm.Persons.Application;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace MDGsm.Infrastructure.Persons;
+namespace MDGsm.Persons.Infrastructure;
 
 /// <summary>
 /// PostgreSQL persistence boundary for temporary workflows. The caller must supply authenticated

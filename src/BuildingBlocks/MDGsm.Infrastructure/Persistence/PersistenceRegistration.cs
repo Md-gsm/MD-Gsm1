@@ -1,8 +1,5 @@
-using MDGsm.Application.Persons;
 using MDGsm.IdentityAccess.Application;
 using MDGsm.Infrastructure.IdentityAccess;
-using MDGsm.Infrastructure.Persons;
-using MDGsm.Persons.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,31 +10,10 @@ public static class PersistenceRegistration
  public const string ConnectionStringName="MDGsmDatabase";
  public static IServiceCollection AddMdGsmPersistence(this IServiceCollection services,IConfiguration configuration)
  {
-  var workflowKeyPath = configuration[WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ConfigurationKey];
-  if (OperatingSystem.IsWindows() && !string.IsNullOrWhiteSpace(workflowKeyPath))
-  {
-   services.AddSingleton(new WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(workflowKeyPath));
-   services.AddSingleton<ITemporaryWorkflowEncryptionKeyProvider>(s => s.GetRequiredService<WindowsDpapiTemporaryWorkflowEncryptionKeyProvider>());
-   services.AddHostedService<TemporaryWorkflowKeyStartupValidator>();
-  }
-
   var cs=configuration.GetConnectionString(ConnectionStringName);
   if(string.IsNullOrWhiteSpace(cs))return services;
   services.AddDbContext<MdGsmDbContext>(o=>o.UseNpgsql(cs,n=>n.EnableRetryOnFailure(maxRetryCount:3)));
   services.AddSingleton(_=>NpgsqlDataSource.Create(cs));
-  services.AddScoped<IPartyRepository,PostgresPartyRepository>();
-  services.AddScoped<IPartyReferenceValidator,PostgresPartyReferenceValidator>();
-  services.AddSingleton<PostgresTemporaryWorkflowStore>();
-  services.AddSingleton<ITemporaryWorkflowRetentionStore>(s=>s.GetRequiredService<PostgresTemporaryWorkflowStore>());
-  services.AddSingleton<ITemporaryWorkflowRetentionAlert,StructuredLogTemporaryWorkflowRetentionAlert>();
-  services.AddHostedService<TemporaryWorkflowRetentionWorker>();
-  services.AddScoped<IPartySensitiveDataAuthorizer,IdentityAccessPartySensitiveDataAuthorizer>();
-  services.AddScoped<IPersonsWorkflowPromotionAuthorizer,IdentityAccessPersonsWorkflowPromotionAuthorizer>();
-  if (services.Any(descriptor => descriptor.ServiceType == typeof(ITemporaryWorkflowEncryptionKeyProvider)))
-  {
-   services.AddScoped<ITemporaryWorkflowPayloadProtector,AesGcmTemporaryWorkflowPayloadProtector>();
-   services.AddScoped<ITemporaryWorkflowPromotionService,PostgresTemporaryWorkflowPromotionService>();
-  }
   services.AddScoped<PostgresIdentityAccessStores>();
   services.AddScoped<IAccountStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());
   services.AddScoped<ISessionStore>(s=>s.GetRequiredService<PostgresIdentityAccessStores>());

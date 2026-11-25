@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Domain\MDGsm.Persons.Domain.csproj" />
+    <ProjectReference Include="..\Application\MDGsm.Persons.Application.csproj" />
+    <ProjectReference Include="..\Contracts\MDGsm.Persons.Contracts.csproj" />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.4" />
+    <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
+    <EmbeddedResource Include="..\..\..\..\database\migrations\persons\0002_persons_core.sql">
+      <LogicalName>MDGsm.Migrations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\..\database\migrations\0004_persons_reserve_national_identifiers.sql">
+      <LogicalName>MDGsm.Migrations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\..\database\migrations\0005_persons_nonblank_identity_names.sql">
+      <LogicalName>MDGsm.Migrations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\..\database\migrations\0007_persons_temporary_workflows.sql">
+      <LogicalName>MDGsm.Migrations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\..\database\migrations\0008_persons_party_merge.sql">
+      <LogicalName>MDGsm.Migrations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\..\database\migrations\0012_persons_workflow_promotion_results.sql">
+      <LogicalName>MDGsm.Migrations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\..\database\migrations\0013_persons_outbox.sql">
+      <LogicalName>MDGsm.Migrations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

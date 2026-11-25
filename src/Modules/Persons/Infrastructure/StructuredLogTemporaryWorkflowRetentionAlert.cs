@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace MDGsm.Infrastructure.Persons;
+namespace MDGsm.Persons.Infrastructure;
 
 /// <summary>
 /// Emits a PII-free critical structured event. Production hosting must route this event to

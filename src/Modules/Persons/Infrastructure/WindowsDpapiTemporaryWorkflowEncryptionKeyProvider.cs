@@ -6,9 +6,9 @@ using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
-using MDGsm.Application.Persons;
+using MDGsm.Persons.Application;
 
-namespace MDGsm.Infrastructure.Persons;
+namespace MDGsm.Persons.Infrastructure;
 
 /// <summary>
 /// Windows DPAPI LocalMachine provider dedicated to Persons temporary-workflow payloads.

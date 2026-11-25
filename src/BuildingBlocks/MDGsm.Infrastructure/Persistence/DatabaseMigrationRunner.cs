@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using Npgsql;
@@ -18,14 +19,15 @@ public sealed class DatabaseMigrationRunner
         bool requireDisposableMarker = true,
         CancellationToken cancellationToken = default,
         string? migrationLoginRole = null,
-        string? schemaOwnerRole = null)
+        string? schemaOwnerRole = null,
+        IEnumerable<Assembly>? additionalMigrationAssemblies = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
         if (string.IsNullOrWhiteSpace(migrationLoginRole) != string.IsNullOrWhiteSpace(schemaOwnerRole))
         {
             throw new ArgumentException("Migration login and schema-owner roles must be supplied together.");
         }
-        var migrations = LoadMigrations();
+        var migrations = LoadMigrations(additionalMigrationAssemblies);
         var builder = new NpgsqlConnectionStringBuilder(connectionString)
         {
             Timeout = 15,
@@ -210,11 +212,15 @@ public sealed class DatabaseMigrationRunner
 
     private static string QuoteRole(string roleName) => "\"" + roleName + "\"";
 
-    private static IReadOnlyList<MigrationArtifact> LoadMigrations()
+    private static IReadOnlyList<MigrationArtifact> LoadMigrations(IEnumerable<Assembly>? additionalMigrationAssemblies)
     {
-        var assembly = typeof(DatabaseMigrationRunner).Assembly;
+        var assemblies = new[] { typeof(DatabaseMigrationRunner).Assembly }
+            .Concat(additionalMigrationAssemblies ?? Array.Empty<Assembly>())
+            .Distinct()
+            .ToArray();
         var migrations = new List<MigrationArtifact>();
 
+        foreach (var assembly in assemblies)
         foreach (var resourceName in assembly.GetManifestResourceNames())
         {
             if (!resourceName.StartsWith(ResourcePrefix, StringComparison.Ordinal))
