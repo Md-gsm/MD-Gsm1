@@ -196,6 +196,8 @@ public sealed class PersonsPreviewInstallerTests
         Assert.DoesNotContain("Remove-Item -LiteralPath $keyDirectory", uninstallScript);
         Assert.Contains("workflow-key.dpapi", integrationScript);
         Assert.Contains("unins000.exe", integrationScript);
+        Assert.Contains("Level = @(1, 2, 3)", integrationScript);
+        Assert.Contains("/api/v1/system/info", integrationScript);
         Assert.Contains("ReadAllBytes($keyFile)", integrationScript);
         Assert.Contains("ReadAllBytes($keyFile)", integrationScript);
         Assert.Contains("post-uninstall-reinstall", integrationScript);
