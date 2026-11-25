@@ -122,7 +122,7 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
 
         var operationId = Guid.CreateVersion7();
         var created = await service.PromoteAsync(NewCommand(workflowId, operationId, createNew: true), default);
-        await Assert.ThrowsAsync<IdempotencyKeyConflictException>(() =>
+        await Assert.ThrowsAsync<TemporaryWorkflowOwnershipException>(() =>
             service.PromoteAsync(new TemporaryWorkflowPromotionCommand(
                 workflowId, operationId, otherActor, null, true, false), default));
         Assert.Equal(1L, await ScalarAsync(dataSource,
