@@ -42,35 +42,75 @@ function Get-AccountSid([string] $AccountName) {
 }
 
 function Assert-ProtectedAcl([string] $Path, [string] $ServiceSid, [string] $SystemSid, [bool] $IsDirectory) {
-    $acl = Get-Acl -LiteralPath $Path
-    Write-SetupLog ("ACL inspected: Path=$Path; Protected=$($acl.AreAccessRulesProtected)")
-    foreach ($entry in @($acl.Access)) {
-        $sidText = try { $entry.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value } catch { [string]$entry.IdentityReference }
-        Write-SetupLog ("ACL ACE: SID=$sidText; Type=$($entry.AccessControlType); Rights=$($entry.FileSystemRights); Inherited=$($entry.IsInherited)")
+    # Use .NET Framework FileInfo/DirectoryInfo APIs directly. Avoid loading
+    # PowerShell's security module during Setup because its type data can already
+    # be registered by the installer host.
+    $accessSections = [System.Security.AccessControl.AccessControlSections]::Access
+    if ($IsDirectory) {
+        $acl = ([System.IO.DirectoryInfo]::new($Path)).GetAccessControl($accessSections)
+    } else {
+        $acl = ([System.IO.FileInfo]::new($Path)).GetAccessControl($accessSections)
     }
-    if (-not $acl.AreAccessRulesProtected) { throw "The protected ACL flag is missing on the Persons workflow key location." }
-    $rules = @($acl.Access | Where-Object { $_.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow })
-    if ($rules.Count -ne 2) { throw "The Persons workflow key ACL must contain exactly the service SID and LocalSystem." }
+
+    Write-SetupLog ("ACL inspected through .NET: Path=$Path; Protected=$($acl.AreAccessRulesProtected)")
+    if (-not $acl.AreAccessRulesProtected) {
+        throw "The protected ACL flag is missing on the Persons workflow key location."
+    }
+
+    # Include explicit and inherited ACEs. A protected DACL must contain exactly
+    # two allow rules: the dedicated API service SID and LocalSystem.
+    $allRules = @($acl.GetAccessRules(
+        $true,
+        $true,
+        [System.Security.Principal.SecurityIdentifier]))
+    foreach ($entry in $allRules) {
+        Write-SetupLog ("ACL ACE: SID=$($entry.IdentityReference.Value); Type=$($entry.AccessControlType); Rights=$($entry.FileSystemRights); Inheritance=$($entry.InheritanceFlags); Propagation=$($entry.PropagationFlags); Inherited=$($entry.IsInherited)")
+    }
+
+    if ($allRules.Count -ne 2) {
+        throw "The protected Persons workflow DACL must contain exactly two ACEs and no inherited or additional entries."
+    }
+    $rules = @($allRules | Where-Object {
+        $_.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow
+    })
+    if ($rules.Count -ne 2) {
+        throw "The Persons workflow key DACL must contain only allow rules for the service SID and LocalSystem."
+    }
 
     $ruleSids = @($rules | ForEach-Object {
-        $_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
+        $_.IdentityReference.Value
     } | Sort-Object -Unique)
     $expectedSids = @($ServiceSid, $SystemSid) | Sort-Object -Unique
-    if (($ruleSids -join ',') -ne ($expectedSids -join ',')) { throw "The Persons workflow key ACL contains an unexpected principal." }
+    if (($ruleSids -join ',') -ne ($expectedSids -join ',')) {
+        throw "The Persons workflow key ACL contains an unexpected principal."
+    }
 
     $serviceRule = $rules | Where-Object {
-        $_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value -eq $ServiceSid
+        $_.IdentityReference.Value -eq $ServiceSid
     } | Select-Object -First 1
-    if ($null -eq $serviceRule) { throw "The API service SID has no key access rule." }
+    if ($null -eq $serviceRule) {
+        throw "The API service SID has no key access rule."
+    }
 
     $rights = [int]$serviceRule.FileSystemRights
+    $writeRights = [int](
+        [System.Security.AccessControl.FileSystemRights]::WriteData -bor
+        [System.Security.AccessControl.FileSystemRights]::AppendData -bor
+        [System.Security.AccessControl.FileSystemRights]::WriteAttributes -bor
+        [System.Security.AccessControl.FileSystemRights]::WriteExtendedAttributes -bor
+        [System.Security.AccessControl.FileSystemRights]::Delete -bor
+        [System.Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor
+        [System.Security.AccessControl.FileSystemRights]::ChangePermissions -bor
+        [System.Security.AccessControl.FileSystemRights]::TakeOwnership
+    )
     if ($IsDirectory) {
         $required = [int][System.Security.AccessControl.FileSystemRights]::ReadAndExecute
-        if (($rights -band $required) -ne $required) { throw "The API service SID lacks directory read/execute access." }
+        if (($rights -band $required) -ne $required -or ($rights -band $writeRights) -ne 0) {
+            throw "The API service SID must have read/execute-only access to the protected key directory."
+        }
     } else {
         $required = [int][System.Security.AccessControl.FileSystemRights]::ReadData
-        $write = [int][System.Security.AccessControl.FileSystemRights]::WriteData
-        if (($rights -band $required) -ne $required -or ($rights -band $write) -ne 0) {
+        if (($rights -band $required) -ne $required -or ($rights -band $writeRights) -ne 0) {
             throw "The API service SID must have read-only access to the protected key file."
         }
     }
