@@ -1,10 +1,10 @@
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
-using MDGsm.Application.Persons;
+using MDGsm.Persons.Application;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace MDGsm.Infrastructure.Persons;
+namespace MDGsm.Persons.Infrastructure;
 
 /// <summary>
 /// Verifies the configured DPAPI key under the actual API process identity before startup completes.

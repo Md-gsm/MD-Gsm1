@@ -1,8 +1,8 @@
-using MDGsm.Application.Persons;
+using MDGsm.Persons.Application;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace MDGsm.Infrastructure.Persons;
+namespace MDGsm.Persons.Infrastructure;
 
 /// <summary>Closed vocabulary for retention-alert events. It cannot carry record data or exception messages.</summary>
 public enum TemporaryWorkflowRetentionFailureCode
