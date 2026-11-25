@@ -41,8 +41,13 @@ if (OperatingSystem.IsWindows())
 {
     builder.Logging.AddEventLog(settings =>
     {
-        settings.LogName = "Application";
-        settings.SourceName = "MDGsm.Api";
+        // The EventLog settings delegate is analyzed independently of the
+        // outer platform guard, so guard its Windows-only properties here too.
+        if (OperatingSystem.IsWindows())
+        {
+            settings.LogName = "Application";
+            settings.SourceName = "MDGsm.Api";
+        }
     });
 }
 builder.Services.AddProblemDetails();
