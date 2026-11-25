@@ -166,6 +166,8 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains(".GetAccessControl($accessSections)", serviceScript);
         Assert.Contains(".GetAccessRules(", serviceScript);
         Assert.DoesNotContain("Get-Acl", serviceScript);
+        Assert.Contains("The LocalSystem principal must retain FullControl", serviceScript);
+        Assert.Contains("DACL must not contain inherited ACEs", serviceScript);
         Assert.Contains("ProvisionNewKeyForService", apiProgram);
         Assert.Contains("ProgramData", serviceScript);
         Assert.Contains("UseWindowsService", apiProgram);
