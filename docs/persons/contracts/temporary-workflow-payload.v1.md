@@ -7,7 +7,7 @@ Status: AC-37 implementation contract. This describes the encrypted payload form
 - Algorithm: AES-256-GCM.
 - Wire bytes: 12-byte nonce || 16-byte authentication tag || ciphertext.
 - Associated data (UTF-8): MD-Gsm/Persons/TemporaryWorkflow/v1/{workflowRecordId:D}/{keyVersion}.
-- Key material is resolved by keyVersion through the injected ITemporaryWorkflowEncryptionKeyProvider. A 32-byte key is required.
+- Key material is resolved by keyVersion through the injected ITemporaryWorkflowEncryptionKeyProvider. The provider returns a caller-owned byte[32] buffer; the AES-GCM adapter zeroes that buffer on success and failure. A 32-byte key is required.
 - A ciphertext copied to another WorkflowId or paired with a different keyVersion fails authentication.
 - The key provider is intentionally not implemented or registered by this change. No key, credential, or secret is committed to source control.
 
