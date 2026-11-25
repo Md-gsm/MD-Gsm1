@@ -48,6 +48,8 @@
 | 42–43 | تست‌های موجود `AC42_preview_is_read_only_and_counts_transferable_finance_references` و `AC43_two_existing_finance_accounts_are_a_blocking_conflict_and_no_state_changes` | preview بدون تغییر state و جلوگیری از merge در تعارض دو حساب Finance. |
 | 44 | `PersonsMergeContractTests.cs::AC44_MergeIsAtomicConcurrentAndIdempotentWithFailureRollback` | suite ترکیبی replay/idempotency، rollback پس از خطای Verify و انتخاب دقیقاً یک برنده در mergeهای هم‌زمان. |
 
+در تکمیل شواهد AC-38 روی شاخه PR #96، تست `PersonsTemporaryDataRetentionTests.cs::AC38_structured_retention_alert_accepts_only_closed_failure_code_and_emits_no_payload` نیز ثبت شد. این تست نشان می‌دهد adapter فعلی alert فقط enum بستهٔ failure code می‌پذیرد و event ساختاریافته payload/PII دریافت یا چاپ نمی‌کند. این شواهد محدود است؛ AC-38 همچنان UNMAPPED می‌ماند تا تمام مسیرهای logging، audit، metrics و CI artifacts با sentinelهای PII پوشش داده شوند.
+
 AC-45 و AC-31..34، AC-37..38 همچنان باز هستند. این تست‌ها فقط بر مصرف‌کنندگان و runtime فعلیِ ثبت‌شده در مخزن تکیه دارند؛ اثبات تمام consumerهای آینده، همهٔ historical snapshotها، تمام failure stageها یا SLA عملیاتی production محسوب نمی‌شوند.
 
 ## ۴. AC-46 تا AC-49 — CI/evidence
