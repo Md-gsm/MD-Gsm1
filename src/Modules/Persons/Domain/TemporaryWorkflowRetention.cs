@@ -1,4 +1,4 @@
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 /// <summary>Policy state only; encrypted PII payload storage belongs to Infrastructure.</summary>
 public sealed class TemporaryWorkflowRetention

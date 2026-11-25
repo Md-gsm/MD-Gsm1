@@ -1,4 +1,4 @@
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 /// <summary>Natural-person identity attributes. Contact and financial data are not stored here.</summary>
 public sealed class NaturalPerson : Party

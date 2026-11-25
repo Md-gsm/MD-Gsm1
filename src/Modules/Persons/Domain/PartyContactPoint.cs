@@ -1,4 +1,4 @@
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 public enum ContactPointKind { Mobile = 1, Landline = 2, Email = 3 }
 

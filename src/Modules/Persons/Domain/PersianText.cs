@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 /// <summary>
 /// Canonical form for Persian free text used in names and addresses, so that the same

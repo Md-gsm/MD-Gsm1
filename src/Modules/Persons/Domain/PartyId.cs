@@ -1,4 +1,4 @@
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 /// <summary>
 /// Stable UUIDv7 identity shared by natural persons and legal entities.

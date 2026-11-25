@@ -1,4 +1,4 @@
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 /// <summary>Work relationship of a colleague. Applies only to natural persons holding the Colleague role.</summary>
 public enum WorkClassification

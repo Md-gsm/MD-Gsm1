@@ -1,4 +1,4 @@
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 /// <summary>Normalized Iranian and international identity values. Validation is format-only; legal verification is external.</summary>
 public static class PartyIdentifiers
