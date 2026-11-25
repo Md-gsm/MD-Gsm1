@@ -291,7 +291,7 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
         {
             throw;
         }
-        catch (Exception exception) when (exception is CryptographicException or ArgumentException or JsonException)
+        catch (Exception exception) when (exception is not OperationCanceledException and not OutOfMemoryException)
         {
             throw new TemporaryWorkflowPayloadException();
         }
