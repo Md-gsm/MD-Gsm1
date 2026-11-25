@@ -21,7 +21,14 @@
 .\scripts\Build-Windows-Installer.ps1
 ```
 
-خروجی مورد انتظار: `artifacts\installer\MD-Gsm-Persons-Preview-Setup-v0.2.10.exe`.
+خروجی مورد انتظار: `artifacts\installer\MD-Gsm-Setup-v0.3.0.exe`.
+
+این نصب‌کننده دیگر پیش‌نمایش per-user نیست؛ نسخهٔ کنترل‌شدهٔ نصب سراسری را می‌سازد:
+- فایل‌های برنامه در `C:\Program Files\MD-Gsm\` نصب می‌شوند و API در زیرپوشهٔ `Api` قرار می‌گیرد.
+- سرویس محلی `MDGsmApi` با حساب `NT AUTHORITY\LocalService` اجرا می‌شود.
+- فقط کلید رمز‌شدهٔ Persons در `C:\ProgramData\MD-Gsm\Keys\Persons\MDGsmApi\` نگهداری می‌شود؛ این مسیر محل نصب برنامه نیست.
+- Repair کلید موجود را جایگزین نمی‌کند و Uninstall سرویس و فایل‌های Program Files را حذف می‌کند ولی کلید ProgramData را حفظ می‌کند.
+- این بسته هنوز دیتابیس عملیاتی ندارد؛ سرویس فقط روی loopback گوش می‌دهد و ثبت اشخاص، ورود IdentityAccess و Promotion عمداً غیرفعال‌اند. داده‌های داشبورد همچنان نمایشی‌اند.
 
 ## محدودیت
 داده‌های داشبورد و ردیف‌های نمایشی این بسته ساختگی‌اند. رابط پیش‌نمایش هنوز فرم عملیاتی ثبت/ویرایش اشخاص و گردش‌کار پذیرشِ متصل به API نیست. در Backend شاخه main، endpoint جزئیات محافظت‌شده اشخاص (`GET /api/v1/persons/{partyId}`) و persistence مبتنی بر PostgreSQL وجود دارد؛ این موضوع به معنی اتصال همین UI پیش‌نمایش یا تکمیل چرخه ثبت/جست‌وجو نیست.
