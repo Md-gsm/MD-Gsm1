@@ -56,6 +56,20 @@ function Get-ServiceFailureDiagnostics([string] $Phase) {
     $sections.Add("sc.exe qc:")
     $sections.Add((& $scExe qc $serviceName 2>&1 | Out-String))
 
+    try {
+        $listeners = @(Get-NetTCPConnection -LocalPort 5080 -State Listen -ErrorAction Stop)
+        if ($listeners.Count -eq 0) {
+            $sections.Add("TCP listener: no process is listening on port 5080.")
+        }
+        foreach ($listener in $listeners) {
+            $owner = Get-CimInstance Win32_Process -Filter ("ProcessId={0}" -f $listener.OwningProcess)
+            $sections.Add(("TCP listener: Address={0}; Port={1}; PID={2}; Process={3}; Executable={4}" -f
+                $listener.LocalAddress, $listener.LocalPort, $listener.OwningProcess, $owner.Name, $owner.ExecutablePath))
+        }
+    } catch {
+        $sections.Add("Could not inspect TCP listener ownership: $($_.Exception.Message)")
+    }
+
     $eventStart = (Get-Date).AddMinutes(-10)
     foreach ($logName in @('System', 'Application')) {
         try {
@@ -111,9 +125,24 @@ function Assert-ServiceReady([string] $Phase) {
         throw "MDGsmApi is not running as LocalService after phase '$Phase'."
     }
     try {
-        $response = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:5080/health/live' -TimeoutSec 5
+        $response = Invoke-WebRequest -UseBasicParsing -SkipHttpErrorCheck -Uri 'http://127.0.0.1:5080/health/live' -TimeoutSec 5
         if ($response.StatusCode -ne 200) {
-            throw "Unexpected HTTP status $($response.StatusCode)."
+            $body = [string]$response.Content
+            if ($body.Length -gt 2048) { $body = $body.Substring(0, 2048) }
+            $diagnostics = Get-ServiceFailureDiagnostics $Phase
+            Write-Host ("LIVENESS HTTP RESPONSE: Status=$($response.StatusCode); Body=$body")
+            Write-Host ("SERVICE LIVENESS DIAGNOSTICS after phase '$Phase':" + [Environment]::NewLine + $diagnostics)
+            throw "MDGsmApi liveness returned HTTP $($response.StatusCode): $body"
+        }
+
+        $payload = $response.Content | ConvertFrom-Json
+        if ($payload.product -ne 'MD-Gsm' -or $payload.status -ne 'alive' -or $payload.scope -ne 'process-liveness-only') {
+            throw "The liveness endpoint did not return the expected MD-Gsm process identity payload."
+        }
+
+        $listeners = @(Get-NetTCPConnection -LocalPort 5080 -State Listen -ErrorAction Stop)
+        if (-not ($listeners.OwningProcess -contains [uint32]$service.ProcessId)) {
+            throw "Port 5080 is not owned by the registered MDGsmApi service process (service PID $($service.ProcessId))."
         }
     } catch {
         $diagnostics = Get-ServiceFailureDiagnostics $Phase
