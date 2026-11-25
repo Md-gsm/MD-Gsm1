@@ -28,6 +28,8 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
 
     public ValueTask<byte[]> GetKeyAsync(string keyVersion, CancellationToken cancellationToken)
     {
+        if (!OperatingSystem.IsWindows())
+            throw new PlatformNotSupportedException("Persons workflow DPAPI key custody requires Windows.");
         cancellationToken.ThrowIfCancellationRequested();
         if (!string.Equals(keyVersion, KeyVersion, StringComparison.Ordinal))
             throw new TemporaryWorkflowPayloadException();
@@ -71,6 +73,10 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         var path = ValidatePath(keyFilePath);
         var directory = Path.GetDirectoryName(path)!;
         Directory.CreateDirectory(directory);
+        var apiSid = WindowsIdentity.GetCurrent().User
+            ?? throw new InvalidOperationException("The setup process has no Windows SID.");
+        var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+        SetDirectoryAcl(directory, apiSid, systemSid, FileSystemRights.Modify);
 
         var key = RandomNumberGenerator.GetBytes(32);
         byte[]? protectedKey = null;
@@ -106,18 +112,7 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
             }
             finally { CryptographicOperations.ZeroMemory(verified); }
 
-            var directorySecurity = new DirectorySecurity();
-            directorySecurity.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-            var apiSid = WindowsIdentity.GetCurrent().User
-                ?? throw new InvalidOperationException("The setup process has no Windows SID.");
-            var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
-            directorySecurity.AddAccessRule(new FileSystemAccessRule(
-                apiSid, FileSystemRights.ReadAndExecute, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
-                PropagationFlags.None, AccessControlType.Allow));
-            directorySecurity.AddAccessRule(new FileSystemAccessRule(
-                systemSid, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
-                PropagationFlags.None, AccessControlType.Allow));
-            new DirectoryInfo(directory).SetAccessControl(directorySecurity);
+            SetDirectoryAcl(directory, apiSid, systemSid, FileSystemRights.ReadAndExecute);
         }
         catch
         {
@@ -133,6 +128,19 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
             if (protectedKey is not null) CryptographicOperations.ZeroMemory(protectedKey);
             if (file is not null) CryptographicOperations.ZeroMemory(file);
         }
+    }
+
+    private static void SetDirectoryAcl(string directory, SecurityIdentifier apiSid, SecurityIdentifier systemSid, FileSystemRights apiRights)
+    {
+        var security = new DirectorySecurity();
+        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        security.AddAccessRule(new FileSystemAccessRule(
+            apiSid, apiRights, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+            PropagationFlags.None, AccessControlType.Allow));
+        security.AddAccessRule(new FileSystemAccessRule(
+            systemSid, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+            PropagationFlags.None, AccessControlType.Allow));
+        new DirectoryInfo(directory).SetAccessControl(security);
     }
 
     private static string ValidatePath(string value)
