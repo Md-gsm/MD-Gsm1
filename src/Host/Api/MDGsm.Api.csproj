@@ -8,5 +8,6 @@
     <ProjectReference Include="..\..\Modules\RepairOperations\Contracts\MDGsm.RepairOperations.Contracts.csproj" />
     <ProjectReference Include="..\..\Modules\Finance\Contracts\MDGsm.Finance.Contracts.csproj" />
     <ProjectReference Include="..\..\Modules\Finance\MDGsm.Finance.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.4" />
   </ItemGroup>
 </Project>
