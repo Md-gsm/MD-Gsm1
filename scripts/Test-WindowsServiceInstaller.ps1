@@ -83,6 +83,12 @@ function Get-ServiceFailureDiagnostics([string] $Phase) {
         }
     }
 
+    $serviceSetupLog = Join-Path $env:TEMP 'MD-Gsm-ApiServiceSetup.log'
+    if (Test-Path -LiteralPath $serviceSetupLog -PathType Leaf) {
+        $sections.Add("PowerShell API service setup log:")
+        $sections.Add((Get-Content -LiteralPath $serviceSetupLog -Tail 120 | Out-String))
+    }
+
     $setupLog = Join-Path $env:TEMP ("MD-Gsm-Setup-" + $Phase + ".log")
     if (Test-Path -LiteralPath $setupLog -PathType Leaf) {
         $sections.Add("Inno Setup log tail:")
