@@ -1,5 +1,7 @@
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using MDGsm.Application.Persons;
 using MDGsm.Infrastructure.Persons;
 using Xunit;
@@ -112,6 +114,20 @@ public sealed class WindowsDpapiTemporaryWorkflowKeyProviderTests
             WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKey(path);
             var bytes = await File.ReadAllBytesAsync(path);
             bytes[^1] ^= 0x01;
+
+            // ProvisionNewKey deliberately grants the API identity read-only access.
+            // This test-only file is disposable, so grant the current test identity
+            // Modify solely to corrupt the blob; production ACLs remain unchanged.
+            var testIdentity = WindowsIdentity.GetCurrent().User
+                ?? throw new InvalidOperationException("The Windows test identity has no SID.");
+            var testFileSecurity = new FileSecurity();
+            testFileSecurity.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+            testFileSecurity.AddAccessRule(new FileSystemAccessRule(
+                testIdentity, FileSystemRights.Modify, AccessControlType.Allow));
+            testFileSecurity.AddAccessRule(new FileSystemAccessRule(
+                new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
+                FileSystemRights.FullControl, AccessControlType.Allow));
+            new FileInfo(path).SetAccessControl(testFileSecurity);
             await File.WriteAllBytesAsync(path, bytes);
             CryptographicOperations.ZeroMemory(bytes);
 
