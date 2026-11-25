@@ -11,7 +11,6 @@ namespace MDGsm.Infrastructure.Persons;
 /// Windows DPAPI LocalMachine provider dedicated to Persons temporary-workflow payloads.
 /// Reading never creates or replaces key material; provisioning is an explicit setup action.
 /// </summary>
-[SupportedOSPlatform("windows")]
 public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITemporaryWorkflowEncryptionKeyProvider
 {
     public const string ConfigurationKey = "Persons:WorkflowEncryption:KeyFilePath";
@@ -20,11 +19,13 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
     private static readonly byte[] Header = Encoding.ASCII.GetBytes("MDGSPWK1");
     private readonly string keyFilePath;
 
+    [SupportedOSPlatform("windows")]
     public WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(string keyFilePath)
     {
         this.keyFilePath = ValidatePath(keyFilePath);
     }
 
+    [SupportedOSPlatform("windows")]
     public ValueTask<byte[]> GetKeyAsync(string keyVersion, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -64,6 +65,7 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
     /// Explicit one-time provisioning operation. Run only as the final API service identity.
     /// The destination must be a fresh per-installation directory under ProgramData.
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public static void ProvisionNewKey(string keyFilePath)
     {
         var path = ValidatePath(keyFilePath);
@@ -130,6 +132,7 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         }
     }
 
+    [SupportedOSPlatform("windows")]
     private static void SetDirectoryAcl(
         string directory, SecurityIdentifier apiSid, SecurityIdentifier systemSid, FileSystemRights apiRights)
     {
@@ -144,6 +147,7 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         new DirectoryInfo(directory).SetAccessControl(security);
     }
 
+    [SupportedOSPlatform("windows")]
     private static string ValidatePath(string value)
     {
         if (string.IsNullOrWhiteSpace(value) || !Path.IsPathFullyQualified(value))
