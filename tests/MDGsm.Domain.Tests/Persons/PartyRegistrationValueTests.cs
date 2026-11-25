@@ -109,13 +109,6 @@ public sealed class PartyRegistrationValueTests
     }
 
     [Fact]
-    public void Discount_with_more_than_two_decimals_is_rejected_instead_of_being_rounded()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => PartyFinancialProfile.Create(defaultDiscountPercent: 12.345m));
-        Assert.Equal(12.34m, PartyFinancialProfile.Create(defaultDiscountPercent: 12.34m).DefaultDiscountPercent);
-    }
-
-    [Fact]
     public void Iranian_national_id_accepts_ten_digits_and_normalizes_digits()
     {
         Assert.Equal("0123456789", PartyIdentifiers.NormalizeIranianNationalId("۰۱۲۳۴۵۶۷۸۹"));
@@ -150,24 +143,6 @@ public sealed class PartyRegistrationValueTests
 
         Assert.Equal("IR", address.CountryCode);
         Assert.Equal("1234567890", address.PostalCode);
-    }
-
-    [Fact]
-    public void Financial_profile_keeps_only_last_four_card_digits()
-    {
-        var profile = PartyFinancialProfile.Create(2_500_000, 5.5m, DefaultPaymentMethod.CardToCard, "۱۲۳۴");
-
-        Assert.Equal(2_500_000, profile.CreditLimitRial);
-        Assert.Equal(5.5m, profile.DefaultDiscountPercent);
-        Assert.Equal("1234", profile.BankCardLastFour);
-    }
-
-    [Fact]
-    public void Financial_profile_rejects_full_card_number_and_invalid_ranges()
-    {
-        Assert.Throws<ArgumentException>(() => PartyFinancialProfile.Create(bankCardLastFour: "1234567890123456"));
-        Assert.Throws<ArgumentOutOfRangeException>(() => PartyFinancialProfile.Create(creditLimitRial: -1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => PartyFinancialProfile.Create(defaultDiscountPercent: 101));
     }
 
     [Fact]

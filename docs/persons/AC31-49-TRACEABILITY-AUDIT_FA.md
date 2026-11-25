@@ -182,3 +182,8 @@ SQLهای Persons در اسمبلی `MDGsm.Persons.Infrastructure` به‌صور
 - اجرای دقیق restore/build/test و PostgreSQL 18 migration replay روی Linux و Windows و review مستقل، شرط پذیرش Issue #99 است.
 - این تغییر به هیچ وجه Search quotas، Abuse Lock، Contact/Address history یا انتقال ستون‌های Finance-owned را تکمیل نمی‌کند؛ Issues #97/#98 همچنان بازند.
 - `g1Authorized=false`؛ هیچ Migration روی دیتابیس واقعی اجرا نشده و هیچ feature flag یا runtime فعال نشده است.
+
+
+### اصلاح مرز دادهٔ Finance در انتقال Issue #99
+
+نوع بلااستفادهٔ `PartyFinancialProfile` از Persons.Domain خارج شد؛ این نوع صرفاً سقف اعتبار، تخفیف، روش پرداخت و چهار رقم کارت را مدل می‌کرد و هیچ مصرف‌کنندهٔ اجرایی در مخزن نداشت. این داده‌ها طبق تصمیم مالک در Issue #98 متعلق به Finance هستند. حذف این مدل کد بلااستفاده، هیچ DDL یا داده‌ای را تغییر نداده است: چهار ستون قدیمی در Migration `0002` عمداً دست‌نخورده باقی مانده‌اند و حذف/انتقال Schema و داده فقط پس از inventory و برنامهٔ forward-only در Issue #98 پیگیری می‌شود.

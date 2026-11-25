@@ -1,4 +1,3 @@
-using MDGsm.Persons.Application;
 using MDGsm.Persons.Domain;
 using MDGsm.Persons.Contracts;
 using MDGsm.Persons.Application;
