@@ -1,4 +1,4 @@
-name: MD-Gsm Windows Persons Preview Installer
+name: MD-Gsm Windows Installer + API Service Integration
 
 on:
   workflow_dispatch:
@@ -15,6 +15,7 @@ on:
       - 'tests/**'
       - 'installer/**'
       - 'scripts/Build-Windows-Installer.ps1'
+      - 'scripts/Test-WindowsServiceInstaller.ps1'
       - 'MDGsm.sln'
       - '.github/workflows/windows-preview-installer.yml'
 
@@ -36,12 +37,15 @@ jobs:
       - name: Install Inno Setup 6
         shell: pwsh
         run: choco install innosetup --yes --no-progress
-      - name: Build and package self-contained preview installer
+      - name: Build and package self-contained system-wide installer
         shell: pwsh
         run: .\scripts\Build-Windows-Installer.ps1
+      - name: Exercise actual service install, repair, and uninstall
+        shell: pwsh
+        run: .\scripts\Test-WindowsServiceInstaller.ps1 -InstallerPath artifacts/installer/MD-Gsm-Setup-v0.3.0.exe
       - name: Upload Windows installer
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: MD-Gsm-Persons-Preview-Installer-v0.2.10
-          path: artifacts/installer/MD-Gsm-Persons-Preview-Setup-v0.2.10.exe*
+          name: MD-Gsm-Windows-Installer-v0.3.0
+          path: artifacts/installer/MD-Gsm-Setup-v0.3.0.exe*
           if-no-files-found: error
