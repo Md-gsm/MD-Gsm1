@@ -61,25 +61,43 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         }
     }
 
+    public const string ApiServiceName = "MDGsmApi";
+
     /// <summary>
-    /// Explicit one-time provisioning operation. Run only as the final API service identity.
-    /// The destination must be a fresh per-installation directory under ProgramData.
+    /// Setup resolves the service SID after creating the Windows service and enabling its SID type.
+    /// The elevated setup identity is never used as the runtime key reader.
     /// </summary>
     [SupportedOSPlatform("windows")]
-    public static void ProvisionNewKey(string keyFilePath)
+    public static void ProvisionNewKeyForService(string keyFilePath, string serviceName)
     {
+        if (!string.Equals(serviceName, ApiServiceName, StringComparison.Ordinal))
+            throw new InvalidOperationException("Only the approved MDGsmApi service identity can receive this key.");
+
+        var serviceSid = new NTAccount("NT SERVICE", serviceName)
+            .Translate(typeof(SecurityIdentifier)) as SecurityIdentifier
+            ?? throw new InvalidOperationException("The MDGsmApi service SID could not be resolved.");
+
+        ProvisionNewKey(keyFilePath, serviceSid);
+    }
+
+    /// <summary>
+    /// Explicit one-time provisioning operation for a caller-supplied runtime SID.
+    /// Production Setup must call ProvisionNewKeyForService after registering the service SID.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static void ProvisionNewKey(string keyFilePath, SecurityIdentifier runtimeServiceSid)
+    {
+        ArgumentNullException.ThrowIfNull(runtimeServiceSid);
         var path = ValidatePath(keyFilePath);
         var directory = Path.GetDirectoryName(path)!;
         Directory.CreateDirectory(directory);
 
-        var apiSid = WindowsIdentity.GetCurrent().User
+        var setupSid = WindowsIdentity.GetCurrent().User
             ?? throw new InvalidOperationException("The setup process has no Windows SID.");
         var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
         if (File.Exists(path))
             throw new IOException("A Persons workflow key already exists; provisioning never overwrites it.");
-
-        SetDirectoryAcl(directory, apiSid, systemSid, FileSystemRights.Modify);
 
         var key = RandomNumberGenerator.GetBytes(32);
         byte[]? protectedKey = null;
@@ -92,6 +110,8 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
             Header.CopyTo(file, 0);
             protectedKey.CopyTo(file, Header.Length);
 
+            // Keep the inherited setup ACL only while creating the one-time file.
+            // The final protected DACL excludes the interactive/elevated setup identity.
             using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None,
                        4096, FileOptions.WriteThrough))
             {
@@ -99,12 +119,6 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
                 stream.Write(file);
                 stream.Flush(flushToDisk: true);
             }
-
-            var fileSecurity = new FileSecurity();
-            fileSecurity.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-            fileSecurity.AddAccessRule(new FileSystemAccessRule(apiSid, FileSystemRights.Read, AccessControlType.Allow));
-            fileSecurity.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, AccessControlType.Allow));
-            new FileInfo(path).SetAccessControl(fileSecurity);
 
             var verified = ProtectedData.Unprotect(protectedKey, Entropy, DataProtectionScope.LocalMachine);
             try
@@ -114,14 +128,28 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
             }
             finally { CryptographicOperations.ZeroMemory(verified); }
 
-            SetDirectoryAcl(directory, apiSid, systemSid, FileSystemRights.ReadAndExecute);
+            SetFileAcl(path, runtimeServiceSid, systemSid);
+            SetDirectoryAcl(directory, runtimeServiceSid, systemSid, FileSystemRights.ReadAndExecute);
         }
         catch
         {
-            if (createdByThisCall && File.Exists(path))
-                File.Delete(path);
-            if (Directory.Exists(directory))
-                SetDirectoryAcl(directory, apiSid, systemSid, FileSystemRights.ReadAndExecute);
+            // A failed first provision is cleaned using a temporary setup-only ACL.
+            // No cleanup path is allowed to replace an existing key.
+            try
+            {
+                if (Directory.Exists(directory))
+                    SetDirectoryAcl(directory, setupSid, systemSid, FileSystemRights.Modify);
+                if (createdByThisCall && File.Exists(path))
+                {
+                    var cleanupSecurity = new FileSecurity();
+                    cleanupSecurity.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+                    cleanupSecurity.AddAccessRule(new FileSystemAccessRule(setupSid, FileSystemRights.FullControl, AccessControlType.Allow));
+                    cleanupSecurity.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, AccessControlType.Allow));
+                    new FileInfo(path).SetAccessControl(cleanupSecurity);
+                    File.Delete(path);
+                }
+            }
+            catch { /* Preserve the original failure; any partial file remains fail-closed. */ }
             throw;
         }
         finally
@@ -130,6 +158,16 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
             if (protectedKey is not null) CryptographicOperations.ZeroMemory(protectedKey);
             if (file is not null) CryptographicOperations.ZeroMemory(file);
         }
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static void SetFileAcl(string path, SecurityIdentifier runtimeServiceSid, SecurityIdentifier systemSid)
+    {
+        var security = new FileSecurity();
+        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        security.AddAccessRule(new FileSystemAccessRule(runtimeServiceSid, FileSystemRights.Read, AccessControlType.Allow));
+        security.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, AccessControlType.Allow));
+        new FileInfo(path).SetAccessControl(security);
     }
 
     [SupportedOSPlatform("windows")]
