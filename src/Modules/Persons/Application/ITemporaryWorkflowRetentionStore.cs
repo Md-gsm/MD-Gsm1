@@ -1,4 +1,4 @@
-namespace MDGsm.Application.Persons;
+namespace MDGsm.Persons.Application;
 
 /// <summary>Application-owned port for idempotent expiry and ciphertext-purge sweeps.</summary>
 public interface ITemporaryWorkflowRetentionStore

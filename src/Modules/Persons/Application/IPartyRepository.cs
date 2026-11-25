@@ -1,6 +1,6 @@
 using System.Data.Common;
 
-namespace MDGsm.Application.Persons;
+namespace MDGsm.Persons.Application;
 
 public static class PartySearchLimits
 {
