@@ -126,6 +126,7 @@ public static class TemporaryWorkflowPayloadParser
     private static readonly JsonSerializerOptions Options = new()
     {
         PropertyNameCaseInsensitive = false,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
         MaxDepth = 16,
         AllowTrailingCommas = false,
@@ -160,7 +161,7 @@ public static class TemporaryWorkflowPayloadParser
 
         var address = payload.Address;
         var addressValues = address is null
-            ? new[] { null, null, null, null }
+            ? new string?[] { null, null, null, null }
             : new[] { address.Province, address.City, address.PostalCode, address.AddressLine };
         if (addressValues.Any(value => !string.IsNullOrWhiteSpace(value)) &&
             addressValues.Any(string.IsNullOrWhiteSpace))
