@@ -1,4 +1,5 @@
 using System.Data;
+using MDGsm.Persons.Application;
 using MDGsm.Persons.Contracts;
 using Npgsql;
 using NpgsqlTypes;
