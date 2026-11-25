@@ -163,6 +163,9 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("NT AUTHORITY\\LocalService", serviceScript);
         Assert.Contains("sidtype", serviceScript);
         Assert.Contains("--provision-persons-workflow-key", serviceScript);
+        Assert.Contains(".GetAccessControl($accessSections)", serviceScript);
+        Assert.Contains(".GetAccessRules(", serviceScript);
+        Assert.DoesNotContain("Get-Acl", serviceScript);
         Assert.Contains("ProvisionNewKeyForService", apiProgram);
         Assert.Contains("ProgramData", serviceScript);
         Assert.Contains("UseWindowsService", apiProgram);
