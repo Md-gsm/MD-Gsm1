@@ -43,6 +43,8 @@ public sealed class PersonsApiContractTests
         Assert.Contains("QuickRegisterLegalPartyRequest request", program, StringComparison.Ordinal);
         Assert.Contains("QuickRegisterNaturalAsync", program, StringComparison.Ordinal);
         Assert.Contains("QuickRegisterLegalAsync", program, StringComparison.Ordinal);
+        Assert.Contains("request.ConfirmDistinctParty", program, StringComparison.Ordinal);
+        Assert.Contains("confirmDistinctParty", openApi, StringComparison.Ordinal);
         Assert.Contains("Persons:WriteApiEnabled", program, StringComparison.Ordinal);
         Assert.Contains("HasPermissionAsync(accountId, \"persons.create\"", program, StringComparison.Ordinal);
         Assert.Contains("HasPermissionAsync(accountId, \"persons.read\"", program, StringComparison.Ordinal);
