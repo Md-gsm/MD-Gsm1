@@ -396,8 +396,8 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
 
     private sealed class TestKeyProvider : ITemporaryWorkflowEncryptionKeyProvider
     {
-        public ValueTask<ReadOnlyMemory<byte>> GetKeyAsync(string keyVersion, CancellationToken cancellationToken) =>
-            ValueTask.FromResult<ReadOnlyMemory<byte>>(EncryptionKey);
+        public ValueTask<byte[]> GetKeyAsync(string keyVersion, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(EncryptionKey.ToArray());
     }
 
     private sealed class AllowAllPromotionAuthorizer : IPersonsWorkflowPromotionAuthorizer
