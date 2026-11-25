@@ -200,6 +200,7 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("existing Persons key directory has no key file", installScript);
         Assert.Contains("LocalSystem", installScript);
         Assert.DoesNotContain("Remove-Item -LiteralPath $keyDirectory", uninstallScript);
+        Assert.Contains("did not reach Stopped state", uninstallScript);
         Assert.Contains("workflow-key.dpapi", integrationScript);
         Assert.Contains("unins000.exe", integrationScript);
         Assert.Contains("Level = @(1, 2, 3)", integrationScript);
