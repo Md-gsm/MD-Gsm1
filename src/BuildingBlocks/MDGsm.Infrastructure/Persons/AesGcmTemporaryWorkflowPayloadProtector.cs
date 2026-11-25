@@ -19,8 +19,7 @@ public sealed class AesGcmTemporaryWorkflowPayloadProtector(
         if (workflowRecordId == Guid.Empty || string.IsNullOrWhiteSpace(keyVersion) || ciphertext.Length < 28)
             throw new TemporaryWorkflowPayloadException();
 
-        var keyMaterial = await keyProvider.GetKeyAsync(keyVersion, cancellationToken);
-        var key = keyMaterial.ToArray();
+        var key = await keyProvider.GetKeyAsync(keyVersion, cancellationToken);
         if (key.Length != 32)
         {
             CryptographicOperations.ZeroMemory(key);
