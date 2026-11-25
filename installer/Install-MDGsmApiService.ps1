@@ -182,6 +182,13 @@ function Restore-ServiceState {
 }
 
 function Invoke-PreparePhase {
+    if ([System.IO.File]::Exists($ServiceStatePath)) {
+        $script:setupStage = 'recover prior interrupted setup state'
+        Write-SetupLog 'A prior service-state record exists. Restoring it before capturing this setup attempt.'
+        Restore-ServiceState
+        Write-SetupLog 'Prior interrupted Setup state restored; a fresh pre-install snapshot will be captured.'
+    }
+
     $script:setupStage = 'capture pre-install service state'
     Write-SetupLog 'Capturing MDGsmApi service identity and state before any Program Files replacement.'
     $service = Get-ServiceRecord
@@ -290,6 +297,22 @@ function Invoke-InstallPhase {
             Set-KeyProvisionedMarker
         } else {
             Write-SetupLog 'Existing DPAPI key-provisioned marker found; one-time provisioning skipped. The service will validate the protected blob and DACL at startup.'
+        }
+
+        $script:setupStage = 'register Windows Application Event Log source'
+        $eventSource = 'MDGsm.Api'
+        Write-SetupLog ("Ensuring Application Event Log source exists: " + $eventSource)
+        if ([System.Diagnostics.EventLog]::SourceExists($eventSource)) {
+            $eventLogName = [System.Diagnostics.EventLog]::LogNameFromSourceName($eventSource, '.')
+            if ($eventLogName -ne 'Application') {
+                throw "The MDGsm.Api event source is already registered to an unexpected Windows Event Log."
+            }
+            Write-SetupLog 'Application Event Log source already exists.'
+        } else {
+            # Setup is elevated; never ask the LocalService runtime identity to
+            # create machine-wide Event Log registry entries.
+            [System.Diagnostics.EventLog]::CreateEventSource($eventSource, 'Application')
+            Write-SetupLog 'Application Event Log source was created by elevated Setup.'
         }
 
         $script:setupStage = 'validate service account and start service'

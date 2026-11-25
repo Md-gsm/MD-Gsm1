@@ -210,7 +210,9 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("FileMode.CreateNew", provider);
         Assert.Contains("--provision-persons-workflow-key", installScript);
         Assert.Contains("ProvisionNewKeyForService", provider);
-        Assert.Contains("existing Persons key directory has no key file", installScript);
+        Assert.Contains("An existing installation did not attest its protected key during Prepare", installScript);
+        Assert.Contains("one-time provisioning skipped", installScript);
+        Assert.DoesNotContain("Test-Path -LiteralPath $keyFile", installScript);
         Assert.Contains("LocalSystem", installScript);
         Assert.DoesNotContain("Remove-Item -LiteralPath $keyDirectory", uninstallScript);
         Assert.DoesNotContain("WorkflowEncryption", uninstallScript);
