@@ -29,7 +29,7 @@ The source envelope contains no arbitrary JSON payload. In particular, it contai
 
 ## Transaction and delivery semantics
 
-Party creation, workflow promotion state, ciphertext deletion, the immutable promotion tombstone, the PartyRegistered event, and its initial pending delivery row commit in one PostgreSQL transaction. A deferred database constraint rejects an event-only commit without the initial delivery record.
+Party creation, workflow promotion state, ciphertext deletion, the immutable promotion tombstone, the PartyRegistered event, and its initial pending delivery row are inserted and committed in one PostgreSQL transaction. The application service inserts both Outbox rows on the same transaction; PostgreSQL rollback removes both if either insert or any other promotion step fails. Disposable PostgreSQL integration tests verify this rollback behavior.
 
 Delivery is at-least-once. Retries update the delivery state and retain the original eventId; consumers must deduplicate by eventId. Event envelopes are immutable. Delivery state is mutable and supports pending, leased, delivered, and quarantined states.
 
