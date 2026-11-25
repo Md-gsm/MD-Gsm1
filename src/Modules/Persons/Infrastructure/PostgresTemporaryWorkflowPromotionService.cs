@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.Json;
 using MDGsm.Persons.Application;
+using MDGsm.Persons.Domain;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -44,7 +45,7 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
             var preview = new TemporaryWorkflowPromotionPreview(
                 workflowRecordId,
                 decoded.SchemaVersion,
-                decoded.PartyType == MDGsm.Domain.Persons.PartyType.NaturalPerson ? "NaturalPerson" : "LegalEntity",
+                decoded.PartyType == PartyType.NaturalPerson ? "NaturalPerson" : "LegalEntity",
                 decoded.DisplayName,
                 decoded.MaskedPrimaryMobile,
                 decoded.HasNationalIdentifier,
