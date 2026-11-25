@@ -198,9 +198,19 @@ public sealed class PersonsEndToEndTests
         Assert.Equal(3L, await ScalarAsync(scope,
             "SELECT business_roles::bigint FROM persons WHERE party_id = @id", Guid.Parse(first.PartyId)));
 
+        var forceOperation = Guid.CreateVersion7();
+        var forcePreview = await scope.Repository.QuickRegisterNaturalAsync(
+            differentName, Actor, forceOperation, forceNew: true, selectedPartyId: null, scope.Transaction, default);
+        Assert.Equal(PartyQuickRegistrationOutcome.SelectionRequired, forcePreview.Outcome);
+        Assert.Single(forcePreview.Candidates);
+
         var forced = await scope.Repository.QuickRegisterNaturalAsync(
-            differentName, Actor, Guid.CreateVersion7(), forceNew: true, selectedPartyId: null, scope.Transaction, default);
+            differentName, Actor, forceOperation, forceNew: true, selectedPartyId: null,
+            scope.Transaction, default, confirmDistinctParty: true);
         Assert.Equal(PartyQuickRegistrationOutcome.Created, forced.Outcome);
+        Assert.Equal(1L, await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_access_audit WHERE action = 'force-new-confirmed' AND actor = 'ci-test-user' AND party_id = @id",
+            Guid.Parse(first.PartyId)));
         Assert.True(forced.Created);
         Assert.NotEqual(first.PartyId, forced.PartyId);
         Assert.Equal(2L, await ScalarAsync(scope,
