@@ -94,6 +94,7 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
             var workflow = await LockWorkflowAsync(
                 connection, transaction, command.WorkflowRecordId, cancellationToken);
             workflowExists = true;
+            EnsureOwnerAndPurpose(workflow, command.ActorId);
             var replay = await FindExistingTombstoneAsync(
                 connection, transaction, command.WorkflowRecordId, command.OperationId, cancellationToken);
             if (replay is not null)
@@ -119,7 +120,7 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
                 throw new IdempotencyKeyConflictException();
             }
 
-            EnsureOwnedAndOpen(workflow, command.ActorId);
+            EnsureWorkflowOpen(workflow);
             var encryptedPayload = await ReadPayloadAsync(
                 connection, transaction, command.WorkflowRecordId, cancellationToken);
             var decoded = await DecodeAsync(command.WorkflowRecordId, encryptedPayload, cancellationToken);
@@ -212,16 +213,26 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
         if (actorId == Guid.Empty) throw new UnauthorizedAccessException("A validated actor is required.");
     }
 
-    private void EnsureOwnedAndOpen(WorkflowRow row, Guid actorId)
+    private static void EnsureOwnerAndPurpose(WorkflowRow row, Guid actorId)
     {
         if (!string.Equals(row.OwnerModule, "Persons", StringComparison.Ordinal) ||
             !string.Equals(row.PurposeCode, "PartyRegistration", StringComparison.Ordinal))
             throw new TemporaryWorkflowUnavailableException();
         if (!string.Equals(row.CreatedBy, actorId.ToString("D"), StringComparison.OrdinalIgnoreCase))
             throw new TemporaryWorkflowOwnershipException();
+    }
+
+    private void EnsureWorkflowOpen(WorkflowRow row)
+    {
         if (!string.Equals(row.LifecycleStatus, "open", StringComparison.Ordinal) ||
             row.ExpiresAtUtc <= timeProvider.GetUtcNow())
             throw new TemporaryWorkflowUnavailableException();
+    }
+
+    private void EnsureOwnedAndOpen(WorkflowRow row, Guid actorId)
+    {
+        EnsureOwnerAndPurpose(row, actorId);
+        EnsureWorkflowOpen(row);
     }
 
     private async Task<WorkflowRow> LockWorkflowAsync(
