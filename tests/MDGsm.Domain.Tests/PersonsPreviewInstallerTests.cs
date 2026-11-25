@@ -169,6 +169,8 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("ProvisionNewKeyForService", apiProgram);
         Assert.Contains("ProgramData", serviceScript);
         Assert.Contains("UseWindowsService", apiProgram);
+        Assert.Contains("AddEventLog", apiProgram);
+        Assert.Contains("logger.LogError(exception", apiProgram);
         Assert.Contains("Microsoft.Extensions.Hosting.WindowsServices", apiProject);
         Assert.DoesNotContain("Preview-only", iss);
         Assert.False(buildScript.Contains("python.exe", StringComparison.OrdinalIgnoreCase));
