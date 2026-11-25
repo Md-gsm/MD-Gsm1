@@ -2,7 +2,7 @@ using System.Data.Common;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using MDGsm.Finance.Infrastructure.Accounts;
-using MDGsm.Infrastructure.Persons;
+using MDGsm.Persons.Infrastructure;
 using MDGsm.Persons.Contracts;
 using Npgsql;
 using Xunit;

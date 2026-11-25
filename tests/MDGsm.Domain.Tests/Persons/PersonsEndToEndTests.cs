@@ -1,6 +1,6 @@
-using MDGsm.Application.Persons;
-using MDGsm.Domain.Persons;
-using MDGsm.Infrastructure.Persons;
+using MDGsm.Persons.Application;
+using MDGsm.Persons.Domain;
+using MDGsm.Persons.Infrastructure;
 using Npgsql;
 using Xunit;
 

@@ -1,4 +1,4 @@
-using MDGsm.Domain.Persons;
+using MDGsm.Persons.Domain;
 using Xunit;
 
 namespace MDGsm.Domain.Tests.Persons;
