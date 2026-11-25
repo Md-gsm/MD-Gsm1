@@ -70,6 +70,9 @@ function Assert-ProtectedAcl([string] $Path, [string] $ServiceSid, [string] $Sys
     if ($allRules.Count -ne 2) {
         throw "The protected Persons workflow DACL must contain exactly two ACEs and no inherited or additional entries."
     }
+    if (@($allRules | Where-Object { $_.IsInherited }).Count -ne 0) {
+        throw "The protected Persons workflow DACL must not contain inherited ACEs."
+    }
     $rules = @($allRules | Where-Object {
         $_.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow
     })
@@ -90,6 +93,17 @@ function Assert-ProtectedAcl([string] $Path, [string] $ServiceSid, [string] $Sys
     } | Select-Object -First 1
     if ($null -eq $serviceRule) {
         throw "The API service SID has no key access rule."
+    }
+
+    $systemRule = $rules | Where-Object {
+        $_.IdentityReference.Value -eq $SystemSid
+    } | Select-Object -First 1
+    if ($null -eq $systemRule) {
+        throw "The LocalSystem principal has no key-management access rule."
+    }
+    $systemFullControl = [int][System.Security.AccessControl.FileSystemRights]::FullControl
+    if (([int]$systemRule.FileSystemRights -band $systemFullControl) -ne $systemFullControl) {
+        throw "The LocalSystem principal must retain FullControl on the protected Persons key location."
     }
 
     $rights = [int]$serviceRule.FileSystemRights
