@@ -38,7 +38,13 @@ builder.Logging.AddConsole();
 // Windows Service console output is not a reliable diagnostic sink. Mirror
 // application errors to the standard Windows Application event log.
 if (OperatingSystem.IsWindows())
-    builder.Logging.AddEventLog();
+{
+    builder.Logging.AddEventLog(settings =>
+    {
+        settings.LogName = "Application";
+        settings.SourceName = "MDGsm.Api";
+    });
+}
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddMdGsmPersistence(builder.Configuration);
