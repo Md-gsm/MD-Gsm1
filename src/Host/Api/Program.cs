@@ -70,6 +70,16 @@ builder.Services.AddScoped<PostgresPartyAccountProvisioner>();
 builder.Services.AddScoped<IPartyMergeParticipant, PostgresPartyAccountMergeParticipant>();
 builder.Services.AddScoped<PostgresPartyMergeService>();
 
+// The database-backed Persons endpoints must not be added to the endpoint data
+// source unless their complete persistence/authorization dependency set exists.
+// The server installer intentionally starts without a database connection string;
+// registering these handlers anyway makes Minimal API infer missing services as
+// request parameters and can break endpoint initialization (including /health/live).
+var personsPersistenceAvailable =
+    builder.Services.Any(descriptor => descriptor.ServiceType == typeof(NpgsqlDataSource)) &&
+    builder.Services.Any(descriptor => descriptor.ServiceType == typeof(IRolePermissionStore)) &&
+    builder.Services.Any(descriptor => descriptor.ServiceType == typeof(IPartyRepository));
+
 var app = builder.Build();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
@@ -187,12 +197,14 @@ app.MapPost("/api/v1/identity/logout", async (
 });
 
 
+if (personsPersistenceAvailable)
+{
 // Every public create path performs duplicate resolution. There is intentionally no
 // lower-level HTTP route that can bypass the quick-registration decision or ForceNew validation.
 app.MapPost("/api/v2/persons", async (
     QuickRegisterNaturalPartyRequest request, HttpContext context, IConfiguration configuration,
-    NpgsqlDataSource dataSource, IAuthenticatedActorContext actor, IRolePermissionStore permissions,
-    IPartyRepository parties, CancellationToken cancellationToken) =>
+    [FromServices] NpgsqlDataSource dataSource, IAuthenticatedActorContext actor, [FromServices] IRolePermissionStore permissions,
+    [FromServices] IPartyRepository parties, CancellationToken cancellationToken) =>
 {
     if (!configuration.GetValue<bool>("Persons:WriteApiEnabled"))
         return (IResult)Results.Json(new { error = "persons_write_api_disabled" },
@@ -240,8 +252,8 @@ app.MapPost("/api/v2/persons", async (
 
 app.MapPost("/api/v2/persons/legal", async (
     QuickRegisterLegalPartyRequest request, HttpContext context, IConfiguration configuration,
-    NpgsqlDataSource dataSource, IAuthenticatedActorContext actor, IRolePermissionStore permissions,
-    IPartyRepository parties, CancellationToken cancellationToken) =>
+    [FromServices] NpgsqlDataSource dataSource, IAuthenticatedActorContext actor, [FromServices] IRolePermissionStore permissions,
+    [FromServices] IPartyRepository parties, CancellationToken cancellationToken) =>
 {
     if (!configuration.GetValue<bool>("Persons:WriteApiEnabled"))
         return (IResult)Results.Json(new { error = "persons_write_api_disabled" },
@@ -290,9 +302,9 @@ app.MapPost("/api/v2/persons/legal", async (
 app.MapGet("/api/v2/persons/{partyId}", async (
     string partyId,
     bool? includeSensitive,
-    IPartyRepository parties,
+    [FromServices] IPartyRepository parties,
     IAuthenticatedActorContext actor,
-    IRolePermissionStore permissions,
+    [FromServices] IRolePermissionStore permissions,
     CancellationToken cancellationToken) =>
 {
     var accountId = AccountId.From(actor.AccountId);
@@ -316,6 +328,14 @@ app.MapGet("/api/v2/persons/{partyId}", async (
         return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 });
+
+}
+
+if (!personsPersistenceAvailable)
+{
+    app.Logger.LogInformation(
+        "Database-backed Persons API routes are not registered because required persistence services are unavailable.");
+}
 
 // Promotion routes are absent unless both an explicit API flag and an approved
 // encryption-key provider are supplied by the host. The repository does not invent
