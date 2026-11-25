@@ -439,7 +439,8 @@ public partial class MainWindow
 
         if (pending.IsNatural)
         {
-            var request = ((QuickRegisterNaturalPartyRequest)pending.Request) with { ConfirmDistinctParty = true };
+            var request = ((QuickRegisterNaturalPartyRequest)pending.Request) with { ForceNew = true, ConfirmDistinctParty = true };
+            NaturalForceNewCheckBox.IsChecked = true;
             _pendingQuickRegistration = pending with
             {
                 Request = request,
@@ -448,7 +449,8 @@ public partial class MainWindow
         }
         else
         {
-            var request = ((QuickRegisterLegalPartyRequest)pending.Request) with { ConfirmDistinctParty = true };
+            var request = ((QuickRegisterLegalPartyRequest)pending.Request) with { ForceNew = true, ConfirmDistinctParty = true };
+            LegalForceNewCheckBox.IsChecked = true;
             _pendingQuickRegistration = pending with
             {
                 Request = request,
@@ -546,14 +548,9 @@ public partial class MainWindow
             switch (result.Outcome)
             {
                 case "SelectionRequired":
-                    var forceNew = pending.IsNatural
-                        ? ((QuickRegisterNaturalPartyRequest)pending.Request).ForceNew
-                        : ((QuickRegisterLegalPartyRequest)pending.Request).ForceNew;
-                    PersonsResultText.Text = forceNew
-                        ? "موارد مشابه پیدا شدند. پس از بررسی، می‌توانید ساخت هویت مستقل را صریحاً تأیید کنید یا یکی از اشخاص موجود را انتخاب کنید."
-                        : "موارد مشابه پیدا شدند. یکی از آن‌ها را انتخاب کنید.";
+                    PersonsResultText.Text = "موارد مشابه پیدا شدند. یکی را انتخاب کنید یا پس از بررسی، ساخت شخص مستقل را صریحاً تأیید کنید.";
                     PersonsCandidatesPanel.Visibility = Visibility.Visible;
-                    ConfirmDistinctPartyButton.Visibility = forceNew ? Visibility.Visible : Visibility.Collapsed;
+                    ConfirmDistinctPartyButton.Visibility = Visibility.Visible;
                     foreach (var candidate in result.Candidates)
                         PersonsCandidates.Add(candidate);
                     break;
