@@ -79,7 +79,7 @@ begin
   Parameters := '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
     ServiceSetupScriptPath + '" -InstallDirectory "' + ExpandConstant('{app}') +
     '" -ServiceStatePath "' + ServiceStatePath + '" -Phase "' + Phase + '"';
-  if not Exec(PowerShellPath, Parameters, ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  if not Exec(PowerShellPath, Parameters, ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
     RaiseException('Could not start the MD-Gsm API service setup phase: ' + Phase);
   if ResultCode <> 0 then
     RaiseException('MD-Gsm API service setup phase failed: ' + Phase);
@@ -113,7 +113,7 @@ begin
     Parameters := '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
       ServiceSetupScriptPath + '" -InstallDirectory "' + ExpandConstant('{app}') +
       '" -ServiceStatePath "' + ServiceStatePath + '" -Phase "Restore"';
-    if Exec(PowerShellPath, Parameters, ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    if Exec(PowerShellPath, Parameters, ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
     begin
       if ResultCode <> 0 then
         Log('WARNING: API service state restore phase failed with exit code ' + IntToStr(ResultCode));

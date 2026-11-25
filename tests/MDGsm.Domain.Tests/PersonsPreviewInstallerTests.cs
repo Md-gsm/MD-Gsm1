@@ -188,6 +188,10 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("[SupportedOSPlatform(\"windows\")]", keyStartupValidator);
         Assert.Contains("CloseApplications=yes", iss);
         Assert.Contains("function PrepareToInstall", iss);
+        Assert.Contains("ServiceStatePath := ExpandConstant('{tmp}", iss);
+        Assert.Contains("ServiceSetupScriptPath := ExpandConstant('{tmp}", iss);
+        Assert.Contains("Exec(PowerShellPath, Parameters, ExpandConstant('{tmp}')", iss);
+        Assert.DoesNotContain("Exec(PowerShellPath, Parameters, ExpandConstant('{app}')", iss);
         Assert.Contains("RunApiServicePhase('Install')", iss);
         Assert.Contains("Phase \"Restore\"", iss);
         Assert.Contains("ProgramData", serviceScript);
