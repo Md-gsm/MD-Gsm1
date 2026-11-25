@@ -118,7 +118,7 @@ public sealed class TemporaryWorkflowPromotionTests
 
     private sealed class TestKeyProvider(byte[] key) : ITemporaryWorkflowEncryptionKeyProvider
     {
-        public ValueTask<ReadOnlyMemory<byte>> GetKeyAsync(string keyVersion, CancellationToken cancellationToken) =>
-            ValueTask.FromResult<ReadOnlyMemory<byte>>(key);
+        public ValueTask<byte[]> GetKeyAsync(string keyVersion, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(key.ToArray());
     }
 }
