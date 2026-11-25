@@ -57,3 +57,6 @@
 
 
 **رزرو WG-0 در 2026-11-25 برای AC-37:** پس از تأیید صریح مالک در Issue #100، شماره‌های 0012 و 0013 در همین PR #96 به‌ترتیب برای نتیجه/Tombstone فرایند Promotion و Outbox منبع Persons رزرو شدند. این شماره‌ها ابتدا در شاخه PR #96 قابل مشاهده شدند و سپس SQL متناظر فقط در محدوده مصوب Issue #100 نوشته شد. وضعیت هر دو Migration برابر `IMPLEMENTED — DISPOSABLE VERIFICATION PENDING` است؛ هنوز در محیط disposable اجرا و تأیید نشده‌اند. هیچ Migration در دیتابیس واقعی اجرا نشده و هیچ مجوزی برای Principal/Grant، runtime یا production صادر نشده است.
+
+
+**همگام‌سازی پس از ادغام PR #104 — 2026-11-25:** commit ادغام `3cc735c604c82c7ea52961d781ca94d46f4a6146` رزرو canonical شماره‌های 0012 و 0013 را به `main` منتقل کرد. نسخهٔ کامل و دست‌نخوردهٔ رجیستری پیش از این تغییر، به‌همراه فرادادهٔ زمان‌دار، در مسیر `docs/data/backups/MIGRATION_SEQUENCE_REGISTRY_FA_20261125T212554+0330_PRE-AC37-0012-0013-CANONICAL-RESERVATION.txt` و فایل `.meta.md` حفظ شده است؛ نسخهٔ پشتیبان قبلی PR #96 نیز بدون حذف باقی می‌ماند. پیاده‌سازی SQL در PR #96 با وضعیت `IMPLEMENTED — DISPOSABLE VERIFICATION PENDING` باقی می‌ماند. موفقیت تست‌های disposable روی head قبلی جایگزین اعمال disposable پس از ادغام نهایی و ثبت SHA-256 SQL/merge commit نیست. این reconciliation هیچ مجوزی برای production apply، provision کلید مشتری، فعال‌سازی runtime یا G1 صادر نمی‌کند.
