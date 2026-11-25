@@ -13,6 +13,14 @@ public static class PersistenceRegistration
  public const string ConnectionStringName="MDGsmDatabase";
  public static IServiceCollection AddMdGsmPersistence(this IServiceCollection services,IConfiguration configuration)
  {
+  var workflowKeyPath = configuration[WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ConfigurationKey];
+  if (OperatingSystem.IsWindows() && !string.IsNullOrWhiteSpace(workflowKeyPath))
+  {
+   services.AddSingleton(new WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(workflowKeyPath));
+   services.AddSingleton<ITemporaryWorkflowEncryptionKeyProvider>(s => s.GetRequiredService<WindowsDpapiTemporaryWorkflowEncryptionKeyProvider>());
+   services.AddHostedService<TemporaryWorkflowKeyStartupValidator>();
+  }
+
   var cs=configuration.GetConnectionString(ConnectionStringName);
   if(string.IsNullOrWhiteSpace(cs))return services;
   services.AddDbContext<MdGsmDbContext>(o=>o.UseNpgsql(cs,n=>n.EnableRetryOnFailure(maxRetryCount:3)));
@@ -25,12 +33,6 @@ public static class PersistenceRegistration
   services.AddHostedService<TemporaryWorkflowRetentionWorker>();
   services.AddScoped<IPartySensitiveDataAuthorizer,IdentityAccessPartySensitiveDataAuthorizer>();
   services.AddScoped<IPersonsWorkflowPromotionAuthorizer,IdentityAccessPersonsWorkflowPromotionAuthorizer>();
-  var workflowKeyPath = configuration[WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ConfigurationKey];
-  if (OperatingSystem.IsWindows() && !string.IsNullOrWhiteSpace(workflowKeyPath) && File.Exists(workflowKeyPath))
-  {
-   services.AddSingleton(new WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(workflowKeyPath));
-   services.AddSingleton<ITemporaryWorkflowEncryptionKeyProvider>(s => s.GetRequiredService<WindowsDpapiTemporaryWorkflowEncryptionKeyProvider>());
-  }
   if (services.Any(descriptor => descriptor.ServiceType == typeof(ITemporaryWorkflowEncryptionKeyProvider)))
   {
    services.AddScoped<ITemporaryWorkflowPayloadProtector,AesGcmTemporaryWorkflowPayloadProtector>();
