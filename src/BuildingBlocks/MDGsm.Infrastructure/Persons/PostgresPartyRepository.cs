@@ -140,14 +140,12 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
 
         if (candidates.Count > 0)
         {
-            {
-                // Candidate names and masked contact values are disclosed to the caller.
-                // Persist the access evidence independently before returning any candidate data.
-                await AppendSearchAuditAsync(
-                    candidates.Select(candidate => Guid.Parse(candidate.PartyId)).ToArray(),
-                    actor,
-                    cancellationToken);
-            }
+            // Candidate names and masked contact values are disclosed to the caller.
+            // Persist the access evidence independently before returning any candidate data.
+            await AppendSearchAuditAsync(
+                candidates.Select(candidate => Guid.Parse(candidate.PartyId)).ToArray(),
+                actor,
+                cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(selectedPartyId))
             {
