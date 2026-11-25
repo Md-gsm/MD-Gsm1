@@ -387,7 +387,7 @@ def run_architecture(root: Path) -> None:
     if not db_migrator.exists():
         raise GateFailure("DbMigrator project is missing.")
     db_migrator_refs = {
-        Path(node.attrib.get("Include", "").replace("\\\\", "/")).stem
+        Path(node.attrib.get("Include", "").replace(chr(92), "/").split("/")[-1]).stem
         for node in ET.parse(db_migrator).iter()
         if node.tag.endswith("ProjectReference")
     }
