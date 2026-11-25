@@ -1,3 +1,5 @@
+using MDGsm.Persons.Contracts;
+
 namespace MDGsm.Persons.Application;
 
 public sealed record PartyMergePreview(

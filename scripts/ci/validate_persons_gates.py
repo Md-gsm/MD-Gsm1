@@ -272,12 +272,13 @@ def run_architecture(root: Path) -> None:
         # Shared Infrastructure may implement module-owned application ports through
         # explicitly enumerated references; this is an inward dependency only.
         "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {
-            "MDGsm.Application", "MDGsm.IdentityAccess.Application", "MDGsm.Persons.Contracts"
+            "MDGsm.Application", "MDGsm.IdentityAccess.Application",
+            "MDGsm.Persons.Application", "MDGsm.Persons.Infrastructure"
         },
         "BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj": set(),
         "Host/Api/MDGsm.Api.csproj": {
             "MDGsm.Application", "MDGsm.Infrastructure",
-            "MDGsm.Persons.Contracts", "MDGsm.IdentityAccess.Contracts",
+            "MDGsm.Persons.Application", "MDGsm.Persons.Contracts", "MDGsm.IdentityAccess.Contracts",
             "MDGsm.RepairOperations.Contracts", "MDGsm.Finance.Contracts", "MDGsm.Finance",
         },
         "Host/Client/MDGsm.Host.Client.csproj": {
@@ -289,6 +290,13 @@ def run_architecture(root: Path) -> None:
     for module in modules:
         expected_projects[f"Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj"] = set()
     expected_projects["Modules/Finance/MDGsm.Finance.csproj"] = {"MDGsm.Finance.Contracts", "MDGsm.Persons.Contracts"}
+    expected_projects["Modules/Persons/Domain/MDGsm.Persons.Domain.csproj"] = set()
+    expected_projects["Modules/Persons/Application/MDGsm.Persons.Application.csproj"] = {
+        "MDGsm.Persons.Domain", "MDGsm.Persons.Contracts"
+    }
+    expected_projects["Modules/Persons/Infrastructure/MDGsm.Persons.Infrastructure.csproj"] = {
+        "MDGsm.Persons.Application", "MDGsm.Persons.Domain", "MDGsm.Persons.Contracts"
+    }
     expected_projects["Modules/Accounting/Domain/MDGsm.Accounting.Domain.csproj"] = set()
     expected_projects["Modules/Accounting/Application/MDGsm.Accounting.Application.csproj"] = {
         "MDGsm.Accounting.Domain", "MDGsm.Accounting.Contracts"
@@ -340,6 +348,29 @@ def run_architecture(root: Path) -> None:
                     f"Desktop/client source must not directly use database persistence: {source.relative_to(root)}"
                 )
 
+    # Persons implementation code is module-owned. Shared Infrastructure is
+    # the explicit composition/migration boundary; Hosts and peer modules cannot
+    # reference Persons Domain or Infrastructure directly.
+    for legacy_dir in (
+        "BuildingBlocks/MDGsm.Domain/Persons",
+        "BuildingBlocks/MDGsm.Application/Persons",
+        "BuildingBlocks/MDGsm.Infrastructure/Persons",
+    ):
+        directory = project_root / legacy_dir
+        if directory.exists():
+            executable = sorted(path.relative_to(root).as_posix() for path in directory.rglob("*.cs"))
+            if executable:
+                raise GateFailure(f"Persons executable source remains in transitional BuildingBlocks paths: {executable}")
+
+    persons_host = projects["Host/Api/MDGsm.Api.csproj"]
+    host_refs = {
+        Path(node.attrib.get("Include", "").replace("\\", "/")).stem
+        for node in ET.parse(persons_host).iter()
+        if node.tag.endswith("ProjectReference")
+    }
+    if {"MDGsm.Persons.Domain", "MDGsm.Persons.Infrastructure"} & host_refs:
+        raise GateFailure("API Host must not reference Persons Domain or Infrastructure directly; use Application and Contracts.")
+
     target = root / "docs/architecture/modular-target.md"
     required_readmes = [
         root / "src/Host/Api/README.md",
@@ -366,6 +397,12 @@ def run_architecture(root: Path) -> None:
         if not marker.exists() or f'Current = "{expected_version}"' not in marker.read_text(encoding="utf-8"):
             raise GateFailure(f"{module} Contracts version marker is missing or invalid.")
 
+    for layer in ("Domain", "Application", "Infrastructure"):
+        project = root / "src" / "Modules" / "Persons" / layer / f"MDGsm.Persons.{layer}.csproj"
+        solution_path = f"src\\Modules\\Persons\\{layer}\\MDGsm.Persons.{layer}.csproj"
+        if not project.exists() or solution_path not in solution:
+            raise GateFailure(f"Persons {layer} project is missing from MDGsm.sln.")
+
     old_roots = (
         "MDGsm.Domain", "MDGsm.Application", "MDGsm.Infrastructure",
         "MDGsm.Api", "MDGsm.Desktop", "MDGsm.Client",
@@ -374,7 +411,7 @@ def run_architecture(root: Path) -> None:
         if (project_root / old_root).exists():
             raise GateFailure(f"Flat legacy project directory remains under src/: {old_root}")
 
-    print("PASS: modular project inventory, Host/BuildingBlocks dependency graph, isolated Contracts assemblies, and source boundaries.")
+    print("PASS: modular project inventory, Persons module-owned layers, Host/BuildingBlocks dependency graph, isolated Contracts assemblies, and source boundaries.")
 
 def run_registry(root: Path) -> None:
     reg = load_json(root / "docs/persons/consumer-registry.json")

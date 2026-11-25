@@ -29,11 +29,12 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest["temporaryDataRuntimeImplemented"] = False
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             for relative in (
-                "src/BuildingBlocks/MDGsm.Infrastructure/Persons/PostgresTemporaryWorkflowStore.cs",
-                "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorkflowRetentionWorker.cs",
+                "src/Modules/Persons/Infrastructure/PostgresTemporaryWorkflowStore.cs",
+                "src/Modules/Persons/Infrastructure/TemporaryWorkflowRetentionWorker.cs",
                 "database/migrations/0007_persons_temporary_workflows.sql",
                 "database/migrations/0012_persons_workflow_promotion_results.sql",
-                "src/BuildingBlocks/MDGsm.Infrastructure/Persons/PostgresTemporaryWorkflowPromotionService.cs",
+                "src/Modules/Persons/Infrastructure/PostgresTemporaryWorkflowPromotionService.cs",
+                "src/Modules/Persons/Infrastructure/PersonsInfrastructureRegistration.cs",
             ):
                 target = dst / relative
                 if target.exists():
@@ -63,7 +64,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             manifest["temporaryDataRuntimeImplemented"] = True
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            marker = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
+            marker = dst / "src/Modules/Persons/Infrastructure/TemporaryWorker.cs"
             marker.write_text("public sealed class TemporaryDataRetentionWorker {}", encoding="utf-8")
             retention_test = dst / "tests/MDGsm.Domain.Tests/Persons/PersonsTemporaryDataRetentionTests.cs"
             if retention_test.exists():
@@ -79,7 +80,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             manifest["temporaryDataRuntimeImplemented"] = False
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            marker = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
+            marker = dst / "src/Modules/Persons/Infrastructure/TemporaryWorker.cs"
             marker.write_text("public sealed class TemporaryDataRetentionWorker {}", encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_retention(dst)

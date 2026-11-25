@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Xunit;
+using MDGsm.Infrastructure.Persistence;
+using MDGsm.Persons.Infrastructure;
 
 namespace MDGsm.Domain.Tests.Persons;
 
@@ -84,6 +86,25 @@ public sealed class MigrationResourceTests
 
         Assert.Equal(files, implementedPaths);
         Assert.Equal(implementedPaths.Length, implementedPaths.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+
+        // Persons SQL now belongs to its module Infrastructure assembly; platform,
+        // IdentityAccess and Finance SQL remain embedded in shared Infrastructure.
+        var expectedResources = files
+            .Select(file => "MDGsm.Migrations." + Path.GetFileName(file))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+        var migrationAssemblies = new[]
+        {
+            typeof(DatabaseMigrationRunner).Assembly,
+            typeof(PersonsInfrastructureAssemblyMarker).Assembly
+        }.Distinct();
+        var actualResources = migrationAssemblies
+            .SelectMany(assembly => assembly.GetManifestResourceNames())
+            .Where(name => name.StartsWith("MDGsm.Migrations.", StringComparison.Ordinal))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+        Assert.Equal(actualResources.Length, actualResources.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(expectedResources, actualResources);
     }
 
     private static string FindRepositoryRoot()
