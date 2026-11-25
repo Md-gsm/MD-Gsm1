@@ -64,6 +64,109 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task AC37_preview_is_owner_scoped_masked_and_audited()
+    {
+        await using var dataSource = OpenDataSource();
+        var mobile = NewMobile();
+        var workflowId = await CreateWorkflowAsync(dataSource, mobile);
+        var preview = await CreateService(dataSource).PreviewAsync(workflowId, Actor, Guid.CreateVersion7(), default);
+
+        Assert.Equal(workflowId, preview.WorkflowRecordId);
+        Assert.Equal("NaturalPerson", preview.PartyType);
+        Assert.Equal("سارا محمدی", preview.DisplayName);
+        Assert.NotNull(preview.MaskedPrimaryMobile);
+        Assert.DoesNotContain(mobile, preview.MaskedPrimaryMobile, StringComparison.Ordinal);
+        Assert.Equal(1L, await ScalarAsync(dataSource,
+            "SELECT count(*) FROM persons_temporary_workflow_access_audit WHERE workflow_record_id = @id AND action = 'preview';",
+            workflowId));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AC37_closed_and_expired_workflows_are_rejected_without_deleting_payload()
+    {
+        await using var dataSource = OpenDataSource();
+        var service = CreateService(dataSource);
+        var closedId = await CreateWorkflowAsync(dataSource, NewMobile());
+        await ExecuteAsync(dataSource,
+            "UPDATE persons_temporary_workflows SET lifecycle_status = 'closed', row_version = row_version + 1 WHERE workflow_record_id = @id;",
+            closedId);
+
+        await Assert.ThrowsAsync<TemporaryWorkflowUnavailableException>(() =>
+            service.PromoteAsync(NewCommand(closedId, Guid.CreateVersion7(), createNew: true), default));
+        Assert.Equal(1L, await ScalarAsync(dataSource,
+            "SELECT count(*) FROM persons_temporary_workflow_payloads WHERE workflow_record_id = @id;", closedId));
+
+        var expiredId = await CreateWorkflowAsync(
+            dataSource, NewMobile(), createdAtUtc: DateTimeOffset.UtcNow.AddDays(-8));
+        await Assert.ThrowsAsync<TemporaryWorkflowUnavailableException>(() =>
+            service.PromoteAsync(NewCommand(expiredId, Guid.CreateVersion7(), createNew: true), default));
+        Assert.Equal(1L, await ScalarAsync(dataSource,
+            "SELECT count(*) FROM persons_temporary_workflow_payloads WHERE workflow_record_id = @id;", expiredId));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AC37_workflow_owner_mismatch_and_cross_actor_replay_are_rejected()
+    {
+        await using var dataSource = OpenDataSource();
+        var workflowId = await CreateWorkflowAsync(dataSource, NewMobile());
+        var otherActor = Guid.CreateVersion7();
+        var service = CreateService(dataSource);
+
+        await Assert.ThrowsAsync<TemporaryWorkflowOwnershipException>(() =>
+            service.PromoteAsync(new TemporaryWorkflowPromotionCommand(
+                workflowId, Guid.CreateVersion7(), otherActor, null, true, false), default));
+        Assert.Equal(1L, await ScalarAsync(dataSource,
+            "SELECT count(*) FROM persons_temporary_workflow_payloads WHERE workflow_record_id = @id;", workflowId));
+
+        var operationId = Guid.CreateVersion7();
+        var created = await service.PromoteAsync(NewCommand(workflowId, operationId, createNew: true), default);
+        await Assert.ThrowsAsync<IdempotencyKeyConflictException>(() =>
+            service.PromoteAsync(new TemporaryWorkflowPromotionCommand(
+                workflowId, operationId, otherActor, null, true, false), default));
+        Assert.Equal(1L, await ScalarAsync(dataSource,
+            "SELECT count(*) FROM persons_outbox_events WHERE idempotency_key = @id;", operationId));
+        Assert.NotNull(created.PartyId);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AC37_concurrent_same_actor_same_operation_returns_one_creation_and_one_replay()
+    {
+        await using var dataSource = OpenDataSource();
+        var workflowId = await CreateWorkflowAsync(dataSource, NewMobile());
+        var command = NewCommand(workflowId, Guid.CreateVersion7(), createNew: true);
+        var service = CreateService(dataSource);
+
+        var results = await Task.WhenAll(
+            service.PromoteAsync(command, default),
+            service.PromoteAsync(command, default));
+
+        Assert.Single(results.Where(result => result.Outcome == TemporaryWorkflowPromotionOutcome.Created));
+        Assert.Single(results.Where(result => result.Outcome == TemporaryWorkflowPromotionOutcome.Replayed));
+        Assert.Single(results.Select(result => result.PartyId).Distinct());
+        Assert.Equal(1L, await ScalarAsync(dataSource,
+            "SELECT count(*) FROM persons_outbox_events WHERE idempotency_key = @id;", command.OperationId));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AC37_tombstone_and_outbox_envelopes_exclude_descriptive_PII_columns()
+    {
+        await using var dataSource = OpenDataSource();
+        var tombstoneColumns = await ColumnNamesAsync(dataSource, "persons_temporary_workflow_promotions");
+        var eventColumns = await ColumnNamesAsync(dataSource, "persons_outbox_events");
+
+        foreach (var forbidden in new[] { "given_name", "family_name", "legal_name", "national_id", "mobile", "email", "address", "encrypted_payload" })
+        {
+            Assert.DoesNotContain(forbidden, tombstoneColumns, StringComparer.OrdinalIgnoreCase);
+            Assert.DoesNotContain(forbidden, eventColumns, StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task AC37_explicit_existing_party_selection_creates_tombstone_without_PartyRegistered()
     {
         await using var dataSource = OpenDataSource();
@@ -187,7 +290,7 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
         new(workflowId, operationId, Actor, null, createNew, false, Guid.CreateVersion7());
 
     private static async Task<Guid> CreateWorkflowAsync(
-        NpgsqlDataSource dataSource, string mobile, string givenName = "سارا")
+        NpgsqlDataSource dataSource, string mobile, string givenName = "سارا", DateTimeOffset? createdAtUtc = null)
     {
         var workflowId = Guid.CreateVersion7();
         var plaintext = Encoding.UTF8.GetBytes($$"""
@@ -204,7 +307,7 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
         var ciphertext = Encrypt(workflowId, KeyVersion, EncryptionKey, plaintext);
         await new PostgresTemporaryWorkflowStore(dataSource).CreateAsync(
             workflowId, "Persons", "PartyRegistration", ActorText, Guid.CreateVersion7(),
-            DateTimeOffset.UtcNow, ciphertext, KeyVersion);
+            createdAtUtc ?? DateTimeOffset.UtcNow, ciphertext, KeyVersion);
         CryptographicOperations.ZeroMemory(plaintext);
         return workflowId;
     }
@@ -270,6 +373,27 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
         await command.ExecuteNonQueryAsync();
     }
 
+    private static async Task ExecuteAsync(NpgsqlDataSource dataSource, string sql, Guid id)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue("id", id);
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private static async Task<string[]> ColumnNamesAsync(NpgsqlDataSource dataSource, string table)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = @table;",
+            connection);
+        command.Parameters.AddWithValue("table", table);
+        var names = new List<string>();
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync()) names.Add(reader.GetString(0));
+        return names.ToArray();
+    }
+
     private sealed class TestKeyProvider : ITemporaryWorkflowEncryptionKeyProvider
     {
         public ValueTask<ReadOnlyMemory<byte>> GetKeyAsync(string keyVersion, CancellationToken cancellationToken) =>
@@ -279,7 +403,7 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
     private sealed class AllowAllPromotionAuthorizer : IPersonsWorkflowPromotionAuthorizer
     {
         public Task<bool> HasPermissionAsync(Guid actorId, string permissionKey, CancellationToken cancellationToken) =>
-            Task.FromResult(actorId == Actor &&
+            Task.FromResult(actorId != Guid.Empty &&
                 permissionKey is "persons.workflow.promote" or "persons.read" or "persons.create" or "persons.update");
     }
 }
