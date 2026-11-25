@@ -25,12 +25,6 @@ public static class PersistenceRegistration
   services.AddHostedService<TemporaryWorkflowRetentionWorker>();
   services.AddScoped<IPartySensitiveDataAuthorizer,IdentityAccessPartySensitiveDataAuthorizer>();
   services.AddScoped<IPersonsWorkflowPromotionAuthorizer,IdentityAccessPersonsWorkflowPromotionAuthorizer>();
-  var workflowKeyPath = configuration[WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ConfigurationKey];
-  if (OperatingSystem.IsWindows() && !string.IsNullOrWhiteSpace(workflowKeyPath) && File.Exists(workflowKeyPath))
-  {
-   services.AddSingleton(new WindowsDpapiTemporaryWorkflowEncryptionKeyProvider(workflowKeyPath));
-   services.AddSingleton<ITemporaryWorkflowEncryptionKeyProvider>(s => s.GetRequiredService<WindowsDpapiTemporaryWorkflowEncryptionKeyProvider>());
-  }
   if (services.Any(descriptor => descriptor.ServiceType == typeof(ITemporaryWorkflowEncryptionKeyProvider)))
   {
    services.AddScoped<ITemporaryWorkflowPayloadProtector,AesGcmTemporaryWorkflowPayloadProtector>();
