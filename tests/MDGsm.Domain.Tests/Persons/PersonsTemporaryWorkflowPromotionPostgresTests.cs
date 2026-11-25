@@ -143,8 +143,8 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
             service.PromoteAsync(command, default),
             service.PromoteAsync(command, default));
 
-        Assert.Single(results.Where(result => result.Outcome == TemporaryWorkflowPromotionOutcome.Created));
-        Assert.Single(results.Where(result => result.Outcome == TemporaryWorkflowPromotionOutcome.Replayed));
+        Assert.Single(results, result => result.Outcome == TemporaryWorkflowPromotionOutcome.Created);
+        Assert.Single(results, result => result.Outcome == TemporaryWorkflowPromotionOutcome.Replayed);
         Assert.Single(results.Select(result => result.PartyId).Distinct());
         Assert.Equal(1L, await ScalarAsync(dataSource,
             "SELECT count(*) FROM persons_outbox_events WHERE idempotency_key = @id;", command.OperationId));
