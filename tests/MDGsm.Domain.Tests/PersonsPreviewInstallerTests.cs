@@ -190,9 +190,12 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("workflow-key.dpapi", integrationScript);
         Assert.Contains("unins000.exe", integrationScript);
         Assert.Contains("ReadAllBytes($keyFile)", integrationScript);
-        Assert.Contains("Test-Path -LiteralPath $keyFile", integrationScript);
+        Assert.Contains("ReadAllBytes($keyFile)", integrationScript);
+        Assert.Contains("post-uninstall-reinstall", integrationScript);
+        Assert.Contains("Invoke-SystemUninstaller", integrationScript);
         Assert.DoesNotContain("Get-FileHash -LiteralPath $keyFile", integrationScript);
         Assert.DoesNotContain("Get-Acl -LiteralPath $keyFile", integrationScript);
+        Assert.DoesNotContain("Test-Path -LiteralPath $keyFile", integrationScript);
         Assert.Contains("NT SERVICE", integrationScript);
     }
 
