@@ -289,6 +289,7 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
 
 
     [Theory]
+    [Trait("Category", "Integration")]
     [InlineData(true, "persons.workflow.promote")]
     [InlineData(true, "persons.read")]
     [InlineData(true, "persons.create")]
@@ -361,14 +362,12 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
         var triggerName = "trg_ci_fail_tombstone_" + operationId.ToString("N");
         await ExecuteAsync(dataSource, $"""
             CREATE FUNCTION public.{functionName}() RETURNS trigger
-            LANGUAGE plpgsql AS $
-            BEGIN
-                IF NEW.operation_id = '{operationId:D}' THEN
-                    RAISE EXCEPTION 'injected AC-37 tombstone failure';
+            LANGUAGE plpgsql AS 'BEGIN
+                IF NEW.operation_id = ''{operationId:D}'' THEN
+                    RAISE EXCEPTION ''injected AC-37 tombstone failure'';
                 END IF;
                 RETURN NEW;
-            END;
-            $;
+            END;';
             CREATE TRIGGER {triggerName}
             BEFORE INSERT ON persons_temporary_workflow_promotions
             FOR EACH ROW EXECUTE FUNCTION public.{functionName}();
