@@ -76,18 +76,30 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         var serviceSid = new NTAccount("NT SERVICE", serviceName)
             .Translate(typeof(SecurityIdentifier)) as SecurityIdentifier
             ?? throw new InvalidOperationException("The MDGsmApi service SID could not be resolved.");
+        var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
-        ProvisionNewKey(keyFilePath, serviceSid);
+        // Production key and directory ownership is transferred to LocalSystem.
+        // The Setup identity is deliberately not retained as owner after provisioning.
+        ProvisionNewKeyCore(keyFilePath, serviceSid, systemSid);
     }
 
     /// <summary>
-    /// Explicit one-time provisioning operation for a caller-supplied runtime SID.
-    /// Production Setup must call ProvisionNewKeyForService after registering the service SID.
+    /// Test seam for provisioning with an explicitly supplied reader SID. Production
+    /// Setup must use ProvisionNewKeyForService so LocalSystem owns the protected objects.
     /// </summary>
     [SupportedOSPlatform("windows")]
     public static void ProvisionNewKey(string keyFilePath, SecurityIdentifier runtimeServiceSid)
     {
         ArgumentNullException.ThrowIfNull(runtimeServiceSid);
+        ProvisionNewKeyCore(keyFilePath, runtimeServiceSid, storageOwnerSid: null);
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static void ProvisionNewKeyCore(
+        string keyFilePath,
+        SecurityIdentifier runtimeServiceSid,
+        SecurityIdentifier? storageOwnerSid)
+    {
         var path = ValidatePath(keyFilePath);
         var directory = Path.GetDirectoryName(path)!;
         Directory.CreateDirectory(directory);
@@ -95,13 +107,14 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         var setupSid = WindowsIdentity.GetCurrent().User
             ?? throw new InvalidOperationException("The setup process has no Windows SID.");
         var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+        var finalOwnerSid = storageOwnerSid ?? setupSid;
 
         if (File.Exists(path))
             throw new IOException("A Persons workflow key already exists; provisioning never overwrites it.");
 
         // Restrict the directory before the protected blob is written. This closes
         // the inherited-ProgramData-ACL window during first-time provisioning.
-        SetDirectoryAcl(directory, setupSid, systemSid, FileSystemRights.Modify);
+        SetDirectoryAcl(directory, setupSid, systemSid, FileSystemRights.Modify, setupSid);
 
         var key = RandomNumberGenerator.GetBytes(32);
         byte[]? protectedKey = null;
@@ -132,8 +145,8 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
             }
             finally { CryptographicOperations.ZeroMemory(verified); }
 
-            SetFileAcl(path, runtimeServiceSid, systemSid);
-            SetDirectoryAcl(directory, runtimeServiceSid, systemSid, FileSystemRights.ReadAndExecute);
+            SetFileAcl(path, runtimeServiceSid, systemSid, finalOwnerSid);
+            SetDirectoryAcl(directory, runtimeServiceSid, systemSid, FileSystemRights.ReadAndExecute, finalOwnerSid);
         }
         catch
         {
@@ -142,11 +155,12 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
             try
             {
                 if (Directory.Exists(directory))
-                    SetDirectoryAcl(directory, setupSid, systemSid, FileSystemRights.Modify);
+                    SetDirectoryAcl(directory, setupSid, systemSid, FileSystemRights.Modify, setupSid);
                 if (createdByThisCall && File.Exists(path))
                 {
                     var cleanupSecurity = new FileSecurity();
                     cleanupSecurity.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+                    cleanupSecurity.SetOwner(setupSid);
                     cleanupSecurity.AddAccessRule(new FileSystemAccessRule(setupSid, FileSystemRights.FullControl, AccessControlType.Allow));
                     cleanupSecurity.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, AccessControlType.Allow));
                     new FileInfo(path).SetAccessControl(cleanupSecurity);
@@ -164,11 +178,120 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         }
     }
 
+    /// <summary>
+    /// Called by the API hosted service while running under the actual MDGsmApi token.
+    /// It verifies the service SID is present in that token and that both protected
+    /// objects are owned by LocalSystem with the exact two-principal DACL.
+    /// </summary>
     [SupportedOSPlatform("windows")]
-    private static void SetFileAcl(string path, SecurityIdentifier runtimeServiceSid, SecurityIdentifier systemSid)
+    public void ValidateKeyStorageForCurrentService()
+    {
+        using var identity = WindowsIdentity.GetCurrent();
+        var localServiceSid = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+        if (identity.User is null || !identity.User.Equals(localServiceSid))
+            throw new InvalidOperationException("The Persons workflow key may only be validated by the approved LocalService API process.");
+
+        var serviceSid = new NTAccount("NT SERVICE", ApiServiceName)
+            .Translate(typeof(SecurityIdentifier)) as SecurityIdentifier
+            ?? throw new InvalidOperationException("The MDGsmApi service SID could not be resolved.");
+        if (identity.Groups is null || !identity.Groups.Contains(serviceSid))
+            throw new InvalidOperationException("The MDGsmApi service SID is not enabled in the current Windows service token.");
+
+        var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+        ValidateProtectedKeyStorage(keyFilePath, serviceSid, systemSid);
+    }
+
+    /// <summary>
+    /// Validates owner and exact DACL semantics. Exposed as a deterministic test seam;
+    /// production calls it only through ValidateKeyStorageForCurrentService.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static void ValidateProtectedKeyStorage(
+        string keyFilePath,
+        SecurityIdentifier expectedReaderSid,
+        SecurityIdentifier expectedOwnerSid)
+    {
+        ArgumentNullException.ThrowIfNull(expectedReaderSid);
+        ArgumentNullException.ThrowIfNull(expectedOwnerSid);
+        var path = ValidatePath(keyFilePath);
+        var directory = Path.GetDirectoryName(path)
+            ?? throw new InvalidOperationException("The Persons workflow key directory is invalid.");
+        var sections = AccessControlSections.Access | AccessControlSections.Owner;
+
+        var directorySecurity = new DirectoryInfo(directory).GetAccessControl(sections);
+        var fileSecurity = new FileInfo(path).GetAccessControl(sections);
+        ValidateProtectedAccessRules(directorySecurity, expectedReaderSid, expectedOwnerSid, isDirectory: true);
+        ValidateProtectedAccessRules(fileSecurity, expectedReaderSid, expectedOwnerSid, isDirectory: false);
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static void ValidateProtectedAccessRules(
+        FileSystemSecurity security,
+        SecurityIdentifier expectedReaderSid,
+        SecurityIdentifier expectedOwnerSid,
+        bool isDirectory)
+    {
+        if (!security.AreAccessRulesProtected)
+            throw new InvalidOperationException("The Persons workflow key DACL must be protected from inheritance.");
+
+        var owner = security.GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier;
+        if (owner is null || !owner.Equals(expectedOwnerSid))
+            throw new InvalidOperationException("The Persons workflow key object has an unexpected owner.");
+
+        var rules = security.GetAccessRules(
+                includeExplicit: true,
+                includeInherited: true,
+                targetType: typeof(SecurityIdentifier))
+            .Cast<FileSystemAccessRule>()
+            .ToArray();
+        if (rules.Length != 2 || rules.Any(rule =>
+                rule.IsInherited || rule.AccessControlType != AccessControlType.Allow))
+            throw new InvalidOperationException("The Persons workflow key DACL must contain exactly two explicit allow ACEs.");
+
+        var readerRule = rules.SingleOrDefault(rule =>
+            rule.IdentityReference.Equals(expectedReaderSid));
+        var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+        var systemRule = rules.SingleOrDefault(rule =>
+            rule.IdentityReference.Equals(systemSid));
+        if (readerRule is null || systemRule is null)
+            throw new InvalidOperationException("The Persons workflow key DACL contains an unexpected principal.");
+
+        if ((systemRule.FileSystemRights & FileSystemRights.FullControl) != FileSystemRights.FullControl)
+            throw new InvalidOperationException("LocalSystem must retain FullControl over the Persons workflow key.");
+
+        var expectedInheritance = isDirectory
+            ? InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit
+            : InheritanceFlags.None;
+        if (readerRule.InheritanceFlags != expectedInheritance ||
+            systemRule.InheritanceFlags != expectedInheritance ||
+            readerRule.PropagationFlags != PropagationFlags.None ||
+            systemRule.PropagationFlags != PropagationFlags.None)
+            throw new InvalidOperationException("The Persons workflow key ACE inheritance flags are invalid.");
+
+        var rights = readerRule.FileSystemRights;
+        var required = isDirectory ? FileSystemRights.ReadAndExecute : FileSystemRights.Read;
+        var prohibited = FileSystemRights.WriteData |
+                         FileSystemRights.AppendData |
+                         FileSystemRights.WriteAttributes |
+                         FileSystemRights.WriteExtendedAttributes |
+                         FileSystemRights.Delete |
+                         FileSystemRights.DeleteSubdirectoriesAndFiles |
+                         FileSystemRights.ChangePermissions |
+                         FileSystemRights.TakeOwnership;
+        if ((rights & required) != required || (rights & prohibited) != 0)
+            throw new InvalidOperationException("The MDGsmApi service SID must have read-only access to the Persons workflow key storage.");
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static void SetFileAcl(
+        string path,
+        SecurityIdentifier runtimeServiceSid,
+        SecurityIdentifier systemSid,
+        SecurityIdentifier ownerSid)
     {
         var security = new FileSecurity();
         security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        security.SetOwner(ownerSid);
         security.AddAccessRule(new FileSystemAccessRule(runtimeServiceSid, FileSystemRights.Read, AccessControlType.Allow));
         security.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, AccessControlType.Allow));
         new FileInfo(path).SetAccessControl(security);
@@ -176,10 +299,15 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
 
     [SupportedOSPlatform("windows")]
     private static void SetDirectoryAcl(
-        string directory, SecurityIdentifier apiSid, SecurityIdentifier systemSid, FileSystemRights apiRights)
+        string directory,
+        SecurityIdentifier apiSid,
+        SecurityIdentifier systemSid,
+        FileSystemRights apiRights,
+        SecurityIdentifier ownerSid)
     {
         var security = new DirectorySecurity();
         security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        security.SetOwner(ownerSid);
         security.AddAccessRule(new FileSystemAccessRule(
             apiSid, apiRights, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
             PropagationFlags.None, AccessControlType.Allow));

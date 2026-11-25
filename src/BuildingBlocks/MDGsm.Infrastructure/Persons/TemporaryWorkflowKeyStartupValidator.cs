@@ -9,11 +9,14 @@ namespace MDGsm.Infrastructure.Persons;
 /// Verifies the configured DPAPI key under the actual API process identity before startup completes.
 /// </summary>
 public sealed class TemporaryWorkflowKeyStartupValidator(
-    ITemporaryWorkflowEncryptionKeyProvider keyProvider,
+    WindowsDpapiTemporaryWorkflowEncryptionKeyProvider keyProvider,
     ILogger<TemporaryWorkflowKeyStartupValidator> logger) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        keyProvider.ValidateKeyStorageForCurrentService();
+        logger.LogInformation("Persons workflow key owner and DACL validation succeeded under the MDGsmApi service token.");
+
         var key = await keyProvider.GetKeyAsync(
             WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.KeyVersion,
             cancellationToken);
