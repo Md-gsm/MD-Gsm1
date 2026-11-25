@@ -1,5 +1,5 @@
 {
-  "mapVersion": "1.2",
+  "mapVersion": "1.3",
   "sourceArchitecture": "MDGsm_Persons_Module_Architecture_Decision_and_Build_Spec_v1.1_FA",
   "criteria": [
     {
@@ -53,9 +53,9 @@
     {
       "id": "AC-37",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsTemporaryWorkflowPromotionPostgresTests.cs",
+      "automatedTest": "AC37_new_party_promotion_commits_party_tombstone_payload_purge_and_outbox_atomically",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Promotion requires an explicit person choice and duplicate check; promotion is atomic and idempotent"
     },
     {
@@ -155,13 +155,14 @@
       "expectedBehavior": "CI evidence contains commit, contract versions, schema fingerprint, gate/test counts, and no raw PII."
     }
   ],
-  "note": "AC-31..34 and AC-37..38 remain UNMAPPED pending full temporary-data lifecycle, authorization/audit, promotion and PII evidence. AC-35 now has a worker-level retry/alert redaction test; PostgreSQL AC32/AC35 integration tests separately prove repeated purge/close operations are idempotent. AC-36 has disposable PostgreSQL proof of search isolation. AC-39..44 map to registry/classification and Finance merge tests. AC-45 remains UNMAPPED.",
+  "note": "AC-31..34 and AC-38 remain UNMAPPED pending complete temporary-data lifecycle/SLA and comprehensive telemetry evidence. AC-35 has worker retry/alert-redaction tests; AC-36 has disposable PostgreSQL search-isolation proof. AC-37 is IMPLEMENTED on PR #96 exact reviewed head 467527ab5389fdfcda183e546037616aca92bdc1, with PostgreSQL promotion/authorization/rollback/replay tests, Linux and Windows PostgreSQL gates, and independent approval. AC-39..44 map to consumer/merge tests, subject to the stated runtime coverage caveats; AC-45 remains UNMAPPED. AC-46..49 are CI/evidence controls only.",
   "runtimeCoverageCaveat": {
-    "AC31toAC38": "AC-35 now tests a transient retention-store failure, the next scheduled worker sweep, failed alert delivery, and confirms exception payloads never enter logs; PostgreSQL tests verify repeat close/purge idempotency. AC-36 is covered at repository and Host route registration. AC-31..34, AC-37..38 remain open for complete end-to-end expiry/SLA, real authorization/audit, promotion, and comprehensive telemetry evidence.",
+    "AC31toAC38": "AC-35 covers transient retention-store failure, next-cycle worker retry, failed alert delivery, and redacted exception handling; PostgreSQL tests verify repeat close/purge idempotency. AC-36 is covered at repository and Host route registration. AC-37 is implemented on PR #96 exact head 467527ab5389fdfcda183e546037616aca92bdc1: explicit New/Existing choice and permission matrix, duplicate/ForceNew confirmation, corrupt payload fail-closed and retry, actor-bound idempotency/concurrency, and injected rollback/retry at workflow close, payload purge, tombstone and Outbox insertion. Exact-head Linux/Windows PostgreSQL, security, API, E2E, installer, CodeQL and Owner gates passed; independent reviewer mrdeljoe4 approved this exact SHA. AC-31..34 and AC-38 remain open/unmapped; AC-37 acceptance does not authorize production migration, customer key provisioning, endpoint/feature activation or G1.",
     "AC39toAC40": "Every external PartyId consumer is source-enumerated, registered exactly once and assigned one accepted merge classification; automated test plus the registry CI gate.",
     "AC41": "The current Finance merge participant is checked against each versioned Preview/Prepare/Validate/Apply/Verify/Recover protocol hook. Future participants must be added to the registry and tested.",
     "AC42toAC43": "Finance merge preview counts references without mutation and an unresolved dual-account conflict blocks execution.",
     "AC44toAC45": "AC-44 now runs a combined integration suite covering idempotent replay, injected failure rollback/recovery and concurrent same-source merge winner selection. AC-45 remains open: AccountId/created-at preservation is tested, but there is no full immutable ledger-history snapshot/reconciliation proof.",
-    "AC46toAC49": "CI policy/evidence controls only; not runtime acceptance."
+    "AC46toAC49": "CI policy/evidence controls only; not runtime acceptance.",
+    "AC37": "AC-37 acceptance: implementation and test evidence reside on PR #96 reviewed head 467527ab5389fdfcda183e546037616aca92bdc1. The source-owned Outbox inserts the PII-free PartyRegistered event and initial delivery state atomically for a newly created Party only. Delivery dispatch/worker lifecycle is not claimed here and remains in the separate Issue #97 workstream. Migration 0012/0013 remain IMPLEMENTED — DISPOSABLE VERIFICATION PENDING until post-merge disposable evidence and SQL hashes are recorded per the central registry."
   }
 }

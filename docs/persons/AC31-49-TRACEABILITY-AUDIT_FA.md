@@ -116,3 +116,44 @@ Test file: `tests/MDGsm.Domain.Tests/Persons/PersonsTemporaryWorkflowPromotionPo
 - Windows PostgreSQL migration, Windows installer integration and CodeQL were still pending at this evidence snapshot.
 
 The canonical mainline migration reservation is being handled by registry-only PR #104; PR #103 merged 0010/0011 only. Migration 0012/0013 remains pending full Linux/Windows disposable evidence and independent review. No real database migration, production key provisioning, runtime flag or G1 authorization is performed.
+
+
+## AC-37 acceptance closure evidence — 2026-11-25
+
+**Decision: AC-37 = IMPLEMENTED on the exact reviewed PR #96 head.** This section supersedes the earlier historical `UNMAPPED / independent review pending` snapshot above; that snapshot is retained as historical audit evidence and is not the current criterion state.
+
+### Exact source and reviewer acceptance
+
+- Repository: `Md-gsm/MD-Gsm1`.
+- PR: #96 — https://github.com/Md-gsm/MD-Gsm1/pull/96
+- Exact reviewed commit: `467527ab5389fdfcda183e546037616aca92bdc1`.
+- Independent review: `mrdeljoe4`, review ID `6063008782`, state `APPROVED`, submitted 2026-11-25 18:37:54 UTC, on the exact commit above.
+- PR state at evidence capture: open, unmerged, `mergeable=true`, `mergeable_state=clean`.
+
+### AC-37 automated evidence
+
+Primary mapped PostgreSQL integration test: `PersonsTemporaryWorkflowPromotionPostgresTests.cs::AC37_new_party_promotion_commits_party_tombstone_payload_purge_and_outbox_atomically`.
+
+Additional tests on the same head cover:
+- `AC37_authorization_matrix_denies_each_required_permission_before_mutation` and `AC37_existing_party_path_does_not_require_create_permission`.
+- `AC37_unprotectable_payload_is_rejected_without_state_change_and_can_retry_after_repair`.
+- `AC37_workflow_close_failure_rolls_back_and_same_operation_retries`.
+- `AC37_payload_purge_failure_rolls_back_and_same_operation_retries`.
+- `AC37_failure_at_tombstone_insert_rolls_back_and_same_operation_retries`.
+- `AC37_failed_outbox_insert_rolls_back_party_workflow_tombstone_and_payload_deletion`.
+- Existing same-head coverage for explicit existing/new Party selection, duplicate review, explicit ForceNew confirmation, same-Actor/same-OperationId replay, cross-Actor rejection, concurrency, PII-free tombstone/event envelope, and atomic Party/tombstone/payload/outbox commit.
+
+### Exact-head CI
+
+- Persons Module Gates run `45674621630`: all required jobs passed, including Linux PostgreSQL migration/integration and Windows PostgreSQL 18 migration, API contract, merge contract, security, disposable E2E, architecture, consumer registry, retention, CI enforcement and evidence.
+- Windows Installer + API Service Integration run `45674621908`: success.
+- CodeQL run `45674621701`: success.
+- Project Charter Owner Gate run `45674621863`: success.
+- Exact commit check-runs: all 17 completed successfully, zero failures and zero pending.
+
+### Scope boundaries that remain in force
+
+- AC-37 covers Promotion, its PII-free result/tombstone/access evidence, conditional source Outbox insertion and the tested atomic/retry behavior. It does not claim that a separate Outbox dispatcher/delivery worker is implemented; delivery lifecycle remains in Issue #97.
+- Migration 0012 and 0013 remain `IMPLEMENTED — DISPOSABLE VERIFICATION PENDING` in `MIGRATION_SEQUENCE_REGISTRY_FA.md`. Per the registry rule, update to `VERIFIED_DISPOSABLE` only after the implementation PR is merged and post-merge disposable application evidence, SQL SHA-256 values and merge commit are recorded.
+- No production database migration, customer key provisioning, live feature flag/API activation, deployment or G1 authorization is included. `g1Authorized=false` remains unchanged.
+- Acceptance Map version 1.3 maps AC-37 to the primary integration test above. AC-31..34, AC-38 and AC-45 remain explicitly UNMAPPED; this closure does not close Issue #97, #98 or #99.
