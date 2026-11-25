@@ -18,7 +18,7 @@ paths:
       summary: Resolve or register a natural person
       description: >-
         Every natural-person creation path performs duplicate resolution. Requires persons.create and persons.read.
-        Existing candidates require explicit selection unless ForceNew is set. Actor is derived from the validated server session.
+        ForceNew never bypasses duplicate checks. If candidates exist, the server returns them first; creating a distinct Party then requires ConfirmDistinctParty=true after review. Actor is derived from the validated server session.
         Search/list HTTP is intentionally not exposed until persistent quotas and abuse-lock controls are approved and implemented.
       parameters:
         - in: header
@@ -45,7 +45,7 @@ paths:
       summary: Resolve or register a legal entity
       description: >-
         Every legal-entity creation path performs duplicate resolution. Requires persons.create and persons.read.
-        Existing candidates require explicit selection unless ForceNew is set. Actor is derived from the validated server session.
+        ForceNew never bypasses duplicate checks. If candidates exist, the server returns them first; creating a distinct Party then requires ConfirmDistinctParty=true after review. Actor is derived from the validated server session.
       parameters:
         - in: header
           name: Idempotency-Key
@@ -109,6 +109,7 @@ components:
         party: { $ref: '#/components/schemas/CreateNaturalPartyRequest' }
         forceNew: { type: boolean, default: false }
         selectedPartyId: { type: string, format: uuid, nullable: true }
+        confirmDistinctParty: { type: boolean, default: false, description: Requires an explicit reviewed ForceNew decision when duplicate candidates exist. }
     QuickRegisterLegalPartyRequest:
       type: object
       required: [party]
@@ -116,6 +117,7 @@ components:
         party: { $ref: '#/components/schemas/CreateLegalPartyRequest' }
         forceNew: { type: boolean, default: false }
         selectedPartyId: { type: string, format: uuid, nullable: true }
+        confirmDistinctParty: { type: boolean, default: false, description: Requires an explicit reviewed ForceNew decision when duplicate candidates exist. }
     PartyQuickRegistrationCandidate:
       type: object
       required: [partyId, partyType, displayName, roles, partyIsActive, isMerged, hasActiveMobile, maskedMobile]
