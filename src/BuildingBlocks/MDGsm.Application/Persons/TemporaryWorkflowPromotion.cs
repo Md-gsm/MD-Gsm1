@@ -192,7 +192,8 @@ public static class TemporaryWorkflowPayloadParser
                 string.IsNullOrWhiteSpace(payload.FamilyName) ||
                 !string.IsNullOrWhiteSpace(payload.LegalName) ||
                 !string.IsNullOrWhiteSpace(payload.LegalNationalId) ||
-                !string.IsNullOrWhiteSpace(payload.EconomicCode))
+                !string.IsNullOrWhiteSpace(payload.EconomicCode) ||
+                !string.IsNullOrWhiteSpace(payload.ResponsiblePersonName))
                 throw new TemporaryWorkflowPayloadException();
 
             var workClassification = ParseNullableEnum<WorkClassification>(payload.WorkClassification);
