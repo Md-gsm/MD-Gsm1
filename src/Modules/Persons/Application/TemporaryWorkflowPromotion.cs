@@ -261,3 +261,16 @@ public static class TemporaryWorkflowPayloadParser
             : throw new TemporaryWorkflowPayloadException();
     }
 }
+
+
+/// <summary>Minimal command boundary for one-time Windows service key provisioning.</summary>
+public interface ITemporaryWorkflowKeyProvisioner
+{
+    void ProvisionNewKeyForService(string keyFilePath, string serviceName);
+}
+
+/// <summary>Canonical Windows Service identity owned by the Persons deployment contract.</summary>
+public static class PersonsApiServiceIdentity
+{
+    public const string ApiServiceName = "MDGsmApi";
+}

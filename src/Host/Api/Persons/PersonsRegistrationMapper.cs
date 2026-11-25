@@ -1,5 +1,5 @@
-using MDGsm.Application.Persons;
-using MDGsm.Domain.Persons;
+using MDGsm.Persons.Application;
+using MDGsm.Persons.Domain;
 using MDGsm.Persons.Contracts;
 
 namespace MDGsm.Api.Persons;
