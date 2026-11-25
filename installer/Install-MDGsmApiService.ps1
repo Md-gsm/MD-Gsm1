@@ -12,6 +12,10 @@ $quotedApiExe = [string]([char]34) + $apiExe + [char]34
 
 $script:setupLogPath = Join-Path $env:TEMP 'MD-Gsm-ApiServiceSetup.log'
 $script:setupStage = 'initializing'
+$serviceExistedAtStart = $false
+$serviceWasRunningAtStart = $false
+$serviceCreatedDuringSetup = $false
+$keyDirectoryCreatedDuringSetup = $false
 try {
     Set-Content -LiteralPath $script:setupLogPath -Value ("{0:o} setup script started" -f (Get-Date)) -Encoding UTF8
 } catch {
@@ -140,8 +144,11 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 $script:setupStage = 'create or configure Windows service'
 Write-SetupLog 'Checking whether MDGsmApi service already exists.'
 $existingService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
+$serviceExistedAtStart = ($null -ne $existingService)
+$serviceWasRunningAtStart = ($null -ne $existingService -and $existingService.State -eq 'Running')
 if ($null -eq $existingService) {
     Invoke-Sc @('create', $serviceName, 'binPath=', $quotedApiExe, 'start=', 'auto', 'obj=', $serviceAccount, 'DisplayName=', '"MD-Gsm API"')
+    $serviceCreatedDuringSetup = $true
 } else {
     if ($existingService.State -eq 'Running') {
         Invoke-Sc @('stop', $serviceName)
@@ -169,6 +176,7 @@ if ($directoryExisted -and -not (Test-Path -LiteralPath $keyFile -PathType Leaf)
 }
 if (-not $directoryExisted) {
     New-Item -ItemType Directory -Path $keyDirectory -Force | Out-Null
+    $keyDirectoryCreatedDuringSetup = $true
     Write-SetupLog 'Starting one-time explicit DPAPI key provisioning for MDGsmApi service SID.'
     $provisionOutput = & $apiExe '--provision-persons-workflow-key' $keyFile $serviceName 2>&1
     $provisionExitCode = $LASTEXITCODE
@@ -258,5 +266,68 @@ Write-Host 'The DPAPI key is outside Program Files and remains unchanged during 
     Write-SetupLog ("FATAL: " + $_.Exception.ToString())
     Write-SetupLog ("FATAL category: " + [string]$_.CategoryInfo)
     Write-SetupLog ("FATAL script stack: " + [string]$_.ScriptStackTrace)
+
+    # Roll back only resources created or started by this invocation. Never
+    # delete a pre-existing service or any provisioned/protected DPAPI key.
+    if ($serviceCreatedDuringSetup) {
+        try {
+            $rollbackService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
+            if ($null -ne $rollbackService -and $rollbackService.State -ne 'Stopped') {
+                $rollbackOutput = & $scExe stop $serviceName 2>&1
+                $rollbackExitCode = $LASTEXITCODE
+                Write-SetupLog ("Rollback service stop exit code: " + $rollbackExitCode)
+                foreach ($line in @($rollbackOutput)) { Write-SetupLog ("Rollback SCM output: " + [string]$line) }
+                if ($rollbackExitCode -eq 0) {
+                    $rollbackDeadline = (Get-Date).AddSeconds(30)
+                    do {
+                        Start-Sleep -Milliseconds 500
+                        $rollbackService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
+                    } while ($null -ne $rollbackService -and $rollbackService.State -ne 'Stopped' -and (Get-Date) -lt $rollbackDeadline)
+                }
+            }
+
+            $rollbackService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
+            if ($null -ne $rollbackService -and $rollbackService.State -eq 'Stopped') {
+                & $scExe delete $serviceName | Out-Null
+                if ($LASTEXITCODE -eq 0) {
+                    Write-SetupLog 'Rollback removed the service created by this failed setup.'
+                } else {
+                    Write-SetupLog ("Rollback could not delete the new service; sc.exe exit code: " + $LASTEXITCODE)
+                }
+            } elseif ($null -ne $rollbackService) {
+                Write-SetupLog ("Rollback left the newly created service registered because it did not stop; state=" + $rollbackService.State)
+            }
+        } catch {
+            Write-SetupLog ("Rollback of newly created service failed: " + $_.Exception.Message)
+        }
+    } elseif ($serviceExistedAtStart) {
+        try {
+            $rollbackService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
+            if ($null -ne $rollbackService -and $serviceWasRunningAtStart -and $rollbackService.State -eq 'Stopped') {
+                & $scExe start $serviceName | Out-Null
+                Write-SetupLog ("Rollback restored the pre-existing service to Running; sc.exe exit code: " + $LASTEXITCODE)
+            } elseif ($null -ne $rollbackService -and -not $serviceWasRunningAtStart -and $rollbackService.State -eq 'Running') {
+                & $scExe stop $serviceName | Out-Null
+                Write-SetupLog ("Rollback restored the pre-existing service to Stopped; sc.exe exit code: " + $LASTEXITCODE)
+            }
+        } catch {
+            Write-SetupLog ("Rollback of pre-existing service state failed: " + $_.Exception.Message)
+        }
+    }
+
+    if ($keyDirectoryCreatedDuringSetup -and -not (Test-Path -LiteralPath $keyFile -PathType Leaf)) {
+        try {
+            $remainingKeyItems = @(Get-ChildItem -LiteralPath $keyDirectory -Force -ErrorAction Stop)
+            if ($remainingKeyItems.Count -eq 0) {
+                Remove-Item -LiteralPath $keyDirectory -Force -ErrorAction Stop
+                Write-SetupLog 'Removed the empty key directory created by this failed setup; no key material existed.'
+            } else {
+                Write-SetupLog 'Preserved the setup-created key directory because it contains entries or could not be proven empty.'
+            }
+        } catch {
+            Write-SetupLog ("Could not clean up the empty setup-created key directory: " + $_.Exception.Message)
+        }
+    }
+
     throw
 }
