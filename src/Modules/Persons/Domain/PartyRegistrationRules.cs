@@ -1,4 +1,4 @@
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 /// <summary>Cross-field validation shared by registration workflows.</summary>
 public static class PartyRegistrationRules

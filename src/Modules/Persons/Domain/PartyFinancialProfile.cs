@@ -1,4 +1,4 @@
-namespace MDGsm.Domain.Persons;
+namespace MDGsm.Persons.Domain;
 
 public enum DefaultPaymentMethod { Cash = 1, CardToCard = 2, BankTransfer = 3, Pos = 4, Credit = 5 }
 
