@@ -215,6 +215,9 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
 
     private void EnsureOwnedAndOpen(WorkflowRow row, Guid actorId)
     {
+        if (!string.Equals(row.OwnerModule, "Persons", StringComparison.Ordinal) ||
+            !string.Equals(row.PurposeCode, "PartyRegistration", StringComparison.Ordinal))
+            throw new TemporaryWorkflowUnavailableException();
         if (!string.Equals(row.CreatedBy, actorId.ToString("D"), StringComparison.OrdinalIgnoreCase))
             throw new TemporaryWorkflowOwnershipException();
         if (!string.Equals(row.LifecycleStatus, "open", StringComparison.Ordinal) ||
@@ -227,7 +230,7 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
         CancellationToken cancellationToken)
     {
         await using var command = new NpgsqlCommand("""
-            SELECT created_by, lifecycle_status, expires_at_utc
+            SELECT owner_module, purpose_code, created_by, lifecycle_status, expires_at_utc
             FROM persons_temporary_workflows
             WHERE workflow_record_id = @workflow
             FOR UPDATE;
@@ -237,7 +240,8 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
         if (!await reader.ReadAsync(cancellationToken))
             throw new TemporaryWorkflowUnavailableException();
         return new WorkflowRow(
-            reader.GetString(0), reader.GetString(1), reader.GetFieldValue<DateTimeOffset>(2));
+            reader.GetString(0), reader.GetString(1), reader.GetString(2),
+            reader.GetString(3), reader.GetFieldValue<DateTimeOffset>(4));
     }
 
     private static async Task<EncryptedPayload> ReadPayloadAsync(
@@ -450,7 +454,7 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
         _ => "promotion_failed"
     };
 
-    private sealed record WorkflowRow(string CreatedBy, string LifecycleStatus, DateTimeOffset ExpiresAtUtc);
+    private sealed record WorkflowRow(string OwnerModule, string PurposeCode, string CreatedBy, string LifecycleStatus, DateTimeOffset ExpiresAtUtc);
     private sealed record EncryptedPayload(byte[] Ciphertext, string KeyVersion);
     private sealed record Tombstone(Guid WorkflowRecordId, Guid OperationId, string ActorId, Guid PartyId, string Outcome);
 }
