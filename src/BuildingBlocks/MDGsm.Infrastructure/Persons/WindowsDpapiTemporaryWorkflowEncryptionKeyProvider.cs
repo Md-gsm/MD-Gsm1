@@ -76,6 +76,8 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
         var apiSid = WindowsIdentity.GetCurrent().User
             ?? throw new InvalidOperationException("The setup process has no Windows SID.");
         var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+        if (File.Exists(path))
+            throw new IOException("A Persons workflow key already exists; provisioning never overwrites it.");
         SetDirectoryAcl(directory, apiSid, systemSid, FileSystemRights.Modify);
 
         var key = RandomNumberGenerator.GetBytes(32);
@@ -120,6 +122,8 @@ public sealed class WindowsDpapiTemporaryWorkflowEncryptionKeyProvider : ITempor
             // but failed before verification, remove only that just-created artifact.
             if (createdByThisCall && File.Exists(path))
                 File.Delete(path);
+            else if (File.Exists(path))
+                SetDirectoryAcl(directory, apiSid, systemSid, FileSystemRights.ReadAndExecute);
             throw;
         }
         finally
