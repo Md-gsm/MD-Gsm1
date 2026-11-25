@@ -190,11 +190,30 @@ Write-SetupLog 'Service reached Running; waiting for loopback liveness endpoint.
 $healthUri = 'http://127.0.0.1:5080/health/live'
 $healthy = $false
 $deadline = (Get-Date).AddSeconds(25)
+$script:healthFailureLogged = $false
 while (-not $healthy -and (Get-Date) -lt $deadline) {
     try {
         $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUri -TimeoutSec 2
         $healthy = ($response.StatusCode -eq 200)
     } catch {
+        if (-not $script:healthFailureLogged) {
+            $httpResponse = $_.Exception.Response
+            if ($null -ne $httpResponse) {
+                try {
+                    $statusCode = [int]$httpResponse.StatusCode
+                    $responseStream = $httpResponse.GetResponseStream()
+                    $reader = [System.IO.StreamReader]::new($responseStream)
+                    try { $responseBody = $reader.ReadToEnd() } finally { $reader.Dispose() }
+                    if ($responseBody.Length -gt 2048) { $responseBody = $responseBody.Substring(0, 2048) }
+                    Write-SetupLog ("Liveness HTTP response: Status=$statusCode; Body=$responseBody")
+                } catch {
+                    Write-SetupLog ("Could not read liveness HTTP error response: " + $_.Exception.Message)
+                }
+            } else {
+                Write-SetupLog ("Liveness connection exception: " + $_.Exception.ToString())
+            }
+            $script:healthFailureLogged = $true
+        }
         Start-Sleep -Milliseconds 500
     }
 }
