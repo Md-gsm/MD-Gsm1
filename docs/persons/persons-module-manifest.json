@@ -1,5 +1,5 @@
 {
-  "manifestVersion": "1.2",
+  "manifestVersion": "1.3",
   "module": "Persons",
   "repositoryStage": "G1_CONTRACTS",
   "implementationState": "PARTIAL",
@@ -31,14 +31,14 @@
     "negativeCiEnforcementTestPassed": true,
     "jobOwnersAssigned": true,
     "acceptanceCriteriaAc31ToAc49Mapped": false,
-    "architectureAligned": true,
+    "architectureAligned": false,
     "windowsPostgres18Validated": true,
     "applicationMigrationRunnerValidated": true
   },
-  "note": "Current main includes partial temporary-workflow ciphertext storage/retention and a transactional Party merge coordinator with a Finance participant and Finance account provisioner (integrated by PR #50). This branch adds canonical natural/legal Party registration POST routes that always run transactional duplicate resolution (same-name reuse, candidate selection, or explicit ForceNew); there is no direct-create HTTP bypass. It also adds strict request mapping, actor-bound idempotency, audited candidate disclosure, masked Party details, CountryCode persistence and an authenticated Desktop workflow. Write routes remain disabled unless Persons:WriteApiEnabled is explicitly set; this is not G1 or production authorization. Search HTTP exposure and durable quota/abuse controls, complete Contact/Address update/deactivation history, promotion and alerts, complete merge-consumer inventory/privacy acceptance, Persons Outbox and migration reservations (Issues #97/#98), AC-31..AC-49 traceability, physical relocation from transitional BuildingBlocks per ADR-0016, independent security review and Owner G1 acceptance remain open. IdentityAccess deployment/bootstrap/recovery and production rollout remain separate gates. No production database was migrated; g1Authorized remains false.",
+  "note": "Current main includes partial temporary-workflow ciphertext storage/retention and a transactional Party merge coordinator with a Finance participant and Finance account provisioner (integrated by PR #50). This branch adds canonical natural/legal Party registration POST routes that always run transactional duplicate resolution (same-name reuse, candidate selection, or explicit ForceNew); there is no direct-create HTTP bypass. It also adds strict request mapping, actor-bound idempotency, audited candidate disclosure, masked Party details, CountryCode persistence and an authenticated Desktop workflow. Write routes remain disabled unless Persons:WriteApiEnabled is explicitly set; this is not G1 or production authorization. Search HTTP exposure and durable quota/abuse controls, complete Contact/Address update/deactivation history, promotion and alerts, complete merge-consumer inventory/privacy acceptance, Persons Outbox and migration reservations (Issues #97/#98), AC-31..AC-49 traceability, ADR-0016 physical relocation is implemented in the stacked Issue #99 branch and awaits exact-head CI/review acceptance; Search quotas/abuse controls and Contact/Address history remain open (Issues #97/#98); independent security review and Owner G1 acceptance remain open. IdentityAccess deployment/bootstrap/recovery and production rollout remain separate gates. The Issue #99 relocation branch is not merged or accepted yet. No production database was migrated; g1Authorized remains false. The unused Persons-side financial-profile type was removed; legacy financial columns in migration 0002 remain unchanged pending the separately approved forward-only data/schema work in Issue #98.",
   "validationEvidenceReference": "docs/operations/evidence/g0-ci-validation-2026-10-31.json",
   "runtimeHostBuildingBlocksRelocated": true,
-  "personsInternalCodePlacement": "TRANSITIONAL_BUILDINGBLOCKS_PER_ADR_0014",
+  "personsInternalCodePlacement": "MODULE_OWNED_PROJECTS_PER_ADR_0016",
   "evidenceNote": "main is protected; branch endpoint exposes 14 required contexts. Detailed protection endpoint is HTTP 403 for this integration; review/signature settings below are from the Project Owner's supplied REST audit. Exact main merge commit 4933cc9abda03568a23979e3ac25a085981ff84e has 13/15 check-runs successful, 0 failed and 2 in progress (persons-postgres-windows-migrations and codeql-csharp); windows-preview-installer succeeded. PR #54 head 83b551683b0dbd7fa8bc383ec4c21469e0e45149 had 18/18 successful check-runs. PostgreSQL validation uses disposable databases only; no real-data or production migration. G1 remains unauthorized.",
   "historicalValidationBeforePr40": {
     "commit": "194720455d01a5f88b1996ed9b100b7bc7ec363b",
@@ -90,5 +90,7 @@
     "requiredStatusCheckContexts": 14,
     "codeqlRequired": false,
     "windowsPreviewInstaller": "NOT_RUN_ON_THIS_MAIN_SHA"
-  }
+  },
+  "personsIndependentProjectsPresent": true,
+  "personsIndependentProjectsIncludedInSolution": true
 }

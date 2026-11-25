@@ -66,9 +66,17 @@ Persons زیرمجموعه Organization نیست؛ Persons مالک هویت Par
 
 این گراف روابط قراردادی مورد انتظار را نشان می‌دهد، نه دستور تغییر ترتیب رسمی. ترتیب فازها همچنان دقیقاً طبق GOV-001 است: ۶ Platform Core/Organization، ۷ Inventory، ۸ Accounting، ۹ Treasury، ۱۰ Sales/Purchasing، ۱۱ RepairOperations، ۱۲ ERP Integration. هر تعارض واقعی بین وابستگی و ترتیب فازها باید با تحلیل dependency و تأیید مالک حل شود؛ این نمودار به‌تنهایی مجوز جابه‌جایی فاز نیست.
 
-## تصمیم موقت مالکیت ماژول اشخاص (ADR-0014)
+## مرز فیزیکی پروژه‌های Persons بر اساس ADR-0016 — پیاده‌سازی در شاخهٔ Issue #99
 
-کد داخلی Domain/Application/Infrastructure اشخاص در این برش، موقتاً زیر `src/BuildingBlocks` باقی می‌ماند تا انتقال کنترل‌شده در زنجیرهٔ PRهای Draft انجام شود. این محل مالکیت نهایی نیست؛ مصرف‌کنندگان فقط مجاز به استفاده از قراردادهای `src/Modules/Persons/Contracts` هستند و وابستگی مستقیم به پیاده‌سازی داخلی ممنوع است.
+کد اجرایی Persons به سه پروژهٔ مستقل منتقل شده است:
 
-**شرط پایان وضعیت موقت:** پیش از هرگونه G1 authorization یا ادغام نهایی Persons، کد داخلی باید به `src/Modules/Persons/{Domain,Application,Infrastructure}` منتقل شود، solution/DI/CI اصلاح و تست معماری عدم وابستگی مستقیم را اثبات کند. این تصمیم مجوز G1 یا merge نیست.
+- `src/Modules/Persons/Domain/MDGsm.Persons.Domain.csproj`: مدل دامنه و value objectها؛ بدون ProjectReference.
+- `src/Modules/Persons/Application/MDGsm.Persons.Application.csproj`: use caseها و portها؛ وابسته فقط به Domain و Contracts خود Persons.
+- `src/Modules/Persons/Infrastructure/MDGsm.Persons.Infrastructure.csproj`: persistence، DPAPI، retention و adapterهای PostgreSQL؛ وابسته فقط به Application، Domain و Contracts خود Persons.
+
+مصرف‌کنندگان بیرونی همچنان فقط قراردادهای `src/Modules/Persons/Contracts` را مصرف می‌کنند. API Host مستقیماً به Application و Contracts ارجاع می‌دهد و به Domain/Infrastructure داخلی Persons ارجاع مستقیم ندارد. Shared Infrastructure صرفاً composition root و محل اجرای DbMigrator است و از طریق Extension رسمی Persons را ثبت می‌کند؛ آداپتورهای متصل به IdentityAccess در `MDGsm.Infrastructure.IdentityAccess` می‌مانند تا جهت وابستگی معکوس نشود.
+
+SQLهای Persons از Shared Infrastructure به اسمبلی `MDGsm.Persons.Infrastructure` منتقل و با LogicalNameهای قبلی `MDGsm.Migrations.NNNN_name.sql` منتشر می‌شوند. DbMigrator منابع هر دو اسمبلی را می‌خواند؛ نام فایل، محتوای SQL، شماره‌ها و checksumهای migration تغییر نمی‌کنند. این تغییر فقط جابه‌جایی کد و resource assembly است؛ هیچ Migration روی دیتابیس واقعی اجرا نمی‌شود.
+
+وضعیت این تغییر در شاخهٔ stacked Issue #99 در انتظار restore/build/test، PostgreSQL 18 Linux/Windows migration replay، بازبینی مستقل و پذیرش نهایی است. `g1Authorized=false` باقی می‌ماند و این تغییر به‌تنهایی مجوز G1، feature flag، production deployment یا merge نیست.
 

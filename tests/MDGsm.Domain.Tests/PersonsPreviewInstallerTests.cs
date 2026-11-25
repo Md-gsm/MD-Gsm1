@@ -177,7 +177,7 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("refusing to remove or take over that service", serviceScript);
         Assert.Contains("refusing to reconfigure an unexpected service", serviceScript);
         Assert.Contains("Rollback restored the pre-install Running state and loopback API health", serviceScript);
-        var keyProvider = File.ReadAllText(Path.Combine(root, "src", "BuildingBlocks", "MDGsm.Infrastructure", "Persons", "WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.cs"));
+        var keyProvider = File.ReadAllText(Path.Combine(root, "src", "Modules", "Persons", "Infrastructure", "WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.cs"));
         Assert.Contains("ValidateKeyStorageForCurrentService", keyProvider);
         Assert.Contains("ValidateProtectedKeyStorage", keyProvider);
         Assert.Contains("GetOwner(typeof(SecurityIdentifier))", keyProvider);
@@ -187,7 +187,7 @@ public sealed class PersonsPreviewInstallerTests
         Assert.Contains("identity.Groups.Contains(serviceSid)", keyProvider);
         Assert.Contains("GetAccessRules(", keyProvider);
         Assert.Contains("ProvisionNewKeyForService", apiProgram);
-        var keyStartupValidator = File.ReadAllText(Path.Combine(root, "src", "BuildingBlocks", "MDGsm.Infrastructure", "Persons", "TemporaryWorkflowKeyStartupValidator.cs"));
+        var keyStartupValidator = File.ReadAllText(Path.Combine(root, "src", "Modules", "Persons", "Infrastructure", "TemporaryWorkflowKeyStartupValidator.cs"));
         Assert.Contains("ValidateKeyStorageForCurrentService", keyStartupValidator);
         Assert.Contains("[SupportedOSPlatform(\"windows\")]", keyStartupValidator);
         Assert.Contains("CloseApplications=yes", iss);
@@ -217,7 +217,7 @@ public sealed class PersonsPreviewInstallerTests
         var installScript = File.ReadAllText(Path.Combine(root, "installer", "Install-MDGsmApiService.ps1"));
         var uninstallScript = File.ReadAllText(Path.Combine(root, "installer", "Uninstall-MDGsmApiService.ps1"));
         var integrationScript = File.ReadAllText(Path.Combine(root, "scripts", "Test-WindowsServiceInstaller.ps1"));
-        var provider = File.ReadAllText(Path.Combine(root, "src", "BuildingBlocks", "MDGsm.Infrastructure", "Persons", "WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.cs"));
+        var provider = File.ReadAllText(Path.Combine(root, "src", "Modules", "Persons", "Infrastructure", "WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.cs"));
 
         Assert.Contains("FileMode.CreateNew", provider);
         Assert.Contains("--provision-persons-workflow-key", installScript);

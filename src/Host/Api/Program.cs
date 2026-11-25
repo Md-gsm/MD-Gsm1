@@ -2,15 +2,12 @@ using System.Net.Http.Headers;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using MDGsm.Api.Security;
-using MDGsm.Api.Persons;
 using MDGsm.Application.Contracts;
-using MDGsm.Application.Persons;
+using MDGsm.Persons.Application;
 using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Contracts;
 using MDGsm.IdentityAccess.Domain;
-using MDGsm.Domain.Persons;
 using MDGsm.Infrastructure.IdentityAccess;
-using MDGsm.Infrastructure.Persons;
 using MDGsm.Finance.Contracts;
 using MDGsm.Finance.Infrastructure.Accounts;
 using MDGsm.Persons.Contracts;
@@ -19,6 +16,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddMdGsmPersistence(builder.Configuration);
+
 if (args.Length > 0 && string.Equals(args[0], "--provision-persons-workflow-key", StringComparison.Ordinal))
 {
     if (args.Length != 3)
@@ -26,13 +26,17 @@ if (args.Length > 0 && string.Equals(args[0], "--provision-persons-workflow-key"
     if (!OperatingSystem.IsWindows())
         throw new PlatformNotSupportedException("Persons workflow key provisioning is Windows-only.");
 
-    WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ProvisionNewKeyForService(args[1], args[2]);
+#pragma warning disable ASP0000 // The one-shot command exits before host startup and no provider escapes this scope.
+    using (var provisioningServices = builder.Services.BuildServiceProvider())
+    {
+        provisioningServices.GetRequiredService<ITemporaryWorkflowKeyProvisioner>()
+            .ProvisionNewKeyForService(args[1], args[2]);
+    }
+#pragma warning restore ASP0000
     return;
 }
-
-var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseWindowsService(options =>
-    options.ServiceName = WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.ApiServiceName);
+    options.ServiceName = PersonsApiServiceIdentity.ApiServiceName);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 // Windows Service console output is not a reliable diagnostic sink. Mirror
@@ -52,7 +56,6 @@ if (OperatingSystem.IsWindows())
 }
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
-builder.Services.AddMdGsmPersistence(builder.Configuration);
 builder.Services.AddSingleton<IAccessTokenFactory, OpaqueAccessTokenFactory>();
 builder.Services.AddSingleton<IPasswordHasher, PlatformPasswordHasher>();
 // Construct the HMAC key lazily. The login endpoint explicitly returns 503 when
@@ -68,7 +71,6 @@ builder.Services.AddScoped<IAuthenticatedActorContext, HttpAuthenticatedActorCon
 builder.Services.AddScoped<IFinanceActorContext, AuthenticatedFinanceActorContext>();
 builder.Services.AddScoped<PostgresPartyAccountProvisioner>();
 builder.Services.AddScoped<IPartyMergeParticipant, PostgresPartyAccountMergeParticipant>();
-builder.Services.AddScoped<PostgresPartyMergeService>();
 
 // The database-backed Persons endpoints must not be added to the endpoint data
 // source unless their complete persistence/authorization dependency set exists.
@@ -393,18 +395,7 @@ if (workflowPromotionApiEnabled)
             var result = await promotion.PromoteAsync(new TemporaryWorkflowPromotionCommand(
                 workflowRecordId, operationId, actor.AccountId, request.SelectedPartyId,
                 request.CreateNewParty, request.ConfirmDistinctParty, Guid.CreateVersion7()), cancellationToken);
-            var candidates = result.Candidates.Select(candidate => new PartyQuickRegistrationCandidateContract(
-                candidate.PartyId,
-                candidate.Type == PartyType.NaturalPerson ? "NaturalPerson" : "LegalEntity",
-                candidate.DisplayName,
-                new[]
-                {
-                    (candidate.Roles & PartyBusinessRoles.Customer) == PartyBusinessRoles.Customer ? "Customer" : null,
-                    (candidate.Roles & PartyBusinessRoles.Colleague) == PartyBusinessRoles.Colleague ? "Colleague" : null
-                }.Where(role => role is not null).Select(role => role!).ToArray(),
-                candidate.PartyIsActive, candidate.IsMerged, candidate.HasActiveMobile, candidate.MaskedMobile)).ToArray();
-            return Results.Ok(new TemporaryWorkflowPromotionResponse(
-                result.Outcome.ToString(), result.PartyId, result.Created, result.Replayed, candidates));
+            return Results.Ok(PersonsRegistrationMapper.Map(result));
         }
         catch (UnauthorizedAccessException)
         {

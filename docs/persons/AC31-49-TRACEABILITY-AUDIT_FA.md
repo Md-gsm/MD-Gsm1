@@ -157,3 +157,33 @@ Additional tests on the same head cover:
 - Migration 0012 and 0013 remain `IMPLEMENTED — DISPOSABLE VERIFICATION PENDING` in `MIGRATION_SEQUENCE_REGISTRY_FA.md`. Per the registry rule, update to `VERIFIED_DISPOSABLE` only after the implementation PR is merged and post-merge disposable application evidence, SQL SHA-256 values and merge commit are recorded.
 - No production database migration, customer key provisioning, live feature flag/API activation, deployment or G1 authorization is included. `g1Authorized=false` remains unchanged.
 - Acceptance Map version 1.3 maps AC-37 to the primary integration test above. AC-31..34, AC-38 and AC-45 remain explicitly UNMAPPED; this closure does not close Issue #97, #98 or #99.
+
+
+## Issue #99 — انتقال فیزیکی internals به پروژه‌های مستقل (2026-11-25)
+
+این بخش وضعیت جاری شاخهٔ `wg1/persons-independent-projects-issue-99-20261125` را ثبت می‌کند؛ بخش‌های تاریخی ممیزی بالا به‌عنوان snapshot زمان خود حفظ شده‌اند.
+
+### ساختار پروژه‌ای اعمال‌شده در شاخه
+
+- Domain: `src/Modules/Persons/Domain/MDGsm.Persons.Domain.csproj` — مستقل و بدون وابستگی پروژه‌ای.
+- Application: `src/Modules/Persons/Application/MDGsm.Persons.Application.csproj` — فقط وابسته به Domain و Contracts.
+- Infrastructure: `src/Modules/Persons/Infrastructure/MDGsm.Persons.Infrastructure.csproj` — فقط وابسته به Application، Domain و Contracts.
+- API Host به Application و Contracts ارجاع می‌دهد؛ به Domain/Infrastructure داخلی Persons ارجاع مستقیم ندارد.
+- IdentityAccess-owned authorization adapters در Shared Infrastructure / IdentityAccess باقی می‌مانند و از portهای Application اشخاص استفاده می‌کنند.
+- کد اجرایی از مسیرهای قدیمی `src/BuildingBlocks/MDGsm.{Domain,Application,Infrastructure}/Persons` خارج شده؛ READMEهای آن مسیرها صرفاً توضیح انتقال هستند.
+
+### DbMigrator و migration resources
+
+SQLهای Persons در اسمبلی `MDGsm.Persons.Infrastructure` به‌صورت EmbeddedResource قرار گرفته‌اند. نام LogicalResourceها بدون تغییر باقی می‌ماند و `DatabaseMigrationRunner` منابع اسمبلی Shared Infrastructure و Persons Infrastructure را با هم می‌خواند. تست `MigrationResourceTests` فهرست منابع دو اسمبلی را با همهٔ فایل‌های SQL و رجیستری مرکزی تطبیق می‌دهد. محتوای فایل‌های SQL و شماره‌گذاری آن‌ها تغییر نکرده است.
+
+### پذیرش و وضعیت
+
+- این تغییر روی شاخهٔ مستقل و stacked نسبت به PR #96 انجام شده و هنوز merge نشده است.
+- اجرای دقیق restore/build/test و PostgreSQL 18 migration replay روی Linux و Windows و review مستقل، شرط پذیرش Issue #99 است.
+- این تغییر به هیچ وجه Search quotas، Abuse Lock، Contact/Address history یا انتقال ستون‌های Finance-owned را تکمیل نمی‌کند؛ Issues #97/#98 همچنان بازند.
+- `g1Authorized=false`؛ هیچ Migration روی دیتابیس واقعی اجرا نشده و هیچ feature flag یا runtime فعال نشده است.
+
+
+### اصلاح مرز دادهٔ Finance در انتقال Issue #99
+
+نوع بلااستفادهٔ `PartyFinancialProfile` از Persons.Domain خارج شد؛ این نوع صرفاً سقف اعتبار، تخفیف، روش پرداخت و چهار رقم کارت را مدل می‌کرد و هیچ مصرف‌کنندهٔ اجرایی در مخزن نداشت. این داده‌ها طبق تصمیم مالک در Issue #98 متعلق به Finance هستند. حذف این مدل کد بلااستفاده، هیچ DDL یا داده‌ای را تغییر نداده است: چهار ستون قدیمی در Migration `0002` عمداً دست‌نخورده باقی مانده‌اند و حذف/انتقال Schema و داده فقط پس از inventory و برنامهٔ forward-only در Issue #98 پیگیری می‌شود.

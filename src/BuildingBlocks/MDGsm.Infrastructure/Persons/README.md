@@ -1,5 +1,3 @@
-# Persons Infrastructure — transitional implementation placement
+# Persons Infrastructure — legacy path notice
 
-The current PostgreSQL Persons repository/persistence implementation is located in this shared BuildingBlocks project as a documented transitional placement under ADR-0014. Persons business migration(s) are registered with the application-owned DbMigrator; CI validates them against disposable PostgreSQL 18 databases only.
-
-The module-owned target boundary remains Persons; this physical placement does not transfer data ownership. No production/real-data database migration is claimed, and G1 remains unauthorized.
+No executable Persons Infrastructure implementation is maintained in this BuildingBlocks directory. The active module-owned project is `src/Modules/Persons/Infrastructure/MDGsm.Persons.Infrastructure.csproj`. Shared Infrastructure is only the composition/migration boundary. This README remains as a migration/ownership breadcrumb; do not add source files here.

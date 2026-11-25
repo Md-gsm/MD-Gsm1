@@ -1,11 +1,8 @@
 {
-  "registryVersion": "1.7",
+  "registryVersion": "1.8",
   "module": "Persons",
   "ownerPaths": [
     "src/Modules/Persons",
-    "src/BuildingBlocks/MDGsm.Domain/Persons",
-    "src/BuildingBlocks/MDGsm.Application/Persons",
-    "src/BuildingBlocks/MDGsm.Infrastructure/Persons",
     "database/migrations/persons",
     "database/migrations/0008_persons_party_merge.sql",
     "database/migrations/0012_persons_workflow_promotion_results.sql",
@@ -19,15 +16,6 @@
       "mergeProtocolVersion": "1.0",
       "purpose": "Finance-owned one-to-one Party subledger account identity; no balance or ledger data.",
       "mergeClassification": "PERSISTED_ACTIVE_REFERENCE",
-      "mergeParticipant": false
-    },
-    {
-      "module": "ApiHost",
-      "path": "src/Host/Api/Persons/PersonsRegistrationMapper.cs",
-      "contractVersion": "Persons.Contracts/2.0",
-      "mergeProtocolVersion": "1.0",
-      "purpose": "Maps versioned Persons API registration and quick-registration response contracts to application commands and responses; transports PartyId and masked duplicate candidates without owning Party data.",
-      "mergeClassification": "NON_PERSISTENT_TRANSPORT",
       "mergeParticipant": false
     },
     {

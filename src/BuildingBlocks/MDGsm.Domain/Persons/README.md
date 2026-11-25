@@ -1,5 +1,3 @@
-# Persons Domain — transitional implementation placement
+# Persons Domain — legacy path notice
 
-The current Party domain implementation is located in this shared BuildingBlocks project as a documented transitional placement under ADR-0014. The module-owned target boundary remains Persons; this physical placement does not transfer data ownership.
-
-The domain implementation is partial. It does not imply that the complete Persons workflows, G1 acceptance or module activation are complete. New code must respect the approved ownership and Contracts boundaries.
+No executable Persons Domain implementation is maintained in this BuildingBlocks directory. The active module-owned project is `src/Modules/Persons/Domain/MDGsm.Persons.Domain.csproj`. This README remains only as a migration/ownership breadcrumb; do not add source files here.

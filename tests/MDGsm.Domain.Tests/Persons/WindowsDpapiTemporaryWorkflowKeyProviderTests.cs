@@ -2,8 +2,8 @@ using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using MDGsm.Application.Persons;
-using MDGsm.Infrastructure.Persons;
+using MDGsm.Persons.Application;
+using MDGsm.Persons.Infrastructure;
 using Xunit;
 
 namespace MDGsm.Domain.Tests.Persons;
