@@ -88,3 +88,31 @@ PR #47 بسته و `merged=false` است؛ بدنه آن **Superseded / Do Not M
 گام بعدی: (1) AC-31..34 و AC-37..38 برای SLA حذف، authorization/audit تمدید، promotion و redaction جامع؛ (2) AC-45 برای snapshot تاریخی و reconciliation همه ارجاعات؛ (3) پیش از تغییرات schema/Outbox/quota، تصمیم Owner/WG-0 و رزرو migration از مسیر Issue #97/#98؛ (4) چرخه کامل ContactPoint/Address و انتقال internals مطابق ADR-0016 در workstream هماهنگ جداگانه.
 
 این سند فقط ممیزی مستنداتی است؛ runtime، schema، migration، DB، تنظیم زنده GitHub یا تصمیم معماری را تغییر نمی‌دهد. `g1Authorized=false` باقی است.
+
+
+## AC-37 — promotion evidence update (2026-11-25)
+
+**Current criterion status: UNMAPPED / independent review pending.** Do not mark IMPLEMENTED or G1-ready solely from CI.
+
+### PostgreSQL integration test coverage
+
+Test file: `tests/MDGsm.Domain.Tests/Persons/PersonsTemporaryWorkflowPromotionPostgresTests.cs`
+
+- `AC37_authorization_matrix_denies_each_required_permission_before_mutation` — New Party requires promote/read/create; Existing Party requires promote/read; each missing permission is denied before state mutation.
+- `AC37_existing_party_path_does_not_require_create_permission` — positive Existing Party route with create permission denied.
+- `AC37_unprotectable_payload_is_rejected_without_state_change_and_can_retry_after_repair` — corrupted authenticated ciphertext fails closed, retains workflow/payload, and same OperationId succeeds after test-only payload repair.
+- `AC37_workflow_close_failure_rolls_back_and_same_operation_retries` — injected failure while transitioning workflow to promoted rolls back Party/operation/payload/tombstone state and retry succeeds.
+- `AC37_payload_purge_failure_rolls_back_and_same_operation_retries` — injected payload deletion failure rolls back and retry succeeds.
+- `AC37_failure_at_tombstone_insert_rolls_back_and_same_operation_retries` — injected tombstone failure rolls back and retry succeeds.
+- `AC37_failed_outbox_insert_rolls_back_party_workflow_tombstone_and_payload_deletion` — injected Outbox failure rolls back; same operation succeeds after removing the test trigger.
+- Existing tests cover duplicate review, explicit ForceNew confirmation, Existing Party selection, actor-bound replay, concurrent idempotency, PII-free tombstone/event envelope, and atomic Party/tombstone/payload/outbox commit.
+
+### Exact-head evidence
+
+- Commit: `44950e2303415e785c4d3dfb545b09d5c1ba27a7`
+- Linux PostgreSQL migration/integration job: run `45670296726`, job `139403651514` — passed; 63 tests passed.
+- Foundation build/test: job `139403651418` — passed.
+- API contract, merge contract, security, E2E disposable, architecture, consumer registry, CI enforcement and spec/checksum gates — passed.
+- Windows PostgreSQL migration, Windows installer integration and CodeQL were still pending at this evidence snapshot.
+
+The canonical mainline migration reservation is being handled by registry-only PR #104; PR #103 merged 0010/0011 only. Migration 0012/0013 remains pending full Linux/Windows disposable evidence and independent review. No real database migration, production key provisioning, runtime flag or G1 authorization is performed.
