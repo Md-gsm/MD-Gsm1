@@ -134,8 +134,8 @@ try {
     $firstRun = @(& dotnet run --project $migratorProject --configuration Release 2>&1)
     $firstExitCode = $LASTEXITCODE
     $firstRun | ForEach-Object { Write-Host $_ }
-    if ($firstExitCode -ne 0 -or (($firstRun -join "`n") -notmatch 'newlyApplied=12')) {
-        throw 'The first application migration run did not apply all ten registered migrations.'
+    if ($firstExitCode -ne 0 -or (($firstRun -join "`n") -notmatch 'newlyApplied=13')) {
+        throw 'The first application migration run did not apply all thirteen registered migrations.'
     }
 
     Write-Host 'Re-running the application-owned migration runner to verify idempotence and checksum validation...'
@@ -147,12 +147,20 @@ try {
     }
 
     $history = & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d $databaseName -t -A -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(migration_version)::text FROM mdgsm_migration_history;"
-    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '12|15') { throw "Migration history verification failed: '$history'." }
+    if ($LASTEXITCODE -ne 0 -or "$history".Trim() -ne '13|16') { throw "Migration history verification failed: '$history'." }
     $schemaVersion = & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d $databaseName -t -A -v ON_ERROR_STOP=1 -c "SELECT count(*)::text || '|' || max(version)::text FROM mdgsm_schema_version;"
     if ($LASTEXITCODE -ne 0 -or "$schemaVersion".Trim() -ne '1|1') { throw "Infrastructure schema version verification failed: '$schemaVersion'." }
 
     $roleChecks = & $psqlPath -h 127.0.0.1 -p "$port" -U postgres -d $databaseName -t -A -v ON_ERROR_STOP=1 -c "SELECT (r.rolcanlogin AND NOT r.rolsuper AND NOT r.rolcreatedb AND NOT r.rolcreaterole AND NOT r.rolreplication AND NOT r.rolbypassrls AND NOT r.rolinherit)::text || '|' || has_database_privilege('migration_runner',current_database(),'CREATE')::text || '|' || has_schema_privilege('migration_runner','public','CREATE')::text || '|' || (SELECT count(*) FROM pg_auth_members m WHERE m.member=r.oid)::text FROM pg_roles r WHERE r.rolname='migration_runner';"
     if ($LASTEXITCODE -ne 0 -or "$roleChecks".Trim() -ne 'true|false|false|1') { throw "Migration LOGIN privilege boundary failed: '$roleChecks'." }
+
+    Write-Host 'Running the seeded Migration 0016 archive parity/immutability integration proof on Windows...'
+    $testsProject = Join-Path $PSScriptRoot '..\tests\MDGsm.Domain.Tests\MDGsm.Domain.Tests.csproj'
+    if (-not (Test-Path -LiteralPath $testsProject)) { throw "Domain test project not found: $testsProject" }
+    & dotnet restore $testsProject
+    if ($LASTEXITCODE -ne 0) { throw 'Could not restore the integration test project on Windows.' }
+    & dotnet test $testsProject --configuration Release --no-restore --filter "FullyQualifiedName~PersonsFinancialFieldArchiveMigrationTests" --logger "console;verbosity=normal"
+    if ($LASTEXITCODE -ne 0) { throw 'Seeded Migration 0016 archive integration proof failed on Windows PostgreSQL 18.' }
 
     Write-Host 'PASS: PostgreSQL 18 on Windows, EDB installer checksum, disposable database marker, app-owned migrations, checksum history and second-run idempotence.' -ForegroundColor Green
 }
