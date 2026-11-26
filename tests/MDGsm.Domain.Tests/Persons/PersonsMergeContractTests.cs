@@ -63,7 +63,7 @@ public sealed class PersonsMergeContractTests
     }
 
     [Fact]
-    public void AC41_FinanceMergeParticipantImplementsVersionedProtocolHooks()
+    public void AC41_AllRegisteredParticipantsImplementVersionedProtocolHooks()
     {
         var contract = typeof(IPartyMergeParticipant);
         var participants = new IPartyMergeParticipant[]
@@ -112,7 +112,7 @@ public sealed class PersonsMergeContractTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task AC42_preview_is_read_only_and_counts_transferable_finance_references()
+    public async Task AC42_preview_is_read_only_and_counts_all_finance_and_persons_references()
     {
         await using var dataSource = OpenDataSource();
         var source = await CreatePartyAsync(dataSource, "Source");
@@ -200,6 +200,61 @@ public sealed class PersonsMergeContractTests
         Assert.Equal(1L, await CountActiveContactPointsAsync(dataSource, target));
         Assert.Equal(1L, await CountActiveAddressesAsync(dataSource, source));
         Assert.Equal(1L, await CountActiveAddressesAsync(dataSource, target));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AC45_merge_preserves_existing_lifecycle_snapshots_and_reconciles_active_references()
+    {
+        await using var dataSource = OpenDataSource();
+        var source = await CreatePartyAsync(dataSource, "AC45-Source");
+        var target = await CreatePartyAsync(dataSource, "AC45-Target");
+        var accountId = await CreateFinanceAccountAsync(dataSource, source);
+        var accountCreatedAt = await FindAccountCreatedAtAsync(dataSource, source);
+
+        const string sharedMobile = "+989120000007";
+        const string sharedAddress = "AC45-shared-address";
+        await CreateContactPointAsync(dataSource, source, 1, sharedMobile, true, true);
+        await CreateContactPointAsync(dataSource, target, 1, sharedMobile, true, false);
+        await CreateContactPointAsync(dataSource, source, 2, "ac45-source@example.test", true, true);
+        await CreateAddressAsync(dataSource, source, sharedAddress, true);
+        await CreateAddressAsync(dataSource, target, sharedAddress, true);
+        await CreateAddressAsync(dataSource, source, "AC45-source-unique-address", false);
+
+        var preMergeHistoryIds = await ReadHistoryIdsAsync(dataSource, [source, target]);
+        Assert.NotEmpty(preMergeHistoryIds);
+        var preMergeSnapshots = await ReadHistorySnapshotSetAsync(dataSource, preMergeHistoryIds);
+
+        var service = new PostgresPartyMergeService(dataSource,
+            [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant()]);
+        var operationId = Guid.CreateVersion7();
+        var result = await service.MergeAsync(
+            source, target, operationId, "ci-merge-actor", DateTimeOffset.UtcNow);
+
+        Assert.False(result.Replayed);
+        Assert.False(await IsActiveAsync(dataSource, source));
+        Assert.True(await IsActiveAsync(dataSource, target));
+        Assert.Equal(target, await FindMergedIntoAsync(dataSource, source));
+
+        // Two exact duplicates are retired; two unique source references transfer to the canonical Party.
+        Assert.Equal(0L, await CountActiveContactPointsAsync(dataSource, source));
+        Assert.Equal(0L, await CountActiveAddressesAsync(dataSource, source));
+        Assert.Equal(2L, await CountActiveContactPointsAsync(dataSource, target));
+        Assert.Equal(2L, await CountActiveAddressesAsync(dataSource, target));
+
+        Assert.Equal(accountId, await FindAccountIdAsync(dataSource, target));
+        Assert.Equal(accountCreatedAt, await FindAccountCreatedAtAsync(dataSource, target));
+        Assert.Null(await FindAccountIdAsync(dataSource, source));
+
+        // Existing before/after snapshots must be byte-for-byte stable by their immutable history IDs.
+        Assert.Equal(preMergeSnapshots,
+            await ReadHistorySnapshotSetAsync(dataSource, preMergeHistoryIds));
+        Assert.True(await CountMergeHistoryRowsAsync(dataSource, operationId) >= 5L);
+
+        // Target consent remains restrictive and only one primary address survives.
+        Assert.False(await ReadMessagingConsentAsync(dataSource, target, sharedMobile));
+        Assert.Equal(1L, await CountPrimaryAddressesAsync(dataSource, target));
+        Assert.Equal(2L, await CountPrimaryContactPointsAsync(dataSource, target));
     }
 
     [Fact]
@@ -369,6 +424,89 @@ public sealed class PersonsMergeContractTests
         command.Parameters.AddWithValue("primary", isPrimary);
         await command.ExecuteNonQueryAsync();
         return id;
+    }
+
+    private static async Task<Guid[]> ReadHistoryIdsAsync(
+        NpgsqlDataSource dataSource, Guid[] partyIds)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("""
+            SELECT history_id
+            FROM persons_lifecycle_history
+            WHERE party_id = ANY(@parties)
+            ORDER BY history_id;
+            """, connection);
+        command.Parameters.AddWithValue("parties", partyIds);
+        var ids = new List<Guid>();
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            ids.Add(reader.GetGuid(0));
+        return [.. ids];
+    }
+
+    private static async Task<string> ReadHistorySnapshotSetAsync(
+        NpgsqlDataSource dataSource, Guid[] historyIds)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("""
+            SELECT COALESCE(
+                jsonb_agg(to_jsonb(history) ORDER BY history.history_id),
+                '[]'::jsonb)::text
+            FROM persons_lifecycle_history AS history
+            WHERE history.history_id = ANY(@ids);
+            """, connection);
+        command.Parameters.AddWithValue("ids", historyIds);
+        return (string)(await command.ExecuteScalarAsync())!;
+    }
+
+    private static async Task<long> CountMergeHistoryRowsAsync(
+        NpgsqlDataSource dataSource, Guid operationId)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("""
+            SELECT count(*) FROM persons_lifecycle_history
+            WHERE operation_id=@operation
+              AND change_type IN ('merge-source','merge-transfer','merge-deduplicated');
+            """, connection);
+        command.Parameters.AddWithValue("operation", operationId);
+        return (long)(await command.ExecuteScalarAsync())!;
+    }
+
+    private static async Task<bool> ReadMessagingConsentAsync(
+        NpgsqlDataSource dataSource, Guid partyId, string mobile)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("""
+            SELECT is_messaging_allowed FROM persons_contact_points
+            WHERE party_id=@party AND kind=1 AND value=@mobile AND is_active;
+            """, connection);
+        command.Parameters.AddWithValue("party", partyId);
+        command.Parameters.AddWithValue("mobile", mobile);
+        return (bool)(await command.ExecuteScalarAsync())!;
+    }
+
+    private static async Task<long> CountPrimaryAddressesAsync(
+        NpgsqlDataSource dataSource, Guid partyId)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("""
+            SELECT count(*) FROM persons_addresses
+            WHERE party_id=@party AND is_active AND is_primary;
+            """, connection);
+        command.Parameters.AddWithValue("party", partyId);
+        return (long)(await command.ExecuteScalarAsync())!;
+    }
+
+    private static async Task<long> CountPrimaryContactPointsAsync(
+        NpgsqlDataSource dataSource, Guid partyId)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("""
+            SELECT count(*) FROM persons_contact_points
+            WHERE party_id=@party AND is_active AND is_primary;
+            """, connection);
+        command.Parameters.AddWithValue("party", partyId);
+        return (long)(await command.ExecuteScalarAsync())!;
     }
 
     private static async Task<long> CountActiveContactPointsAsync(NpgsqlDataSource dataSource, Guid partyId)
