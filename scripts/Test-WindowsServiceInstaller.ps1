@@ -349,6 +349,7 @@ Assert-KeyProvisionedMarker 'initial-install'
 # exact file and directory DACLs before starting the service; service startup
 # validates successful DPAPI unprotection under NT SERVICE\MDGsmApi.
 Assert-ServiceReady 'initial-install'
+Assert-DatabaseProvisioning 'initial-install'
 $unexpectedKeyRead = $false
 $keyBytes = $null
 try {
@@ -400,10 +401,18 @@ Write-Host '== Repair by rerunning the actual system-wide installer =='
 Invoke-SystemInstaller 'repair'
 Assert-ServiceReady 'repair'
 Assert-KeyProvisionedMarker 'repair'
+Assert-DatabaseProvisioning 'repair'
 
 Write-Host '== Uninstall and verify key-directory preservation =='
 Invoke-SystemUninstaller 'first-uninstall'
 Assert-KeyProvisionedMarker 'first-uninstall'
+$pgServiceAfterUninstall = Get-Service -Name 'MDGsmPostgreSQL18' -ErrorAction SilentlyContinue
+$connectionFileAfterUninstall = Join-Path $env:ProgramData 'MD-Gsm\Secrets\Api\database-connection.dpapi'
+if ($null -eq $pgServiceAfterUninstall -or $pgServiceAfterUninstall.Status -ne 'Running' -or
+    -not (Test-Path -LiteralPath $connectionFileAfterUninstall -PathType Leaf) -or
+    (Get-FileHash -LiteralPath $connectionFileAfterUninstall -Algorithm SHA256).Hash -ne $script:initialRuntimeConnectionHash) {
+    throw 'API uninstall removed or changed the central PostgreSQL cluster or protected runtime credential.'
+}
 
 Write-Host '== Reinstall after uninstall to prove the existing DPAPI key was preserved =='
 # If the key file was deleted, Install-MDGsmApiService.ps1 sees the existing
@@ -411,6 +420,7 @@ Write-Host '== Reinstall after uninstall to prove the existing DPAPI key was pre
 Invoke-SystemInstaller 'post-uninstall-reinstall'
 Assert-ServiceReady 'post-uninstall-reinstall'
 Assert-KeyProvisionedMarker 'post-uninstall-reinstall'
+Assert-DatabaseProvisioning 'post-uninstall-reinstall'
 $setupLogAfterReinstall = Join-Path $env:TEMP 'MD-Gsm-ApiServiceSetup.log'
 if (-not (Test-Path -LiteralPath $setupLogAfterReinstall -PathType Leaf) -or
     -not (Get-Content -LiteralPath $setupLogAfterReinstall -Raw).Contains('Existing DPAPI key-provisioned marker found; one-time provisioning skipped.')) {
