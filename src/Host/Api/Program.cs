@@ -338,8 +338,10 @@ if (builder.Configuration.GetValue<bool>("Persons:SearchApiEnabled") &&
         [FromServices] IPersonsSearchControl searchControl, CancellationToken cancellationToken) =>
     {
         var accountId = AccountId.From(actor.AccountId);
-        // Search is global and rowless; use the same fail-closed role scope as Party details.
-        if (!await PersonsGlobalReadAuthorization.CanReadAsync(permissions, accountId, cancellationToken))
+        // Search is global and rowless: general read permission is not sufficient.
+        // A dedicated permission prevents low-privilege roles from enumerating the Party directory.
+        if (!await PersonsGlobalReadAuthorization.CanReadAsync(permissions, accountId, cancellationToken) ||
+            !await permissions.HasPermissionAsync(accountId, "persons.search", cancellationToken))
         {
             await searchControl.RecordSecurityViolationAsync(actor.AccountId.ToString("D"),
                 PersonsSearchSecurityViolation.PermissionDenied, context.TraceIdentifier, cancellationToken);
@@ -360,7 +362,16 @@ if (builder.Configuration.GetValue<bool>("Persons:SearchApiEnabled") &&
         {
             var results = await parties.SearchAsync(term, limit ?? PartySearchLimits.MaxResults,
                 actor.AccountId.ToString("D"), cancellationToken);
-            return (IResult)Results.Ok(new { items = results, requestId = context.TraceIdentifier });
+            // Search returns only the fields needed to identify a candidate.
+            // Do not serialize the internal list DTO (roles, city, or creation timestamp).
+            var items = results.Select(item => new
+            {
+                partyId = item.PartyId,
+                partyType = item.PartyType.ToString(),
+                displayName = item.DisplayName,
+                maskedMobile = item.MaskedMobile
+            });
+            return (IResult)Results.Ok(new { items, requestId = context.TraceIdentifier });
         }
         catch (ArgumentException)
         {
