@@ -12,3 +12,13 @@ All Persons routes require a PostgreSQL-validated IdentityAccess bearer session.
 All write routes are fail-closed behind `Persons:WriteApiEnabled`, whose default is false. The Desktop client cannot set or override this server configuration. Search/list HTTP exposure remains withheld until persistent per-actor/per-purpose quotas, a global warning counter, abuse-lock criteria and audited admin unlock are approved and implemented.
 
 These routes are a partial implementation candidate, not Persons G1 authorization, production readiness, schema-change authorization or production activation. Contact/Address lifecycle, persistent search controls, Outbox, complete merge-consumer acceptance and independent security review remain open.
+
+## Search security boundary (PR #96)
+
+The global Search endpoint is separately gated by `Persons:SearchApiEnabled` (default false),
+a live `persons.read` check, and the dedicated `persons.search` permission. In the initial
+permission matrix, only SuperAdmin receives `persons.search`; other roles are denied by default.
+Search responses are allow-listed to PartyId, PartyType, display name and masked mobile.
+Business roles, city and creation timestamps are not serialized. Per-actor quotas and the
+approved 5-violations/10-minute, 15-minute Abuse Lock remain additional controls, not
+substitutes for authorization.
