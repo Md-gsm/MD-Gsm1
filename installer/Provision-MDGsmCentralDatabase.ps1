@@ -275,9 +275,14 @@ try {
             throw 'The existing PostgreSQL installation state is invalid or does not match this product.'
         }
         if ($null -eq $service) {
-            throw 'The managed PostgreSQL service is missing. Setup will preserve the existing data directory and will not initialize a replacement cluster.'
+            if (Test-Path -LiteralPath $pgDataDirectory -PathType Container) {
+                throw 'The managed PostgreSQL service is missing while its data directory exists. Setup will preserve the cluster and will not reinitialize it.'
+            }
+            if ($state.Status -eq 'ready') {
+                throw 'The PostgreSQL service is missing from a completed installation; Repair will not recreate it automatically.'
+            }
         }
-        if (-not (Test-Path -LiteralPath $pgDataDirectory -PathType Container)) {
+        elseif (-not (Test-Path -LiteralPath $pgDataDirectory -PathType Container)) {
             throw 'The managed PostgreSQL data directory is missing; refusing to create a new empty cluster during Repair.'
         }
         $script:clusterSecrets = (Unprotect-Text $adminSecretPath) | ConvertFrom-Json
@@ -363,8 +368,13 @@ try {
         }
     }
 
+    $groupAttributes = Invoke-Psql 'postgres' 'postgres' $script:clusterSecrets.SuperuserPassword "SELECT (NOT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit)::text FROM pg_roles WHERE rolname = 'mdgsm_runtime';"
+    if ($groupAttributes -ne 'true') { throw 'The mdgsm_runtime group role has unexpected PostgreSQL role attributes.' }
+
     Invoke-Psql 'postgres' 'postgres' $script:clusterSecrets.SuperuserPassword "GRANT mdgsm_runtime TO mdgsm_api_runtime WITH INHERIT TRUE, SET FALSE, ADMIN FALSE;" | Out-Null
     Invoke-Psql 'postgres' 'postgres' $script:clusterSecrets.SuperuserPassword "GRANT CONNECT ON DATABASE mdgsm TO mdgsm_api_runtime;" | Out-Null
+    $membership = Invoke-Psql 'postgres' 'postgres' $script:clusterSecrets.SuperuserPassword "SELECT (m.inherit_option AND NOT m.set_option AND NOT m.admin_option)::text FROM pg_auth_members m JOIN pg_roles parent ON parent.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE parent.rolname='mdgsm_runtime' AND member.rolname='mdgsm_api_runtime';"
+    if ($membership -ne 'true') { throw 'The API LOGIN membership options do not match the least-privilege runtime policy.' }
 
     $apiIdentity = Invoke-Psql 'mdgsm' 'mdgsm_api_runtime' $apiPassword "SELECT session_user || '|' || current_user || '|' || current_database() || '|' || (current_setting('server_version_num')::integer / 10000)::text || '|' || inet_server_addr()::text;"
     if ($apiIdentity -ne 'mdgsm_api_runtime|mdgsm_api_runtime|mdgsm|18|127.0.0.1') {
