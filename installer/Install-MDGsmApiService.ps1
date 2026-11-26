@@ -358,10 +358,33 @@ function Invoke-InstallPhase {
             throw "The central PostgreSQL provisioner is missing from the installation package."
         }
         Write-SetupLog 'Running central PostgreSQL 18 provision-or-verify. This step does not apply application schema migrations.'
-        $provisionOutput = @(& $provisionerPath -InstallDirectory $InstallDirectory 2>&1)
-        $provisionExitCode = $LASTEXITCODE
-        foreach ($line in @($provisionOutput)) {
-            Write-SetupLog ('Database provisioner: ' + [string]$line)
+        $provisionStdout = Join-Path $env:TEMP ('MDGsm-Postgres-Provision-' + [Guid]::NewGuid().ToString('N') + '.out.log')
+        $provisionStderr = Join-Path $env:TEMP ('MDGsm-Postgres-Provision-' + [Guid]::NewGuid().ToString('N') + '.err.log')
+        $provisionPowerShell = Join-Path $PSHOME 'powershell.exe'
+        $provisionArguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
+            $provisionerPath + '" -InstallDirectory "' + $InstallDirectory + '"'
+        $provisionStart = @{
+            FilePath = $provisionPowerShell
+            ArgumentList = $provisionArguments
+            Wait = $true
+            PassThru = $true
+            NoNewWindow = $true
+            RedirectStandardOutput = $provisionStdout
+            RedirectStandardError = $provisionStderr
+        }
+        try {
+            $provisionProcess = Start-Process @provisionStart
+            $provisionExitCode = $provisionProcess.ExitCode
+        }
+        finally {
+            foreach ($provisionLog in @($provisionStdout, $provisionStderr)) {
+                if (Test-Path -LiteralPath $provisionLog -PathType Leaf) {
+                    foreach ($line in Get-Content -LiteralPath $provisionLog) {
+                        Write-SetupLog ('Database provisioner: ' + [string]$line)
+                    }
+                    Remove-Item -LiteralPath $provisionLog -Force -ErrorAction SilentlyContinue
+                }
+            }
         }
         if ($provisionExitCode -ne 0) {
             throw "Central PostgreSQL provisioning failed (exit $provisionExitCode); API service start is blocked."
