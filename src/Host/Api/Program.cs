@@ -446,7 +446,7 @@ if (builder.Configuration.GetValue<bool>("Persons:LifecycleApiEnabled") &&
         IAuthenticatedActorContext actor, [FromServices] IRolePermissionStore permissions,
         [FromServices] IPartyLifecycleService lifecycleService, CancellationToken cancellationToken) =>
     {
-        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.contact.update", cancellationToken))
+        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.update", cancellationToken))
             return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
         try
         {
@@ -478,7 +478,7 @@ if (builder.Configuration.GetValue<bool>("Persons:LifecycleApiEnabled") &&
         IAuthenticatedActorContext actor, [FromServices] IRolePermissionStore permissions,
         [FromServices] IPartyLifecycleService lifecycleService, CancellationToken cancellationToken) =>
     {
-        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.address.update", cancellationToken))
+        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.update", cancellationToken))
             return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
         try
         {
