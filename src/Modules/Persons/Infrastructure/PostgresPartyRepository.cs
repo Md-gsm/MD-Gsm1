@@ -62,7 +62,7 @@ public sealed class PostgresPartyRepository(
         return QuickRegisterAsync(request, PartyType.NaturalPerson,
             PersianText.Normalize($"{request.GivenName} {request.FamilyName}"),
             actorId, operationId, forceNew, selectedPartyId, confirmDistinctParty, outboxContext, transaction,
-            () => AddNaturalAsync(request, actorId, operationId, transaction, cancellationToken), cancellationToken);
+            () => AddNaturalAsync(request, actorId, operationId, transaction, cancellationToken, outboxContext), cancellationToken);
     }
 
     public Task<PartyQuickRegistrationResult> QuickRegisterLegalAsync(
@@ -75,7 +75,7 @@ public sealed class PostgresPartyRepository(
         PartyRegistrationRules.ValidateWorkClassification(PartyType.LegalPerson, request.Roles, request.WorkClassification);
         return QuickRegisterAsync(request, PartyType.LegalPerson, PersianText.Normalize(request.LegalName),
             actorId, operationId, forceNew, selectedPartyId, confirmDistinctParty, outboxContext, transaction,
-            () => AddLegalAsync(request, actorId, operationId, transaction, cancellationToken), cancellationToken);
+            () => AddLegalAsync(request, actorId, operationId, transaction, cancellationToken, outboxContext), cancellationToken);
     }
 
     private async Task<PartyQuickRegistrationResult> QuickRegisterAsync(
