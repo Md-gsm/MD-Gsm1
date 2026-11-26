@@ -116,18 +116,8 @@ assert_eq "$KEY_REPEAT" "$KEY" "Same InstallationId yields same server-derived 6
 [[ "$OTHER_KEY" != "$KEY" ]] || fail "independent test InstallationIds unexpectedly produced the same key"
 pass "Different InstallationId test vector derives a separate lock key"
 
-# Built-in lock/hash functions must be callable by a non-privileged test role.
-"${PSQL[@]}" -q <<'SQL'
-CREATE ROLE o46_test_executor NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
-SET ROLE o46_test_executor;
-SELECT CASE WHEN
-  has_function_privilege(current_user, 'pg_catalog.hashtextextended(text,bigint)', 'EXECUTE')
-  AND has_function_privilege(current_user, 'pg_catalog.pg_advisory_xact_lock(bigint)', 'EXECUTE')
-  AND has_function_privilege(current_user, 'pg_catalog.pg_advisory_xact_lock_shared(bigint)', 'EXECUTE')
-THEN 1 ELSE 1/0 END;
-RESET ROLE;
-SQL
-pass "Non-privileged role can execute required pg_catalog lock/hash primitives"
+# Executor is intentionally not expected to receive direct table or pg_catalog privileges.
+"${PSQL[@]}" -q -c "CREATE ROLE o46_test_executor NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT"
 
 # Exclusive lock excludes both lock modes; independent InstallationIds proceed separately.
 start_holder "o46-exclusive-holder" "$KEY" "exclusive" 3
@@ -275,6 +265,17 @@ GRANT USAGE ON SCHEMA o46_test TO o46_test_executor;
 GRANT EXECUTE ON FUNCTION o46_test.issue_initial_owner_challenge_v1(uuid,uuid,uuid,bytea)
   TO o46_test_executor;
 SQL
+
+# Verify the effective built-in privileges on the actual SECURITY DEFINER owner and Reader roles.
+# No system-function grant is added by this test; missing privilege is a hard failure/evidence.
+OWNER_LOCK_PRIVS="$(query "SELECT
+  has_function_privilege('o46_test_fn_owner','pg_catalog.hashtextextended(text,bigint)','EXECUTE')::text || '|' ||
+  has_function_privilege('o46_test_fn_owner','pg_catalog.pg_advisory_xact_lock(bigint)','EXECUTE')::text;")"
+assert_eq "$OWNER_LOCK_PRIVS" "true|true" "NOLOGIN SECURITY DEFINER owner can derive and acquire the exclusive lock"
+READER_LOCK_PRIVS="$(query "SELECT
+  has_function_privilege('o46_test_reader','pg_catalog.hashtextextended(text,bigint)','EXECUTE')::text || '|' ||
+  has_function_privilege('o46_test_reader','pg_catalog.pg_advisory_xact_lock_shared(bigint)','EXECUTE')::text;")"
+assert_eq "$READER_LOCK_PRIVS" "true|true" "View-only Reader can derive key and acquire the shared lock"
 
 ACL_RESULT="$(query "SELECT
   has_function_privilege('o46_test_executor',
