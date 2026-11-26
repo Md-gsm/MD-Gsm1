@@ -15,10 +15,10 @@ These routes are a partial implementation candidate, not Persons G1 authorizatio
 
 ## Search security boundary (PR #96)
 
-The global Search endpoint is separately gated by `Persons:SearchApiEnabled` (default false),
-a live `persons.read` check, and the dedicated `persons.search` permission. In the initial
-permission matrix, only SuperAdmin receives `persons.search`; other roles are denied by default.
-Search responses are allow-listed to PartyId, PartyType, display name and masked mobile.
-Business roles, city and creation timestamps are not serialized. Per-actor quotas and the
-approved 5-violations/10-minute, 15-minute Abuse Lock remain additional controls, not
-substitutes for authorization.
+Search is gated by `Persons:SearchApiEnabled` (default false) and the same server-side,
+fail-closed `PersonsGlobalReadAuthorization` used by Party details. Technician is denied
+from global Search until authoritative assignment-based row scope exists. Denials are
+audited before quota consumption or database search. Search responses are allow-listed to
+PartyId, PartyType, display name and masked mobile; internal business roles, city and
+creation timestamps are not serialized. Per-actor quotas and the approved Abuse Lock are
+additional controls, not substitutes for authorization.
