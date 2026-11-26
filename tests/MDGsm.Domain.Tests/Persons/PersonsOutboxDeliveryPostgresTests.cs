@@ -119,13 +119,13 @@ public sealed class PersonsOutboxDeliveryPostgresTests
         var firstLease = Assert.Single(await store.LeaseDueAsync(
             workerA, 1, startAt, startAt.AddMinutes(1), default, [eventId]));
         Assert.Equal(eventId, firstLease.Event.EventId);
-        Assert.Equal(Guid.Parse(party.PartyId), leasedEvent.Event.AggregateId);
+        Assert.Equal(Guid.Parse(party.PartyId), firstLease.Event.AggregateId);
         Assert.Equal(1, firstLease.AttemptCount);
 
         var reclaimAt = startAt.AddMinutes(1).AddSeconds(1);
         var secondLease = Assert.Single(await store.LeaseDueAsync(
             workerB, 1, reclaimAt, reclaimAt.AddMinutes(1), default, [eventId]));
-        Assert.Equal(leasedEvent.Event.EventId, secondLease.Event.EventId);
+        Assert.Equal(firstLease.Event.EventId, secondLease.Event.EventId);
         Assert.Equal(2, secondLease.AttemptCount);
 
         Assert.False(await store.MarkDeliveredAsync(
@@ -173,12 +173,10 @@ public sealed class PersonsOutboxDeliveryPostgresTests
         var store = new PostgresPersonsOutboxDeliveryStore(dataSource);
         var start = DateTimeOffset.UtcNow;
         var eventId = await EventIdForOperationAsync(dataSource, operation);
-        var firstLease = await store.LeaseDueAsync(
-            "worker-a", 1, start, start.AddMinutes(1), default, [eventId]);
-        var leasedEvent = Assert.Single(firstLease);
+        var leasedEvent = Assert.Single(await store.LeaseDueAsync(
+            "worker-a", 1, start, start.AddMinutes(1), default, [eventId]));
         Assert.Equal(Guid.Parse(party.PartyId), leasedEvent.Event.AggregateId);
 
-        Assert.Equal(Guid.Parse(party.PartyId), firstLease.Event.AggregateId);
         var retryAt = start.AddSeconds(30);
         Assert.True(await store.ScheduleRetryAsync(
             leasedEvent.Event.EventId, "worker-a", start.AddSeconds(1), retryAt,
@@ -189,7 +187,7 @@ public sealed class PersonsOutboxDeliveryPostgresTests
         var secondLease = Assert.Single(await store.LeaseDueAsync(
             "worker-b", 1, retryAt.AddSeconds(1), retryAt.AddMinutes(1), default, [eventId]));
 
-        Assert.Equal(firstLease.Event.EventId, secondLease.Event.EventId);
+        Assert.Equal(leasedEvent.Event.EventId, secondLease.Event.EventId);
         Assert.Equal(2, secondLease.AttemptCount);
         Assert.True(await store.MarkDeliveredAsync(
             secondLease.Event.EventId, "worker-b", retryAt.AddSeconds(2), default));
