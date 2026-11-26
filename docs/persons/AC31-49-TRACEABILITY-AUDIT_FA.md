@@ -187,3 +187,38 @@ SQLهای Persons در اسمبلی `MDGsm.Persons.Infrastructure` به‌صور
 ### اصلاح مرز دادهٔ Finance در انتقال Issue #99
 
 نوع بلااستفادهٔ `PartyFinancialProfile` از Persons.Domain خارج شد؛ این نوع صرفاً سقف اعتبار، تخفیف، روش پرداخت و چهار رقم کارت را مدل می‌کرد و هیچ مصرف‌کنندهٔ اجرایی در مخزن نداشت. این داده‌ها طبق تصمیم مالک در Issue #98 متعلق به Finance هستند. حذف این مدل کد بلااستفاده، هیچ DDL یا داده‌ای را تغییر نداده است: چهار ستون قدیمی در Migration `0002` عمداً دست‌نخورده باقی مانده‌اند و حذف/انتقال Schema و داده فقط پس از inventory و برنامهٔ forward-only در Issue #98 پیگیری می‌شود.
+
+
+---
+
+## Stage 6 — پذیرش و شواهد AC-31 تا AC-49 (2026-11-26)
+
+**مرجع جاری:** Acceptance Map v1.4 در `docs/persons/acceptance-gate-map.json`. بخش‌های قدیمی این گزارش snapshot تاریخی خود را حفظ می‌کنند و در موارد تعارض با این بخش Stage 6، وضعیت فعلی از Map v1.4 و شواهد commit-bound استخراج می‌شود.
+
+### نتیجه ردیابی
+
+- هر ۱۹ معیار AC-31 تا AC-49 دارای آزمون اصلی نام‌گذاری‌شده‌اند؛ ۱۷ آزمون پشتیبان نیز در نقشه ثبت شده‌اند. CI برای وجود فایل/متد اصلی و همهٔ supporting testها validator اجرا می‌کند.
+- AC-31 تا AC-38 به retention، renewal، search isolation، promotion اتمیک و redaction مربوط‌اند.
+- AC-39/40 کشف source-based مصرف‌کنندگان PartyId و classification یکتای آن‌ها را می‌آزمایند.
+- AC-41 participantهای واقعی Finance و Persons را برای تمام hookهای نسخه‌دار قرارداد بررسی می‌کند.
+- AC-42 preview ترکیبی Finance/Persons را فقط‌خواندنی بررسی می‌کند؛ AC-43 تعارض دو Finance account را پیش از mutation مسدود می‌کند؛ AC-44 idempotency، rollback/recovery و رقابت هم‌زمان را در هر دو participant می‌آزماید.
+- AC-45 snapshotهای history را با HistoryIdهای قبلی و JSON قبل/بعد از Merge مقایسه می‌کند و active referenceهای ContactPoint/Address، provenance، consent، primary flags، tombstone و merge-history را تطبیق می‌دهد. AccountId و CreatedAt حساب Finance نیز ثابت می‌مانند.
+
+### شواهد نامزد دقیق SHA
+
+- کد/آزمون روی SHA `ad5a1144b16268c19cd170a2e2759cddc448e972` ثبت شده است.
+- Persons Module Gates run `45800993885`: در زمان ثبت این snapshot، Windows PostgreSQL در حال اجرا بود؛ jobهای دیگر شامل spec/checksum، foundation، Linux PostgreSQL، security، API، architecture، registry، retention، merge، E2E و CI enforcement موفق بودند.
+- Foundation build/test job `139843963380`: **275 passed, 0 failed, 0 skipped**؛ build بدون warning و error.
+- Linux PostgreSQL job `139843963151`: **82 passed, 0 failed, 0 skipped**؛ Migration Runner در اجرای اول ۱۲ migration را اعمال کرد و اجرای دوم صفر migration جدید اعمال کرد. نسخه‌های 0012 تا 0015 در دیتابیس disposable اجرا شدند.
+- Project Charter Owner Gate run `45800993685`: موفق.
+- Windows PostgreSQL، CodeQL و Windows Installer در زمان ثبت این snapshot pending بودند؛ فقط نتیجه‌ای که روی SHA نهایی همین مرحله read-back شود، برای پذیرش قابل استفاده است.
+
+### محدودیت‌های پذیرش
+
+1. AC-32/35 از نظر کد و آزمون، sweep فوری، اجرای هر ۱۵ دقیقه، drain تمام batchهای due، retry و هشدار redacted را دارند. این شواهد به‌تنهایی تحویل واقعی هشدار در SLA پنج‌دقیقه‌ای یا ظرفیت purge تحت بار تولیدی را اثبات نمی‌کند؛ مقصد alert عملیاتی و آزمون بار محیط استقرار همچنان شرط عملیاتی جداگانه‌اند.
+2. Migration 0006 توضیح می‌دهد `finance_party_accounts` فقط هویت حساب تفصیلی را نگه می‌دارد و balance/ledger rows در آن وجود ندارد. AC-45 وضعیت تمام historyهای موجود Persons و شناسه/زمان حساب Finance را تطبیق می‌دهد؛ با ایجاد persistence دفترکل در آینده، snapshot/reconciliation آن هم باید به قرارداد و participant اضافه شود.
+3. AC-46 تا AC-49 کنترل CI و evidence manifest هستند؛ این چهار مورد Runtime acceptance ماژول محسوب نمی‌شوند.
+4. همهٔ migration proofها فقط روی PostgreSQL disposable هستند؛ هیچ دیتابیس واقعی یا مشتری تغییر نکرده است.
+5. PR #96 همچنان باز و ادغام‌نشده در `main` است. reviewهای قبلی به headهای قدیمی تعلق دارند و برای آخرین SHA معتبر نیستند. `g1Authorized=false` و `architectureAligned=false` باقی می‌مانند.
+
+این بخش، وضعیت پیاده‌سازی/ردیابی و snapshot اولیهٔ CI Stage 6 را ثبت می‌کند؛ بسته‌شدن رسمی Stage 6 هنوز به read-back کامل Windows PostgreSQL، CodeQL، Windows Installer و آزمون‌های Persons روی آخرین SHA مستندشده و بازبینی مستقل همان SHA وابسته است.
