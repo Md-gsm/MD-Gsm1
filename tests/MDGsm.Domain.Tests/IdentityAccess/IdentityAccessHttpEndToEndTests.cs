@@ -317,6 +317,17 @@ public sealed class IdentityAccessHttpEndToEndTests
                         ["IdentityAccess:HttpLoginEnabled"] = "true",
                         ["Persons:SearchApiEnabled"] = "true"
                     }));
+                // As in the primary host, bind both EF and raw Npgsql to this
+                // marked disposable database; a config-only override can leave a
+                // separately registered data source pointed at the default DB.
+                web.ConfigureTestServices(services =>
+                {
+                    services.RemoveAll<DbContextOptions<MdGsmDbContext>>();
+                    services.RemoveAll<MdGsmDbContext>();
+                    services.AddDbContext<MdGsmDbContext>(options => options.UseNpgsql(connectionString));
+                    services.RemoveAll<NpgsqlDataSource>();
+                    services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
+                });
             });
         using var searchClient = searchFactory.CreateClient();
 
