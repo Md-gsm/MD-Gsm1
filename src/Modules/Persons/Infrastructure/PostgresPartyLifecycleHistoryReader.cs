@@ -63,7 +63,13 @@ public sealed class PostgresPartyLifecycleHistoryReader(NpgsqlDataSource dataSou
         return new PartyLifecycleHistoryPage(items, next);
     }
 
-    private static JsonElement ParseJson(string json)\n    {\n        using var document = JsonDocument.Parse(json);\n        return document.RootElement.Clone();\n    }\n\n    private async Task AppendAccessAuditAsync(IReadOnlyCollection<Guid> sourceParties,
+    private static JsonElement ParseJson(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.Clone();
+    }
+
+    private async Task AppendAccessAuditAsync(IReadOnlyCollection<Guid> sourceParties,
         string actor, CancellationToken cancellationToken)
     {
         var connectionString = new NpgsqlConnectionStringBuilder(dataSource.ConnectionString) { Pooling = false }.ConnectionString;
