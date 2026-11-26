@@ -55,7 +55,7 @@ public sealed class PersonsTemporaryDataRetentionTests
             await worker.StopAsync(CancellationToken.None);
         }
 
-        Assert.Equal(new[] { 250, 250, 0 }, store.BatchSizes);
+        Assert.Equal(new[] { 250, 250, 0 }, store.PurgeResults);
     }
 
     [Fact]
@@ -193,7 +193,7 @@ public sealed class PersonsTemporaryDataRetentionTests
     {
         private int _callCount;
 
-        public List<int> BatchSizes { get; } = [];
+        public List<int> PurgeResults { get; } = [];
         public TaskCompletionSource<bool> AllBatchesDrained { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -203,15 +203,12 @@ public sealed class PersonsTemporaryDataRetentionTests
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            BatchSizes.Add(batchSize);
             var call = Interlocked.Increment(ref _callCount);
+            var purgedRows = call == 3 ? 0 : batchSize;
+            PurgeResults.Add(purgedRows);
             if (call == 3)
-            {
                 AllBatchesDrained.TrySetResult(true);
-                return Task.FromResult(0);
-            }
-
-            return Task.FromResult(250);
+            return Task.FromResult(purgedRows);
         }
     }
 
