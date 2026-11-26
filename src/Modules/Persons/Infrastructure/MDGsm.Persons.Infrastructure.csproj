@@ -35,5 +35,8 @@
     <EmbeddedResource Include="..\..\..\..\database\migrations\0013_persons_outbox.sql">
       <LogicalName>MDGsm.Migrations.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\..\database\migrations\0014_persons_search_control_plane.sql">
+      <LogicalName>MDGsm.Migrations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>
