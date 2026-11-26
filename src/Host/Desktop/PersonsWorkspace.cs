@@ -470,6 +470,13 @@ public partial class MainWindow
 
         var pending = _pendingQuickRegistration;
         if (pending is null) return;
+        if (!candidate.PartyIsActive || candidate.IsMerged || !candidate.HasActiveMobile)
+        {
+            PersonsResultText.Text = candidate.IsMerged
+                ? "این سابقه ادغام‌شده است و انتخاب آن مجاز نیست؛ مقصد اصلی را از اطلاعات نمایش‌داده‌شده بررسی کنید."
+                : "این شخص فعال یا دارای شماره موبایل فعال نیست و قابل انتخاب نیست.";
+            return;
+        }
         if (pending.IsNatural)
         {
             var request = ((QuickRegisterNaturalPartyRequest)pending.Request) with

@@ -66,15 +66,20 @@ public sealed class PersonsRegistrationMapperTests
     [Fact]
     public void Quick_registration_maps_legal_person_to_the_published_LegalEntity_value()
     {
+        var canonicalPartyId = Guid.CreateVersion7().ToString("D");
         var candidate = new PartyQuickRegistrationCandidate(
             Guid.CreateVersion7().ToString("D"), PartyType.LegalPerson, "شرکت نمونه",
-            PartyBusinessRoles.Customer, true, false, true, "0912•••1234");
+            PartyBusinessRoles.Customer, false, true, true, "0912•••1234",
+            canonicalPartyId, "شرکت مقصد");
         var result = new PartyQuickRegistrationResult(
             PartyQuickRegistrationOutcome.SelectionRequired, null, false, [candidate]);
 
         var response = PersonsRegistrationMapper.Map(result);
 
-        Assert.Equal("LegalEntity", Assert.Single(response.Candidates).PartyType);
+        var mapped = Assert.Single(response.Candidates);
+        Assert.Equal("LegalEntity", mapped.PartyType);
+        Assert.Equal(canonicalPartyId, mapped.CanonicalPartyId);
+        Assert.Equal("شرکت مقصد", mapped.CanonicalDisplayName);
     }
 
     [Fact]

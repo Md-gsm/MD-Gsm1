@@ -225,8 +225,22 @@ public sealed class PersonsEndToEndTests
         const string mobile = "09125550130";
         var source = await scope.Repository.AddNaturalAsync(
             NewNatural(mobile, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
-        var target = await scope.Repository.AddNaturalAsync(
+        var intermediate = await scope.Repository.AddNaturalAsync(
             NewNatural(null, NewNationalId()), Actor, Guid.CreateVersion7(), scope.Transaction, default);
+        var canonical = await scope.Repository.AddNaturalAsync(
+            NewNatural(null, NewNationalId()) with { GivenName = "مقصد", FamilyName = "نهایی" },
+            Actor, Guid.CreateVersion7(), scope.Transaction, default);
+
+        await using (var intermediateMerge = new NpgsqlCommand("""
+            UPDATE persons
+            SET is_active = false, merged_into_party_id = @canonical
+            WHERE party_id = @intermediate;
+            """, scope.Connection, scope.Transaction))
+        {
+            intermediateMerge.Parameters.AddWithValue("intermediate", Guid.Parse(intermediate.PartyId));
+            intermediateMerge.Parameters.AddWithValue("canonical", Guid.Parse(canonical.PartyId));
+            Assert.Equal(1, await intermediateMerge.ExecuteNonQueryAsync());
+        }
 
         await using (var mergeMarker = new NpgsqlCommand("""
             UPDATE persons
@@ -235,7 +249,7 @@ public sealed class PersonsEndToEndTests
             """, scope.Connection, scope.Transaction))
         {
             mergeMarker.Parameters.AddWithValue("source", Guid.Parse(source.PartyId));
-            mergeMarker.Parameters.AddWithValue("target", Guid.Parse(target.PartyId));
+            mergeMarker.Parameters.AddWithValue("target", Guid.Parse(intermediate.PartyId));
             Assert.Equal(1, await mergeMarker.ExecuteNonQueryAsync());
         }
 
@@ -255,11 +269,36 @@ public sealed class PersonsEndToEndTests
         Assert.False(candidate.PartyIsActive);
         Assert.True(candidate.IsMerged);
         Assert.True(candidate.HasActiveMobile);
+        Assert.Equal(canonical.PartyId, candidate.CanonicalPartyId);
+        Assert.Equal("مقصد نهایی", candidate.CanonicalDisplayName);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             scope.Repository.QuickRegisterNaturalAsync(
                 request, Actor, operationId, forceNew: false, selectedPartyId: candidate.PartyId,
                 scope.Transaction, default));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            scope.Repository.QuickRegisterNaturalAsync(
+                NewNatural(null, NewNationalId()), Actor, Guid.CreateVersion7(),
+                forceNew: false, selectedPartyId: source.PartyId, scope.Transaction, default));
+
+        var forceNewOperation = Guid.CreateVersion7();
+        var forceNewPreview = await scope.Repository.QuickRegisterNaturalAsync(
+            request, Actor, forceNewOperation, forceNew: true, selectedPartyId: null,
+            scope.Transaction, default);
+        Assert.Equal(PartyQuickRegistrationOutcome.SelectionRequired, forceNewPreview.Outcome);
+        Assert.Equal(canonical.PartyId, Assert.Single(forceNewPreview.Candidates).CanonicalPartyId);
+
+        var forced = await scope.Repository.QuickRegisterNaturalAsync(
+            request, Actor, forceNewOperation, forceNew: true, selectedPartyId: null,
+            scope.Transaction, default, confirmDistinctParty: true);
+        Assert.Equal(PartyQuickRegistrationOutcome.Created, forced.Outcome);
+        Assert.True(await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_access_audit WHERE party_id = @id AND action = 'search'",
+            Guid.Parse(canonical.PartyId)) >= 1);
+        Assert.True(await ScalarAsync(scope,
+            "SELECT count(*) FROM persons_access_audit WHERE party_id = @id AND action = 'force-new-confirmed'",
+            Guid.Parse(canonical.PartyId)) >= 1);
     }
 
     [Fact]

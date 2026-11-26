@@ -917,7 +917,7 @@
               <Border x:Name="PersonsCandidatesPanel" Visibility="Collapsed" Background="#FFFBEB" BorderBrush="#FCD34D" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,15">
                 <StackPanel>
                   <TextBlock Text="اشخاص مشابه پیدا شدند" Foreground="#92400E" FontWeight="Bold" FontSize="16"/>
-                  <TextBlock Text="برای جلوگیری از ساخت هویت تکراری، یکی از موارد زیر را انتخاب کنید. فقط نام، نوع و موبایل پوشانده‌شده نمایش داده می‌شود."
+                  <TextBlock Text="برای جلوگیری از ساخت هویت تکراری، یکی از موارد زیر را انتخاب کنید. برای سابقه‌های ادغام‌شده، مقصد اصلی نیز نمایش داده می‌شود."
                              Foreground="#92400E" Margin="0,5,0,10" TextWrapping="Wrap"/>
                   <ItemsControl ItemsSource="{Binding PersonsCandidates}">
                     <ItemsControl.ItemTemplate>
@@ -936,6 +936,9 @@
                                     <DataTrigger Binding="{Binding IsMerged}" Value="True">
                                       <Setter Property="IsEnabled" Value="False"/>
                                     </DataTrigger>
+                                    <DataTrigger Binding="{Binding HasActiveMobile}" Value="False">
+                                      <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
                                   </Style.Triggers>
                                 </Style>
                               </Button.Style>
@@ -944,6 +947,34 @@
                               <TextBlock Text="{Binding DisplayName}" Foreground="#1F2937" FontWeight="SemiBold"/>
                               <TextBlock Text="{Binding PartyType}" Foreground="#64748B" FontSize="12.5"/>
                               <TextBlock Text="{Binding MaskedMobile}" Foreground="#64748B" FontSize="12.5"/>
+                              <StackPanel Margin="0,5,0,0">
+                                <StackPanel.Style>
+                                  <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                      <DataTrigger Binding="{Binding IsMerged}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                      </DataTrigger>
+                                    </Style.Triggers>
+                                  </Style>
+                                </StackPanel.Style>
+                                <TextBlock Text="مقصد اصلی پس از ادغام:" Foreground="#92400E" FontWeight="SemiBold" FontSize="12"/>
+                                <TextBlock Text="{Binding CanonicalDisplayName}" Foreground="#1F2937" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding CanonicalPartyId}" Foreground="#64748B" FontSize="11.5" FlowDirection="LeftToRight"/>
+                                <TextBlock Text="مقصد نهایی از زنجیره ادغام قابل حل نیست؛ انتخاب این سابقه همچنان مسدود است."
+                                           Foreground="#B91C1C" FontSize="12" TextWrapping="Wrap">
+                                  <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                      <Setter Property="Visibility" Value="Collapsed"/>
+                                      <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CanonicalPartyId}" Value="{x:Null}">
+                                          <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                      </Style.Triggers>
+                                    </Style>
+                                  </TextBlock.Style>
+                                </TextBlock>
+                              </StackPanel>
                               <TextBlock Text="این مورد قابل انتخاب نیست (ادغام‌شده یا غیرفعال)." Foreground="#B91C1C" FontSize="12"
                                          TextWrapping="Wrap">
                                 <TextBlock.Style>

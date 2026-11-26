@@ -5,7 +5,8 @@ public sealed record QuickRegisterLegalPartyRequest(CreateLegalPartyRequest Part
 
 public sealed record PartyQuickRegistrationCandidateContract(
     string PartyId, string PartyType, string DisplayName, IReadOnlyList<string> Roles,
-    bool PartyIsActive, bool IsMerged, bool HasActiveMobile, string MaskedMobile);
+    bool PartyIsActive, bool IsMerged, bool HasActiveMobile, string MaskedMobile,
+    string? CanonicalPartyId = null, string? CanonicalDisplayName = null);
 
 public sealed record PartyQuickRegistrationResponse(
     string Outcome, string? PartyId, bool Created, IReadOnlyList<PartyQuickRegistrationCandidateContract> Candidates);

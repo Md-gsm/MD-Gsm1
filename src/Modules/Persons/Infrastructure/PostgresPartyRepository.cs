@@ -159,7 +159,7 @@ public sealed class PostgresPartyRepository(
             // Candidate names and masked contact values are disclosed to the caller.
             // Persist the access evidence independently before returning any candidate data.
             await AppendSearchAuditAsync(
-                candidates.Select(candidate => Guid.Parse(candidate.PartyId)).ToArray(),
+                GetCandidateDisclosurePartyIds(candidates),
                 actor,
                 cancellationToken);
 
@@ -183,7 +183,7 @@ public sealed class PostgresPartyRepository(
                     return new PartyQuickRegistrationResult(PartyQuickRegistrationOutcome.SelectionRequired,
                         null, false, candidates);
                 await AppendDuplicateOverrideAuditAsync(
-                    candidates.Select(candidate => Guid.Parse(candidate.PartyId)).ToArray(), actor, cancellationToken);
+                    GetCandidateDisclosurePartyIds(candidates), actor, cancellationToken);
             }
             else
             {
@@ -222,12 +222,40 @@ public sealed class PostgresPartyRepository(
         await using var command = new NpgsqlCommand("""
             SELECT p.party_id, p.party_type, p.business_roles,
                    CASE WHEN p.party_type = 1 THEN concat_ws(' ', p.given_name, p.family_name) ELSE p.legal_name END,
-                   p.is_active, (p.merged_into_party_id IS NOT NULL) AS is_merged, bool_or(c.is_active)
+                   p.is_active, (p.merged_into_party_id IS NOT NULL) AS is_merged, bool_or(c.is_active),
+                   canonical_target.canonical_party_id, canonical_target.canonical_display_name
             FROM persons p
             JOIN persons_contact_points c ON c.party_id = p.party_id
+            LEFT JOIN LATERAL (
+                WITH RECURSIVE merge_chain(party_id, merged_into_party_id, depth, visited) AS (
+                    SELECT target_party.party_id, target_party.merged_into_party_id,
+                           1, ARRAY[target_party.party_id]
+                    FROM persons target_party
+                    WHERE target_party.party_id = p.merged_into_party_id
+                    UNION ALL
+                    SELECT next_party.party_id, next_party.merged_into_party_id,
+                           merge_chain.depth + 1, merge_chain.visited || next_party.party_id
+                    FROM merge_chain
+                    JOIN persons next_party ON next_party.party_id = merge_chain.merged_into_party_id
+                    WHERE merge_chain.merged_into_party_id IS NOT NULL
+                      AND NOT (next_party.party_id = ANY(merge_chain.visited))
+                      AND merge_chain.depth < 64
+                )
+                SELECT canonical.party_id AS canonical_party_id,
+                       CASE WHEN canonical.party_type = 1
+                            THEN concat_ws(' ', canonical.given_name, canonical.family_name)
+                            ELSE canonical.legal_name
+                       END AS canonical_display_name
+                FROM merge_chain
+                JOIN persons canonical ON canonical.party_id = merge_chain.party_id
+                WHERE merge_chain.merged_into_party_id IS NULL
+                ORDER BY merge_chain.depth DESC
+                LIMIT 1
+            ) canonical_target ON true
             WHERE c.kind = 1 AND c.value = @mobile
             GROUP BY p.party_id, p.party_type, p.business_roles, p.given_name, p.family_name,
-                     p.legal_name, p.is_active, p.merged_into_party_id
+                     p.legal_name, p.is_active, p.merged_into_party_id,
+                     canonical_target.canonical_party_id, canonical_target.canonical_display_name
             ORDER BY p.is_active DESC, bool_or(c.is_active) DESC, p.party_id;
             """, connection, transaction);
         command.Parameters.AddWithValue("mobile", normalizedMobile);
@@ -238,7 +266,9 @@ public sealed class PostgresPartyRepository(
                 reader.GetGuid(0).ToString("D"), (PartyType)reader.GetInt16(1),
                 reader.GetString(3), (PartyBusinessRoles)reader.GetInt16(2),
                 reader.GetBoolean(4), reader.GetBoolean(5), reader.GetBoolean(6),
-                PartyIdentifiers.MaskPhone(normalizedMobile)));
+                PartyIdentifiers.MaskPhone(normalizedMobile),
+                reader.IsDBNull(7) ? null : reader.GetGuid(7).ToString("D"),
+                reader.IsDBNull(8) ? null : reader.GetString(8)));
         return results;
     }
 
@@ -254,8 +284,35 @@ public sealed class PostgresPartyRepository(
                    p.is_active, (p.merged_into_party_id IS NOT NULL),
                    (SELECT c.value FROM persons_contact_points c
                     WHERE c.party_id = p.party_id AND c.kind = 1 AND c.is_active
-                    ORDER BY c.is_primary DESC, c.created_at_utc, c.contact_point_id LIMIT 1)
+                    ORDER BY c.is_primary DESC, c.created_at_utc, c.contact_point_id LIMIT 1),
+                   canonical_target.canonical_party_id, canonical_target.canonical_display_name
             FROM persons p
+            LEFT JOIN LATERAL (
+                WITH RECURSIVE merge_chain(party_id, merged_into_party_id, depth, visited) AS (
+                    SELECT target_party.party_id, target_party.merged_into_party_id,
+                           1, ARRAY[target_party.party_id]
+                    FROM persons target_party
+                    WHERE target_party.party_id = p.merged_into_party_id
+                    UNION ALL
+                    SELECT next_party.party_id, next_party.merged_into_party_id,
+                           merge_chain.depth + 1, merge_chain.visited || next_party.party_id
+                    FROM merge_chain
+                    JOIN persons next_party ON next_party.party_id = merge_chain.merged_into_party_id
+                    WHERE merge_chain.merged_into_party_id IS NOT NULL
+                      AND NOT (next_party.party_id = ANY(merge_chain.visited))
+                      AND merge_chain.depth < 64
+                )
+                SELECT canonical.party_id AS canonical_party_id,
+                       CASE WHEN canonical.party_type = 1
+                            THEN concat_ws(' ', canonical.given_name, canonical.family_name)
+                            ELSE canonical.legal_name
+                       END AS canonical_display_name
+                FROM merge_chain
+                JOIN persons canonical ON canonical.party_id = merge_chain.party_id
+                WHERE merge_chain.merged_into_party_id IS NULL
+                ORDER BY merge_chain.depth DESC
+                LIMIT 1
+            ) canonical_target ON true
             WHERE p.party_id = @party;
             """, connection, transaction);
         command.Parameters.AddWithValue("party", id);
@@ -268,7 +325,9 @@ public sealed class PostgresPartyRepository(
                 reader.GetGuid(0).ToString("D"), (PartyType)reader.GetInt16(1),
                 reader.GetString(3), (PartyBusinessRoles)reader.GetInt16(2),
                 reader.GetBoolean(4), reader.GetBoolean(5), mobile is not null,
-                mobile is null ? string.Empty : PartyIdentifiers.MaskPhone(mobile))
+                mobile is null ? string.Empty : PartyIdentifiers.MaskPhone(mobile),
+                reader.IsDBNull(7) ? null : reader.GetGuid(7).ToString("D"),
+                reader.IsDBNull(8) ? null : reader.GetString(8))
         ];
     }
 
@@ -682,6 +741,18 @@ public sealed class PostgresPartyRepository(
         if (details is not null)
             await AppendReadAuditAsync(id.Value, actor, includeSensitive, cancellationToken);
         return details;
+    }
+
+    private static Guid[] GetCandidateDisclosurePartyIds(IEnumerable<PartyQuickRegistrationCandidate> candidates)
+    {
+        var ids = new HashSet<Guid>();
+        foreach (var candidate in candidates)
+        {
+            ids.Add(Guid.Parse(candidate.PartyId));
+            if (candidate.CanonicalPartyId is not null)
+                ids.Add(Guid.Parse(candidate.CanonicalPartyId));
+        }
+        return ids.ToArray();
     }
 
     private async Task AppendSearchAuditAsync(IReadOnlyList<Guid> partyIds, string actor, CancellationToken cancellationToken)

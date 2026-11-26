@@ -42,7 +42,8 @@ public static class PersonsRegistrationMapper
             result.Outcome.ToString(), result.PartyId, result.Created,
             result.Candidates.Select(candidate => new PartyQuickRegistrationCandidateContract(
                 candidate.PartyId, ToContractPartyType(candidate.Type), candidate.DisplayName, ToRoleNames(candidate.Roles),
-                candidate.PartyIsActive, candidate.IsMerged, candidate.HasActiveMobile, candidate.MaskedMobile)).ToArray());
+                candidate.PartyIsActive, candidate.IsMerged, candidate.HasActiveMobile, candidate.MaskedMobile,
+                candidate.CanonicalPartyId, candidate.CanonicalDisplayName)).ToArray());
     }
 
     /// <summary>Maps the application read model to the versioned public response without exposing application-only fields.</summary>
