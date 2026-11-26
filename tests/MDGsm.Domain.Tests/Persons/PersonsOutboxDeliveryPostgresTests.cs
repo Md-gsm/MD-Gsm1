@@ -249,7 +249,7 @@ public sealed class PersonsOutboxDeliveryPostgresTests
     public async Task Worker_schedules_a_closed_failure_code_and_never_logs_publisher_exception_message()
     {
         var eventMessage = NewEvent();
-        var store = new FakeDeliveryStore(new LeasedPersonsOutboxEvent(eventMessage, 1));
+        var store = new FakeDeliveryStore(new LeasedPersonsOutboxEvent(eventMessage, 1, 1));
         var publisher = new FakePublisher
         {
             Failure = new InvalidOperationException("SENSITIVE-PII-MUST-NOT-BE-LOGGED")
@@ -279,7 +279,7 @@ public sealed class PersonsOutboxDeliveryPostgresTests
     public async Task Worker_acknowledges_only_after_publisher_success()
     {
         var eventMessage = NewEvent();
-        var store = new FakeDeliveryStore(new LeasedPersonsOutboxEvent(eventMessage, 1));
+        var store = new FakeDeliveryStore(new LeasedPersonsOutboxEvent(eventMessage, 1, 1));
         var publisher = new FakePublisher();
         var worker = new PersonsOutboxDeliveryWorker(
             store, publisher, new RecordingLogger<PersonsOutboxDeliveryWorker>(), leaseOwner: "test-worker");
