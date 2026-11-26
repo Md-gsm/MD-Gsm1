@@ -310,13 +310,8 @@ app.MapGet("/api/v2/persons/{partyId}", async (
     CancellationToken cancellationToken) =>
 {
     var accountId = AccountId.From(actor.AccountId);
-    // Technician row scope depends on authoritative repair-assignment ownership,
-    // which is not yet available in this integration candidate. Fail closed rather
-    // than treating the broad persons.read grant as permission to read every party.
-    if (await permissions.HasRoleAsync(accountId, RoleCatalog.Technician, cancellationToken))
-        return Results.StatusCode(StatusCodes.Status403Forbidden);
-
-    if (!await permissions.HasPermissionAsync(accountId, "persons.read", cancellationToken))
+    // Party detail is a global/rowless read until authoritative assignment scope exists.
+    if (!await PersonsGlobalReadAuthorization.CanReadAsync(permissions, accountId, cancellationToken))
         return Results.StatusCode(StatusCodes.Status403Forbidden);
 
     try
@@ -343,7 +338,8 @@ if (builder.Configuration.GetValue<bool>("Persons:SearchApiEnabled") &&
         [FromServices] IPersonsSearchControl searchControl, CancellationToken cancellationToken) =>
     {
         var accountId = AccountId.From(actor.AccountId);
-        if (!await permissions.HasPermissionAsync(accountId, "persons.read", cancellationToken))
+        // Search is global and rowless; use the same fail-closed role scope as Party details.
+        if (!await PersonsGlobalReadAuthorization.CanReadAsync(permissions, accountId, cancellationToken))
         {
             await searchControl.RecordSecurityViolationAsync(actor.AccountId.ToString("D"),
                 PersonsSearchSecurityViolation.PermissionDenied, context.TraceIdentifier, cancellationToken);
@@ -658,3 +654,24 @@ public sealed record SetContactPointActiveRequest(bool IsActive, long ExpectedRo
 public sealed record UpdateContactPointRequest(string Value, long ExpectedRowVersion, string Reason);
 public sealed record SetAddressActiveRequest(bool IsActive, long ExpectedRowVersion, string Reason);
 public sealed record UpdateAddressRequest(string CountryCode, string Province, string City, string PostalCode, string AddressLine, long ExpectedRowVersion, string Reason);
+
+/// <summary>
+/// Central authorization rule for global/rowless Party reads. Technician access is
+/// denied until the API can enforce authoritative repair-assignment row scope.
+/// </summary>
+internal static class PersonsGlobalReadAuthorization
+{
+    public static async Task<bool> CanReadAsync(
+        IRolePermissionStore permissions,
+        AccountId accountId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(permissions);
+
+        if (await permissions.HasRoleAsync(accountId, RoleCatalog.Technician, cancellationToken))
+            return false;
+
+        return await permissions.HasPermissionAsync(accountId, "persons.read", cancellationToken);
+    }
+}
+
