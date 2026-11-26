@@ -14,11 +14,12 @@ $desktopPublishDir = Join-Path $publishRoot 'desktop'
 $apiPublishDir = Join-Path $publishRoot 'api'
 $outputDir = Join-Path $repoRoot 'artifacts\installer'
 $issFile = Join-Path $repoRoot 'installer\MDGsm-Setup.iss'
+$centralProvisioner = Join-Path $repoRoot 'installer\Provision-MDGsmCentralDatabase.ps1'
 
 if (-not $IsWindows -and $env:OS -ne 'Windows_NT') {
     throw 'The Windows installer must be built on Windows. No application or database was changed.'
 }
-foreach ($requiredPath in @($solution, $desktopProject, $apiProject, $issFile)) {
+foreach ($requiredPath in @($solution, $desktopProject, $apiProject, $issFile, $centralProvisioner)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) { throw "Required build input was not found: $requiredPath" }
 }
 
