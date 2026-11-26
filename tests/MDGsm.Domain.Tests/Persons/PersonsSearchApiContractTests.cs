@@ -17,6 +17,9 @@ public sealed class PersonsSearchApiContractTests
         Assert.Contains("persons.search", program, StringComparison.Ordinal);
         Assert.Contains("persons.search.abuse.unlock", program, StringComparison.Ordinal);
         Assert.Contains("RecordSecurityViolationAsync", program, StringComparison.Ordinal);
+        Assert.Contains("Persons:HistoryApiEnabled", program, StringComparison.Ordinal);
+        Assert.Contains("persons.history.read", program, StringComparison.Ordinal);
+        Assert.Contains("persons.read.sensitive", program, StringComparison.Ordinal);
     }
 
     private static string FindRepositoryRoot()
