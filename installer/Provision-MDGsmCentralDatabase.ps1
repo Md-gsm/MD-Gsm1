@@ -124,17 +124,13 @@ function Unprotect-Text([string] $Path) {
 }
 
 function Set-PostgresDataRootAcl {
-    $service = Get-Service -Name $pgServiceName -ErrorAction SilentlyContinue
-    $accountName = if ($null -ne $service) { [string]$service.StartName } else { 'MDGsmPgSvc' }
-    if ($accountName -match '^NT AUTHORITY\\') {
-        throw 'The managed PostgreSQL service is using an unexpected built-in account.'
+    $serviceRecord = Get-CimInstance -ClassName Win32_Service -Filter "Name='$pgServiceName'" -ErrorAction SilentlyContinue
+    $accountName = if ($null -ne $serviceRecord) { [string]$serviceRecord.StartName } else { '.\\MDGsmPgSvc' }
+    if ([string]::IsNullOrWhiteSpace($accountName) -or
+        $accountName -match '^(LocalSystem|NT AUTHORITY\\|NT SERVICE\\)') {
+        throw 'The managed PostgreSQL service is using an unexpected built-in or service-SID account.'
     }
-    try {
-        $accountSid = Get-AccountSid $accountName
-    }
-    catch {
-        $accountSid = Get-AccountSid ('.\\MDGsmPgSvc')
-    }
+    $accountSid = Get-AccountSid $accountName
 
     if (-not (Test-Path -LiteralPath $pgDataRoot -PathType Container)) {
         New-Item -ItemType Directory -Path $pgDataRoot -Force | Out-Null
