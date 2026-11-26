@@ -226,8 +226,8 @@ function Assert-DatabaseProvisioning([string] $Phase) {
 
     $pgRoot = Join-Path $env:ProgramFiles 'PostgreSQL\18'
     $psql = Join-Path $pgRoot 'bin\psql.exe'
-    $statePath = Join-Path $env:ProgramData 'MD-Gsm\PostgreSQL\18\cluster-state.json'
-    $adminSecretPath = Join-Path $env:ProgramData 'MD-Gsm\PostgreSQL\18\cluster-admin.dpapi'
+    $statePath = Join-Path $env:ProgramData 'MD-Gsm\Provisioning\PostgreSQL\cluster-state.json'
+    $adminSecretPath = Join-Path $env:ProgramData 'MD-Gsm\Provisioning\PostgreSQL\cluster-admin.dpapi'
     $connectionFile = Join-Path $env:ProgramData 'MD-Gsm\Secrets\Api\database-connection.dpapi'
     foreach ($required in @($psql, $statePath, $adminSecretPath, $connectionFile)) {
         if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
