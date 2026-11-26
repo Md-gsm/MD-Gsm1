@@ -224,7 +224,7 @@ function Assert-DatabaseProvisioning([string] $Phase) {
         throw "Managed PostgreSQL 18 is not running after '$Phase'."
     }
 
-    $pgRoot = Join-Path $env:ProgramFiles 'PostgreSQL\18'
+    $pgRoot = Join-Path $env:ProgramFiles 'MD-Gsm-PostgreSQL\18'
     $psql = Join-Path $pgRoot 'bin\psql.exe'
     $statePath = Join-Path $env:ProgramData 'MD-Gsm\Provisioning\PostgreSQL\cluster-state.json'
     $adminSecretPath = Join-Path $env:ProgramData 'MD-Gsm\Provisioning\PostgreSQL\cluster-admin.dpapi'
