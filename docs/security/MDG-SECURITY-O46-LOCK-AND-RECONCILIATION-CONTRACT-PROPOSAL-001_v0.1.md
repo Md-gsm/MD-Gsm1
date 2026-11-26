@@ -5,7 +5,7 @@
 | Document ID | MDG-SECURITY-O46-LOCK-AND-RECONCILIATION-CONTRACT-PROPOSAL-001 |
 | Version / date | 0.1 / 2026-11-26 |
 | Status | **TECHNICAL PROPOSAL — OWNER / INDEPENDENT REVIEW REQUIRED; NOT IMPLEMENTATION AUTHORIZATION** |
-| Baseline | `main` `075baff32b29ea96e67c821cbe4416a941c943f2` |
+| Baseline | `main` `598fd829c02556659ca855250ece9dd05b821f87` |
 | Tracking | Issue #118; JRN-REC-01/02/03 decisions in PR #92 history |
 
 ## 1. Scope and accepted boundaries
@@ -83,20 +83,28 @@ JRN-REC-02 View ownership and JRN-REC-03 View SELECT are independent. `mdgsm_sch
 
 The available disposable catalog has no `reporting_ro`, no `runtime_app` LOGIN, no O-46 View and no effective SELECT path. The repository does not identify the actual production API LOGIN; Issue #117 says no production PostgreSQL connection is currently configured/tested. Therefore there is no proven caller that can execute the shared lock and SELECT the approved View. **JRN-REC-03 remains OPEN / BLOCKED.** Required next evidence: sanitized read-only catalog export from the actual target cluster plus the actual API/Setup Service DB connection identity and effective function/View privileges. No identity or grant is to be guessed or created.
 
-## 8. Required PostgreSQL 18.6 proof
+## 8. PostgreSQL 18.6 evidence — bounded partial proof
 
-- Identical key from all three paths for the same InstallationId; namespace fixed and caller key rejected.
-- Exclusive/exclusive and exclusive/shared serialization across two real connections.
-- Shared-lock negative read with live challenge permits only same-operation retry; later commit is then observed by the next reconciliation.
-- Transaction lock release on commit, rollback, cancellation and backend termination.
-- Isolation rejection; stale-snapshot scenario cannot be accepted.
-- Independent installations proceed concurrently except harmless hash-collision serialization.
-- Different SetupOperationId cannot open a second live challenge for one InstallationId.
-- Same request ID/same inputs idempotent; same ID/different inputs rejected.
-- Replay, expiry, revoke, wrong bindings, unknown commit and restart do not create a second Account/binding/receipt.
-- No direct writer bypass; actual permitted Reader can execute lock + SELECT exact View but cannot read base tables or mutate; no extra principal/grant introduced.
+PR #120 is merged into `main` at `598fd829c02556659ca855250ece9dd05b821f87`. Its dedicated disposable PostgreSQL 18.6 harness completed successfully with **24 explicit PASS assertions** (workflow run [45879818050](https://github.com/Md-gsm/MD-Gsm1/actions/runs/45879818050)). The harness verifies:
 
-All tests are **NOT RUN / NOT VERIFIED**. No PostgreSQL 18 behavior is claimed proven for O-46.
+- InstallationId-scoped advisory-lock key derivation and deterministic behavior.
+- Exclusive/shared lock interaction, serialization and isolation between installations.
+- Transaction lock release on COMMIT, ROLLBACK and backend termination.
+- Test-only SECURITY DEFINER owner and Executor EXECUTE-only boundaries; Reader view-only privilege assertions.
+- Idempotency and concurrent SetupOperation race behavior.
+- READ COMMITTED versus REPEATABLE READ snapshot behavior.
+
+This is a **bounded primitive/protocol proof on a disposable CI database**, not an end-to-end O-46 implementation or production deployment test. It does not prove the production routine bodies, target-cluster effective ACLs, or that an actual deployed Reader can execute the shared lock and read an approved View. It also does not establish the central PostgreSQL target or API/Setup Service connection identity.
+
+The following O-46 acceptance evidence remains **NOT RUN / NOT VERIFIED** and must not be inferred from PR #120:
+
+- Full O-46 challenge-issue and Owner-claim routine behavior, including exact persisted state transitions and replay/restart handling.
+- Actual target-cluster function and View ACLs under the exact deployed API/Setup Service identity.
+- A real approved Reader path, including the shared lock plus approved View SELECT and negative base-table/write privilege checks.
+- End-to-end crash/unknown-commit reconciliation against the protected Journal and the actual Windows/CNG/TPM environment.
+- Full adversarial acceptance suite against the approved deployment topology.
+
+Until those proofs exist, JRN-REC-03 remains OPEN / BLOCKED and no Bootstrap, Migration 0010, production connection, role/grant, feature activation, G1 or Go-Live is authorized.
 
 ## 9. Review gates and non-authorization
 
