@@ -56,16 +56,31 @@ var
   I: Integer;
   C: Char;
   LowerValue: String;
+  Remainder: String;
+  Authority: String;
+  SlashPos: Integer;
 begin
   LowerValue := LowerCase(Trim(Value));
   if Copy(LowerValue, 1, 8) <> 'https://' then
     Result := False
   else if (Pos('@', Copy(Value, 9, Length(Value))) > 0) or
           (Pos('?', Value) > 0) or (Pos('#', Value) > 0) or
-          (Pos(' ', Value) > 0) or (Pos('\', Value) > 0) then
+          (Pos(' ', Value) > 0) or (Pos('\\', Value) > 0) then
     Result := False
   else
   begin
+    Remainder := Copy(Trim(Value), 9, Length(Trim(Value)));
+    SlashPos := Pos('/', Remainder);
+    if SlashPos > 0 then
+      Authority := Copy(Remainder, 1, SlashPos - 1)
+    else
+      Authority := Remainder;
+    if (Authority = '') or (Authority = '.') or (Authority = '..') then
+    begin
+      Result := False;
+      Exit;
+    end;
+
     Result := True;
     for I := 1 to Length(Value) do
     begin
@@ -80,6 +95,26 @@ begin
         Exit;
       end;
     end;
+  end;
+end;
+
+function InitializeSetup: Boolean;
+var
+  Candidate: String;
+begin
+  Result := True;
+  if WizardSilent then
+  begin
+    Candidate := Trim(GetEnv('MDGSM_CLIENT_API_BASEURL'));
+    if not IsSafeHttpsBaseUrl(Candidate) then
+    begin
+      MsgBox('Silent client setup requires a valid MDGSM_CLIENT_API_BASEURL HTTPS value.', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+    if Candidate[Length(Candidate)] <> '/' then
+      Candidate := Candidate + '/';
+    ApiBaseUrl := Candidate;
   end;
 end;
 
