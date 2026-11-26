@@ -1,0 +1,168 @@
+{
+  "mapVersion": "1.3",
+  "sourceArchitecture": "MDGsm_Persons_Module_Architecture_Decision_and_Build_Spec_v1.1_FA",
+  "criteria": [
+    {
+      "id": "AC-31",
+      "gate": "persons-temporary-data-retention",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
+      "expectedBehavior": "Expiry blocks access at the exact UTC expiry instant"
+    },
+    {
+      "id": "AC-32",
+      "gate": "persons-temporary-data-retention",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
+      "expectedBehavior": "Physical purge removes expired raw temporary PII within the deadline"
+    },
+    {
+      "id": "AC-33",
+      "gate": "persons-temporary-data-retention",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
+      "expectedBehavior": "TTL cannot be extended beyond the 30-day absolute maximum"
+    },
+    {
+      "id": "AC-34",
+      "gate": "persons-temporary-data-retention",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
+      "expectedBehavior": "Only one authorized renewal with reason is accepted"
+    },
+    {
+      "id": "AC-35",
+      "gate": "persons-temporary-data-retention",
+      "testFile": "PersonsTemporaryDataRetentionTests.cs",
+      "automatedTest": "AC35_worker_retries_on_next_cycle_and_logs_only_redacted_failure_codes",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Cleanup worker is idempotent and retries after transient failure"
+    },
+    {
+      "id": "AC-36",
+      "gate": "persons-temporary-data-retention",
+      "testFile": "PersonsTemporaryWorkflowPostgresTests.cs",
+      "automatedTest": "AC36_temporary_workflow_payload_does_not_appear_in_Persons_search_or_search_route",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Temporary data never appears in global people search or generic autocomplete"
+    },
+    {
+      "id": "AC-37",
+      "gate": "persons-temporary-data-retention",
+      "testFile": "PersonsTemporaryWorkflowPromotionPostgresTests.cs",
+      "automatedTest": "AC37_new_party_promotion_commits_party_tombstone_payload_purge_and_outbox_atomically",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Promotion requires an explicit person choice and duplicate check; promotion is atomic and idempotent"
+    },
+    {
+      "id": "AC-38",
+      "gate": "persons-temporary-data-retention",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
+      "expectedBehavior": "Logs, audit, metrics and CI artifacts do not contain raw temporary PII"
+    },
+    {
+      "id": "AC-39",
+      "gate": "persons-merge-contract",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC39_AC40_AllExternalPartyIdConsumersAreRegisteredAndClassifiedExactlyOnce",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "All code-discovered PartyId consumers are registered"
+    },
+    {
+      "id": "AC-40",
+      "gate": "persons-merge-contract",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC39_AC40_AllExternalPartyIdConsumersAreRegisteredAndClassifiedExactlyOnce",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Every PartyId reference has exactly one merge classification"
+    },
+    {
+      "id": "AC-41",
+      "gate": "persons-merge-contract",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC41_FinanceMergeParticipantImplementsVersionedProtocolHooks",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Every participant implements versioned Prepare/Validate/Apply/Verify/Recovery contract"
+    },
+    {
+      "id": "AC-42",
+      "gate": "persons-merge-contract",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC42_preview_is_read_only_and_counts_transferable_finance_references",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Merge preview is read-only and counts active, historical, transferable and blocking references"
+    },
+    {
+      "id": "AC-43",
+      "gate": "persons-merge-contract",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC43_two_existing_finance_accounts_are_a_blocking_conflict_and_no_state_changes",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Unresolved blocking conflicts prevent execution"
+    },
+    {
+      "id": "AC-44",
+      "gate": "persons-merge-contract",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC44_MergeIsAtomicConcurrentAndIdempotentWithFailureRollback",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Merge is atomic, concurrency-safe and idempotent; failures leave no partial state"
+    },
+    {
+      "id": "AC-45",
+      "gate": "persons-merge-contract",
+      "testFile": null,
+      "automatedTest": null,
+      "status": "UNMAPPED",
+      "expectedBehavior": "Historical snapshots stay unchanged and active references reconcile exactly"
+    },
+    {
+      "id": "AC-46",
+      "gate": "persons-ci-enforcement-test",
+      "testFile": "test_persons_gate_policy.py",
+      "automatedTest": "test_required_jobs_are_unconditionally_scheduled",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Every required gate job is present, always scheduled, and cannot be bypassed with path filters."
+    },
+    {
+      "id": "AC-47",
+      "gate": "persons-ci-enforcement-test",
+      "testFile": "test_persons_gate_policy.py",
+      "automatedTest": "test_failed_gate_cannot_be_relabelled_pass_na",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "A gate with an implementation marker but missing/invalid evidence fails closed."
+    },
+    {
+      "id": "AC-48",
+      "gate": "persons-ci-enforcement-test",
+      "testFile": "test_persons_gate_policy.py",
+      "automatedTest": "test_g1_authorization_without_external_evidence_fails",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "G1 cannot be authorized without real remote SCM, approval, and enforcement evidence."
+    },
+    {
+      "id": "AC-49",
+      "gate": "persons-ci-evidence",
+      "testFile": "test_persons_gate_policy.py",
+      "automatedTest": "test_ci_evidence_manifest_is_traceable_and_redacted",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "CI evidence contains commit, contract versions, schema fingerprint, gate/test counts, and no raw PII."
+    }
+  ],
+  "note": "AC-31..34 and AC-38 remain UNMAPPED pending complete temporary-data lifecycle/SLA and comprehensive telemetry evidence. AC-35 has worker retry/alert-redaction tests; AC-36 has disposable PostgreSQL search-isolation proof. AC-37 is IMPLEMENTED on PR #96 exact reviewed head 467527ab5389fdfcda183e546037616aca92bdc1, with PostgreSQL promotion/authorization/rollback/replay tests, Linux and Windows PostgreSQL gates, and independent approval. AC-39..44 map to consumer/merge tests, subject to the stated runtime coverage caveats; AC-45 remains UNMAPPED. AC-46..49 are CI/evidence controls only.",
+  "runtimeCoverageCaveat": {
+    "AC31toAC38": "AC-35 covers transient retention-store failure, next-cycle worker retry, failed alert delivery, and redacted exception handling; PostgreSQL tests verify repeat close/purge idempotency. AC-36 is covered at repository and Host route registration. AC-37 is implemented on PR #96 exact head 467527ab5389fdfcda183e546037616aca92bdc1: explicit New/Existing choice and permission matrix, duplicate/ForceNew confirmation, corrupt payload fail-closed and retry, actor-bound idempotency/concurrency, and injected rollback/retry at workflow close, payload purge, tombstone and Outbox insertion. Exact-head Linux/Windows PostgreSQL, security, API, E2E, installer, CodeQL and Owner gates passed; independent reviewer mrdeljoe4 approved this exact SHA. AC-31..34 and AC-38 remain open/unmapped; AC-37 acceptance does not authorize production migration, customer key provisioning, endpoint/feature activation or G1.",
+    "AC39toAC40": "Every external PartyId consumer is source-enumerated, registered exactly once and assigned one accepted merge classification; automated test plus the registry CI gate.",
+    "AC41": "The current Finance merge participant is checked against each versioned Preview/Prepare/Validate/Apply/Verify/Recover protocol hook. Future participants must be added to the registry and tested.",
+    "AC42toAC43": "Finance merge preview counts references without mutation and an unresolved dual-account conflict blocks execution.",
+    "AC44toAC45": "AC-44 now runs a combined integration suite covering idempotent replay, injected failure rollback/recovery and concurrent same-source merge winner selection. AC-45 remains open: AccountId/created-at preservation is tested, but there is no full immutable ledger-history snapshot/reconciliation proof.",
+    "AC46toAC49": "CI policy/evidence controls only; not runtime acceptance.",
+    "AC37": "AC-37 acceptance: implementation and test evidence reside on PR #96 reviewed head 467527ab5389fdfcda183e546037616aca92bdc1. The source-owned Outbox inserts the PII-free PartyRegistered event and initial delivery state atomically for a newly created Party only. Delivery dispatch/worker lifecycle is not claimed here and remains in the separate Issue #97 workstream. Migration 0012/0013 remain IMPLEMENTED — DISPOSABLE VERIFICATION PENDING until post-merge disposable evidence and SQL hashes are recorded per the central registry."
+  }
+}
