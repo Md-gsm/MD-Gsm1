@@ -12,6 +12,52 @@ servers:
 security:
   - opaqueBearer: []
 paths:
+  /api/v2/persons/search:
+    get:
+      operationId: searchPersons
+      summary: Search the Party directory
+      description: >-
+        Requires a validated session, persons.read and the separate persons.search permission.
+        This is a global, rowless search; only SuperAdmin receives persons.search in the initial
+        permission matrix. Other roles are denied until an explicit permission grant is approved.
+        Responses contain only PartyId, type, display name and masked mobile; internal roles,
+        city and creation timestamp are not returned. Search HTTP is absent unless
+        Persons:SearchApiEnabled is explicitly enabled (default false).
+      parameters:
+        - in: query
+          name: term
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 80 }
+          description: Name search (2-80 normalized characters) or exactly four mobile suffix digits.
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 20, default: 20 }
+      x-feature-flag: Persons:SearchApiEnabled
+      responses:
+        '200':
+          description: Minimal search result list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, requestId]
+                properties:
+                  requestId: { type: string }
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [partyId, partyType, displayName, maskedMobile]
+                      properties:
+                        partyId: { type: string, format: uuid }
+                        partyType: { type: string, enum: [NaturalPerson, LegalEntity] }
+                        displayName: { type: string }
+                        maskedMobile: { type: [string, 'null'] }
+        '401': { description: Missing or invalid session }
+        '403': { description: Missing persons.read or persons.search permission }
+        '422': { description: Search term validation failed }
+        '429': { description: Actor rate-limited or Abuse Locked; Retry-After is returned }
   /api/v2/persons:
     post:
       operationId: quickRegisterNaturalParty
