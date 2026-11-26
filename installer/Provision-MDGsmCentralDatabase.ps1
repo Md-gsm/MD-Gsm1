@@ -5,6 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.Security -ErrorAction Stop
 $pgServiceName = 'MDGsmPostgreSQL18'
 $pgInstallRoot = Join-Path $env:ProgramFiles 'MD-Gsm-PostgreSQL\18'
 $pgDataRoot = Join-Path $env:ProgramData 'MD-Gsm\PostgreSQL\18'
