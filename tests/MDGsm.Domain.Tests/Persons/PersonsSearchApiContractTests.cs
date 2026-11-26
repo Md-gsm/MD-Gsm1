@@ -15,7 +15,8 @@ public sealed class PersonsSearchApiContractTests
         Assert.Contains("Persons:SearchApiEnabled", program, StringComparison.Ordinal);
         Assert.Contains("IPersonsSearchControl", program, StringComparison.Ordinal);
         Assert.Contains("persons.search", program, StringComparison.Ordinal);
-        Assert.Contains("persons.search.abuse.unlock", program, StringComparison.Ordinal);
+        Assert.Contains("RoleCatalog.SuperAdmin", program, StringComparison.Ordinal);
+        Assert.Contains("AdminUnlockAsync", program, StringComparison.Ordinal);
         Assert.Contains("RecordSecurityViolationAsync", program, StringComparison.Ordinal);
         Assert.Contains("Persons:HistoryApiEnabled", program, StringComparison.Ordinal);
         Assert.Contains("persons.sensitive.read", program, StringComparison.Ordinal);
