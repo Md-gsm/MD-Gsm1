@@ -59,6 +59,11 @@ public sealed class IdentityAccessHttpEndToEndTests
         const string changedPassword = "Changed-Password-2026!";
         var accountId = Guid.CreateVersion7();
         var roleId = Guid.CreateVersion7();
+        var managerAccountId = Guid.CreateVersion7();
+        var managerRoleId = Guid.CreateVersion7();
+        var managerUsername = "searchmgr" + Guid.NewGuid().ToString("N")[..12];
+        const string managerPassword = "Search-Manager-Password-2026!";
+        var searchPartyId = Guid.CreateVersion7();
         var now = DateTimeOffset.UtcNow;
 
         // Exercise the same ordered SQL migration path as staging before using EF.
@@ -99,11 +104,11 @@ public sealed class IdentityAccessHttpEndToEndTests
             db.IdentityRoles.Add(new IdentityRoleRow
             {
                 RoleId = roleId,
-                RoleKey = "http_flow_reader_" + Guid.NewGuid().ToString("N")[..8],
-                DisplayName = "HTTP flow reader",
-                Description = "Disposable HTTP integration test role",
-                IsSystemRole = false,
-                IsAssignable = true,
+                RoleKey = RoleCatalog.Technician,
+                DisplayName = "Technician",
+                Description = "Disposable HTTP integration test Technician role",
+                IsSystemRole = true,
+                IsAssignable = false,
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now
             });
@@ -128,19 +133,76 @@ public sealed class IdentityAccessHttpEndToEndTests
                 readPermission.IsActive = true;
             }
 
+            // The technician deliberately has the broad persons.read permission.
+            // Search must still deny global access because row-level assignment scope is absent.
             db.IdentityAccountRoles.Add(new IdentityAccountRoleRow
             {
                 AccountId = accountId,
                 RoleId = roleId,
                 AssignedAtUtc = now,
-                AssignmentReason = "http-e2e-test"
+                AssignmentReason = "http-e2e-technician-search-security-test"
             });
             db.IdentityRolePermissions.Add(new IdentityRolePermissionRow
             {
                 RoleId = roleId,
                 PermissionId = readPermission.PermissionId
             });
+
+            var managerUsernameValue = Username.Parse(managerUsername);
+            db.IdentityAccounts.Add(new IdentityAccountRow
+            {
+                AccountId = managerAccountId,
+                LoginName = managerUsernameValue.DisplayValue,
+                LoginNameNormalized = managerUsernameValue.NormalizedValue,
+                PasswordHash = hasher.Hash(managerPassword),
+                PasswordHashVersion = hasher.CurrentVersion,
+                MustChangePassword = false,
+                IsEnabled = true,
+                IsBootstrapAccount = false,
+                CredentialVersion = 1,
+                FailedAttemptCount = 0,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            });
+            db.IdentityRoles.Add(new IdentityRoleRow
+            {
+                RoleId = managerRoleId,
+                RoleKey = RoleCatalog.Manager,
+                DisplayName = "Manager",
+                Description = "Disposable HTTP integration test Manager role",
+                IsSystemRole = true,
+                IsAssignable = false,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            });
+            db.IdentityAccountRoles.Add(new IdentityAccountRoleRow
+            {
+                AccountId = managerAccountId,
+                RoleId = managerRoleId,
+                AssignedAtUtc = now,
+                AssignmentReason = "http-e2e-manager-search-positive-control"
+            });
+            db.IdentityRolePermissions.Add(new IdentityRolePermissionRow
+            {
+                RoleId = managerRoleId,
+                PermissionId = readPermission.PermissionId
+            });
             await db.SaveChangesAsync();
+        }
+
+        // Seed one synthetic Party that is discoverable only to a role authorized
+        // for global Persons reads. The database is marked disposable and is dropped
+        // at the end of this test.
+        await using (var seedConnection = new NpgsqlConnection(connectionString))
+        {
+            await seedConnection.OpenAsync();
+            await using var seedParty = new NpgsqlCommand("""
+                INSERT INTO persons
+                    (party_id, party_type, business_roles, given_name, family_name, created_by, updated_by)
+                VALUES (@party, 1, 1, 'SearchGuard', 'CanaryParty', 'search-e2e', 'search-e2e');
+                """, seedConnection);
+            seedParty.Parameters.AddWithValue("party", searchPartyId);
+            await seedParty.ExecuteNonQueryAsync();
         }
 
         // Provision the canonical N.6 runtime_app LOGIN only inside this marked,
@@ -240,6 +302,87 @@ public sealed class IdentityAccessHttpEndToEndTests
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", active.AccessToken);
         var heartbeat = await client.PostAsync("/api/v1/identity/heartbeat", content: null);
         Assert.Equal(HttpStatusCode.NoContent, heartbeat.StatusCode);
+
+        // Exercise the real Search endpoint with its feature flag enabled. This second
+        // host uses the marked disposable DB's test-admin connection so the Persons
+        // search repository and control-plane tables are exercised end to end.
+        using var searchFactory = new WebApplicationFactory<global::Program>()
+            .WithWebHostBuilder(web =>
+            {
+                web.ConfigureAppConfiguration((_, config) =>
+                    config.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["ConnectionStrings:MDGsmDatabase"] = connectionString,
+                        ["IdentityAccess:PrivacyHmacKey"] = privacyKey,
+                        ["IdentityAccess:HttpLoginEnabled"] = "true",
+                        ["Persons:SearchApiEnabled"] = "true"
+                    }));
+            });
+        using var searchClient = searchFactory.CreateClient();
+        searchClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", active.AccessToken);
+
+        var technicianSearch = await searchClient.GetAsync("/api/v2/persons/search?term=SearchGuard");
+        Assert.Equal(HttpStatusCode.Forbidden, technicianSearch.StatusCode);
+        var technicianSearchBody = await technicianSearch.Content.ReadAsStringAsync();
+        Assert.DoesNotContain(searchPartyId.ToString("D"), technicianSearchBody);
+        Assert.DoesNotContain("CanaryParty", technicianSearchBody);
+
+        // Party details and Search must share the same global-read policy.
+        var technicianDetails = await searchClient.GetAsync($"/api/v2/persons/{searchPartyId:D}");
+        Assert.Equal(HttpStatusCode.Forbidden, technicianDetails.StatusCode);
+
+        await using (var verifyConnection = new NpgsqlConnection(connectionString))
+        {
+            await verifyConnection.OpenAsync();
+            await using var verifyTechnician = new NpgsqlCommand("""
+                SELECT
+                    (SELECT count(*) FROM persons_search_security_violation_audit
+                     WHERE actor_id = @actor AND violation_code = 'permission_denied'),
+                    (SELECT count(*) FROM persons_search_actor_purpose_counters
+                     WHERE actor_id = @actor AND purpose = 'persons.search'),
+                    (SELECT count(*) FROM persons_access_audit
+                     WHERE actor = @actor AND party_id = @party);
+                """, verifyConnection);
+            verifyTechnician.Parameters.AddWithValue("actor", accountId.ToString("D"));
+            verifyTechnician.Parameters.AddWithValue("party", searchPartyId);
+            await using var verifyReader = await verifyTechnician.ExecuteReaderAsync();
+            Assert.True(await verifyReader.ReadAsync());
+            Assert.Equal(1L, verifyReader.GetInt64(0)); // Denial is durably recorded.
+            Assert.Equal(0L, verifyReader.GetInt64(1)); // Denied requests never consume Search quota.
+            Assert.Equal(0L, verifyReader.GetInt64(2)); // Search/Details never read or audit a Party row.
+        }
+
+        searchClient.DefaultRequestHeaders.Authorization = null;
+        var managerLogin = await searchClient.PostAsJsonAsync("/api/v1/identity/login",
+            new LoginRequest(managerUsername, managerPassword, Guid.CreateVersion7()));
+        Assert.Equal(HttpStatusCode.OK, managerLogin.StatusCode);
+        var managerSession = await managerLogin.Content.ReadFromJsonAsync<LoginResponse>();
+        Assert.NotNull(managerSession);
+        searchClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", managerSession!.AccessToken);
+
+        var managerSearch = await searchClient.GetAsync("/api/v2/persons/search?term=SearchGuard");
+        Assert.Equal(HttpStatusCode.OK, managerSearch.StatusCode);
+        var managerSearchBody = await managerSearch.Content.ReadAsStringAsync();
+        Assert.Contains(searchPartyId.ToString("D"), managerSearchBody);
+        Assert.Contains("CanaryParty", managerSearchBody);
+
+        await using (var verifyManagerConnection = new NpgsqlConnection(connectionString))
+        {
+            await verifyManagerConnection.OpenAsync();
+            await using var verifyManager = new NpgsqlCommand("""
+                SELECT count(*) FROM persons_access_audit
+                WHERE actor = @actor AND party_id = @party;
+                """, verifyManagerConnection);
+            verifyManager.Parameters.AddWithValue("actor", managerAccountId.ToString("D"));
+            verifyManager.Parameters.AddWithValue("party", searchPartyId);
+            Assert.Equal(1L, (long)(await verifyManager.ExecuteScalarAsync())!);
+        }
+
+        // Return to the original host/client so the existing logout/session test
+        // continues to validate the independently issued session.
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", active.AccessToken);
 
         // The natural/legal Persons write routes must be reachable through the real
         // session middleware but remain closed by default. This test deliberately does
