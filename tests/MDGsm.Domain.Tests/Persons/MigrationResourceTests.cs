@@ -103,7 +103,11 @@ public sealed class MigrationResourceTests
             .Where(name => name.StartsWith("MDGsm.Migrations.", StringComparison.Ordinal))
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(actualResources.Length, actualResources.Distinct(StringComparer.Ordinal).Count());
+        var duplicateResources = actualResources.GroupBy(name => name, StringComparer.Ordinal)
+            .Where(group => group.Count() > 1)
+            .Select(group => $"{group.Key} (x{group.Count()})")
+            .ToArray();
+        Assert.Empty(duplicateResources, $"Duplicate migration resource names: {string.Join(", ", duplicateResources)}");
         Assert.Equal(expectedResources, actualResources);
     }
 
