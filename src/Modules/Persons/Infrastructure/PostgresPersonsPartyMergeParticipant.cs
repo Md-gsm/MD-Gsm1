@@ -192,7 +192,7 @@ public sealed class PostgresPersonsPartyMergeParticipant : IPartyMergeParticipan
               AND NOT EXISTS (
                   SELECT 1 FROM persons_contact_points t
                   WHERE t.party_id=@target AND t.kind=s.kind AND t.is_active
-                    AND lower(btrim(t.value))=lower(btrim(s.value));
+                    AND lower(btrim(t.value))=lower(btrim(s.value))
               );
             """, postgres, tx))
         {
@@ -216,7 +216,7 @@ public sealed class PostgresPersonsPartyMergeParticipant : IPartyMergeParticipan
                     AND lower(btrim(t.province))=lower(btrim(s.province))
                     AND lower(btrim(t.city))=lower(btrim(s.city))
                     AND btrim(t.postal_code)=btrim(s.postal_code)
-                    AND lower(btrim(t.address_line))=lower(btrim(s.address_line));
+                    AND lower(btrim(t.address_line))=lower(btrim(s.address_line))
               );
             """, postgres, tx))
         {
