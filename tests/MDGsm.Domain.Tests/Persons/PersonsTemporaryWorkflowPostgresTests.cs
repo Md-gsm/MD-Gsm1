@@ -131,13 +131,18 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => store.RenewAsync(id,
             now.AddDays(1), TimeSpan.FromDays(1), "No authorization supplied", "ci-actor",
             explicitlyAuthorized: false));
+        await Assert.ThrowsAsync<ArgumentException>(() => store.RenewAsync(id,
+            now.AddDays(1), TimeSpan.FromDays(1), "short", "ci-actor", explicitlyAuthorized: true));
+        await Assert.ThrowsAsync<ArgumentException>(() => store.RenewAsync(id,
+            now.AddDays(1), TimeSpan.FromDays(1), "Valid renewal reason", " ",
+            explicitlyAuthorized: true));
 
         Assert.True(await store.RenewAsync(id, now.AddDays(1), TimeSpan.FromDays(40),
             "Owner approved temporary extension", "ci-actor", explicitlyAuthorized: true));
 
         await using var connection = await dataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand("""
-            SELECT expires_at_utc, renewal_count
+            SELECT expires_at_utc, renewal_count, renewal_reason, renewed_by, renewed_at_utc
             FROM persons_temporary_workflows
             WHERE workflow_record_id = @id;
             """, connection);
@@ -146,6 +151,9 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         Assert.True(await reader.ReadAsync());
         Assert.Equal(now.AddDays(30), reader.GetFieldValue<DateTimeOffset>(0));
         Assert.Equal((short)1, reader.GetInt16(1));
+        Assert.Equal("Owner approved temporary extension", reader.GetString(2));
+        Assert.Equal("ci-actor", reader.GetString(3));
+        Assert.Equal(now.AddDays(1), reader.GetFieldValue<DateTimeOffset>(4));
         await reader.DisposeAsync();
 
         Assert.False(await store.RenewAsync(id, now.AddDays(2), TimeSpan.FromDays(1),

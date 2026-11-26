@@ -29,8 +29,10 @@ public sealed class TemporaryWorkflowRetentionWorker(
     TimeProvider? timeProvider = null,
     TimeSpan? interval = null) : BackgroundService
 {
+    public const int DefaultSweepIntervalMinutes = 15;
+
     private readonly TimeProvider _clock = timeProvider ?? TimeProvider.System;
-    private readonly TimeSpan _interval = interval ?? TimeSpan.FromMinutes(15);
+    private readonly TimeSpan _interval = interval ?? TimeSpan.FromMinutes(DefaultSweepIntervalMinutes);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
