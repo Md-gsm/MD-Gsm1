@@ -27,12 +27,12 @@ paths:
         - in: query
           name: term
           required: true
-          schema: { type: string, minLength: 2, maxLength: 80 }
-          description: Name search (2-80 normalized characters) or exactly four mobile suffix digits.
+          schema: { type: string, minLength: 2, maxLength: 160 }
+          description: Name search (2-160 normalized characters) or exactly four mobile suffix digits.
         - in: query
           name: limit
           required: false
-          schema: { type: integer, minimum: 1, maximum: 20, default: 20 }
+          schema: { type: integer, minimum: 1, maximum: 10, default: 10 }
       x-feature-flag: Persons:SearchApiEnabled
       responses:
         '200':
