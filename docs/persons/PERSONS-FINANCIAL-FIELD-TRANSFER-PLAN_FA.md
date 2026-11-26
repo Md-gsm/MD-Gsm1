@@ -3,8 +3,8 @@
 - شناسه: ISSUE-98 / WG-0
 - نسخه: 1.0
 - تاریخ: 2026-11-26
-- مبنای بررسی: `main` در `60bb00008de79e359bed1582816602b8ad08edd5`
-- وضعیت: طرح اجرایی ثبت‌شده؛ Migration شماره 0016 فقط پس از ادغام رزرو رسمی نوشته می‌شود.
+- مبنای بررسی: `main` پس از ادغام رزرو 0016 در `5d9d4d360e2f54d2c03449f0db31d54fa7e98e1a`
+- وضعیت: Migration 0016 نوشته شده است؛ PR #113 برای رزرو رسمی ادغام شده، ولی CI مهاجرت/آزمون داده‌دار و بازبینی مستقل پیاده‌سازی هنوز در انتظار است.
 
 ## 1. نتیجه موجودی مصرف‌کنندگان
 
@@ -55,16 +55,33 @@
 
 ## 5. معیارهای پذیرش Migration 0016
 
-- رزرو رسمی شماره 0016 پیش از ایجاد فایل SQL.
+- رزرو رسمی شماره 0016 پیش از ایجاد فایل SQL؛ PR #113 با تأیید ناظر در `main` ادغام شده است.
 - Migration forward-only و اتمیک؛ عدم ویرایش 0002/0015.
 - حفظ دقیق همه مقادیر و metadata و assert برابری source/archive پیش از حذف ستون‌ها.
 - حذف هر چهار ستون و constraint کارت از Persons.
 - عدم دسترسی PUBLIC/runtime و جلوگیری از UPDATE/DELETE/TRUNCATE archive.
-- آزمون PostgreSQL 18 روی Linux و Windows برای مقدارهای غیرپیش‌فرض، مقدارهای null/default، parity، حذف ستون‌ها، ACL و immutability.
-- اجرای دوم migration runner بدون اعمال مجدد و با checksum history یکسان.
+- آزمون داده‌دار `PersonsFinancialFieldArchiveMigrationTests` روی PostgreSQL 18 در Linux و Windows برای مقدارهای غیرپیش‌فرض، null/default، provenance، حذف ستون‌ها، ACL و immutability؛ اجرای Linux در گیت یکپارچه و اجرای مستقل همان آزمون در job ویندوز.
+- اجرای دوم migration runner بدون اعمال مجدد و با checksum history یکسان؛ کنترل history و backup/restore در هر دو سیستم‌عامل.
 - ثبت SHA-256 SQL، کامیت ادغام و شواهد disposable در رجیستری.
 - بدون اجرای دیتابیس واقعی، تولیدی، G1، API activation یا انتشار.
 
 ## 6. مرز تکمیل
 
 با ادغام و اعتبارسنجی Migration 0016، نشت schema و وابستگی Persons به چهار فیلد حذف می‌شود و داده قدیمی بدون مصرف عملیاتی حفظ خواهد شد. ساخت مقصد نهایی و مصرف داده در Finance-AR/AP، Pricing و Treasury باید در Issue/مرحله مالک همان قابلیت انجام شود؛ این طرح هیچ‌کدام از آن‌ها را به‌صورت کاذب تکمیل‌شده اعلام نمی‌کند.
+
+
+## 7. وضعیت پیاده‌سازی 0016
+
+فایل SQL ثبت‌شده:
+`database/migrations/0016_persons_financial_field_archive.sql`
+
+آرشیو مقصد:
+`mdgsm_migration_archive.persons_financial_field_archive`
+
+چهار disposition ثابت و غیرعملیاتی:
+- `PARTY_ONLY_SCOPE_REJECTED`
+- `PRICING_RULE_UNMAPPED`
+- `TREASURY_ENUM_UNMAPPED`
+- `TREASURY_LAST4_REFERENCE_ONLY`
+
+آزمون داده‌دار واقعی با سه Party ساختگی اجرا می‌شود: یک مجموعه مقادیر غیرپیش‌فرض، یک ردیف پیش‌فرض با Last Four تهی، و یک ردیف غیرپیش‌فرض دیگر. آزمون، هر مقدار و provenance را با Fixture اصلی مقایسه می‌کند؛ نبود چهار ستون در Persons را می‌سنجد؛ ACL عمومی schema/table/function را رد می‌کند؛ و اثبات می‌کند UPDATE، DELETE و TRUNCATE در آرشیو با SQLSTATE `55000` شکست می‌خورند. اجرای موفق jobهای دقیق Linux و Windows و بازبینی مستقل پیاده‌سازی، شرط تبدیل وضعیت رجیستری به `VERIFIED_DISPOSABLE` است.
