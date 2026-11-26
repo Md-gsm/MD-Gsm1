@@ -35,6 +35,8 @@ public static class PersonsInfrastructureRegistration
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddScoped<IPartyRepository, PostgresPartyRepository>();
+        services.AddScoped<IPersonsOutboxDeliveryStore, PostgresPersonsOutboxDeliveryStore>();
+        services.AddScoped<PersonsOutboxDispatcher>();
         services.AddScoped<IPartyLifecycleService, PostgresPartyLifecycleService>();
         services.AddScoped<IPartyLifecycleHistoryReader, PostgresPartyLifecycleHistoryReader>();
         services.AddScoped<IPartyMergeParticipant, PostgresPersonsPartyMergeParticipant>();
