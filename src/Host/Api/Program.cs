@@ -380,7 +380,7 @@ if (builder.Configuration.GetValue<bool>("Persons:SearchApiEnabled") &&
         if (!Guid.TryParse(actorId, out var targetActor) || targetActor == Guid.Empty)
             return (IResult)Results.BadRequest(new { error = "actor_id_invalid" });
         var adminAccount = AccountId.From(admin.AccountId);
-        if (!await permissions.HasPermissionAsync(adminAccount, "persons.search.abuse.unlock", cancellationToken))
+        if (!await permissions.HasRoleAsync(adminAccount, RoleCatalog.SuperAdmin, cancellationToken))
             return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
         try
         {
@@ -429,7 +429,7 @@ if (builder.Configuration.GetValue<bool>("Persons:LifecycleApiEnabled") &&
         IAuthenticatedActorContext actor, [FromServices] IRolePermissionStore permissions,
         [FromServices] IPartyLifecycleService lifecycleService, CancellationToken cancellationToken) =>
     {
-        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.contact.update", cancellationToken))
+        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.update", cancellationToken))
             return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
         try
         {
@@ -463,7 +463,7 @@ if (builder.Configuration.GetValue<bool>("Persons:LifecycleApiEnabled") &&
         IAuthenticatedActorContext actor, [FromServices] IRolePermissionStore permissions,
         [FromServices] IPartyLifecycleService lifecycleService, CancellationToken cancellationToken) =>
     {
-        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.address.update", cancellationToken))
+        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.update", cancellationToken))
             return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
         try
         {
@@ -501,8 +501,8 @@ if (builder.Configuration.GetValue<bool>("Persons:HistoryApiEnabled") &&
     {
         var accountId = AccountId.From(actor.AccountId);
         if (!await permissions.HasPermissionAsync(accountId, "persons.read", cancellationToken) ||
-            !await permissions.HasPermissionAsync(accountId, "persons.read.sensitive", cancellationToken) ||
-            !await permissions.HasPermissionAsync(accountId, "persons.history.read", cancellationToken))
+            !await permissions.HasPermissionAsync(accountId, "persons.sensitive.read", cancellationToken) ||
+            !await permissions.HasPermissionAsync(accountId, "persons.sensitive.read", cancellationToken))
             return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
 
         if ((beforeOccurredAtUtc is null) != (beforeHistoryId is null))
