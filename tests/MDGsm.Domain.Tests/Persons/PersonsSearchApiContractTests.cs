@@ -20,6 +20,8 @@ public sealed class PersonsSearchApiContractTests
         Assert.Contains("RecordSecurityViolationAsync", program, StringComparison.Ordinal);
         Assert.Contains("Persons:HistoryApiEnabled", program, StringComparison.Ordinal);
         Assert.Contains("persons.sensitive.read", program, StringComparison.Ordinal);
+        Assert.DoesNotContain("persons.contact.update", program, StringComparison.Ordinal);
+        Assert.DoesNotContain("persons.address.update", program, StringComparison.Ordinal);
         Assert.Contains("RoleCatalog.SuperAdmin", program, StringComparison.Ordinal);
     }
 
