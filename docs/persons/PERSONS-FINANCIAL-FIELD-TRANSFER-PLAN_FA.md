@@ -4,7 +4,7 @@
 - نسخه: 1.0
 - تاریخ: 2026-11-26
 - مبنای بررسی: `main` پس از ادغام رزرو 0016 در `5d9d4d360e2f54d2c03449f0db31d54fa7e98e1a`
-- وضعیت: Migration 0016 نوشته شده است؛ PR #113 برای رزرو رسمی ادغام شده، ولی CI مهاجرت/آزمون داده‌دار و بازبینی مستقل پیاده‌سازی هنوز در انتظار است.
+- وضعیت: Migration 0016 با PR #114 تأیید مستقل و ادغام شده است؛ همهٔ ۱۷ Check Run دقیق همان head موفق بودند و آزمون PostgreSQL 18.6 در Linux و Windows، CodeQL و نصب‌کننده موفق شدند. commit ادغام main: `f2f5ada323fc56c769f4003bef5a5c91da1fb478`؛ وضعیت رجیستری: `VERIFIED_DISPOSABLE`.
 
 ## 1. نتیجه موجودی مصرف‌کنندگان
 
@@ -84,4 +84,4 @@
 - `TREASURY_ENUM_UNMAPPED`
 - `TREASURY_LAST4_REFERENCE_ONLY`
 
-آزمون داده‌دار واقعی با سه Party ساختگی اجرا می‌شود: یک مجموعه مقادیر غیرپیش‌فرض، یک ردیف پیش‌فرض با Last Four تهی، و یک ردیف غیرپیش‌فرض دیگر. آزمون، هر مقدار و provenance را با Fixture اصلی مقایسه می‌کند؛ نبود چهار ستون در Persons را می‌سنجد؛ ACL عمومی schema/table/function را رد می‌کند؛ و اثبات می‌کند UPDATE، DELETE و TRUNCATE در آرشیو با SQLSTATE `55000` شکست می‌خورند. اجرای موفق jobهای دقیق Linux و Windows و بازبینی مستقل پیاده‌سازی، شرط تبدیل وضعیت رجیستری به `VERIFIED_DISPOSABLE` است.
+آزمون داده‌دار واقعی با سه Party ساختگی اجرا شد: یک مجموعه مقدار غیرپیش‌فرض، یک ردیف پیش‌فرض با Last Four تهی و یک ردیف غیرپیش‌فرض دیگر. آزمون، همهٔ مقدارها و provenance را با Fixture مقایسه کرد؛ حذف چهار ستون از Persons، نبود ACL عمومی schema/table/function و رد UPDATE/DELETE/TRUNCATE با SQLSTATE `55000` را اثبات کرد. این تست روی PostgreSQL 18.6 هم در Linux و هم در Windows موفق شد. اجرای دوم runner در هر دو محیط `newlyApplied=0` بود. PR #114 با تأیید مستقل `mrdeljoe4` روی head `aca1bbf756b59b5d165cefbe33676eb42fe50efa` ادغام شد؛ merge commit برابر `f2f5ada323fc56c769f4003bef5a5c91da1fb478` است. ۱۷ Check Run دقیق head موفق شدند؛ Linux دارای ۸۳ تست یکپارچهٔ موفق بود. رجیستری اکنون `VERIFIED_DISPOSABLE` است. هیچ production database اجرا نشده و هیچ مقصد عملیاتی Finance/Pricing/Treasury یا G1 فعال نشده است.
