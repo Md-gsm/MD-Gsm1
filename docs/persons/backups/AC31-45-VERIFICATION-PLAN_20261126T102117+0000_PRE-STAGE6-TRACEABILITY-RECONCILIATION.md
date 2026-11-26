@@ -1,0 +1,25 @@
+# AC-31..AC-49 verification plan
+
+> نام فایل برای سازگاری با ارجاع‌های قبلی حفظ شده است؛ دامنه این سند AC-31 تا AC-49 را پوشش می‌دهد.
+
+The G0 traceability plan assigns every requirement to its gate and future executable scenario. These entries are plans, not passing tests or implemented behavior.
+
+| AC | Future test scenario | Required proof |
+|---|---|---|
+| AC-31 | RET-31-UTC-EXPIRY-BLOCK | Expired data is blocked immediately |
+| AC-32 | RET-32-PHYSICAL-PURGE | PII and derivatives purged within 30 minutes |
+| AC-33 | RET-33-ABSOLUTE-MAX-AGE | 30-day absolute age cannot be extended |
+| AC-34 | RET-34-SINGLE-AUTHORIZED-RENEWAL | One authorized renewal only |
+| AC-35 | RET-35-WORKER-IDEMPOTENT-RETRY | Failure, retry, idempotency and alert behavior |
+| AC-36 | RET-36-NO-GLOBAL-DISCOVERY | No global search/autocomplete exposure |
+| AC-37 | RET-37-EXPLICIT-ATOMIC-PROMOTION | Explicit party selection and atomic promotion |
+| AC-38 | RET-38-NO-RAW-PII-TELEMETRY | No raw PII in logs, audit or CI artifacts |
+| AC-39 | MRG-39-CONSUMER-REGISTRY-COMPLETE | All PartyId consumers discovered |
+| AC-40 | MRG-40-REFERENCE-CLASSIFICATION | Every reference classified exactly once |
+| AC-41 | MRG-41-VERSIONED-PARTICIPANT-CONTRACT | Prepare/Validate/Apply/Verify/Recovery contract |
+| AC-42 | MRG-42-READONLY-PREVIEW | Preview is read-only and counts are accurate |
+| AC-43 | MRG-43-BLOCKING-CONFLICT-STOP | Blocking conflicts prevent execution |
+| AC-44 | MRG-44-ATOMIC-CONCURRENT-IDEMPOTENT | Shared transaction, concurrency and idempotency |
+| AC-45 | MRG-45-HISTORICAL-SNAPSHOT-PRESERVATION | Historical snapshots remain unchanged |
+
+AC-31..AC-45 remain UNMAPPED in the executable acceptance map. Focused tests exist for portions of temporary retention, Party merge and Finance provisioning, but they do not yet map every acceptance criterion to an exact test method and do not prove the full criterion. AC-46..AC-49 are separately backed by CI-policy/evidence tests in `scripts/ci/test_persons_gate_policy.py`; these are governance tests, not runtime Persons acceptance. G1 remains unauthorized until every required runtime criterion is implemented, mapped and passes.
