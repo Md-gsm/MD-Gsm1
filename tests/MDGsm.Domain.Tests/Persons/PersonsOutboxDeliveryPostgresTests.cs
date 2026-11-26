@@ -129,16 +129,46 @@ public sealed class PersonsOutboxDeliveryPostgresTests
         Assert.Equal(2, secondLease.AttemptCount);
 
         Assert.False(await store.MarkDeliveredAsync(
-            eventId, workerA, reclaimAt.AddSeconds(1), default));
+            eventId, firstLease.LeaseVersion, workerA, reclaimAt.AddSeconds(1), default));
         Assert.False(await store.ScheduleRetryAsync(
-            eventId, workerA, reclaimAt.AddSeconds(1), reclaimAt.AddSeconds(10),
+            eventId, firstLease.LeaseVersion, workerA, reclaimAt.AddSeconds(1), reclaimAt.AddSeconds(10),
             PersonsOutboxDeliveryFailureCodes.PublishFailed, default));
         Assert.True(await store.MarkDeliveredAsync(
-            eventId, workerB, reclaimAt.AddSeconds(2), default));
+            eventId, secondLease.LeaseVersion, workerB, reclaimAt.AddSeconds(2), default));
 
         Assert.Equal(1L, await ScalarAsync(dataSource,
             "SELECT count(*) FROM persons_outbox_deliveries WHERE event_id=@id AND delivery_status='delivered' AND attempt_count=2;",
             eventId));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Reused_worker_identity_cannot_acknowledge_or_retry_an_obsolete_lease_generation()
+    {
+        await using var dataSource = await OpenDisposableDataSourceAsync();
+        var operation = Guid.CreateVersion7();
+        await new PostgresPartyRepository(dataSource)
+            .AddNaturalAsync(NewNatural(NewMobile()), Actor(), operation, null, default);
+        var eventId = await EventIdForOperationAsync(dataSource, operation);
+        var store = new PostgresPersonsOutboxDeliveryStore(dataSource);
+        var owner = "reused-worker-identity";
+        var firstAt = DateTimeOffset.UtcNow;
+
+        var firstLease = Assert.Single(await store.LeaseDueAsync(
+            owner, 1, firstAt, firstAt.AddMinutes(1), default, [eventId]));
+        var reclaimedAt = firstAt.AddMinutes(1).AddSeconds(1);
+        var secondLease = Assert.Single(await store.LeaseDueAsync(
+            owner, 1, reclaimedAt, reclaimedAt.AddMinutes(1), default, [eventId]));
+
+        Assert.Equal(firstLease.Event.EventId, secondLease.Event.EventId);
+        Assert.NotEqual(firstLease.LeaseVersion, secondLease.LeaseVersion);
+        Assert.False(await store.MarkDeliveredAsync(
+            eventId, firstLease.LeaseVersion, owner, reclaimedAt.AddSeconds(1), default));
+        Assert.False(await store.ScheduleRetryAsync(
+            eventId, firstLease.LeaseVersion, owner, reclaimedAt.AddSeconds(1),
+            reclaimedAt.AddSeconds(10), PersonsOutboxDeliveryFailureCodes.PublishFailed, default));
+        Assert.True(await store.MarkDeliveredAsync(
+            eventId, secondLease.LeaseVersion, owner, reclaimedAt.AddSeconds(2), default));
     }
 
     [Fact]
@@ -179,7 +209,7 @@ public sealed class PersonsOutboxDeliveryPostgresTests
 
         var retryAt = start.AddSeconds(30);
         Assert.True(await store.ScheduleRetryAsync(
-            leasedEvent.Event.EventId, "worker-a", start.AddSeconds(1), retryAt,
+            leasedEvent.Event.EventId, leasedEvent.LeaseVersion, "worker-a", start.AddSeconds(1), retryAt,
             PersonsOutboxDeliveryFailureCodes.PublishFailed, default));
 
         Assert.Empty(await store.LeaseDueAsync(
@@ -190,7 +220,7 @@ public sealed class PersonsOutboxDeliveryPostgresTests
         Assert.Equal(leasedEvent.Event.EventId, secondLease.Event.EventId);
         Assert.Equal(2, secondLease.AttemptCount);
         Assert.True(await store.MarkDeliveredAsync(
-            secondLease.Event.EventId, "worker-b", retryAt.AddSeconds(2), default));
+            secondLease.Event.EventId, secondLease.LeaseVersion, "worker-b", retryAt.AddSeconds(2), default));
     }
 
     [Fact]
@@ -346,14 +376,14 @@ public sealed class PersonsOutboxDeliveryPostgresTests
             CancellationToken cancellationToken, IReadOnlyCollection<Guid>? eventIds = null) =>
             Task.FromResult<IReadOnlyList<LeasedPersonsOutboxEvent>>([message]);
 
-        public Task<bool> MarkDeliveredAsync(Guid eventId, string leaseOwner, DateTimeOffset deliveredAtUtc,
+        public Task<bool> MarkDeliveredAsync(Guid eventId, long leaseVersion, string leaseOwner, DateTimeOffset deliveredAtUtc,
             CancellationToken cancellationToken)
         {
             AcknowledgedEventIds.Add(eventId);
             return Task.FromResult(true);
         }
 
-        public Task<bool> ScheduleRetryAsync(Guid eventId, string leaseOwner, DateTimeOffset nowUtc,
+        public Task<bool> ScheduleRetryAsync(Guid eventId, long leaseVersion, string leaseOwner, DateTimeOffset nowUtc,
             DateTimeOffset nextAttemptAtUtc, string failureCode, CancellationToken cancellationToken)
         {
             LastFailureCode = failureCode;

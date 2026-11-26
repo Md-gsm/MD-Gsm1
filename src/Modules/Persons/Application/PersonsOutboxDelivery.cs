@@ -30,11 +30,11 @@ public sealed record PersonsOutboxEvent(
     Guid IdempotencyKey);
 
 /// <summary>An event leased for one at-least-once delivery attempt.</summary>
-public sealed record LeasedPersonsOutboxEvent(PersonsOutboxEvent Event, int AttemptCount);
+public sealed record LeasedPersonsOutboxEvent(PersonsOutboxEvent Event, int AttemptCount, long LeaseVersion);
 
 /// <summary>
 /// Persistence port for the mutable delivery state. Event envelopes remain immutable.
-/// Every completion/retry operation is fenced by the current lease owner and lease expiry.
+/// Every completion/retry operation is fenced by lease owner, lease expiry and monotonic row version.
 /// </summary>
 public interface IPersonsOutboxDeliveryStore
 {
@@ -48,12 +48,14 @@ public interface IPersonsOutboxDeliveryStore
 
     Task<bool> MarkDeliveredAsync(
         Guid eventId,
+        long leaseVersion,
         string leaseOwner,
         DateTimeOffset deliveredAtUtc,
         CancellationToken cancellationToken);
 
     Task<bool> ScheduleRetryAsync(
         Guid eventId,
+        long leaseVersion,
         string leaseOwner,
         DateTimeOffset nowUtc,
         DateTimeOffset nextAttemptAtUtc,

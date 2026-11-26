@@ -72,6 +72,7 @@ public sealed class PersonsOutboxDeliveryWorker : BackgroundService
                 {
                     var scheduled = await _store.ScheduleRetryAsync(
                         item.Event.EventId,
+                        item.LeaseVersion,
                         _leaseOwner,
                         failedAt,
                         nextAttempt,
@@ -111,7 +112,7 @@ public sealed class PersonsOutboxDeliveryWorker : BackgroundService
 
             var deliveredAt = _clock.GetUtcNow();
             var acknowledged = await _store.MarkDeliveredAsync(
-                item.Event.EventId, _leaseOwner, deliveredAt, cancellationToken);
+                item.Event.EventId, item.LeaseVersion, _leaseOwner, deliveredAt, cancellationToken);
             if (!acknowledged)
             {
                 // A stale worker must never acknowledge a message after its lease was reclaimed.

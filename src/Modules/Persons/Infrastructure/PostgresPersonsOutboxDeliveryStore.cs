@@ -66,12 +66,12 @@ public sealed class PostgresPersonsOutboxDeliveryStore(NpgsqlDataSource dataSour
                     row_version = delivery.row_version + 1
                 FROM due
                 WHERE delivery.event_id = due.event_id
-                RETURNING delivery.event_id, delivery.attempt_count
+                RETURNING delivery.event_id, delivery.attempt_count, delivery.row_version
             )
             SELECT event.event_id, event.event_type, event.contract_version,
                    event.aggregate_id, event.actor_reference, event.occurred_at_utc,
                    event.correlation_id, event.causation_id, event.idempotency_key,
-                   claimed.attempt_count
+                   claimed.attempt_count, claimed.row_version
             FROM claimed
             INNER JOIN persons_outbox_events AS event USING (event_id)
             ORDER BY event.occurred_at_utc, event.event_id;
@@ -101,7 +101,7 @@ public sealed class PostgresPersonsOutboxDeliveryStore(NpgsqlDataSource dataSour
                     reader.IsDBNull(6) ? null : reader.GetGuid(6),
                     reader.IsDBNull(7) ? null : reader.GetGuid(7),
                     reader.GetGuid(8));
-                leased.Add(new LeasedPersonsOutboxEvent(message, reader.GetInt32(9)));
+                leased.Add(new LeasedPersonsOutboxEvent(message, reader.GetInt32(9), reader.GetInt64(10)));
             }
         }
 
@@ -111,6 +111,7 @@ public sealed class PostgresPersonsOutboxDeliveryStore(NpgsqlDataSource dataSour
 
     public async Task<bool> MarkDeliveredAsync(
         Guid eventId,
+        long leaseVersion,
         string leaseOwner,
         DateTimeOffset deliveredAtUtc,
         CancellationToken cancellationToken)
@@ -129,16 +130,19 @@ public sealed class PostgresPersonsOutboxDeliveryStore(NpgsqlDataSource dataSour
             WHERE event_id = @event
               AND delivery_status = 'leased'
               AND lease_owner = @owner
+              AND row_version = @lease_version
               AND lease_expires_at_utc > @delivered;
             """, connection);
         command.Parameters.AddWithValue("event", eventId);
         command.Parameters.AddWithValue("owner", leaseOwner);
+        command.Parameters.AddWithValue("lease_version", leaseVersion);
         command.Parameters.AddWithValue("delivered", deliveredAt);
         return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
     }
 
     public async Task<bool> ScheduleRetryAsync(
         Guid eventId,
+        long leaseVersion,
         string leaseOwner,
         DateTimeOffset nowUtc,
         DateTimeOffset nextAttemptAtUtc,
@@ -166,10 +170,12 @@ public sealed class PostgresPersonsOutboxDeliveryStore(NpgsqlDataSource dataSour
             WHERE event_id = @event
               AND delivery_status = 'leased'
               AND lease_owner = @owner
+              AND row_version = @lease_version
               AND lease_expires_at_utc > @now;
             """, connection);
         command.Parameters.AddWithValue("event", eventId);
         command.Parameters.AddWithValue("owner", leaseOwner);
+        command.Parameters.AddWithValue("lease_version", leaseVersion);
         command.Parameters.AddWithValue("now", now);
         command.Parameters.AddWithValue("next_attempt", nextAttempt);
         command.Parameters.AddWithValue("failure_code", failureCode);
