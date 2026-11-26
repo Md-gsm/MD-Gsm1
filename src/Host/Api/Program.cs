@@ -331,6 +331,70 @@ app.MapGet("/api/v2/persons/{partyId}", async (
     }
 });
 
+ 
+// Search is absent from the endpoint table unless the explicit feature flag is enabled.
+// Every request still requires the current permission and durable server-side controls.
+if (builder.Configuration.GetValue<bool>("Persons:SearchApiEnabled") &&
+    builder.Services.Any(descriptor => descriptor.ServiceType == typeof(IPersonsSearchControl)))
+{
+    app.MapGet("/api/v2/persons/search", async (
+        string term, int? limit, HttpContext context, IAuthenticatedActorContext actor,
+        [FromServices] IRolePermissionStore permissions, [FromServices] IPartyRepository parties,
+        [FromServices] IPersonsSearchControl searchControl, CancellationToken cancellationToken) =>
+    {
+        var accountId = AccountId.From(actor.AccountId);
+        if (!await permissions.HasPermissionAsync(accountId, "persons.read", cancellationToken))
+        {
+            await searchControl.RecordSecurityViolationAsync(actor.AccountId.ToString("D"),
+                PersonsSearchSecurityViolation.PermissionDenied, context.TraceIdentifier, cancellationToken);
+            return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
+        }
+
+        var control = await searchControl.TryConsumeAsync(actor.AccountId.ToString("D"), "persons.search", cancellationToken);
+        if (!control.Allowed)
+        {
+            context.Response.Headers["Retry-After"] = control.RetryAfterSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var error = control.Rejection == PersonsSearchControlRejection.ActorLocked
+                ? "persons_search_actor_locked" : "persons_search_rate_limited";
+            return (IResult)Results.Json(new { error, retryAfterSeconds = control.RetryAfterSeconds },
+                statusCode: StatusCodes.Status429TooManyRequests);
+        }
+
+        try
+        {
+            var results = await parties.SearchAsync(term, limit ?? PartySearchLimits.MaxResults,
+                actor.AccountId.ToString("D"), cancellationToken);
+            return (IResult)Results.Ok(new { items = results, requestId = context.TraceIdentifier });
+        }
+        catch (ArgumentException)
+        {
+            return (IResult)Results.UnprocessableEntity(new { error = "persons_search_validation_failed" });
+        }
+    });
+
+    app.MapPost("/api/v2/persons/search/actors/{actorId}/unlock", async (
+        string actorId, AdminSearchUnlockRequest request, HttpContext context,
+        IAuthenticatedActorContext admin, [FromServices] IRolePermissionStore permissions,
+        [FromServices] IPersonsSearchControl searchControl, CancellationToken cancellationToken) =>
+    {
+        if (!Guid.TryParse(actorId, out var targetActor) || targetActor == Guid.Empty)
+            return (IResult)Results.BadRequest(new { error = "actor_id_invalid" });
+        var adminAccount = AccountId.From(admin.AccountId);
+        if (!await permissions.HasPermissionAsync(adminAccount, "persons.search.abuse.unlock", cancellationToken))
+            return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
+        try
+        {
+            await searchControl.AdminUnlockAsync(targetActor.ToString("D"), admin.AccountId.ToString("D"),
+                request.Reason, context.TraceIdentifier, cancellationToken);
+            return (IResult)Results.NoContent();
+        }
+        catch (ArgumentException)
+        {
+            return (IResult)Results.BadRequest(new { error = "unlock_reason_invalid" });
+        }
+    });
+}
+
 }
 
 if (!personsPersistenceAvailable)
@@ -459,3 +523,5 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
 }
 
 public partial class Program;
+
+public sealed record AdminSearchUnlockRequest(string Reason);
