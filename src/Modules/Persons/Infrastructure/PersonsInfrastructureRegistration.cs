@@ -30,13 +30,26 @@ public static class PersonsInfrastructureRegistration
         return services;
     }
 
+    /// <summary>
+    /// Explicitly opts a host into the one-batch dispatcher after it has supplied
+    /// an approved transport adapter. This does not register a timer or hosted worker.
+    /// </summary>
+    public static IServiceCollection AddPersonsOutboxDispatcher(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        if (!services.Any(descriptor => descriptor.ServiceType == typeof(IPersonsOutboxPublisher)))
+            throw new InvalidOperationException(
+                "Register an approved IPersonsOutboxPublisher before enabling the Persons Outbox dispatcher.");
+        services.AddScoped<PersonsOutboxDispatcher>();
+        return services;
+    }
+
     public static IServiceCollection AddPersonsInfrastructure(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddScoped<IPartyRepository, PostgresPartyRepository>();
         services.AddScoped<IPersonsOutboxDeliveryStore, PostgresPersonsOutboxDeliveryStore>();
-        services.AddScoped<PersonsOutboxDispatcher>();
         services.AddScoped<IPartyLifecycleService, PostgresPartyLifecycleService>();
         services.AddScoped<IPartyLifecycleHistoryReader, PostgresPartyLifecycleHistoryReader>();
         services.AddScoped<IPartyMergeParticipant, PostgresPersonsPartyMergeParticipant>();
