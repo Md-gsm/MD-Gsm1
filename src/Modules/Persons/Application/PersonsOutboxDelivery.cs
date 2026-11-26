@@ -43,7 +43,8 @@ public interface IPersonsOutboxDeliveryStore
         int batchSize,
         DateTimeOffset nowUtc,
         DateTimeOffset leaseExpiresAtUtc,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<Guid>? eventIds = null);
 
     Task<bool> MarkDeliveredAsync(
         Guid eventId,
