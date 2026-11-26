@@ -9,8 +9,9 @@ $pgServiceName = 'MDGsmPostgreSQL18'
 $pgInstallRoot = Join-Path $env:ProgramFiles 'PostgreSQL\18'
 $pgDataRoot = Join-Path $env:ProgramData 'MD-Gsm\PostgreSQL\18'
 $pgDataDirectory = Join-Path $pgDataRoot 'data'
-$statePath = Join-Path $pgDataRoot 'cluster-state.json'
-$adminSecretPath = Join-Path $pgDataRoot 'cluster-admin.dpapi'
+$stateDirectory = Join-Path $provisioningRoot 'PostgreSQL'
+$statePath = Join-Path $stateDirectory 'cluster-state.json'
+$adminSecretPath = Join-Path $stateDirectory 'cluster-admin.dpapi'
 $provisioningRoot = Join-Path $env:ProgramData 'MD-Gsm\Provisioning'
 $installerUrl = 'https://get.enterprisedb.com/postgresql/postgresql-18.6-5-windows-x64.exe'
 $expectedInstallerSha256 = '227e2bc08091b4c2b8338c7d61b11d057f895711480b006f90bfcfcd2410a58a'
@@ -122,8 +123,65 @@ function Unprotect-Text([string] $Path) {
     }
 }
 
+function Set-PostgresDataRootAcl {
+    $service = Get-Service -Name $pgServiceName -ErrorAction SilentlyContinue
+    $accountName = if ($null -ne $service) { [string]$service.StartName } else { 'MDGsmPgSvc' }
+    if ($accountName -match '^NT AUTHORITY\\') {
+        throw 'The managed PostgreSQL service is using an unexpected built-in account.'
+    }
+    try {
+        $accountSid = Get-AccountSid $accountName
+    }
+    catch {
+        $accountSid = Get-AccountSid ('.\\MDGsmPgSvc')
+    }
+
+    if (-not (Test-Path -LiteralPath $pgDataRoot -PathType Container)) {
+        New-Item -ItemType Directory -Path $pgDataRoot -Force | Out-Null
+    }
+    $adminSid = Get-CurrentAdminSid
+    $systemSid = [Security.Principal.SecurityIdentifier]::new('S-1-5-18')
+    $acl = [System.Security.AccessControl.DirectorySecurity]::new()
+    $acl.SetAccessRuleProtection($true, $false)
+    $acl.SetOwner($adminSid)
+    foreach ($sid in @($adminSid, $systemSid)) {
+        $rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
+            $sid, [System.Security.AccessControl.FileSystemRights]::FullControl,
+            [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit,
+            [System.Security.AccessControl.PropagationFlags]::None,
+            [System.Security.AccessControl.AccessControlType]::Allow)
+        $acl.AddAccessRule($rule)
+    }
+    $serviceRule = [System.Security.AccessControl.FileSystemAccessRule]::new(
+        $accountSid, [System.Security.AccessControl.FileSystemRights]::Modify,
+        [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit,
+        [System.Security.AccessControl.PropagationFlags]::None,
+        [System.Security.AccessControl.AccessControlType]::Allow)
+    $acl.AddAccessRule($serviceRule)
+    Set-Acl -LiteralPath $pgDataRoot -AclObject $acl
+}
+
+function Ensure-PostgresServiceAccount {
+    $accountName = 'MDGsmPgSvc'
+    $localUser = Get-LocalUser -Name $accountName -ErrorAction SilentlyContinue
+    if ($null -ne $localUser -and $state.Status -ne 'provisioning') {
+        throw 'The PostgreSQL service account exists outside an incomplete product provisioning operation; Setup will not take it over.'
+    }
+    $securePassword = ConvertTo-SecureString $script:clusterSecrets.ServicePassword -AsPlainText -Force
+    if ($null -eq $localUser) {
+        New-LocalUser -Name $accountName -Password $securePassword -AccountNeverExpires -PasswordNeverExpires -UserMayNotChangePassword -Description 'MD-Gsm managed PostgreSQL 18 service account' | Out-Null
+    }
+    else {
+        Set-LocalUser -Name $accountName -Password $securePassword
+    }
+    $localUser = Get-LocalUser -Name $accountName -ErrorAction Stop
+    if ([string]$localUser.Description -ne 'MD-Gsm managed PostgreSQL 18 service account') {
+        throw 'The local PostgreSQL service account description does not match the managed product account.'
+    }
+}
+
 function Write-State($State) {
-    Set-RestrictedDirectoryAcl $pgDataRoot $false
+    Set-RestrictedDirectoryAcl $stateDirectory $false
     $tempPath = $statePath + '.tmp'
     $json = $State | ConvertTo-Json -Depth 5
     [System.IO.File]::WriteAllText($tempPath, $json, [System.UTF8Encoding]::new($false))
@@ -266,7 +324,10 @@ function Invoke-InstallPostgreSql {
 try {
     $null = Get-CurrentAdminSid
     Set-RestrictedDirectoryAcl $provisioningRoot $false
-    Set-RestrictedDirectoryAcl $pgDataRoot $false
+    Set-RestrictedDirectoryAcl $stateDirectory $false
+    if (-not (Test-Path -LiteralPath $pgDataRoot -PathType Container)) {
+        New-Item -ItemType Directory -Path $pgDataRoot -Force | Out-Null
+    }
     $service = Get-Service -Name $pgServiceName -ErrorAction SilentlyContinue
 
     if (Test-Path -LiteralPath $statePath) {
@@ -315,9 +376,12 @@ try {
     }
 
     if ($null -eq $service) {
+        Ensure-PostgresServiceAccount
+        Set-PostgresDataRootAcl
         Invoke-InstallPostgreSql
         $service = Get-Service -Name $pgServiceName -ErrorAction Stop
     }
+    Set-PostgresDataRootAcl
     if ($service.Status -ne 'Running') { Start-Service -Name $pgServiceName }
     Wait-PostgresReady
 
