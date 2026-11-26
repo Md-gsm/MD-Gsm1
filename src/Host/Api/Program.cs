@@ -365,9 +365,9 @@ if (builder.Configuration.GetValue<bool>("Persons:SearchApiEnabled") &&
             var items = results.Select(item => new
             {
                 partyId = item.PartyId,
-                partyType = item.PartyType.ToString(),
+                partyType = item.Type.ToString(),
                 displayName = item.DisplayName,
-                maskedMobile = item.MaskedMobile
+                maskedMobile = item.MaskedPrimaryMobile
             });
             return (IResult)Results.Ok(new { items, requestId = context.TraceIdentifier });
         }
