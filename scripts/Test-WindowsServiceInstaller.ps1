@@ -1,5 +1,8 @@
 [CmdletBinding()]
-param([Parameter(Mandatory = $true)][string] $InstallerPath)
+param(
+    [Parameter(Mandatory = $true)][string] $InstallerPath,
+    [Parameter(Mandatory = $true)][string] $ClientInstallerPath
+)
 
 $ErrorActionPreference = 'Stop'
 $serviceName = 'MDGsmApi'
@@ -14,6 +17,10 @@ $powerShell51 = Join-Path $env:windir 'System32\WindowsPowerShell\v1.0\powershel
 if (-not (Test-Path -LiteralPath $InstallerPath -PathType Leaf)) {
     throw 'Installer file not found.'
 }
+if (-not (Test-Path -LiteralPath $ClientInstallerPath -PathType Leaf)) {
+    throw 'Client-only installer file not found.'
+}
+
 $initialMarker = Get-ItemProperty -LiteralPath $keyMarkerPath -Name $keyMarkerName -ErrorAction SilentlyContinue
 if ($null -ne $initialMarker -and [int]$initialMarker.$keyMarkerName -eq 1) {
     throw 'The hosted Windows runner is expected to be clean; refusing to reuse a prior key-provisioned marker.'
@@ -334,7 +341,66 @@ function Invoke-SystemUninstaller([string] $Phase) {
     Write-Host ("PASS: service and Program Files removed during phase '" + $Phase + "'.")
 }
 
-Write-Host '== Initial system-wide installation =='
+function Invoke-ClientOnlyInstallerTest {
+    if (Get-Service -Name 'MDGsmApi' -ErrorAction SilentlyContinue) {
+        throw 'The clean Windows runner unexpectedly already has MDGsmApi installed.'
+    }
+    if (Get-Service -Name 'MDGsmPostgreSQL18' -ErrorAction SilentlyContinue) {
+        throw 'The clean Windows runner unexpectedly already has the product PostgreSQL service.'
+    }
+
+    $clientDirectory = Join-Path $env:ProgramFiles 'MD-Gsm-ClientTest'
+    $clientUninstaller = Join-Path $clientDirectory 'unins000.exe'
+    $resolvedClientInstaller = (Resolve-Path -LiteralPath $ClientInstallerPath).Path
+    $log = Join-Path $env:TEMP 'MD-Gsm-Client-Install.log'
+    $oldEndpoint = $env:MDGSM_CLIENT_API_BASEURL
+    try {
+        $env:MDGSM_CLIENT_API_BASEURL = 'https://central-test.example:5081/'
+        $arguments = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR="' +
+            $clientDirectory + '" /LOG="' + $log + '"'
+        $process = Start-Process -FilePath $resolvedClientInstaller -ArgumentList $arguments -Wait -PassThru
+        if ($null -eq $process -or $process.ExitCode -ne 0) {
+            throw 'The client-only installer failed in unattended CI mode.'
+        }
+        if (-not (Test-Path -LiteralPath (Join-Path $clientDirectory 'MDGsm.Desktop.exe') -PathType Leaf)) {
+            throw 'Client-only setup did not install the Desktop executable.'
+        }
+        if (Test-Path -LiteralPath (Join-Path $clientDirectory 'Api')) {
+            throw 'Client-only setup incorrectly installed the central API files.'
+        }
+        $clientConfig = Get-Content -LiteralPath (Join-Path $clientDirectory 'appsettings.json') -Raw
+        if ($clientConfig -notmatch '"BaseUrl":"https://central-test\.example:5081/"') {
+            throw 'Client-only setup did not persist the HTTPS central API endpoint.'
+        }
+        if (Get-Service -Name 'MDGsmApi' -ErrorAction SilentlyContinue) {
+            throw 'Client-only setup incorrectly registered the MDGsmApi service.'
+        }
+        if (Get-Service -Name 'MDGsmPostgreSQL18' -ErrorAction SilentlyContinue) {
+            throw 'Client-only setup incorrectly installed PostgreSQL.'
+        }
+        if (Test-Path -LiteralPath (Join-Path $env:ProgramData 'MD-Gsm\PostgreSQL\18\cluster-state.json')) {
+            throw 'Client-only setup incorrectly created central PostgreSQL state.'
+        }
+        if (Test-Path -LiteralPath (Join-Path $env:ProgramData 'MD-Gsm\Secrets\Api\database-connection.dpapi')) {
+            throw 'Client-only setup incorrectly created a PostgreSQL credential.'
+        }
+
+        if (-not (Test-Path -LiteralPath $clientUninstaller -PathType Leaf)) {
+            throw 'Client-only setup did not create its uninstaller.'
+        }
+        $uninstall = Start-Process -FilePath $clientUninstaller -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -Wait -PassThru
+        if ($null -eq $uninstall -or $uninstall.ExitCode -ne 0 -or (Test-Path -LiteralPath $clientDirectory)) {
+            throw 'Client-only uninstall did not remove its Program Files client directory.'
+        }
+        Write-Host 'PASS: client-only install accepts HTTPS central API configuration and installs no API service, PostgreSQL, or DB secret.'
+    }
+    finally {
+        if ($null -eq $oldEndpoint) { Remove-Item Env:MDGSM_CLIENT_API_BASEURL -ErrorAction SilentlyContinue }
+        else { $env:MDGSM_CLIENT_API_BASEURL = $oldEndpoint }
+    }
+}
+
+Write-Host '== Verify client-only install before central server setup =='\nInvoke-ClientOnlyInstallerTest\n\nWrite-Host '== Initial system-wide installation =='
 Invoke-SystemInstaller 'initial-install'
 
 if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'MDGsm.Desktop.exe') -PathType Leaf)) {
