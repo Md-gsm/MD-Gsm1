@@ -17,6 +17,11 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
+var protectedDatabaseConnectionFile = builder.Configuration["Database:ProtectedConnectionFile"];
+if (!string.IsNullOrWhiteSpace(protectedDatabaseConnectionFile))
+{
+    builder.Configuration.AddProtectedDatabaseConnectionString(protectedDatabaseConnectionFile);
+}
 builder.Services.AddMdGsmPersistence(builder.Configuration);
 
 if (args.Length > 0 && string.Equals(args[0], "--provision-persons-workflow-key", StringComparison.Ordinal))
@@ -101,16 +106,47 @@ app.MapGet("/health/ready", async (IServiceProvider services, IConfiguration con
     if (string.IsNullOrWhiteSpace(configuration.GetConnectionString(PersistenceRegistration.ConnectionStringName)))
         return (IResult)Results.Json(new { status = "not-ready", reason = "database-not-configured" }, statusCode: StatusCodes.Status503ServiceUnavailable);
 
-    var db = services.GetService<MdGsmDbContext>();
-    if (db is null)
+    var dataSource = services.GetService<NpgsqlDataSource>();
+    if (dataSource is null)
         return (IResult)Results.Json(new { status = "not-ready", reason = "database-service-not-registered" }, statusCode: StatusCodes.Status503ServiceUnavailable);
 
     try
     {
-        var canConnect = await db.Database.CanConnectAsync(cancellationToken);
-        return canConnect
-            ? (IResult)Results.Ok(new { status = "ready", dependency = "postgresql" })
-            : Results.Json(new { status = "not-ready", reason = "database-unreachable" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(
+            "SELECT session_user, current_user, current_database(), current_setting('server_version_num')::integer, inet_server_addr()::text",
+            connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            return (IResult)Results.Json(new { status = "not-ready", reason = "database-identity-unverified" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+
+        var sessionLogin = reader.GetString(0);
+        var effectiveRole = reader.GetString(1);
+        var databaseName = reader.GetString(2);
+        var serverVersion = reader.GetInt32(3);
+        var serverAddress = reader.IsDBNull(4) ? string.Empty : reader.GetString(4);
+        var expectedLogin = configuration["Database:ExpectedRuntimeLogin"] ?? "mdgsm_api_runtime";
+        var expectedDatabase = configuration["Database:ExpectedDatabaseName"] ?? "mdgsm";
+        var expectedMajor = configuration.GetValue<int?>("Database:ExpectedPostgreSqlMajor") ?? 18;
+        var serverMajor = serverVersion / 10000;
+
+        if (!string.Equals(sessionLogin, expectedLogin, StringComparison.Ordinal)
+            || !string.Equals(effectiveRole, expectedLogin, StringComparison.Ordinal)
+            || !string.Equals(databaseName, expectedDatabase, StringComparison.Ordinal)
+            || serverMajor != expectedMajor
+            || serverAddress is not ("127.0.0.1" or "::1"))
+        {
+            app.Logger.LogWarning(
+                "Database readiness identity check failed. LoginMatches={LoginMatches}; RoleMatches={RoleMatches}; DatabaseMatches={DatabaseMatches}; MajorMatches={MajorMatches}; Loopback={Loopback}",
+                string.Equals(sessionLogin, expectedLogin, StringComparison.Ordinal),
+                string.Equals(effectiveRole, expectedLogin, StringComparison.Ordinal),
+                string.Equals(databaseName, expectedDatabase, StringComparison.Ordinal),
+                serverMajor == expectedMajor,
+                serverAddress is "127.0.0.1" or "::1");
+            return (IResult)Results.Json(new { status = "not-ready", reason = "database-identity-mismatch" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(new { status = "ready", dependency = "postgresql", serverMajor, identity = "verified" });
     }
     catch (Exception ex) when (ex is not OperationCanceledException)
     {
