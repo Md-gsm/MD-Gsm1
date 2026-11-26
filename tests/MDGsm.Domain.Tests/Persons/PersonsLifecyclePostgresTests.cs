@@ -146,7 +146,8 @@ public sealed class PersonsLifecyclePostgresTests
             $"Exact duplicate origin mismatch: source={sourceId}; target={targetId}; origin={duplicateOrigin}");
         Assert.Equal(0L, reader.GetInt64(4));
         Assert.Equal(1L, reader.GetInt64(5));
-        Assert.Equal(sourceId, reader.GetGuid(6));
+        // The exact duplicate address remains target-origin; source provenance is retained in history.
+        Assert.Equal(targetId, reader.GetGuid(6));
         await reader.DisposeAsync();
 
         await using var historyConnection = await dataSource.OpenConnectionAsync();
