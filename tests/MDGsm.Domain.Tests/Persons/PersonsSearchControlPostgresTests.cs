@@ -56,7 +56,29 @@ public sealed class PersonsSearchControlPostgresTests
         Assert.InRange(locked.RetryAfterSeconds, 1, 900);
 
         await control.AdminUnlockAsync(actor, admin, "Approved integration-test unlock", Guid.CreateVersion7().ToString("D"), default);
+        await using (var stateConnection = await dataSource.OpenConnectionAsync())
+        await using (var stateCommand = new NpgsqlCommand("""
+            SELECT
+              (SELECT count(*) FROM persons_search_abuse_window WHERE actor_id=@actor),
+              (SELECT count(*) FROM persons_search_security_violation_audit WHERE actor_id=@actor);
+            """, stateConnection))
+        {
+            stateCommand.Parameters.AddWithValue("actor", actor);
+            await using var stateReader = await stateCommand.ExecuteReaderAsync();
+            Assert.True(await stateReader.ReadAsync());
+            Assert.Equal(0L, stateReader.GetInt64(0));
+            Assert.Equal(5L, stateReader.GetInt64(1)); // Durable security evidence remains after the active window is reset.
+        }
         Assert.True((await control.TryConsumeAsync(actor, "persons.search", default)).Allowed);
+        for (var i = 0; i < 4; i++)
+            await control.RecordSecurityViolationAsync(actor, PersonsSearchSecurityViolation.PermissionDenied,
+                Guid.CreateVersion7().ToString("D"), default);
+        Assert.True((await control.TryConsumeAsync(actor, "persons.search", default)).Allowed);
+        await control.RecordSecurityViolationAsync(actor, PersonsSearchSecurityViolation.PermissionDenied,
+            Guid.CreateVersion7().ToString("D"), default);
+        var relocked = await control.TryConsumeAsync(actor, "persons.search", default);
+        Assert.False(relocked.Allowed);
+        Assert.Equal(PersonsSearchControlRejection.ActorLocked, relocked.Rejection);
 
         await using var connection = await dataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand("""
