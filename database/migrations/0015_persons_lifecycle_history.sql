@@ -252,21 +252,36 @@ CREATE TRIGGER persons_address_lifecycle_history
     FOR EACH ROW EXECUTE FUNCTION persons_capture_lifecycle_history();
 
 CREATE TRIGGER persons_party_no_delete
-    BEFORE DELETE OR TRUNCATE ON persons
+    BEFORE DELETE ON persons
     FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
-CREATE TRIGGER persons_contact_no_delete
-    BEFORE DELETE OR TRUNCATE ON persons_contact_points
-    FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
-CREATE TRIGGER persons_address_no_delete
-    BEFORE DELETE OR TRUNCATE ON persons_addresses
-    FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
-CREATE TRIGGER persons_lifecycle_history_no_delete
-    BEFORE DELETE OR TRUNCATE ON persons_lifecycle_history
+CREATE TRIGGER persons_party_no_truncate
+    BEFORE TRUNCATE ON persons
     FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
 
-CREATE TRIGGER persons_lifecycle_history_no_mutation
-    BEFORE UPDATE OR DELETE OR TRUNCATE ON persons_lifecycle_history
+CREATE TRIGGER persons_contact_no_delete
+    BEFORE DELETE ON persons_contact_points
     FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
+CREATE TRIGGER persons_contact_no_truncate
+    BEFORE TRUNCATE ON persons_contact_points
+    FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
+
+CREATE TRIGGER persons_address_no_delete
+    BEFORE DELETE ON persons_addresses
+    FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
+CREATE TRIGGER persons_address_no_truncate
+    BEFORE TRUNCATE ON persons_addresses
+    FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
+
+CREATE TRIGGER persons_lifecycle_history_no_update
+    BEFORE UPDATE ON persons_lifecycle_history
+    FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
+CREATE TRIGGER persons_lifecycle_history_no_delete
+    BEFORE DELETE ON persons_lifecycle_history
+    FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
+CREATE TRIGGER persons_lifecycle_history_no_truncate
+    BEFORE TRUNCATE ON persons_lifecycle_history
+    FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
+
 REVOKE ALL ON persons_lifecycle_history FROM PUBLIC;
 REVOKE DELETE, TRUNCATE ON persons, persons_contact_points, persons_addresses FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION persons_capture_lifecycle_history() FROM PUBLIC;
