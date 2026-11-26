@@ -8,6 +8,21 @@ namespace MDGsm.Domain.Tests.Persons;
 public sealed class PersonsOutboxRegistrationTests
 {
     [Fact]
+    public void Infrastructure_registers_delivery_store_but_keeps_dispatcher_opt_in()
+    {
+        var services = new ServiceCollection();
+
+        services.AddPersonsInfrastructure();
+
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(IPersonsOutboxDeliveryStore));
+        Assert.DoesNotContain(services, descriptor =>
+            descriptor.ServiceType == typeof(PersonsOutboxDispatcher));
+        Assert.DoesNotContain(services, descriptor =>
+            descriptor.ServiceType == typeof(IPersonsOutboxPublisher));
+    }
+
+    [Fact]
     public void Dispatcher_registration_is_rejected_without_an_explicit_publisher()
     {
         var services = new ServiceCollection();
