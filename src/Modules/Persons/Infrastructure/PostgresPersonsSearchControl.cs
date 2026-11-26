@@ -198,6 +198,12 @@ public sealed class PostgresPersonsSearchControl(
             delete.Parameters.AddWithValue("actor", actor);
             delete.Parameters.AddWithValue("lock", current.LockId);
             await delete.ExecuteNonQueryAsync(cancellationToken);
+            await using (var clearWindow = new NpgsqlCommand(
+                "DELETE FROM persons_search_abuse_window WHERE actor_id = @actor;", connection, transaction))
+            {
+                clearWindow.Parameters.AddWithValue("actor", actor);
+                await clearWindow.ExecuteNonQueryAsync(cancellationToken);
+            }
             await InsertLockAuditAsync(connection, transaction, current.LockId, actor, "admin_unlocked",
                 now, admin, normalizedReason, request, cancellationToken);
         }
