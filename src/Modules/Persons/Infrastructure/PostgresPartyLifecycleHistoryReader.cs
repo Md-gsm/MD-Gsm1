@@ -45,8 +45,8 @@ public sealed class PostgresPartyLifecycleHistoryReader(NpgsqlDataSource dataSou
             {
                 JsonElement? beforeSnapshot = reader.IsDBNull(9)
                     ? null
-                    : JsonDocument.Parse(reader.GetString(9)).RootElement.Clone();
-                var afterSnapshot = JsonDocument.Parse(reader.GetString(10)).RootElement.Clone();
+                    : ParseJson(reader.GetString(9));
+                var afterSnapshot = ParseJson(reader.GetString(10));
                 items.Add(new PartyLifecycleHistoryItem(
                     reader.GetGuid(0), reader.GetString(1), reader.GetGuid(2), reader.GetGuid(3),
                     reader.GetInt64(4), reader.GetString(5), reader.GetString(6),
@@ -55,7 +55,7 @@ public sealed class PostgresPartyLifecycleHistoryReader(NpgsqlDataSource dataSou
             }
         }
 
-        await AppendAccessAuditAsync(partyId, items.Select(x => x.PartyId).Append(partyId).Distinct().ToArray(),
+        await AppendAccessAuditAsync(items.Select(x => x.PartyId).Append(partyId).Distinct().ToArray(),
             actorId.Trim(), cancellationToken);
         var next = items.Count == limit
             ? new PartyLifecycleHistoryCursor(items[^1].OccurredAtUtc, items[^1].HistoryId)
@@ -63,7 +63,7 @@ public sealed class PostgresPartyLifecycleHistoryReader(NpgsqlDataSource dataSou
         return new PartyLifecycleHistoryPage(items, next);
     }
 
-    private async Task AppendAccessAuditAsync(Guid requestedParty, IReadOnlyCollection<Guid> sourceParties,
+    private static JsonElement ParseJson(string json)\n    {\n        using var document = JsonDocument.Parse(json);\n        return document.RootElement.Clone();\n    }\n\n    private async Task AppendAccessAuditAsync(IReadOnlyCollection<Guid> sourceParties,
         string actor, CancellationToken cancellationToken)
     {
         var connectionString = new NpgsqlConnectionStringBuilder(dataSource.ConnectionString) { Pooling = false }.ConnectionString;
