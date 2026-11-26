@@ -81,7 +81,8 @@ public sealed class PersonsTemporaryWorkflowPostgresTests
         var root = FindRepositoryRoot();
         var program = await File.ReadAllTextAsync(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
         Assert.DoesNotContain("app.MapGet(\"/api/v2/persons\",", program, StringComparison.Ordinal);
-        Assert.DoesNotContain("SearchAsync(", program, StringComparison.Ordinal);
+        Assert.Contains("Persons:SearchApiEnabled", program, StringComparison.Ordinal);
+        Assert.Contains("\"SearchApiEnabled\": false", await File.ReadAllTextAsync(Path.Combine(root, "src", "Host", "Api", "appsettings.json")), StringComparison.Ordinal);
         Assert.DoesNotContain("autocomplete", program, StringComparison.OrdinalIgnoreCase);
 
         await using var payloadConnection = await dataSource.OpenConnectionAsync();
