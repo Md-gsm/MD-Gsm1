@@ -501,7 +501,6 @@ if (builder.Configuration.GetValue<bool>("Persons:HistoryApiEnabled") &&
     {
         var accountId = AccountId.From(actor.AccountId);
         if (!await permissions.HasPermissionAsync(accountId, "persons.read", cancellationToken) ||
-            !await permissions.HasPermissionAsync(accountId, "persons.sensitive.read", cancellationToken) ||
             !await permissions.HasPermissionAsync(accountId, "persons.sensitive.read", cancellationToken))
             return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
 
