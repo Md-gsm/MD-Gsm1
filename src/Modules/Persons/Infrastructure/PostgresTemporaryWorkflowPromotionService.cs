@@ -23,8 +23,7 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
     private const string PromotePermission = "persons.workflow.promote";
     private const string ReadPermission = "persons.read";
     private const string CreatePermission = "persons.create";
-    private const string PartyRegisteredContractVersion = "1.0";
-
+    
     public async Task<TemporaryWorkflowPromotionPreview> PreviewAsync(
         Guid workflowRecordId, Guid actorId, Guid? correlationId, CancellationToken cancellationToken)
     {
@@ -135,14 +134,16 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
                 registration = await parties.QuickRegisterNaturalAsync(
                     natural, command.ActorId.ToString("D"), command.OperationId,
                     command.CreateNewParty, command.SelectedPartyId, transaction, cancellationToken,
-                    command.ConfirmDistinctParty);
+                    command.ConfirmDistinctParty,
+                    new PartyRegisteredOutboxContext(command.CorrelationId, command.WorkflowRecordId, now));
             }
             else if (decoded.Registration is RegisterLegalParty legal)
             {
                 registration = await parties.QuickRegisterLegalAsync(
                     legal, command.ActorId.ToString("D"), command.OperationId,
                     command.CreateNewParty, command.SelectedPartyId, transaction, cancellationToken,
-                    command.ConfirmDistinctParty);
+                    command.ConfirmDistinctParty,
+                    new PartyRegisteredOutboxContext(command.CorrelationId, command.WorkflowRecordId, now));
             }
             else
             {
@@ -173,10 +174,6 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
             var outcome = registration.Created ? "Created" : "Existing";
             await InsertTombstoneAsync(
                 connection, transaction, command, partyId, outcome, decoded.SchemaVersion, now, cancellationToken);
-
-            if (registration.Created)
-                await InsertPartyRegisteredOutboxAsync(
-                    connection, transaction, partyId, command, now, cancellationToken);
 
             await InsertAuditAsync(connection, transaction, command.WorkflowRecordId, command.OperationId,
                 command.ActorId, "promotion_succeeded", outcome.ToLowerInvariant(),
@@ -373,45 +370,6 @@ public sealed class PostgresTemporaryWorkflowPromotionService(
         insert.Parameters.AddWithValue("outcome", outcome);
         insert.Parameters.AddWithValue("version", schemaVersion.ToString(CultureInfo.InvariantCulture));
         await insert.ExecuteNonQueryAsync(cancellationToken);
-    }
-
-    private static async Task InsertPartyRegisteredOutboxAsync(
-        NpgsqlConnection connection, NpgsqlTransaction transaction,
-        Guid partyId, TemporaryWorkflowPromotionCommand command,
-        DateTimeOffset now, CancellationToken cancellationToken)
-    {
-        var eventId = Guid.CreateVersion7();
-        await using (var eventCommand = new NpgsqlCommand("""
-            INSERT INTO persons_outbox_events
-                (event_id, event_type, contract_version, aggregate_id, actor_reference,
-                 occurred_at_utc, correlation_id, causation_id, idempotency_key)
-            VALUES
-                (@event, 'PartyRegistered', @version, @party, @actor,
-                 @occurred, @correlation, @causation, @operation);
-            """, connection, transaction))
-        {
-            eventCommand.Parameters.AddWithValue("event", eventId);
-            eventCommand.Parameters.AddWithValue("version", PartyRegisteredContractVersion);
-            eventCommand.Parameters.AddWithValue("party", partyId);
-            eventCommand.Parameters.AddWithValue("actor", command.ActorId.ToString("D"));
-            eventCommand.Parameters.AddWithValue("occurred", now);
-            eventCommand.Parameters.Add(new NpgsqlParameter("correlation", NpgsqlDbType.Uuid)
-            {
-                Value = (object?)command.CorrelationId ?? DBNull.Value
-            });
-            eventCommand.Parameters.AddWithValue("causation", command.WorkflowRecordId);
-            eventCommand.Parameters.AddWithValue("operation", command.OperationId);
-            await eventCommand.ExecuteNonQueryAsync(cancellationToken);
-        }
-
-        await using var deliveryCommand = new NpgsqlCommand("""
-            INSERT INTO persons_outbox_deliveries
-                (event_id, delivery_status, attempt_count, next_attempt_at_utc)
-            VALUES (@event, 'pending', 0, @now);
-            """, connection, transaction);
-        deliveryCommand.Parameters.AddWithValue("event", eventId);
-        deliveryCommand.Parameters.AddWithValue("now", now);
-        await deliveryCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private async Task AppendAuditAsync(
