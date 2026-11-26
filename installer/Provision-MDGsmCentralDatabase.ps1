@@ -125,7 +125,7 @@ function Unprotect-Text([string] $Path) {
 
 function Set-PostgresDataRootAcl {
     $serviceRecord = Get-CimInstance -ClassName Win32_Service -Filter "Name='$pgServiceName'" -ErrorAction SilentlyContinue
-    $accountName = if ($null -ne $serviceRecord) { [string]$serviceRecord.StartName } else { '.\\MDGsmPgSvc' }
+    $accountName = if ($null -ne $serviceRecord) { [string]$serviceRecord.StartName } else { '.\MDGsmPgSvc' }
     if ([string]::IsNullOrWhiteSpace($accountName) -or
         $accountName -match '^(LocalSystem|NT AUTHORITY\\|NT SERVICE\\)') {
         throw 'The managed PostgreSQL service is using an unexpected built-in or service-SID account.'
