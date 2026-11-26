@@ -64,13 +64,13 @@ CREATE TABLE persons_search_lock_audit (
 CREATE INDEX ix_persons_search_lock_audit_actor_time
     ON persons_search_lock_audit (actor_id, occurred_at_utc);
 
-CREATE RULE persons_search_violation_audit_no_update
+CREATE RULE persons_search_violation_audit_no_update AS
     ON UPDATE TO persons_search_security_violation_audit DO INSTEAD NOTHING;
-CREATE RULE persons_search_violation_audit_no_delete
+CREATE RULE persons_search_violation_audit_no_delete AS
     ON DELETE TO persons_search_security_violation_audit DO INSTEAD NOTHING;
-CREATE RULE persons_search_lock_audit_no_update
+CREATE RULE persons_search_lock_audit_no_update AS
     ON UPDATE TO persons_search_lock_audit DO INSTEAD NOTHING;
-CREATE RULE persons_search_lock_audit_no_delete
+CREATE RULE persons_search_lock_audit_no_delete AS
     ON DELETE TO persons_search_lock_audit DO INSTEAD NOTHING;
 
 REVOKE UPDATE, DELETE, TRUNCATE
