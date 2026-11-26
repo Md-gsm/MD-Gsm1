@@ -30,20 +30,24 @@ public interface IPartyRepository
     /// Ambiguous or different-name matches require explicit selection; forceNew is an explicit choice but never bypasses candidate review; a separate confirmation is required when candidates exist.
     /// </summary>
     Task<PartyQuickRegistrationResult> QuickRegisterNaturalAsync(RegisterNaturalParty request, string actorId,
-        Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken, bool confirmDistinctParty = false);
+        Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken,
+        bool confirmDistinctParty = false, PartyRegisteredOutboxContext? outboxContext = null);
 
     Task<PartyQuickRegistrationResult> QuickRegisterLegalAsync(RegisterLegalParty request, string actorId,
-        Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken, bool confirmDistinctParty = false);
+        Guid operationId, bool forceNew, string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken,
+        bool confirmDistinctParty = false, PartyRegisteredOutboxContext? outboxContext = null);
 
     /// <summary>
     /// Registers a natural person idempotently by <paramref name="operationId"/> (V1: OperationId only, no payload comparison).
     /// When <paramref name="transaction"/> is supplied the write joins that caller-owned transaction (ADR-0005) and is not committed here.
     /// </summary>
     Task<PartyRegistrationResult> AddNaturalAsync(RegisterNaturalParty request, string actorId, Guid operationId,
-        DbTransaction? transaction, CancellationToken cancellationToken);
+        DbTransaction? transaction, CancellationToken cancellationToken,
+        PartyRegisteredOutboxContext? outboxContext = null);
 
     Task<PartyRegistrationResult> AddLegalAsync(RegisterLegalParty request, string actorId, Guid operationId,
-        DbTransaction? transaction, CancellationToken cancellationToken);
+        DbTransaction? transaction, CancellationToken cancellationToken,
+        PartyRegisteredOutboxContext? outboxContext = null);
 
     /// <summary>
     /// Search by name (at least two characters) or by the last four digits of a mobile number.
