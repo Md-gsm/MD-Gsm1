@@ -26,6 +26,7 @@ public sealed class PersonsOutboxRegistrationTests
     public void Dispatcher_registration_is_rejected_without_an_explicit_publisher()
     {
         var services = new ServiceCollection();
+        services.AddPersonsInfrastructure();
 
         var exception = Assert.Throws<InvalidOperationException>(
             () => services.AddPersonsOutboxDispatcher());
@@ -38,6 +39,7 @@ public sealed class PersonsOutboxRegistrationTests
     public void Dispatcher_registration_requires_and_uses_a_host_supplied_publisher()
     {
         var services = new ServiceCollection();
+        services.AddPersonsInfrastructure();
         services.AddSingleton<IPersonsOutboxPublisher, TestPublisher>();
 
         services.AddPersonsOutboxDispatcher();
