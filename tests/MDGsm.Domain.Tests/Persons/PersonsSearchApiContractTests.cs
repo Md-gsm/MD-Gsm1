@@ -16,7 +16,7 @@ public sealed class PersonsSearchApiContractTests
         Assert.Contains("IPersonsSearchControl", program, StringComparison.Ordinal);
         Assert.Contains("PersonsGlobalReadAuthorization.CanReadAsync", program, StringComparison.Ordinal);
         Assert.Contains("var items = results.Select(item => new", program, StringComparison.Ordinal);
-        Assert.Contains("maskedMobile = item.MaskedMobile", program, StringComparison.Ordinal);
+        Assert.Contains("maskedMobile = item.MaskedPrimaryMobile", program, StringComparison.Ordinal);
         Assert.DoesNotContain("new { items = results,", program, StringComparison.Ordinal);
         Assert.Contains("RoleCatalog.SuperAdmin", program, StringComparison.Ordinal);
         Assert.Contains("AdminUnlockAsync", program, StringComparison.Ordinal);
