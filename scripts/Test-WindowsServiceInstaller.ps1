@@ -378,7 +378,7 @@ function Invoke-ClientOnlyInstallerTest {
         if (Get-Service -Name 'MDGsmPostgreSQL18' -ErrorAction SilentlyContinue) {
             throw 'Client-only setup incorrectly installed PostgreSQL.'
         }
-        if (Test-Path -LiteralPath (Join-Path $env:ProgramData 'MD-Gsm\PostgreSQL\18\cluster-state.json')) {
+        if (Test-Path -LiteralPath (Join-Path $env:ProgramData 'MD-Gsm\Provisioning\PostgreSQL\cluster-state.json')) {
             throw 'Client-only setup incorrectly created central PostgreSQL state.'
         }
         if (Test-Path -LiteralPath (Join-Path $env:ProgramData 'MD-Gsm\Secrets\Api\database-connection.dpapi')) {
