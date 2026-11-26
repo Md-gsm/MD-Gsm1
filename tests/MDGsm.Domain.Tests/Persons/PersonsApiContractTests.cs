@@ -21,7 +21,7 @@ public sealed class PersonsApiContractTests
         Assert.DoesNotContain("creditLimitRial", contract, StringComparison.Ordinal);
         Assert.DoesNotContain("defaultDiscountPercent", contract, StringComparison.Ordinal);
         Assert.DoesNotContain("operationId: searchParties", contract, StringComparison.Ordinal);
-        Assert.DoesNotContain("  /api/v2/persons/search:", contract, StringComparison.Ordinal);
+        Assert.Contains("  /api/v2/persons/search:", contract, StringComparison.Ordinal);
         Assert.Contains("PartyResponse:", contract, StringComparison.Ordinal);
         Assert.Contains("workClassification:", contract, StringComparison.Ordinal);
         Assert.DoesNotContain("address    PartyResponse:", contract, StringComparison.Ordinal);
@@ -29,6 +29,26 @@ public sealed class PersonsApiContractTests
         Assert.DoesNotContain("/api/v2/persons/quick/", contract, StringComparison.Ordinal);
     }
 
+
+    [Fact]
+    public void Search_route_is_documented_with_fail_closed_global_read_and_default_off_flag()
+    {
+        var root = FindRepositoryRoot();
+        var contract = File.ReadAllText(Path.Combine(root, "docs", "persons", "contracts", "persons.openapi.yaml"));
+        var program = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
+        var settings = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "appsettings.json"));
+
+        Assert.Contains("  /api/v2/persons/search:", contract, StringComparison.Ordinal);
+        Assert.Contains("Persons:SearchApiEnabled", contract, StringComparison.Ordinal);
+        Assert.Contains("persons.read", contract, StringComparison.Ordinal);
+        Assert.Contains("maxLength: 160", contract, StringComparison.Ordinal);
+        Assert.Contains("maximum: 10", contract, StringComparison.Ordinal);
+        Assert.Contains("maskedMobile", contract, StringComparison.Ordinal);
+        Assert.Contains("PersonsGlobalReadAuthorization.CanReadAsync", program, StringComparison.Ordinal);
+        Assert.Contains("RecordSecurityViolationAsync", program, StringComparison.Ordinal);
+        Assert.Contains("TryConsumeAsync", program, StringComparison.Ordinal);
+        Assert.Contains("\\"SearchApiEnabled\\": false", settings, StringComparison.Ordinal);
+    }
 
     [Fact]
     public void Canonical_natural_and_legal_write_routes_always_use_duplicate_resolution()
