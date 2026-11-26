@@ -400,7 +400,10 @@ function Invoke-ClientOnlyInstallerTest {
     }
 }
 
-Write-Host '== Verify client-only install before central server setup =='\nInvoke-ClientOnlyInstallerTest\n\nWrite-Host '== Initial system-wide installation =='
+Write-Host '== Verify client-only install before central server setup =='
+Invoke-ClientOnlyInstallerTest
+
+Write-Host '== Initial system-wide installation =='
 Invoke-SystemInstaller 'initial-install'
 
 if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'MDGsm.Desktop.exe') -PathType Leaf)) {
