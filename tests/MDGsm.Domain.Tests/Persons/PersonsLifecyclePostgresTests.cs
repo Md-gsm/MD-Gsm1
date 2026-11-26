@@ -193,6 +193,146 @@ public sealed class PersonsLifecyclePostgresTests
         Assert.True((long)(await history.ExecuteScalarAsync())! >= 3L);
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AC45_merge_preserves_preexisting_history_snapshots_and_reconciles_active_references()
+    {
+        await using var dataSource = await OpenDisposableDataSourceAsync();
+        var repository = new PostgresPartyRepository(dataSource);
+        var actor = Guid.CreateVersion7().ToString("D");
+        var source = await repository.AddNaturalAsync(NewNatural("09125550192"), actor, Guid.CreateVersion7(), null, default);
+        var target = await repository.AddNaturalAsync(NewNatural("09125550192"), actor, Guid.CreateVersion7(), null, default);
+        var sourceId = Guid.Parse(source.PartyId);
+        var targetId = Guid.Parse(target.PartyId);
+
+        await using (var setup = await dataSource.OpenConnectionAsync())
+        {
+            await using var restrictiveConsent = new NpgsqlCommand("""
+                UPDATE persons_contact_points SET is_messaging_allowed=false
+                WHERE party_id=@target AND kind=1 AND is_active;
+                """, setup);
+            restrictiveConsent.Parameters.AddWithValue("target", targetId);
+            await restrictiveConsent.ExecuteNonQueryAsync();
+
+            await using var contact = new NpgsqlCommand("""
+                INSERT INTO persons_contact_points
+                    (contact_point_id, party_id, kind, value, is_primary, is_messaging_allowed, is_active, created_by)
+                VALUES (@id, @source, 2, '02177700000', false, true, true, @actor);
+                """, setup);
+            contact.Parameters.AddWithValue("id", Guid.CreateVersion7());
+            contact.Parameters.AddWithValue("source", sourceId);
+            contact.Parameters.AddWithValue("actor", actor);
+            await contact.ExecuteNonQueryAsync();
+
+            await using var address = new NpgsqlCommand("""
+                INSERT INTO persons_addresses
+                    (address_id, party_id, country_code, province, city, postal_code, address_line,
+                     is_primary, is_active, created_by)
+                VALUES (@id, @source, 'IR', 'تهران', 'تهران', '9876543210', 'نشانی غیرتکراری مبدأ',
+                        false, true, @actor);
+                """, setup);
+            address.Parameters.AddWithValue("id", Guid.CreateVersion7());
+            address.Parameters.AddWithValue("source", sourceId);
+            address.Parameters.AddWithValue("actor", actor);
+            await address.ExecuteNonQueryAsync();
+        }
+
+        var priorHistory = await ReadHistorySnapshotsAsync(dataSource, [sourceId, targetId]);
+        Assert.NotEmpty(priorHistory);
+
+        var merge = new PostgresPartyMergeService(dataSource,
+            [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant()]);
+        var operation = Guid.CreateVersion7();
+        var result = await merge.MergeAsync(sourceId, targetId, operation, actor, TimeProvider.System.GetUtcNow(), default);
+        Assert.False(result.Replayed);
+
+        var preservedHistory = await ReadHistorySnapshotsByIdsAsync(
+            dataSource, priorHistory.Select(item => item.Id).ToArray());
+        Assert.Equal(priorHistory.Select(item => item.Snapshot), preservedHistory.Select(item => item.Snapshot));
+
+        await using var verify = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("""
+            SELECT
+              (SELECT count(*) FROM persons_contact_points WHERE party_id=@source AND is_active),
+              (SELECT count(*) FROM persons_contact_points WHERE party_id=@target AND is_active),
+              (SELECT count(*) FROM persons_addresses WHERE party_id=@source AND is_active),
+              (SELECT count(*) FROM persons_addresses WHERE party_id=@target AND is_active),
+              (SELECT origin_party_id FROM persons_contact_points WHERE party_id=@target AND kind=1 AND is_active),
+              (SELECT is_messaging_allowed FROM persons_contact_points WHERE party_id=@target AND kind=1 AND is_active),
+              (SELECT is_primary FROM persons_contact_points WHERE party_id=@target AND kind=1 AND is_active),
+              (SELECT origin_party_id FROM persons_contact_points WHERE party_id=@target AND kind=2 AND is_active AND value='02177700000'),
+              (SELECT origin_party_id FROM persons_addresses WHERE party_id=@target AND is_active AND address_line='نشانی آزمایشی'),
+              (SELECT is_primary FROM persons_addresses WHERE party_id=@target AND is_active AND address_line='نشانی آزمایشی'),
+              (SELECT origin_party_id FROM persons_addresses WHERE party_id=@target AND is_active AND address_line='نشانی غیرتکراری مبدأ'),
+              (SELECT is_primary FROM persons_addresses WHERE party_id=@target AND is_active AND address_line='نشانی غیرتکراری مبدأ'),
+              (SELECT is_active FROM persons WHERE party_id=@source),
+              (SELECT merged_into_party_id FROM persons WHERE party_id=@source);
+            """, verify);
+        command.Parameters.AddWithValue("source", sourceId);
+        command.Parameters.AddWithValue("target", targetId);
+        await using var reader = await command.ExecuteReaderAsync();
+        Assert.True(await reader.ReadAsync());
+        Assert.Equal(0L, reader.GetInt64(0));
+        Assert.Equal(2L, reader.GetInt64(1));
+        Assert.Equal(0L, reader.GetInt64(2));
+        Assert.Equal(2L, reader.GetInt64(3));
+        Assert.Equal(targetId, reader.GetGuid(4));
+        Assert.False(reader.GetBoolean(5));
+        Assert.True(reader.GetBoolean(6));
+        Assert.Equal(sourceId, reader.GetGuid(7));
+        Assert.Equal(targetId, reader.GetGuid(8));
+        Assert.True(reader.GetBoolean(9));
+        Assert.Equal(sourceId, reader.GetGuid(10));
+        Assert.False(reader.GetBoolean(11));
+        Assert.False(reader.GetBoolean(12));
+        Assert.Equal(targetId, reader.GetGuid(13));
+        await reader.DisposeAsync();
+
+        Assert.True(await ScalarAsync(dataSource,
+            "SELECT count(*) FROM persons_lifecycle_history WHERE operation_id=@operation AND change_type IN ('merge-source','merge-transfer','merge-deduplicated');",
+            operation) >= 5L);
+    }
+
+    private static async Task<List<(Guid Id, string Snapshot)>> ReadHistorySnapshotsAsync(
+        NpgsqlDataSource dataSource, Guid[] partyIds)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("""
+            SELECT history_id, jsonb_build_array(history_id, entity_type, entity_id, party_id, row_version,
+                change_type, actor_id, occurred_at_utc, reason, before_snapshot, after_snapshot, operation_id)::text
+            FROM persons_lifecycle_history WHERE party_id = ANY(@party_ids) ORDER BY history_id;
+            """, connection);
+        command.Parameters.AddWithValue("party_ids", partyIds);
+        var rows = new List<(Guid Id, string Snapshot)>();
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync()) rows.Add((reader.GetGuid(0), reader.GetString(1)));
+        return rows;
+    }
+
+    private static async Task<List<(Guid Id, string Snapshot)>> ReadHistorySnapshotsByIdsAsync(
+        NpgsqlDataSource dataSource, Guid[] historyIds)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("""
+            SELECT history_id, jsonb_build_array(history_id, entity_type, entity_id, party_id, row_version,
+                change_type, actor_id, occurred_at_utc, reason, before_snapshot, after_snapshot, operation_id)::text
+            FROM persons_lifecycle_history WHERE history_id = ANY(@history_ids) ORDER BY history_id;
+            """, connection);
+        command.Parameters.AddWithValue("history_ids", historyIds);
+        var rows = new List<(Guid Id, string Snapshot)>();
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync()) rows.Add((reader.GetGuid(0), reader.GetString(1)));
+        return rows;
+    }
+
+    private static async Task<long> ScalarAsync(NpgsqlDataSource dataSource, string sql, Guid operationId)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue("operation", operationId);
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
     private static RegisterNaturalParty NewNatural(string mobile) =>
         new("آزمایش", "تاریخی", PartyBusinessRoles.Customer, Random.Shared.NextInt64(1_000_000_000L, 9_999_999_999L).ToString(),
             mobile, null, null, null, "تهران", "تهران", "1234567890", "نشانی آزمایشی",
