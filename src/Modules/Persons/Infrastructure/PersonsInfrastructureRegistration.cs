@@ -37,6 +37,9 @@ public static class PersonsInfrastructureRegistration
     public static IServiceCollection AddPersonsOutboxDispatcher(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
+        if (!services.Any(descriptor => descriptor.ServiceType == typeof(IPersonsOutboxDeliveryStore)))
+            throw new InvalidOperationException(
+                "Call AddPersonsInfrastructure before enabling the Persons Outbox dispatcher.");
         if (!services.Any(descriptor => descriptor.ServiceType == typeof(IPersonsOutboxPublisher)))
             throw new InvalidOperationException(
                 "Register an approved IPersonsOutboxPublisher before enabling the Persons Outbox dispatcher.");
