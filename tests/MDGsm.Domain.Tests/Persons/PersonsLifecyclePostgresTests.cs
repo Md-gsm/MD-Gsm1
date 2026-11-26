@@ -63,6 +63,35 @@ public sealed class PersonsLifecyclePostgresTests
         history.Parameters.AddWithValue("id", contactId);
         history.Parameters.AddWithValue("actor", actor);
         Assert.Equal(3L, (long)(await history.ExecuteScalarAsync())!);
+
+        Guid addressId;
+        await using (var addressConnection = await dataSource.OpenConnectionAsync())
+        await using (var addressCommand = new NpgsqlCommand("SELECT address_id FROM persons_addresses WHERE party_id=@party AND is_active;", addressConnection))
+        {
+            addressCommand.Parameters.AddWithValue("party", Guid.Parse(party.PartyId));
+            addressId = (Guid)(await addressCommand.ExecuteScalarAsync())!;
+        }
+        var addressUpdated = await lifecycle.UpdateAddressAsync(addressId, "IR", "تهران", "تهران", "1234567890", "نشانی اصلاح‌شده",
+            1, actor, "corrected address", default);
+        Assert.Equal(PartyLifecycleChangeStatus.Applied, addressUpdated.Status);
+        Assert.Equal(2L, addressUpdated.CurrentRowVersion);
+        var addressInactive = await lifecycle.SetAddressActiveAsync(addressId, false, 2, actor, "address temporarily inactive", default);
+        Assert.Equal(PartyLifecycleChangeStatus.Applied, addressInactive.Status);
+        Assert.Equal(3L, addressInactive.CurrentRowVersion);
+        var addressActive = await lifecycle.SetAddressActiveAsync(addressId, true, 3, actor, "address restored", default);
+        Assert.Equal(PartyLifecycleChangeStatus.Applied, addressActive.Status);
+        Assert.Equal(4L, addressActive.CurrentRowVersion);
+
+        var historyReader = new PostgresPartyLifecycleHistoryReader(dataSource);
+        var page = await historyReader.GetAsync(Guid.Parse(party.PartyId), 100, null, actor, default);
+        Assert.Contains(page.Items, item => item.EntityId == contactId && item.ChangeType == "updated");
+        Assert.Contains(page.Items, item => item.EntityId == addressId && item.ChangeType == "reactivated");
+        Assert.Null(page.NextCursor);
+        await using var auditConnection = await dataSource.OpenConnectionAsync();
+        await using var auditCommand = new NpgsqlCommand("SELECT count(*) FROM persons_access_audit WHERE party_id=@party AND actor=@actor AND action='history-read' AND sensitive_included=true;", auditConnection);
+        auditCommand.Parameters.AddWithValue("party", Guid.Parse(party.PartyId));
+        auditCommand.Parameters.AddWithValue("actor", actor);
+        Assert.True((long)(await auditCommand.ExecuteScalarAsync())! >= 1L);
     }
 
     [Fact]
