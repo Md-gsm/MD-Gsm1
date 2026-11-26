@@ -108,7 +108,8 @@ public sealed class MigrationResourceTests
             .Select(group => $"{group.Key} (x{group.Count()})")
             .ToArray();
         Assert.True(duplicateResources.Length == 0, $"Duplicate migration resource names: {string.Join(", ", duplicateResources)}");
-        Assert.Equal(expectedResources, actualResources);
+        Assert.True(expectedResources.SequenceEqual(actualResources),
+            $"Expected migration resources: {string.Join(", ", expectedResources)}; actual: {string.Join(", ", actualResources)}");
     }
 
     private static string FindRepositoryRoot()
