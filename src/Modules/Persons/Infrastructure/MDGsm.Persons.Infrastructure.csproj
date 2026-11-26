@@ -41,5 +41,8 @@
     <EmbeddedResource Include="..\..\..\..\database\migrations\0015_persons_lifecycle_history.sql">
       <LogicalName>MDGsm.Migrations.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\..\database\migrations\0016_persons_financial_field_archive.sql">
+      <LogicalName>MDGsm.Migrations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>
