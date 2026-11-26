@@ -1,5 +1,5 @@
-\\echo 'O-46 JRN-REC-03 evidence collection — READ ONLY; execute using the actual API/Setup Service DB connection identity.'
-\\set ON_ERROR_STOP on
+\echo 'O-46 JRN-REC-03 evidence collection — READ ONLY; execute using the actual API/Setup Service DB connection identity.'
+\set ON_ERROR_STOP on
 BEGIN TRANSACTION READ ONLY;
 
 SELECT
