@@ -123,7 +123,7 @@ public sealed class PostgresPersonsPartyMergeParticipant : IPartyMergeParticipan
             ), update_target AS (
                 UPDATE persons_contact_points t
                 SET is_messaging_allowed = t.is_messaging_allowed AND d.source_messaging,
-                    is_primary = CASE WHEN NOT d.target_has_primary AND d.source_primary THEN true ELSE t.is_primary END
+                    is_primary = CASE WHEN NOT d.target_has_primary AND d.source_primary\n                        AND d.target_id = (SELECT min(d2.target_id) FROM duplicates d2 WHERE d2.kind=d.kind)\n                    THEN true ELSE t.is_primary END
                 FROM duplicates d WHERE t.contact_point_id=d.target_id
                 RETURNING t.contact_point_id
             )
@@ -166,7 +166,7 @@ public sealed class PostgresPersonsPartyMergeParticipant : IPartyMergeParticipan
                 GROUP BY t.address_id
             ), update_target AS (
                 UPDATE persons_addresses t
-                SET is_primary = CASE WHEN NOT d.target_has_primary AND d.source_primary THEN true ELSE t.is_primary END
+                SET is_primary = CASE WHEN NOT d.target_has_primary AND d.source_primary\n                        AND d.target_id = (SELECT min(d2.target_id) FROM duplicates d2)\n                    THEN true ELSE t.is_primary END
                 FROM duplicates d WHERE t.address_id=d.target_id
                 RETURNING t.address_id
             )
