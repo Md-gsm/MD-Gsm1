@@ -194,20 +194,28 @@ BEGIN
 
     IF TG_OP = 'INSERT' THEN
         v_change := 'created';
-    ELSIF TG_TABLE_NAME = 'persons' AND OLD.merged_into_party_id IS NULL AND NEW.merged_into_party_id IS NOT NULL THEN
-        v_change := 'merge-source';
-    ELSIF TG_TABLE_NAME <> 'persons'
-          AND OLD.is_active AND NOT NEW.is_active
-          AND v_reason LIKE 'merge-deduplicated-%' THEN
-        v_change := 'merge-deduplicated';
-    ELSIF TG_TABLE_NAME <> 'persons' AND OLD.party_id <> NEW.party_id THEN
-        v_change := 'merge-transfer';
-    ELSIF OLD.is_active AND NOT NEW.is_active THEN
-        v_change := 'deactivated';
-    ELSIF NOT OLD.is_active AND NEW.is_active THEN
-        v_change := 'reactivated';
+    ELSIF TG_TABLE_NAME = 'persons' THEN
+        IF OLD.merged_into_party_id IS NULL AND NEW.merged_into_party_id IS NOT NULL THEN
+            v_change := 'merge-source';
+        ELSIF OLD.is_active AND NOT NEW.is_active THEN
+            v_change := 'deactivated';
+        ELSIF NOT OLD.is_active AND NEW.is_active THEN
+            v_change := 'reactivated';
+        ELSE
+            v_change := 'updated';
+        END IF;
     ELSE
-        v_change := 'updated';
+        IF OLD.is_active AND NOT NEW.is_active AND v_reason LIKE 'merge-deduplicated-%' THEN
+            v_change := 'merge-deduplicated';
+        ELSIF OLD.party_id <> NEW.party_id THEN
+            v_change := 'merge-transfer';
+        ELSIF OLD.is_active AND NOT NEW.is_active THEN
+            v_change := 'deactivated';
+        ELSIF NOT OLD.is_active AND NEW.is_active THEN
+            v_change := 'reactivated';
+        ELSE
+            v_change := 'updated';
+        END IF;
     END IF;
 
     INSERT INTO public.persons_lifecycle_history
