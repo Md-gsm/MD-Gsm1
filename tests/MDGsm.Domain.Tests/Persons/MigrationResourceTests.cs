@@ -107,7 +107,7 @@ public sealed class MigrationResourceTests
             .Where(group => group.Count() > 1)
             .Select(group => $"{group.Key} (x{group.Count()})")
             .ToArray();
-        Assert.Empty(duplicateResources, $"Duplicate migration resource names: {string.Join(", ", duplicateResources)}");
+        Assert.True(duplicateResources.Length == 0, $"Duplicate migration resource names: {string.Join(", ", duplicateResources)}");
         Assert.Equal(expectedResources, actualResources);
     }
 
