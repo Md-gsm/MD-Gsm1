@@ -319,8 +319,20 @@ public sealed class IdentityAccessHttpEndToEndTests
                     }));
             });
         using var searchClient = searchFactory.CreateClient();
+
+        // Authenticate on the Search host itself. Reusing a token issued by the
+        // separately configured runtime_app host made this cross-host test depend on
+        // session-store connection/heartbeat behavior rather than Search authorization.
+        var searchHostLogin = await searchClient.PostAsJsonAsync("/api/v1/identity/login",
+            new LoginRequest(username, changedPassword, Guid.CreateVersion7()));
+        Assert.Equal(HttpStatusCode.OK, searchHostLogin.StatusCode);
+        var searchHostSession = await searchHostLogin.Content.ReadFromJsonAsync<LoginResponse>();
+        Assert.NotNull(searchHostSession);
+        Assert.False(searchHostSession!.MustChangePassword);
         searchClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", active.AccessToken);
+            new AuthenticationHeaderValue("Bearer", searchHostSession.AccessToken);
+        var searchHostHeartbeat = await searchClient.PostAsync("/api/v1/identity/heartbeat", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, searchHostHeartbeat.StatusCode);
 
         var technicianSearch = await searchClient.GetAsync("/api/v2/persons/search?term=SearchGuard");
         Assert.Equal(HttpStatusCode.Forbidden, technicianSearch.StatusCode);
