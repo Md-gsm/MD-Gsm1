@@ -47,7 +47,7 @@ public sealed class PersonsApiContractTests
         Assert.Contains("PersonsGlobalReadAuthorization.CanReadAsync", program, StringComparison.Ordinal);
         Assert.Contains("RecordSecurityViolationAsync", program, StringComparison.Ordinal);
         Assert.Contains("TryConsumeAsync", program, StringComparison.Ordinal);
-        Assert.Contains("\\"SearchApiEnabled\\": false", settings, StringComparison.Ordinal);
+        Assert.Contains("\"SearchApiEnabled\": false", settings, StringComparison.Ordinal);
     }
 
     [Fact]
