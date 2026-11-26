@@ -177,7 +177,10 @@ class PersonsGatePolicyTests(unittest.TestCase):
             trx_dir = Path(tmp)
             (trx_dir / "sample.trx").write_text(
                 '<TestRun><Results><UnitTestResult outcome="Passed" testName="synthetic_test" />'
-                '<UnitTestResult outcome="Passed" testName="another_synthetic_test" /></Results></TestRun>',
+                '<UnitTestResult outcome="Passed" testName="another_synthetic_test" />'
+                '<UnitTestResult outcome="Passed" testName="RAW-TEMPORARY-PII-CI-ARTIFACT-SENTINEL">'
+                '<Output><StdOut>RAW-TEMPORARY-PII-CI-ARTIFACT-SENTINEL</StdOut></Output>'
+                '</UnitTestResult></Results></TestRun>',
                 encoding="utf-8",
             )
             env = {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "123", "GITHUB_RUN_ATTEMPT": "1"}
@@ -185,12 +188,13 @@ class PersonsGatePolicyTests(unittest.TestCase):
         self.assertEqual("a" * 40, report["commitSha"])
         self.assertRegex(report["schemaFingerprintSha256"], r"^[0-9a-f]{64}$")
         self.assertEqual(len(evidence_writer.UPSTREAM_JOBS), report["gateOutcomeCounts"]["PASS"])
-        self.assertEqual(2, report["testCounts"]["total"])
-        self.assertEqual(2, report["testCounts"]["passed"])
+        self.assertEqual(3, report["testCounts"]["total"])
+        self.assertEqual(3, report["testCounts"]["passed"])
         self.assertFalse(report["redaction"]["containsRawPersonalData"])
         self.assertFalse(report["redaction"]["containsRequestPayloads"])
         self.assertFalse(report["redaction"]["containsCredentials"])
         self.assertNotIn("private-person-name", json.dumps(report))
+        self.assertNotIn("RAW-TEMPORARY-PII-CI-ARTIFACT-SENTINEL", json.dumps(report))
 
     def test_persons_api_route_without_contract_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -207,14 +211,25 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaises(gates.GateFailure):
                 gates.run_api(dst)
 
-    def test_unimplemented_acceptance_criteria_remain_unmapped(self):
+    def test_acceptance_criteria_map_matches_manifest_without_authorizing_g1(self):
         mapping = gates.load_json(ROOT / "docs/persons/acceptance-gate-map.json")
-        for item in mapping["criteria"]:
-            if item["status"] == "UNMAPPED":
-                self.assertIsNone(item.get("testFile"))
-                self.assertIsNone(item.get("automatedTest"))
+        self.assertEqual(["AC-%02d" % number for number in range(31, 50)],
+                         [item["id"] for item in mapping["criteria"]])
+        self.assertEqual({"IMPLEMENTED"}, {item["status"] for item in mapping["criteria"]})
         manifest = gates.load_json(ROOT / "docs/persons/persons-module-manifest.json")
-        self.assertFalse(manifest["g1Prerequisites"]["acceptanceCriteriaAc31ToAc49Mapped"])
+        self.assertTrue(manifest["g1Prerequisites"]["acceptanceCriteriaAc31ToAc49Mapped"])
+        self.assertFalse(manifest["g1Authorized"])
+        for item in mapping["criteria"]:
+            primary = list(ROOT.rglob(item["testFile"]))
+            self.assertTrue(primary, item["id"])
+            self.assertTrue(any(item["automatedTest"] in path.read_text(encoding="utf-8")
+                                for path in primary), item["id"])
+            for supporting in item.get("supportingTests", []):
+                candidates = list(ROOT.rglob(supporting["testFile"]))
+                self.assertTrue(candidates, (item["id"], supporting["testFile"]))
+                self.assertTrue(any(supporting["automatedTest"] in path.read_text(encoding="utf-8")
+                                    for path in candidates),
+                                (item["id"], supporting["automatedTest"]))
 
     def test_g1_cannot_be_authorized_with_unmapped_acceptance_criteria(self):
         with tempfile.TemporaryDirectory() as tmp:

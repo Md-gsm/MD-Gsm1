@@ -139,9 +139,20 @@ def run_spec(root: Path) -> None:
                 raise GateFailure(f"{item['id']} claims an implemented test but file '{item['testFile']}' is missing.")
             if not any(item["automatedTest"] in candidate.read_text(encoding="utf-8", errors="replace") for candidate in candidates):
                 raise GateFailure(f"{item['id']} claims an implemented test but method '{item['automatedTest']}' is absent.")
+            for support in item.get("supportingTests", []):
+                support_file = support.get("testFile")
+                support_method = support.get("automatedTest")
+                if not support_file or not support_method:
+                    raise GateFailure(f"{item['id']} has an incomplete supporting test reference.")
+                support_candidates = list(root.rglob(support_file))
+                if not support_candidates:
+                    raise GateFailure(f"{item['id']} supporting test file '{support_file}' is missing.")
+                if not any(support_method in candidate.read_text(encoding="utf-8", errors="replace")
+                           for candidate in support_candidates):
+                    raise GateFailure(f"{item['id']} supporting test method '{support_method}' is absent.")
     all_criteria_implemented = all(item.get("status") == "IMPLEMENTED" for item in criteria)
-    if prereqs.get("acceptanceCriteriaAc31ToAc49Mapped") is True and not all_criteria_implemented:
-        raise GateFailure("Manifest claims AC-31..AC-49 are mapped, but one or more criteria are UNMAPPED.")
+    if prereqs.get("acceptanceCriteriaAc31ToAc49Mapped") is not all_criteria_implemented:
+        raise GateFailure("Manifest AC-31..AC-49 mapping flag must exactly match the acceptance map.")
     if manifest.get("g1Authorized") is True and not all_criteria_implemented:
         raise GateFailure("G1 cannot be authorized while any AC-31..AC-49 criterion is UNMAPPED.")
     if "src/Modules/Persons" not in registry.get("ownerPaths", []) or "registeredConsumers" not in registry:
