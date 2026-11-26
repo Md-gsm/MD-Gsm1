@@ -122,10 +122,9 @@ public sealed class PostgresPersonsSearchControl(
             await insertWindow.ExecuteNonQueryAsync(cancellationToken);
         }
         await using (var cleanup = new NpgsqlCommand("""
-            DELETE FROM persons_search_abuse_window WHERE actor_id = @actor AND occurred_at_utc < @cutoff;
+            DELETE FROM persons_search_abuse_window WHERE occurred_at_utc < @cutoff;
             """, connection, transaction))
         {
-            cleanup.Parameters.AddWithValue("actor", actor);
             cleanup.Parameters.AddWithValue("cutoff", now - AbuseWindow);
             await cleanup.ExecuteNonQueryAsync(cancellationToken);
         }
