@@ -141,7 +141,9 @@ public sealed class PersonsLifecyclePostgresTests
         Assert.Equal(1L, reader.GetInt64(1));
         Assert.False(reader.GetBoolean(2));
         // The target's exact duplicate remains target-origin; only transferred nonduplicates retain source origin.
-        Assert.Equal(targetId, reader.GetGuid(3));
+        var duplicateOrigin = reader.GetGuid(3);
+        Assert.True(duplicateOrigin == targetId,
+            $"Exact duplicate origin mismatch: source={sourceId}; target={targetId}; origin={duplicateOrigin}");
         Assert.Equal(0L, reader.GetInt64(4));
         Assert.Equal(1L, reader.GetInt64(5));
         Assert.Equal(sourceId, reader.GetGuid(6));
