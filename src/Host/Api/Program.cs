@@ -520,10 +520,6 @@ if (builder.Configuration.GetValue<bool>("Persons:HistoryApiEnabled") &&
         {
             return (IResult)Results.BadRequest(new { error = "persons_history_request_invalid" });
         }
-        catch (ArgumentOutOfRangeException)
-        {
-            return (IResult)Results.BadRequest(new { error = "persons_history_request_invalid" });
-        }
     });
 }
 
