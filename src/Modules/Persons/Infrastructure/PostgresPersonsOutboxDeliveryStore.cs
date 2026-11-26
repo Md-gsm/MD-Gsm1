@@ -36,10 +36,10 @@ public sealed class PostgresPersonsOutboxDeliveryStore(NpgsqlDataSource dataSour
                     last_error_code=CASE WHEN c.lease_expired THEN @lease_expired ELSE d.last_error_code END,
                     row_version=d.row_version+1
                 FROM candidates c WHERE d.event_id=c.event_id
-                RETURNING d.event_id,d.attempt_count
+                RETURNING d.event_id,d.attempt_count,d.row_version
             )
             SELECT e.event_id,e.event_type,e.contract_version,e.aggregate_id,e.actor_reference,
-                   e.occurred_at_utc,e.correlation_id,e.causation_id,e.idempotency_key,c.attempt_count
+                   e.occurred_at_utc,e.correlation_id,e.causation_id,e.idempotency_key,c.attempt_count,c.row_version
             FROM claimed c JOIN persons_outbox_events e ON e.event_id=c.event_id
             ORDER BY e.occurred_at_utc,e.event_id;
             """,connection,transaction);
@@ -58,33 +58,33 @@ public sealed class PostgresPersonsOutboxDeliveryStore(NpgsqlDataSource dataSour
                     reader.GetGuid(0),reader.GetString(1),reader.GetString(2),reader.GetGuid(3),reader.GetString(4),
                     reader.GetFieldValue<DateTimeOffset>(5).ToUniversalTime(),
                     reader.IsDBNull(6)?null:reader.GetGuid(6),reader.IsDBNull(7)?null:reader.GetGuid(7),reader.GetGuid(8));
-                result.Add(new LeasedPersonsOutboxEvent(message,reader.GetInt32(9)));
+                result.Add(new LeasedPersonsOutboxEvent(message,reader.GetInt32(9),reader.GetInt64(10)));
             }
         }
         await transaction.CommitAsync(cancellationToken);
         return result;
     }
 
-    public async Task<bool> MarkDeliveredAsync(Guid eventId,string leaseOwner,DateTimeOffset deliveredAtUtc,CancellationToken cancellationToken)
+    public async Task<bool> MarkDeliveredAsync(Guid eventId,long leaseVersion,string leaseOwner,DateTimeOffset deliveredAtUtc,CancellationToken cancellationToken)
     {
-        ValidateEventId(eventId);var owner=NormalizeLeaseOwner(leaseOwner);var delivered=deliveredAtUtc.ToUniversalTime();
+        ValidateEventId(eventId);if(leaseVersion<1)throw new ArgumentOutOfRangeException(nameof(leaseVersion));var owner=NormalizeLeaseOwner(leaseOwner);var delivered=deliveredAtUtc.ToUniversalTime();
         await using var connection=await dataSource.OpenConnectionAsync(cancellationToken);
         await using var command=new NpgsqlCommand("""
             UPDATE persons_outbox_deliveries
             SET delivery_status='delivered',delivered_at_utc=@delivered,lease_owner=NULL,lease_expires_at_utc=NULL,
                 last_error_code=NULL,row_version=row_version+1
             WHERE event_id=@event AND delivery_status='leased' AND lease_owner=@owner
-              AND lease_expires_at_utc>@delivered;
+              AND row_version=@lease_version AND lease_expires_at_utc>@delivered;
             """,connection);
-        command.Parameters.AddWithValue("event",eventId);command.Parameters.AddWithValue("owner",owner);
+        command.Parameters.AddWithValue("event",eventId);command.Parameters.AddWithValue("owner",owner);command.Parameters.AddWithValue("lease_version",leaseVersion);
         command.Parameters.AddWithValue("delivered",delivered);
         return await command.ExecuteNonQueryAsync(cancellationToken)==1;
     }
 
     public async Task<bool> ScheduleRetryAsync(
-        Guid eventId,string leaseOwner,DateTimeOffset nowUtc,DateTimeOffset nextAttemptAtUtc,string failureCode,CancellationToken cancellationToken)
+        Guid eventId,long leaseVersion,string leaseOwner,DateTimeOffset nowUtc,DateTimeOffset nextAttemptAtUtc,string failureCode,CancellationToken cancellationToken)
     {
-        ValidateEventId(eventId);var owner=NormalizeLeaseOwner(leaseOwner);
+        ValidateEventId(eventId);if(leaseVersion<1)throw new ArgumentOutOfRangeException(nameof(leaseVersion));var owner=NormalizeLeaseOwner(leaseOwner);
         var now=nowUtc.ToUniversalTime();var next=nextAttemptAtUtc.ToUniversalTime();
         if(next<now)throw new ArgumentException("Next attempt cannot precede current time.",nameof(nextAttemptAtUtc));
         if(!string.Equals(failureCode,PersonsOutboxDeliveryFailureCodes.PublishFailed,StringComparison.Ordinal))
@@ -95,9 +95,9 @@ public sealed class PostgresPersonsOutboxDeliveryStore(NpgsqlDataSource dataSour
             SET delivery_status='pending',next_attempt_at_utc=@next,lease_owner=NULL,lease_expires_at_utc=NULL,
                 last_error_code=@failure,row_version=row_version+1
             WHERE event_id=@event AND delivery_status='leased' AND lease_owner=@owner
-              AND lease_expires_at_utc>@now;
+              AND row_version=@lease_version AND lease_expires_at_utc>@now;
             """,connection);
-        command.Parameters.AddWithValue("event",eventId);command.Parameters.AddWithValue("owner",owner);
+        command.Parameters.AddWithValue("event",eventId);command.Parameters.AddWithValue("owner",owner);command.Parameters.AddWithValue("lease_version",leaseVersion);
         command.Parameters.AddWithValue("now",now);command.Parameters.AddWithValue("next",next);
         command.Parameters.AddWithValue("failure",failureCode);
         return await command.ExecuteNonQueryAsync(cancellationToken)==1;

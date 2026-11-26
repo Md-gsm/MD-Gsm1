@@ -33,12 +33,12 @@ public sealed class PersonsOutboxDispatcher
             {
                 // Transport exception text is intentionally never persisted; it can contain PII or secrets.
                 var failedAt=_timeProvider.GetUtcNow();
-                if(await _store.ScheduleRetryAsync(item.Event.EventId,leaseOwner,failedAt,failedAt.Add(retryDelay),
+                if(await _store.ScheduleRetryAsync(item.Event.EventId,item.LeaseVersion,leaseOwner,failedAt,failedAt.Add(retryDelay),
                     PersonsOutboxDeliveryFailureCodes.PublishFailed,cancellationToken))retried++;
                 else lost++;
                 continue;
             }
-            if(await _store.MarkDeliveredAsync(item.Event.EventId,leaseOwner,_timeProvider.GetUtcNow(),cancellationToken))delivered++;
+            if(await _store.MarkDeliveredAsync(item.Event.EventId,item.LeaseVersion,leaseOwner,_timeProvider.GetUtcNow(),cancellationToken))delivered++;
             else lost++;
         }
         return new PersonsOutboxDispatchResult(leased.Count,delivered,retried,lost);

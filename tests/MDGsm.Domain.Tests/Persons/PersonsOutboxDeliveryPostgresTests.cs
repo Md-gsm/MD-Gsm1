@@ -16,8 +16,8 @@ public sealed class PersonsOutboxDeliveryPostgresTests
         var first=await store.LeaseDueAsync("worker-a",10,Start,Start.AddMinutes(1),default);
         var second=await store.LeaseDueAsync("worker-b",10,Start,Start.AddMinutes(1),default);
         var leased=Assert.Single(first);Assert.Equal(eventId,leased.Event.EventId);Assert.Equal(1,leased.AttemptCount);Assert.Empty(second);
-        Assert.True(await store.MarkDeliveredAsync(eventId,"worker-a",Start.AddSeconds(10),default));
-        Assert.False(await store.MarkDeliveredAsync(eventId,"worker-a",Start.AddSeconds(11),default));
+        Assert.True(await store.MarkDeliveredAsync(eventId,leased.LeaseVersion,"worker-a",Start.AddSeconds(10),default));
+        Assert.False(await store.MarkDeliveredAsync(eventId,leased.LeaseVersion,"worker-a",Start.AddSeconds(11),default));
         Assert.Equal("delivered",await ScalarTextAsync(dataSource,"SELECT delivery_status FROM persons_outbox_deliveries WHERE event_id=@event;",eventId));
         Assert.Equal(1L,await ScalarAsync(dataSource,
             "SELECT count(*) FROM persons_outbox_deliveries WHERE event_id=@event AND delivered_at_utc=@time AND lease_owner IS NULL AND lease_expires_at_utc IS NULL;",
@@ -32,12 +32,29 @@ public sealed class PersonsOutboxDeliveryPostgresTests
         Assert.Equal(1,first.AttemptCount);
         var recovered=Assert.Single(await recoveredStore.LeaseDueAsync("process-after-restart",5,Start.AddSeconds(31),Start.AddMinutes(2),default));
         Assert.Equal(eventId,recovered.Event.EventId);Assert.Equal(first.Event.EventId,recovered.Event.EventId);Assert.Equal(2,recovered.AttemptCount);
-        Assert.False(await oldStore.MarkDeliveredAsync(eventId,"process-before-restart",Start.AddSeconds(32),default));
-        Assert.False(await oldStore.ScheduleRetryAsync(eventId,"process-before-restart",Start.AddSeconds(32),Start.AddSeconds(40),
+        Assert.False(await oldStore.MarkDeliveredAsync(eventId,first.LeaseVersion,"process-before-restart",Start.AddSeconds(32),default));
+        Assert.False(await oldStore.ScheduleRetryAsync(eventId,first.LeaseVersion,"process-before-restart",Start.AddSeconds(32),Start.AddSeconds(40),
             PersonsOutboxDeliveryFailureCodes.PublishFailed,default));
         Assert.Equal(PersonsOutboxDeliveryFailureCodes.LeaseExpired,await ScalarTextAsync(dataSource,
             "SELECT last_error_code FROM persons_outbox_deliveries WHERE event_id=@event;",eventId));
-        Assert.True(await recoveredStore.MarkDeliveredAsync(eventId,"process-after-restart",Start.AddSeconds(33),default));
+        Assert.True(await recoveredStore.MarkDeliveredAsync(eventId,recovered.LeaseVersion,"process-after-restart",Start.AddSeconds(33),default));
+    }
+    [Fact][Trait("Category","Integration")]
+    public async Task Reused_worker_identity_cannot_acknowledge_or_retry_an_obsolete_lease_generation()
+    {
+        await using var dataSource=await OpenDisposableDataSourceAsync();var eventId=await InsertPendingEventAsync(dataSource);
+        var store=new PostgresPersonsOutboxDeliveryStore(dataSource);const string worker="reused-worker-identity";
+        var first=Assert.Single(await store.LeaseDueAsync(worker,1,Start,Start.AddSeconds(30),default));
+        var reclaimedAt=Start.AddSeconds(31);
+        var second=Assert.Single(await store.LeaseDueAsync(worker,1,reclaimedAt,reclaimedAt.AddMinutes(1),default));
+        Assert.Equal(first.Event.EventId,second.Event.EventId);Assert.Equal(eventId,second.Event.EventId);
+        Assert.Equal(2,second.AttemptCount);Assert.NotEqual(first.LeaseVersion,second.LeaseVersion);
+        Assert.False(await store.MarkDeliveredAsync(eventId,first.LeaseVersion,worker,reclaimedAt.AddSeconds(1),default));
+        Assert.False(await store.ScheduleRetryAsync(eventId,first.LeaseVersion,worker,reclaimedAt.AddSeconds(1),
+            reclaimedAt.AddSeconds(10),PersonsOutboxDeliveryFailureCodes.PublishFailed,default));
+        Assert.Equal("leased",await ScalarTextAsync(dataSource,
+            "SELECT delivery_status FROM persons_outbox_deliveries WHERE event_id=@event;",eventId));
+        Assert.True(await store.MarkDeliveredAsync(eventId,second.LeaseVersion,worker,reclaimedAt.AddSeconds(2),default));
     }
     [Fact][Trait("Category","Integration")]
     public async Task Retry_waits_until_its_due_time_and_reuses_the_original_event_id()
@@ -45,7 +62,7 @@ public sealed class PersonsOutboxDeliveryPostgresTests
         await using var dataSource=await OpenDisposableDataSourceAsync();var eventId=await InsertPendingEventAsync(dataSource);
         var store=new PostgresPersonsOutboxDeliveryStore(dataSource);
         var first=Assert.Single(await store.LeaseDueAsync("worker-a",5,Start,Start.AddMinutes(1),default));
-        Assert.True(await store.ScheduleRetryAsync(eventId,"worker-a",Start.AddSeconds(5),Start.AddSeconds(45),PersonsOutboxDeliveryFailureCodes.PublishFailed,default));
+        Assert.True(await store.ScheduleRetryAsync(eventId,first.LeaseVersion,"worker-a",Start.AddSeconds(5),Start.AddSeconds(45),PersonsOutboxDeliveryFailureCodes.PublishFailed,default));
         Assert.Empty(await store.LeaseDueAsync("worker-b",5,Start.AddSeconds(44),Start.AddMinutes(2),default));
         var retry=Assert.Single(await store.LeaseDueAsync("worker-after-retry",5,Start.AddSeconds(46),Start.AddMinutes(3),default));
         Assert.Equal(first.Event.EventId,retry.Event.EventId);Assert.Equal(2,retry.AttemptCount);
