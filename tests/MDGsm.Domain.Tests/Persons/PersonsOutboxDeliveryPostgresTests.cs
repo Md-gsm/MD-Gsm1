@@ -104,42 +104,62 @@ public sealed class PersonsOutboxDeliveryPostgresTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task Delivery_leases_are_exclusive_expire_reclaim_with_same_event_id_and_fence_old_owners()
+    public async Task Delivery_lease_expiry_reclaims_same_event_and_fences_old_owner()
     {
         await using var dataSource = await OpenDisposableDataSourceAsync();
-        var repository = new PostgresPartyRepository(dataSource);
-        var first = await repository.AddNaturalAsync(NewNatural(NewMobile()), Actor(), Guid.CreateVersion7(), null, default);
-        var second = await repository.AddNaturalAsync(NewNatural(NewMobile()), Actor(), Guid.CreateVersion7(), null, default);
-
+        var operation = Guid.CreateVersion7();
+        var party = await new PostgresPartyRepository(dataSource)
+            .AddNaturalAsync(NewNatural(NewMobile()), Actor(), operation, null, default);
+        var eventId = await EventIdForOperationAsync(dataSource, operation);
         var store = new PostgresPersonsOutboxDeliveryStore(dataSource);
-        var start = DateTimeOffset.UtcNow;
-        var leaseA = await store.LeaseDueAsync("worker-a", 2, start, start.AddMinutes(1), default);
-        Assert.Equal(2, leaseA.Count);
-        Assert.All(leaseA, item => Assert.Equal(1, item.AttemptCount));
-        Assert.Equal(2, leaseA.Select(item => item.Event.EventId).Distinct().Count());
+        var startAt = DateTimeOffset.UtcNow;
+        var workerA = "worker-a-" + Guid.CreateVersion7().ToString("N");
+        var workerB = "worker-b-" + Guid.CreateVersion7().ToString("N");
 
-        var firstEvent = leaseA.Single(item => item.Event.AggregateId == Guid.Parse(first.PartyId)).Event;
-        var secondEvent = leaseA.Single(item => item.Event.AggregateId == Guid.Parse(second.PartyId)).Event;
+        var firstLease = Assert.Single(await store.LeaseDueAsync(
+            workerA, 1, startAt, startAt.AddMinutes(1), default, [eventId]));
+        Assert.Equal(eventId, firstLease.Event.EventId);
+        Assert.Equal(Guid.Parse(party.PartyId), firstLease.Event.AggregateId);
+        Assert.Equal(1, firstLease.AttemptCount);
 
-        Assert.True(await store.MarkDeliveredAsync(firstEvent.EventId, "worker-a", start.AddSeconds(10), default));
-        var reclaimed = await store.LeaseDueAsync(
-            "worker-b", 10, start.AddMinutes(1).AddSeconds(1), start.AddMinutes(2), default);
+        var reclaimAt = startAt.AddMinutes(1).AddSeconds(1);
+        var secondLease = Assert.Single(await store.LeaseDueAsync(
+            workerB, 1, reclaimAt, reclaimAt.AddMinutes(1), default, [eventId]));
+        Assert.Equal(firstLease.Event.EventId, secondLease.Event.EventId);
+        Assert.Equal(2, secondLease.AttemptCount);
 
-        var retried = Assert.Single(reclaimed);
-        Assert.Equal(secondEvent.EventId, retried.Event.EventId);
-        Assert.Equal(2, retried.AttemptCount);
-        Assert.False(await store.MarkDeliveredAsync(secondEvent.EventId, "worker-a", start.AddMinutes(1).AddSeconds(2), default));
+        Assert.False(await store.MarkDeliveredAsync(
+            eventId, workerA, reclaimAt.AddSeconds(1), default));
         Assert.False(await store.ScheduleRetryAsync(
-            secondEvent.EventId, "worker-a", start.AddMinutes(1).AddSeconds(2),
-            start.AddMinutes(1).AddSeconds(10), PersonsOutboxDeliveryFailureCodes.PublishFailed, default));
-        Assert.True(await store.MarkDeliveredAsync(secondEvent.EventId, "worker-b", start.AddMinutes(1).AddSeconds(3), default));
+            eventId, workerA, reclaimAt.AddSeconds(1), reclaimAt.AddSeconds(10),
+            PersonsOutboxDeliveryFailureCodes.PublishFailed, default));
+        Assert.True(await store.MarkDeliveredAsync(
+            eventId, workerB, reclaimAt.AddSeconds(2), default));
 
         Assert.Equal(1L, await ScalarAsync(dataSource,
-            "SELECT count(*) FROM persons_outbox_deliveries WHERE event_id=@id AND delivery_status='delivered';",
-            firstEvent.EventId));
-        Assert.Equal(1L, await ScalarAsync(dataSource,
-            "SELECT count(*) FROM persons_outbox_deliveries WHERE event_id=@id AND delivery_status='delivered';",
-            secondEvent.EventId));
+            "SELECT count(*) FROM persons_outbox_deliveries WHERE event_id=@id AND delivery_status='delivered' AND attempt_count=2;",
+            eventId));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Concurrent_workers_cannot_lease_the_same_event_twice()
+    {
+        await using var dataSource = await OpenDisposableDataSourceAsync();
+        var operation = Guid.CreateVersion7();
+        await new PostgresPartyRepository(dataSource)
+            .AddNaturalAsync(NewNatural(NewMobile()), Actor(), operation, null, default);
+        var eventId = await EventIdForOperationAsync(dataSource, operation);
+        var store = new PostgresPersonsOutboxDeliveryStore(dataSource);
+        var now = DateTimeOffset.UtcNow;
+
+        var attempts = await Task.WhenAll(
+            store.LeaseDueAsync("parallel-a-" + Guid.CreateVersion7().ToString("N"), 1,
+                now, now.AddMinutes(1), default, [eventId]),
+            store.LeaseDueAsync("parallel-b-" + Guid.CreateVersion7().ToString("N"), 1,
+                now, now.AddMinutes(1), default, [eventId]));
+
+        Assert.Equal(1, attempts.Sum(batch => batch.Count));
     }
 
     [Fact]
@@ -151,7 +171,8 @@ public sealed class PersonsOutboxDeliveryPostgresTests
             .AddNaturalAsync(NewNatural(NewMobile()), Actor(), Guid.CreateVersion7(), null, default);
         var store = new PostgresPersonsOutboxDeliveryStore(dataSource);
         var start = DateTimeOffset.UtcNow;
-        var firstLease = Assert.Single(await store.LeaseDueAsync("worker-a", 1, start, start.AddMinutes(1), default));
+        var eventId = await EventIdForOperationAsync(dataSource, Guid.Parse(party.PartyId));
+        var firstLease = Assert.Single(await store.LeaseDueAsync("worker-a", 1, start, start.AddMinutes(1), default, [eventId]));
 
         Assert.Equal(Guid.Parse(party.PartyId), firstLease.Event.AggregateId);
         var retryAt = start.AddSeconds(30);
@@ -160,9 +181,9 @@ public sealed class PersonsOutboxDeliveryPostgresTests
             PersonsOutboxDeliveryFailureCodes.PublishFailed, default));
 
         Assert.Empty(await store.LeaseDueAsync(
-            "worker-b", 1, start.AddSeconds(29), start.AddMinutes(1), default));
+            "worker-b", 1, start.AddSeconds(29), start.AddMinutes(1), default, [eventId]));
         var secondLease = Assert.Single(await store.LeaseDueAsync(
-            "worker-b", 1, retryAt.AddSeconds(1), retryAt.AddMinutes(1), default));
+            "worker-b", 1, retryAt.AddSeconds(1), retryAt.AddMinutes(1), default, [eventId]));
 
         Assert.Equal(firstLease.Event.EventId, secondLease.Event.EventId);
         Assert.Equal(2, secondLease.AttemptCount);
@@ -259,6 +280,17 @@ public sealed class PersonsOutboxDeliveryPostgresTests
         null,
         Guid.CreateVersion7());
 
+    private static async Task<Guid> EventIdForOperationAsync(NpgsqlDataSource dataSource, Guid operationId)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT event_id FROM persons_outbox_events WHERE idempotency_key=@operation AND event_type='PartyRegistered';",
+            connection);
+        command.Parameters.AddWithValue("operation", operationId);
+        return (Guid)(await command.ExecuteScalarAsync()
+            ?? throw new InvalidOperationException("The test PartyRegistered event was not written."));
+    }
+
     private static async Task<long> ScalarAsync(NpgsqlDataSource dataSource, string sql, object? parameter = null)
     {
         await using var connection = await dataSource.OpenConnectionAsync();
@@ -309,7 +341,7 @@ public sealed class PersonsOutboxDeliveryPostgresTests
 
         public Task<IReadOnlyList<LeasedPersonsOutboxEvent>> LeaseDueAsync(
             string leaseOwner, int batchSize, DateTimeOffset nowUtc, DateTimeOffset leaseExpiresAtUtc,
-            CancellationToken cancellationToken) =>
+            CancellationToken cancellationToken, IReadOnlyCollection<Guid>? eventIds = null) =>
             Task.FromResult<IReadOnlyList<LeasedPersonsOutboxEvent>>([message]);
 
         public Task<bool> MarkDeliveredAsync(Guid eventId, string leaseOwner, DateTimeOffset deliveredAtUtc,
