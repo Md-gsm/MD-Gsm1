@@ -16,7 +16,6 @@ public sealed class SensitivePersonsPermissionCatalogTests
         Assert.False(PermissionCatalog.RoleHasPermission(RoleCatalog.Technician, permission));
         Assert.False(PermissionCatalog.RoleHasPermission(RoleCatalog.Viewer, permission));
     }
-}
 
     [Fact]
     public void Global_search_permission_is_separate_and_only_super_admin_has_it_by_default()
@@ -34,3 +33,4 @@ public sealed class SensitivePersonsPermissionCatalogTests
         Assert.False(PermissionCatalog.RoleHasPermission(RoleCatalog.Accountant, permission));
         Assert.False(PermissionCatalog.RoleHasPermission(RoleCatalog.Viewer, permission));
     }
+}
