@@ -16,7 +16,8 @@ public sealed class PostgresPersonsOutboxDeliveryStore(NpgsqlDataSource dataSour
         int batchSize,
         DateTimeOffset nowUtc,
         DateTimeOffset leaseExpiresAtUtc,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<Guid>? eventIds = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(leaseOwner);
         if (leaseOwner.Length > 128)
@@ -27,6 +28,11 @@ public sealed class PostgresPersonsOutboxDeliveryStore(NpgsqlDataSource dataSour
         var leaseExpiry = leaseExpiresAtUtc.ToUniversalTime();
         if (leaseExpiry <= now)
             throw new ArgumentException("Lease expiry must be later than the lease acquisition time.", nameof(leaseExpiresAtUtc));
+        if (eventIds is { Count: 0 })
+            return Array.Empty<LeasedPersonsOutboxEvent>();
+        var filteredEventIds = eventIds?.Distinct().ToArray();
+        if (filteredEventIds is { Length: > 100 })
+            throw new ArgumentOutOfRangeException(nameof(eventIds), "At most 100 event IDs may be selected in one lease operation.");
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
@@ -34,8 +40,11 @@ public sealed class PostgresPersonsOutboxDeliveryStore(NpgsqlDataSource dataSour
             WITH due AS (
                 SELECT event_id, delivery_status
                 FROM persons_outbox_deliveries
-                WHERE (delivery_status = 'pending' AND next_attempt_at_utc <= @now)
-                   OR (delivery_status = 'leased' AND lease_expires_at_utc <= @now)
+                WHERE (
+                    (delivery_status = 'pending' AND next_attempt_at_utc <= @now)
+                    OR (delivery_status = 'leased' AND lease_expires_at_utc <= @now)
+                )
+                  AND (NOT @filter_events OR event_id = ANY(@event_ids))
                 ORDER BY
                     CASE WHEN delivery_status = 'leased'
                          THEN lease_expires_at_utc ELSE next_attempt_at_utc END,
@@ -71,6 +80,11 @@ public sealed class PostgresPersonsOutboxDeliveryStore(NpgsqlDataSource dataSour
         command.Parameters.AddWithValue("batch_size", batchSize);
         command.Parameters.AddWithValue("owner", leaseOwner);
         command.Parameters.AddWithValue("lease_expiry", leaseExpiry);
+        command.Parameters.AddWithValue("filter_events", filteredEventIds is not null);
+        command.Parameters.Add(new NpgsqlParameter("event_ids", NpgsqlDbType.Array | NpgsqlDbType.Uuid)
+        {
+            Value = filteredEventIds ?? Array.Empty<Guid>()
+        });
 
         var leased = new List<LeasedPersonsOutboxEvent>(batchSize);
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
