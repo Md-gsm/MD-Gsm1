@@ -190,6 +190,16 @@ function Assert-ServiceReady([string] $Phase) {
             throw "The independent system-info route did not identify MD-Gsm."
         }
 
+        $readyResponse = Invoke-WebRequest -UseBasicParsing -SkipHttpErrorCheck -Uri 'http://127.0.0.1:5080/health/ready' -TimeoutSec 10
+        if ($readyResponse.StatusCode -ne 200) {
+            throw "The API readiness endpoint returned HTTP $($readyResponse.StatusCode); the installer must not report success without PostgreSQL."
+        }
+        $readyPayload = $readyResponse.Content | ConvertFrom-Json
+        if ($readyPayload.status -ne 'ready' -or $readyPayload.dependency -ne 'postgresql' -or
+            $readyPayload.identity -ne 'verified' -or $readyPayload.serverMajor -ne 18) {
+            throw 'The API readiness response did not prove PostgreSQL 18 runtime identity.'
+        }
+
         $listeners = @(Get-NetTCPConnection -LocalPort 5080 -State Listen -ErrorAction Stop)
         if (-not ($listeners.OwningProcess -contains [uint32]$service.ProcessId)) {
             throw "Port 5080 is not owned by the registered MDGsmApi service process (service PID $($service.ProcessId))."
@@ -201,6 +211,109 @@ function Assert-ServiceReady([string] $Phase) {
     }
     Write-Host ("PASS: MDGsmApi is running as LocalService after phase '$Phase'.")
 }
+function Assert-DatabaseProvisioning([string] $Phase) {
+    $pgService = Get-Service -Name 'MDGsmPostgreSQL18' -ErrorAction SilentlyContinue
+    if ($null -eq $pgService -or $pgService.Status -ne 'Running') {
+        throw "Managed PostgreSQL 18 is not running after '$Phase'."
+    }
+
+    $pgRoot = Join-Path $env:ProgramFiles 'PostgreSQL\18'
+    $psql = Join-Path $pgRoot 'bin\psql.exe'
+    $statePath = Join-Path $env:ProgramData 'MD-Gsm\PostgreSQL\18\cluster-state.json'
+    $adminSecretPath = Join-Path $env:ProgramData 'MD-Gsm\PostgreSQL\18\cluster-admin.dpapi'
+    $connectionFile = Join-Path $env:ProgramData 'MD-Gsm\Secrets\Api\database-connection.dpapi'
+    foreach ($required in @($psql, $statePath, $adminSecretPath, $connectionFile)) {
+        if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
+            throw "A required central database provisioning file is missing after '$Phase'."
+        }
+    }
+
+    $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
+    if ($state.Status -ne 'ready' -or $state.PostgreSqlMajor -ne 18 -or
+        $state.DatabaseName -ne 'mdgsm' -or $state.RuntimeLogin -ne 'mdgsm_api_runtime') {
+        throw "The central PostgreSQL state does not record the approved ready identity after '$Phase'."
+    }
+
+    $connectionHash = (Get-FileHash -LiteralPath $connectionFile -Algorithm SHA256).Hash
+    if ($null -eq $script:initialRuntimeConnectionHash) {
+        $script:initialRuntimeConnectionHash = $connectionHash
+    } elseif ($connectionHash -ne $script:initialRuntimeConnectionHash) {
+        throw "The protected API database credential changed during '$Phase'; Repair/Reinstall must preserve it."
+    }
+
+    $adminBundle = (Unprotect-TestSecret $adminSecretPath) | ConvertFrom-Json
+    $connectionString = Unprotect-TestSecret $connectionFile
+    $pattern = '^Host=127\.0\.0\.1;Port=(\d{4,5});Database=mdgsm;Username=mdgsm_api_runtime;Password=([A-Za-z0-9_-]{40,80});Timeout=15;Command Timeout=30;Pooling=true$'
+    if ($connectionString -notmatch $pattern -or [int]$Matches[1] -ne [int]$state.Port) {
+        throw "The protected API connection secret does not match the expected local product identity after '$Phase'."
+    }
+    $runtimePassword = $Matches[2]
+    $adminPassword = [string]$adminBundle.SuperuserPassword
+    if ([string]::IsNullOrWhiteSpace($adminPassword)) { throw 'The protected PostgreSQL maintenance credential is invalid.' }
+
+    $oldPassword = $env:PGPASSWORD
+    try {
+        $env:PGPASSWORD = $adminPassword
+        $listen = & $psql -X -w -h 127.0.0.1 -p ([string]$state.Port) -U postgres -d postgres -t -A -c 'SHOW listen_addresses;'
+        if ($LASTEXITCODE -ne 0 -or "$listen".Trim() -ne '127.0.0.1') {
+            throw 'PostgreSQL is not restricted to IPv4 loopback.'
+        }
+        $role = & $psql -X -w -h 127.0.0.1 -p ([string]$state.Port) -U postgres -d postgres -t -A -c "SELECT (rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND rolinherit)::text FROM pg_roles WHERE rolname='mdgsm_api_runtime';"
+        if ($LASTEXITCODE -ne 0 -or "$role".Trim() -ne 'true') {
+            throw 'The API LOGIN does not have the required least-privilege role attributes.'
+        }
+        $membership = & $psql -X -w -h 127.0.0.1 -p ([string]$state.Port) -U postgres -d postgres -t -A -c "SELECT (m.inherit_option AND NOT m.set_option AND NOT m.admin_option)::text FROM pg_auth_members m JOIN pg_roles p ON p.oid=m.roleid JOIN pg_roles u ON u.oid=m.member WHERE p.rolname='mdgsm_runtime' AND u.rolname='mdgsm_api_runtime';"
+        if ($LASTEXITCODE -ne 0 -or "$membership".Trim() -ne 'true') {
+            throw 'The API LOGIN membership is not limited to INHERIT without SET or ADMIN.'
+        }
+        $migrationHistory = & $psql -X -w -h 127.0.0.1 -p ([string]$state.Port) -U postgres -d mdgsm -t -A -c "SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename='mdgsm_migration_history';"
+        if ($LASTEXITCODE -ne 0 -or "$migrationHistory".Trim() -ne '0') {
+            throw 'Installer unexpectedly applied application schema migrations.'
+        }
+
+        $env:PGPASSWORD = $runtimePassword
+        $identity = & $psql -X -w -h 127.0.0.1 -p ([string]$state.Port) -U mdgsm_api_runtime -d mdgsm -t -A -c "SELECT session_user || '|' || current_user || '|' || current_database() || '|' || (current_setting('server_version_num')::integer / 10000)::text || '|' || inet_server_addr()::text;"
+        if ($LASTEXITCODE -ne 0 -or "$identity".Trim() -ne 'mdgsm_api_runtime|mdgsm_api_runtime|mdgsm|18|127.0.0.1') {
+            throw 'The API PostgreSQL LOGIN failed the exact identity, version and loopback proof.'
+        }
+    }
+    finally {
+        if ($null -eq $oldPassword) { Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue }
+        else { $env:PGPASSWORD = $oldPassword }
+        $runtimePassword = $null
+        $adminPassword = $null
+        $connectionString = $null
+        $adminBundle = $null
+    }
+
+    $secretAcl = Get-Acl -LiteralPath $connectionFile
+    $identities = @($secretAcl.Access | ForEach-Object { $_.IdentityReference.Value })
+    if (-not ($identities -contains 'NT SERVICE\MDGsmApi') -or
+        ($identities -match 'BUILTIN\\Users|Everyone|Authenticated Users').Count -gt 0) {
+        throw 'The protected API connection file ACL does not restrict access to the exact service SID.'
+    }
+
+    $apiSettings = Get-Content -LiteralPath (Join-Path $installDirectory 'Api\appsettings.Production.json') -Raw
+    if ($apiSettings -match 'Password=|mdgsm_api_runtime.{0,30}Password') {
+        throw 'The API checked-in production configuration contains a database credential.'
+    }
+    Write-Host ("PASS: PostgreSQL 18 identity, loopback-only listener, API LOGIN/membership, DPAPI secret preservation and no schema migrations verified after '$Phase'.")
+}
+
+function Unprotect-TestSecret([string] $Path) {
+    $cipher = [System.IO.File]::ReadAllBytes($Path)
+    $plain = $null
+    try {
+        $plain = [System.Security.Cryptography.ProtectedData]::Unprotect(
+            $cipher, $null, [System.Security.Cryptography.DataProtectionScope]::LocalMachine)
+        return [System.Text.Encoding]::UTF8.GetString($plain)
+    }
+    finally {
+        [System.Array]::Clear($cipher, 0, $cipher.Length)
+        if ($null -ne $plain) { [System.Array]::Clear($plain, 0, $plain.Length) }
+    }
+}
+
 function Invoke-SystemUninstaller([string] $Phase) {
     if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
         throw "Inno Setup uninstaller was not found during phase '$Phase'."
