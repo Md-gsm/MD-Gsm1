@@ -162,7 +162,7 @@
       "id": "AC-41",
       "gate": "persons-merge-contract",
       "testFile": "PersonsMergeContractTests.cs",
-      "automatedTest": "AC41_FinanceMergeParticipantImplementsVersionedProtocolHooks",
+      "automatedTest": "AC41_AllRegisteredParticipantsImplementVersionedProtocolHooks",
       "status": "IMPLEMENTED",
       "expectedBehavior": "Every participant implements versioned Prepare/Validate/Apply/Verify/Recovery contract"
     },
@@ -170,7 +170,7 @@
       "id": "AC-42",
       "gate": "persons-merge-contract",
       "testFile": "PersonsMergeContractTests.cs",
-      "automatedTest": "AC42_preview_is_read_only_and_counts_transferable_finance_references",
+      "automatedTest": "AC42_preview_is_read_only_and_counts_all_finance_and_persons_references",
       "status": "IMPLEMENTED",
       "expectedBehavior": "Merge preview is read-only and counts active, historical, transferable and blocking references"
     },
@@ -193,10 +193,16 @@
     {
       "id": "AC-45",
       "gate": "persons-merge-contract",
-      "testFile": "PersonsLifecyclePostgresTests.cs",
-      "automatedTest": "AC45_merge_preserves_preexisting_history_snapshots_and_reconciles_active_references",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC45_merge_preserves_existing_lifecycle_snapshots_and_reconciles_active_references",
       "status": "IMPLEMENTED",
-      "expectedBehavior": "Historical snapshots stay unchanged and active references reconcile exactly"
+      "expectedBehavior": "Historical snapshots stay unchanged and active references reconcile exactly",
+      "supportingTests": [
+        {
+          "testFile": "PersonsLifecyclePostgresTests.cs",
+          "automatedTest": "AC45_merge_preserves_preexisting_history_snapshots_and_reconciles_active_references"
+        }
+      ]
     },
     {
       "id": "AC-46",
