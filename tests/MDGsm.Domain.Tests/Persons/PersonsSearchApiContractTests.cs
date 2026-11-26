@@ -14,7 +14,7 @@ public sealed class PersonsSearchApiContractTests
         Assert.Contains("\"SearchApiEnabled\": false", apiSettings, StringComparison.Ordinal);
         Assert.Contains("Persons:SearchApiEnabled", program, StringComparison.Ordinal);
         Assert.Contains("IPersonsSearchControl", program, StringComparison.Ordinal);
-        Assert.Contains("permissions.HasPermissionAsync(accountId, \"persons.search\", cancellationToken)", program, StringComparison.Ordinal);
+        Assert.Contains("PersonsGlobalReadAuthorization.CanReadAsync", program, StringComparison.Ordinal);
         Assert.Contains("var items = results.Select(item => new", program, StringComparison.Ordinal);
         Assert.Contains("maskedMobile = item.MaskedMobile", program, StringComparison.Ordinal);
         Assert.DoesNotContain("new { items = results,", program, StringComparison.Ordinal);
