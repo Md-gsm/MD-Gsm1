@@ -103,8 +103,13 @@ public sealed class MigrationResourceTests
             .Where(name => name.StartsWith("MDGsm.Migrations.", StringComparison.Ordinal))
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(actualResources.Length, actualResources.Distinct(StringComparer.Ordinal).Count());
-        Assert.Equal(expectedResources, actualResources);
+        var duplicateResources = actualResources.GroupBy(name => name, StringComparer.Ordinal)
+            .Where(group => group.Count() > 1)
+            .Select(group => $"{group.Key} (x{group.Count()})")
+            .ToArray();
+        Assert.True(duplicateResources.Length == 0, $"Duplicate migration resource names: {string.Join(", ", duplicateResources)}");
+        Assert.True(expectedResources.SequenceEqual(actualResources),
+            $"Expected migration resources: {string.Join(", ", expectedResources)}; actual: {string.Join(", ", actualResources)}");
     }
 
     private static string FindRepositoryRoot()
