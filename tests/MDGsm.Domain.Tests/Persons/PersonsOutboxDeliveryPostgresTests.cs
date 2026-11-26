@@ -134,10 +134,12 @@ public sealed class PersonsOutboxDeliveryPostgresTests
             start.AddMinutes(1).AddSeconds(10), PersonsOutboxDeliveryFailureCodes.PublishFailed, default));
         Assert.True(await store.MarkDeliveredAsync(secondEvent.EventId, "worker-b", start.AddMinutes(1).AddSeconds(3), default));
 
-        Assert.Equal(2L, await ScalarAsync(dataSource, """
-            SELECT count(*) FROM persons_outbox_deliveries
-            WHERE delivery_status='delivered' AND attempt_count IN (1,2);
-            """));
+        Assert.Equal(1L, await ScalarAsync(dataSource,
+            "SELECT count(*) FROM persons_outbox_deliveries WHERE event_id=@id AND delivery_status='delivered';",
+            firstEvent.EventId));
+        Assert.Equal(1L, await ScalarAsync(dataSource,
+            "SELECT count(*) FROM persons_outbox_deliveries WHERE event_id=@id AND delivery_status='delivered';",
+            secondEvent.EventId));
     }
 
     [Fact]
@@ -262,13 +264,16 @@ public sealed class PersonsOutboxDeliveryPostgresTests
         await using var connection = await dataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand(sql, connection);
         if (parameter is Guid id)
-            command.Parameters.AddWithValue("id", id);
+        {
+            var name = sql.Contains("@party", StringComparison.Ordinal) ? "party"
+                : sql.Contains("@operation", StringComparison.Ordinal) ? "operation" : "id";
+            command.Parameters.AddWithValue(name, id);
+        }
         else if (parameter is string text)
         {
-            if (sql.Contains("@mobile", StringComparison.Ordinal))
-                command.Parameters.AddWithValue("mobile", text);
-            else
-                command.Parameters.AddWithValue("operation", text);
+            var name = sql.Contains("@mobile", StringComparison.Ordinal) ? "mobile"
+                : sql.Contains("@operation", StringComparison.Ordinal) ? "operation" : "id";
+            command.Parameters.AddWithValue(name, text);
         }
         var result = await command.ExecuteScalarAsync();
         return Convert.ToInt64(result, System.Globalization.CultureInfo.InvariantCulture);
