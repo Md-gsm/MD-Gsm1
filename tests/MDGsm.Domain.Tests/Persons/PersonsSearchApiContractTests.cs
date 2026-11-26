@@ -11,7 +11,7 @@ public sealed class PersonsSearchApiContractTests
         var apiSettings = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "appsettings.json"));
         var program = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
 
-        Assert.Contains("\"SearchApiEnabled\": false", apiSettings.Replace(" ", string.Empty), StringComparison.Ordinal);
+        Assert.Contains("\"SearchApiEnabled\": false", apiSettings, StringComparison.Ordinal);
         Assert.Contains("Persons:SearchApiEnabled", program, StringComparison.Ordinal);
         Assert.Contains("IPersonsSearchControl", program, StringComparison.Ordinal);
         Assert.Contains("persons.search", program, StringComparison.Ordinal);
