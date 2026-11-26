@@ -120,10 +120,18 @@ public sealed class DatabaseMigrationRunner
                     $"Migration version {migration.Version} is missing below an already-applied version; refusing out-of-order migration.");
             }
 
-            await using (var applyCommand = new NpgsqlCommand(migration.Sql, connection, transaction))
+            try
             {
+                await using var applyCommand = new NpgsqlCommand(migration.Sql, connection, transaction);
                 applyCommand.CommandTimeout = 120;
                 await applyCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+            catch (PostgresException exception)
+            {
+                throw new InvalidOperationException(
+                    $"Migration {migration.Version} ({migration.Name}) failed: SQLSTATE {exception.SqlState}; " +
+                    $"{exception.MessageText}; position {exception.Position}.",
+                    exception);
             }
 
             await using (var recordCommand = new NpgsqlCommand(
