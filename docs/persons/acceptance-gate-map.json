@@ -1,126 +1,208 @@
 {
-  "mapVersion": "1.1",
+  "mapVersion": "1.4",
   "sourceArchitecture": "MDGsm_Persons_Module_Architecture_Decision_and_Build_Spec_v1.1_FA",
   "criteria": [
     {
       "id": "AC-31",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsTemporaryDataRetentionTests.cs",
+      "automatedTest": "AC31_expiry_blocks_access_at_the_exact_utc_expiry_instant",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Expiry blocks access at the exact UTC expiry instant"
     },
     {
       "id": "AC-32",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
-      "expectedBehavior": "Physical purge removes expired raw temporary PII within the deadline"
+      "testFile": "PersonsTemporaryDataRetentionTests.cs",
+      "automatedTest": "AC32_worker_is_registered_drains_all_due_batches_and_uses_the_fifteen_minute_default",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Physical purge removes expired raw temporary PII within the deadline",
+      "supportingTests": [
+        {
+          "testFile": "PersonsTemporaryWorkflowPostgresTests.cs",
+          "automatedTest": "AC32_ciphertext_is_stored_and_expiry_blocks_reads_before_cleanup"
+        }
+      ]
     },
     {
       "id": "AC-33",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
-      "expectedBehavior": "TTL cannot be extended beyond the 30-day absolute maximum"
+      "testFile": "PersonsTemporaryWorkflowPostgresTests.cs",
+      "automatedTest": "AC33_AC34_renewal_is_single_use_authorized_and_capped_at_thirty_days",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "TTL cannot be extended beyond the 30-day absolute maximum",
+      "supportingTests": [
+        {
+          "testFile": "PersonsTemporaryDataRetentionTests.cs",
+          "automatedTest": "AC33_renewal_never_extends_beyond_absolute_thirty_day_age"
+        }
+      ]
     },
     {
       "id": "AC-34",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
-      "expectedBehavior": "Only one authorized renewal with reason is accepted"
+      "testFile": "PersonsTemporaryWorkflowPostgresTests.cs",
+      "automatedTest": "AC33_AC34_renewal_is_single_use_authorized_and_capped_at_thirty_days",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Only one authorized renewal with reason is accepted",
+      "supportingTests": [
+        {
+          "testFile": "PersonsTemporaryDataRetentionTests.cs",
+          "automatedTest": "AC34_only_one_authorized_renewal_with_a_reason_is_accepted"
+        },
+        {
+          "testFile": "PersonsTemporaryDataRetentionTests.cs",
+          "automatedTest": "AC34_renewal_rejects_missing_reason_or_missing_authorization"
+        }
+      ]
     },
     {
       "id": "AC-35",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
-      "expectedBehavior": "Cleanup worker is idempotent and retries after transient failure"
+      "testFile": "PersonsTemporaryDataRetentionTests.cs",
+      "automatedTest": "AC35_worker_retries_on_next_cycle_and_logs_only_redacted_failure_codes",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Cleanup worker is idempotent and retries after transient failure",
+      "supportingTests": [
+        {
+          "testFile": "PersonsTemporaryDataRetentionTests.cs",
+          "automatedTest": "AC38_structured_retention_alert_accepts_only_closed_failure_code_and_emits_no_payload"
+        }
+      ]
     },
     {
       "id": "AC-36",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsTemporaryWorkflowPostgresTests.cs",
+      "automatedTest": "AC36_temporary_workflow_payload_does_not_appear_in_Persons_search_or_search_route",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Temporary data never appears in global people search or generic autocomplete"
     },
     {
       "id": "AC-37",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
-      "expectedBehavior": "Promotion requires an explicit person choice and duplicate check; promotion is atomic and idempotent"
+      "testFile": "PersonsTemporaryWorkflowPromotionPostgresTests.cs",
+      "automatedTest": "AC37_new_party_promotion_commits_party_tombstone_payload_purge_and_outbox_atomically",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Promotion requires an explicit person choice and duplicate check; promotion is atomic and idempotent",
+      "supportingTests": [
+        {
+          "testFile": "PersonsTemporaryWorkflowPromotionPostgresTests.cs",
+          "automatedTest": "AC37_ForceNew_returns_candidates_until_explicit_confirmation_and_audits_the_override"
+        },
+        {
+          "testFile": "PersonsTemporaryWorkflowPromotionPostgresTests.cs",
+          "automatedTest": "AC37_failed_outbox_insert_rolls_back_party_workflow_tombstone_and_payload_deletion"
+        },
+        {
+          "testFile": "PersonsTemporaryWorkflowPromotionPostgresTests.cs",
+          "automatedTest": "AC37_authorization_matrix_denies_each_required_permission_before_mutation"
+        },
+        {
+          "testFile": "PersonsTemporaryWorkflowPromotionPostgresTests.cs",
+          "automatedTest": "AC37_unprotectable_payload_is_rejected_without_state_change_and_can_retry_after_repair"
+        },
+        {
+          "testFile": "PersonsTemporaryWorkflowPromotionPostgresTests.cs",
+          "automatedTest": "AC37_existing_party_path_does_not_require_create_permission"
+        },
+        {
+          "testFile": "PersonsTemporaryWorkflowPromotionPostgresTests.cs",
+          "automatedTest": "AC37_workflow_close_failure_rolls_back_and_same_operation_retries"
+        },
+        {
+          "testFile": "PersonsTemporaryWorkflowPromotionPostgresTests.cs",
+          "automatedTest": "AC37_payload_purge_failure_rolls_back_and_same_operation_retries"
+        }
+      ]
     },
     {
       "id": "AC-38",
       "gate": "persons-temporary-data-retention",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
-      "expectedBehavior": "Logs, audit, metrics and CI artifacts do not contain raw temporary PII"
+      "testFile": "PersonsTemporaryWorkflowPromotionPostgresTests.cs",
+      "automatedTest": "AC38_temporary_payload_is_excluded_from_audit_metadata_and_metric_telemetry",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Logs, audit, metrics and CI artifacts do not contain raw temporary PII",
+      "supportingTests": [
+        {
+          "testFile": "PersonsTemporaryDataRetentionTests.cs",
+          "automatedTest": "AC35_worker_retries_on_next_cycle_and_logs_only_redacted_failure_codes"
+        },
+        {
+          "testFile": "PersonsTemporaryDataRetentionTests.cs",
+          "automatedTest": "AC38_structured_retention_alert_accepts_only_closed_failure_code_and_emits_no_payload"
+        },
+        {
+          "testFile": "PersonsTemporaryDataRetentionTests.cs",
+          "automatedTest": "AC38_retention_worker_never_publishes_raw_payload_in_metric_tags"
+        },
+        {
+          "testFile": "test_persons_gate_policy.py",
+          "automatedTest": "test_ci_evidence_manifest_is_traceable_and_redacted"
+        }
+      ]
     },
     {
       "id": "AC-39",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC39_AC40_AllExternalPartyIdConsumersAreRegisteredAndClassifiedExactlyOnce",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "All code-discovered PartyId consumers are registered"
     },
     {
       "id": "AC-40",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC39_AC40_AllExternalPartyIdConsumersAreRegisteredAndClassifiedExactlyOnce",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Every PartyId reference has exactly one merge classification"
     },
     {
       "id": "AC-41",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC41_AllRegisteredParticipantsImplementVersionedProtocolHooks",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Every participant implements versioned Prepare/Validate/Apply/Verify/Recovery contract"
     },
     {
       "id": "AC-42",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC42_preview_is_read_only_and_counts_all_finance_and_persons_references",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Merge preview is read-only and counts active, historical, transferable and blocking references"
     },
     {
       "id": "AC-43",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC43_two_existing_finance_accounts_are_a_blocking_conflict_and_no_state_changes",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Unresolved blocking conflicts prevent execution"
     },
     {
       "id": "AC-44",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC44_MergeIsAtomicConcurrentAndIdempotentWithFailureRollback",
+      "status": "IMPLEMENTED",
       "expectedBehavior": "Merge is atomic, concurrency-safe and idempotent; failures leave no partial state"
     },
     {
       "id": "AC-45",
       "gate": "persons-merge-contract",
-      "testFile": null,
-      "automatedTest": null,
-      "status": "UNMAPPED",
-      "expectedBehavior": "Historical snapshots stay unchanged and active references reconcile exactly"
+      "testFile": "PersonsMergeContractTests.cs",
+      "automatedTest": "AC45_merge_preserves_existing_lifecycle_snapshots_and_reconciles_active_references",
+      "status": "IMPLEMENTED",
+      "expectedBehavior": "Historical snapshots stay unchanged and active references reconcile exactly",
+      "supportingTests": [
+        {
+          "testFile": "PersonsLifecyclePostgresTests.cs",
+          "automatedTest": "AC45_merge_preserves_preexisting_history_snapshots_and_reconciles_active_references"
+        }
+      ]
     },
     {
       "id": "AC-46",
@@ -155,10 +237,16 @@
       "expectedBehavior": "CI evidence contains commit, contract versions, schema fingerprint, gate/test counts, and no raw PII."
     }
   ],
-  "note": "AC-31..45 remain UNMAPPED. PR #50 has focused tests for portions of temporary retention and Party merge/Finance provisioning, but no criterion-by-criterion mapping is accepted. AC-46..49 are CI-policy/evidence tests only; they do not demonstrate runtime behavior for AC-31..45.",
+  "note": "Version 1.4 maps all AC-31..AC-49 to named automated tests on PR #96's feature branch. The primary test reference and each additional supporting test reference are verified by the CI specification gate. Mapping establishes code/test traceability only; exact-head CI, independent review and owner authorization remain separate acceptance gates. PostgreSQL evidence uses marked disposable databases only. AC-46..AC-49 are CI governance/evidence controls, not runtime business functionality.",
   "runtimeCoverageCaveat": {
-    "AC31toAC38": "Partial temporary workflow ciphertext store/retention worker; full criterion mapping and acceptance open.",
-    "AC39toAC45": "Partial transactional Party merge coordinator and Finance participant; consumer completeness, classification, participant protocol, preview/conflict behavior, atomicity and historical preservation not all proven.",
-    "AC46toAC49": "CI policy/evidence controls only; not runtime acceptance."
+    "AC31toAC38": "AC-31 checks the exact UTC expiry instant. AC-32 checks worker DI registration, 15-minute cadence, immediate sweep, multi-batch draining and disposable PostgreSQL ciphertext deletion/idempotent purge. AC-33/34 check 30-day absolute TTL, one authorized renewal, reason/actor/time persistence and rejection of invalid renewal metadata. AC-35 checks transient retry and redacted failure logs/alerts. AC-36 checks encrypted temporary payloads are excluded from Persons search and generic search routes. AC-37 covers permission matrix, Existing/New choice, duplicate review/ForceNew confirmation, idempotency, unprotectable payload fail-closed behavior and injected rollback/retry across workflow close, payload deletion, tombstone and Outbox insertion. AC-38 checks raw temporary PII is absent from metadata/audit rows, metric tags and CI evidence output; ciphertext bytes are separately verified as encrypted.",
+    "AC39toAC40": "All non-Persons owner-path PartyId consumers are enumerated from code/migrations, registered once and given exactly one allowed merge classification. Persons-owned paths remain within the Persons owner boundary.",
+    "AC41": "Both production participants (Finance PartyAccount and Persons ContactPoint/Address) implement the versioned Preview/Prepare/Validate/Apply/Verify/Recover protocol hooks.",
+    "AC42": "Combined Finance + Persons preview is read-only and reports active, historical, transferable and blocking references; persisted source records are checked before and after preview.",
+    "AC43": "A dual-Finance-account conflict blocks execution and leaves Finance and Persons source/target references unchanged.",
+    "AC44": "Integrated merge tests include Finance and Persons participants for successful transfer and replay idempotency, injected failure rollback/recovery, and concurrent source merge arbitration with exact contact/address winner reconciliation.",
+    "AC45": "Captures all pre-merge lifecycle history rows and JSON before/after snapshots by history ID, re-reads those same records after merge and compares them unchanged; reconciles source and target ContactPoint/Address counts, origin_party_id, restrictive messaging consent, primary flags, source tombstone and merge history evidence.",
+    "AC46toAC49": "These are CI governance and evidence controls, not runtime module behavior. CI verifies required jobs cannot be bypassed, failed jobs cannot be relabelled as passing, G1 requires external evidence, and the evidence summary remains redacted when synthetic PII is embedded in test output.",
+    "AC37": "The source Outbox emits PII-free PartyRegistered and initial delivery state atomically for newly created Parties. Delivery remains explicitly invoked and opt-in; no publisher/broker/hosted dispatcher, scheduler, retry worker or production delivery activation is authorized by this map."
   }
 }

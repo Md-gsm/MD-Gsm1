@@ -139,9 +139,20 @@ def run_spec(root: Path) -> None:
                 raise GateFailure(f"{item['id']} claims an implemented test but file '{item['testFile']}' is missing.")
             if not any(item["automatedTest"] in candidate.read_text(encoding="utf-8", errors="replace") for candidate in candidates):
                 raise GateFailure(f"{item['id']} claims an implemented test but method '{item['automatedTest']}' is absent.")
+            for support in item.get("supportingTests", []):
+                support_file = support.get("testFile")
+                support_method = support.get("automatedTest")
+                if not support_file or not support_method:
+                    raise GateFailure(f"{item['id']} has an incomplete supporting test reference.")
+                support_candidates = list(root.rglob(support_file))
+                if not support_candidates:
+                    raise GateFailure(f"{item['id']} supporting test file '{support_file}' is missing.")
+                if not any(support_method in candidate.read_text(encoding="utf-8", errors="replace")
+                           for candidate in support_candidates):
+                    raise GateFailure(f"{item['id']} supporting test method '{support_method}' is absent.")
     all_criteria_implemented = all(item.get("status") == "IMPLEMENTED" for item in criteria)
-    if prereqs.get("acceptanceCriteriaAc31ToAc49Mapped") is True and not all_criteria_implemented:
-        raise GateFailure("Manifest claims AC-31..AC-49 are mapped, but one or more criteria are UNMAPPED.")
+    if prereqs.get("acceptanceCriteriaAc31ToAc49Mapped") is not all_criteria_implemented:
+        raise GateFailure("Manifest AC-31..AC-49 mapping flag must exactly match the acceptance map.")
     if manifest.get("g1Authorized") is True and not all_criteria_implemented:
         raise GateFailure("G1 cannot be authorized while any AC-31..AC-49 criterion is UNMAPPED.")
     if "src/Modules/Persons" not in registry.get("ownerPaths", []) or "registeredConsumers" not in registry:
@@ -272,20 +283,31 @@ def run_architecture(root: Path) -> None:
         # Shared Infrastructure may implement module-owned application ports through
         # explicitly enumerated references; this is an inward dependency only.
         "BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj": {
-            "MDGsm.Application", "MDGsm.IdentityAccess.Application", "MDGsm.Persons.Contracts"
+            "MDGsm.Application", "MDGsm.IdentityAccess.Application",
+            "MDGsm.Persons.Application", "MDGsm.Persons.Infrastructure"
         },
         "BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj": set(),
         "Host/Api/MDGsm.Api.csproj": {
             "MDGsm.Application", "MDGsm.Infrastructure",
-            "MDGsm.Persons.Contracts", "MDGsm.IdentityAccess.Contracts",
+            "MDGsm.Persons.Application", "MDGsm.Persons.Contracts", "MDGsm.IdentityAccess.Contracts",
             "MDGsm.RepairOperations.Contracts", "MDGsm.Finance.Contracts", "MDGsm.Finance",
         },
-        "Host/Desktop/MDGsm.Desktop.csproj": {"MDGsm.Client"},
+        "Host/Client/MDGsm.Host.Client.csproj": {
+            "MDGsm.Client", "MDGsm.IdentityAccess.Contracts", "MDGsm.Persons.Contracts",
+        },
+        "Host/Desktop/MDGsm.Desktop.csproj": {"MDGsm.Client", "MDGsm.Host.Client"},
     }
     modules = ("Persons", "IdentityAccess", "RepairOperations", "Finance", "Accounting")
     for module in modules:
         expected_projects[f"Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj"] = set()
     expected_projects["Modules/Finance/MDGsm.Finance.csproj"] = {"MDGsm.Finance.Contracts", "MDGsm.Persons.Contracts"}
+    expected_projects["Modules/Persons/Domain/MDGsm.Persons.Domain.csproj"] = set()
+    expected_projects["Modules/Persons/Application/MDGsm.Persons.Application.csproj"] = {
+        "MDGsm.Persons.Domain", "MDGsm.Persons.Contracts"
+    }
+    expected_projects["Modules/Persons/Infrastructure/MDGsm.Persons.Infrastructure.csproj"] = {
+        "MDGsm.Persons.Application", "MDGsm.Persons.Domain", "MDGsm.Persons.Contracts"
+    }
     expected_projects["Modules/Accounting/Domain/MDGsm.Accounting.Domain.csproj"] = set()
     expected_projects["Modules/Accounting/Application/MDGsm.Accounting.Application.csproj"] = {
         "MDGsm.Accounting.Domain", "MDGsm.Accounting.Contracts"
@@ -328,7 +350,7 @@ def run_architecture(root: Path) -> None:
                 f"expected {sorted(expected_refs)}, found {sorted(actual_refs)}"
             )
 
-    for relative_dir in ("Host/Desktop", "BuildingBlocks/MDGsm.Client"):
+    for relative_dir in ("Host/Desktop", "Host/Client", "BuildingBlocks/MDGsm.Client"):
         source_dir = project_root / relative_dir
         for source in source_dir.rglob("*.cs"):
             source_text = source.read_text(encoding="utf-8", errors="replace")
@@ -336,6 +358,29 @@ def run_architecture(root: Path) -> None:
                 raise GateFailure(
                     f"Desktop/client source must not directly use database persistence: {source.relative_to(root)}"
                 )
+
+    # Persons implementation code is module-owned. Shared Infrastructure is
+    # the explicit composition/migration boundary; Hosts and peer modules cannot
+    # reference Persons Domain or Infrastructure directly.
+    for legacy_dir in (
+        "BuildingBlocks/MDGsm.Domain/Persons",
+        "BuildingBlocks/MDGsm.Application/Persons",
+        "BuildingBlocks/MDGsm.Infrastructure/Persons",
+    ):
+        directory = project_root / legacy_dir
+        if directory.exists():
+            executable = sorted(path.relative_to(root).as_posix() for path in directory.rglob("*.cs"))
+            if executable:
+                raise GateFailure(f"Persons executable source remains in transitional BuildingBlocks paths: {executable}")
+
+    persons_host = projects["Host/Api/MDGsm.Api.csproj"]
+    host_refs = {
+        Path(node.attrib.get("Include", "").replace("\\", "/")).stem
+        for node in ET.parse(persons_host).iter()
+        if node.tag.endswith("ProjectReference")
+    }
+    if {"MDGsm.Persons.Domain", "MDGsm.Persons.Infrastructure"} & host_refs:
+        raise GateFailure("API Host must not reference Persons Domain or Infrastructure directly; use Application and Contracts.")
 
     target = root / "docs/architecture/modular-target.md"
     required_readmes = [
@@ -363,6 +408,12 @@ def run_architecture(root: Path) -> None:
         if not marker.exists() or f'Current = "{expected_version}"' not in marker.read_text(encoding="utf-8"):
             raise GateFailure(f"{module} Contracts version marker is missing or invalid.")
 
+    for layer in ("Domain", "Application", "Infrastructure"):
+        project = root / "src" / "Modules" / "Persons" / layer / f"MDGsm.Persons.{layer}.csproj"
+        solution_path = f"src\\Modules\\Persons\\{layer}\\MDGsm.Persons.{layer}.csproj"
+        if not project.exists() or solution_path not in solution:
+            raise GateFailure(f"Persons {layer} project is missing from MDGsm.sln.")
+
     old_roots = (
         "MDGsm.Domain", "MDGsm.Application", "MDGsm.Infrastructure",
         "MDGsm.Api", "MDGsm.Desktop", "MDGsm.Client",
@@ -371,11 +422,35 @@ def run_architecture(root: Path) -> None:
         if (project_root / old_root).exists():
             raise GateFailure(f"Flat legacy project directory remains under src/: {old_root}")
 
-    print("PASS: modular project inventory, Host/BuildingBlocks dependency graph, isolated Contracts assemblies, and source boundaries.")
+    print("PASS: modular project inventory, Persons module-owned layers, Host/BuildingBlocks dependency graph, isolated Contracts assemblies, and source boundaries.")
 
 def run_registry(root: Path) -> None:
     reg = load_json(root / "docs/persons/consumer-registry.json")
-    registered = {str(x.get("path", "")).replace("\\", "/") for x in reg.get("registeredConsumers", [])}
+    consumers = reg.get("registeredConsumers", [])
+    registered_paths = [str(x.get("path", "")).replace("\\", "/") for x in consumers]
+    if len(registered_paths) != len(set(registered_paths)):
+        duplicates = sorted(path for path in set(registered_paths) if registered_paths.count(path) > 1)
+        raise GateFailure(f"Duplicate PartyId consumer registrations: {duplicates}")
+    registered = set(registered_paths)
+    policy = reg.get("registryPolicy", {})
+    allowed_classifications = set(policy.get("allowedMergeClassifications", []))
+    definitions = policy.get("mergeClassificationDefinitions", {})
+    if not allowed_classifications or set(definitions) != allowed_classifications:
+        raise GateFailure("Consumer registry must define every allowed merge classification exactly once.")
+    for consumer in consumers:
+        classification = consumer.get("mergeClassification")
+        if classification not in allowed_classifications:
+            raise GateFailure(
+                f"PartyId consumer must have exactly one allowed mergeClassification: {consumer.get('path')}"
+            )
+        if not isinstance(consumer.get("mergeParticipant"), bool):
+            raise GateFailure(
+                f"PartyId consumer must explicitly declare mergeParticipant true/false: {consumer.get('path')}"
+            )
+        if consumer["mergeParticipant"] and classification != "PERSISTED_ACTIVE_REFERENCE":
+            raise GateFailure(
+                f"Merge participant must classify a persisted active reference: {consumer.get('path')}"
+            )
     owner_paths = [str(x).replace("\\", "/").rstrip("/") for x in reg.get("ownerPaths", [])]
     found = set()
     owner_paths.extend(["database/migrations/persons"])

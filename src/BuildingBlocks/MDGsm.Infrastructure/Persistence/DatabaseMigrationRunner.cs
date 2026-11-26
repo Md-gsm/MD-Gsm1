@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Npgsql;
+using MDGsm.Persons.Infrastructure;
 
 namespace MDGsm.Infrastructure.Persistence;
 
@@ -119,10 +120,18 @@ public sealed class DatabaseMigrationRunner
                     $"Migration version {migration.Version} is missing below an already-applied version; refusing out-of-order migration.");
             }
 
-            await using (var applyCommand = new NpgsqlCommand(migration.Sql, connection, transaction))
+            try
             {
+                await using var applyCommand = new NpgsqlCommand(migration.Sql, connection, transaction);
                 applyCommand.CommandTimeout = 120;
                 await applyCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+            catch (PostgresException exception)
+            {
+                throw new InvalidOperationException(
+                    $"Migration {migration.Version} ({migration.Name}) failed: SQLSTATE {exception.SqlState}; " +
+                    $"{exception.MessageText}; position {exception.Position}.",
+                    exception);
             }
 
             await using (var recordCommand = new NpgsqlCommand(
@@ -212,35 +221,42 @@ public sealed class DatabaseMigrationRunner
 
     private static IReadOnlyList<MigrationArtifact> LoadMigrations()
     {
-        var assembly = typeof(DatabaseMigrationRunner).Assembly;
+        var assemblies = new[]
+        {
+            typeof(DatabaseMigrationRunner).Assembly,
+            typeof(PersonsInfrastructureAssemblyMarker).Assembly
+        }.Distinct();
         var migrations = new List<MigrationArtifact>();
 
-        foreach (var resourceName in assembly.GetManifestResourceNames())
+        foreach (var assembly in assemblies)
         {
-            if (!resourceName.StartsWith(ResourcePrefix, StringComparison.Ordinal))
+            foreach (var resourceName in assembly.GetManifestResourceNames())
             {
-                continue;
-            }
+                if (!resourceName.StartsWith(ResourcePrefix, StringComparison.Ordinal))
+                {
+                    continue;
+                }
 
-            var fileName = resourceName[ResourcePrefix.Length..];
-            var match = MigrationFileName.Match(fileName);
-            if (!match.Success)
-            {
-                throw new InvalidOperationException($"Embedded migration resource has an invalid name: {fileName}");
-            }
+                var fileName = resourceName[ResourcePrefix.Length..];
+                var match = MigrationFileName.Match(fileName);
+                if (!match.Success)
+                {
+                    throw new InvalidOperationException($"Embedded migration resource has an invalid name: {fileName}");
+                }
 
-            using var stream = assembly.GetManifestResourceStream(resourceName)
-                ?? throw new InvalidOperationException($"Embedded migration resource could not be opened: {fileName}");
-            using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-            var sql = reader.ReadToEnd();
-            if (string.IsNullOrWhiteSpace(sql))
-            {
-                throw new InvalidOperationException($"Embedded migration is empty: {fileName}");
-            }
+                using var stream = assembly.GetManifestResourceStream(resourceName)
+                    ?? throw new InvalidOperationException($"Embedded migration resource could not be opened: {fileName}");
+                using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+                var sql = reader.ReadToEnd();
+                if (string.IsNullOrWhiteSpace(sql))
+                {
+                    throw new InvalidOperationException($"Embedded migration is empty: {fileName}");
+                }
 
-            var version = int.Parse(match.Groups["version"].Value, System.Globalization.CultureInfo.InvariantCulture);
-            var sha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(sql))).ToLowerInvariant();
-            migrations.Add(new MigrationArtifact(version, Path.GetFileNameWithoutExtension(fileName), sql, sha256));
+                var version = int.Parse(match.Groups["version"].Value, System.Globalization.CultureInfo.InvariantCulture);
+                var sha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(sql))).ToLowerInvariant();
+                migrations.Add(new MigrationArtifact(version, Path.GetFileNameWithoutExtension(fileName), sql, sha256));
+            }
         }
 
         if (migrations.Count == 0)

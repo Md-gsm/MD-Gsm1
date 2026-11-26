@@ -19,7 +19,8 @@ public sealed class ArchitectureBoundaryTests
             "src/BuildingBlocks/MDGsm.Infrastructure/MDGsm.Infrastructure.csproj",
             "..\\MDGsm.Application\\MDGsm.Application.csproj",
             "..\\..\\Modules\\IdentityAccess\\Application\\MDGsm.IdentityAccess.Application.csproj",
-            "..\\..\\Modules\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj");
+            "..\\..\\Modules\\Persons\\Application\\MDGsm.Persons.Application.csproj",
+            "..\\..\\Modules\\Persons\\Infrastructure\\MDGsm.Persons.Infrastructure.csproj");
         AssertReferences(root, "src/BuildingBlocks/MDGsm.Client/MDGsm.Client.csproj");
     }
 
@@ -32,6 +33,7 @@ public sealed class ArchitectureBoundaryTests
             "src/Host/Api/MDGsm.Api.csproj",
             "..\\..\\BuildingBlocks\\MDGsm.Application\\MDGsm.Application.csproj",
             "..\\..\\BuildingBlocks\\MDGsm.Infrastructure\\MDGsm.Infrastructure.csproj",
+            "..\\..\\Modules\\Persons\\Application\\MDGsm.Persons.Application.csproj",
             "..\\..\\Modules\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj",
             "..\\..\\Modules\\IdentityAccess\\Contracts\\MDGsm.IdentityAccess.Contracts.csproj",
             "..\\..\\Modules\\RepairOperations\\Contracts\\MDGsm.RepairOperations.Contracts.csproj",
@@ -46,7 +48,14 @@ public sealed class ArchitectureBoundaryTests
         AssertReferences(
             root,
             "src/Host/Desktop/MDGsm.Desktop.csproj",
-            "..\\..\\BuildingBlocks\\MDGsm.Client\\MDGsm.Client.csproj");
+            "..\\..\\BuildingBlocks\\MDGsm.Client\\MDGsm.Client.csproj",
+            "..\\Client\\MDGsm.Host.Client.csproj");
+        AssertReferences(
+            root,
+            "src/Host/Client/MDGsm.Host.Client.csproj",
+            "..\\..\\BuildingBlocks\\MDGsm.Client\\MDGsm.Client.csproj",
+            "..\\..\\Modules\\IdentityAccess\\Contracts\\MDGsm.IdentityAccess.Contracts.csproj",
+            "..\\..\\Modules\\Persons\\Contracts\\MDGsm.Persons.Contracts.csproj");
     }
 
     [Fact]
@@ -54,6 +63,7 @@ public sealed class ArchitectureBoundaryTests
     {
         var root = FindSolutionRoot();
         var solution = File.ReadAllText(Path.Combine(root, "MDGsm.sln"));
+        Assert.Contains("src\\Host\\Client\\MDGsm.Host.Client.csproj", solution);
         foreach (var module in new[] { "Persons", "IdentityAccess", "RepairOperations", "Finance", "Accounting" })
         {
             var relative = $"src/Modules/{module}/Contracts/MDGsm.{module}.Contracts.csproj";
@@ -73,20 +83,42 @@ public sealed class ArchitectureBoundaryTests
     }
 
     [Fact]
-    public void Persons_internal_placement_is_explicitly_transitional_and_blocked_before_g1()
+    public void Persons_internal_projects_follow_ADR0016_and_keep_G1_disabled()
     {
         var root = FindSolutionRoot();
         var manifest = File.ReadAllText(Path.Combine(root, "docs", "persons", "persons-module-manifest.json"));
-        var adr = File.ReadAllText(Path.Combine(root, "docs", "decisions", "0014-persons-module-ownership.md"));
+        var adr = File.ReadAllText(Path.Combine(root, "docs", "decisions", "0016-persons-module-boundary-and-data-ownership.md"));
 
-        Assert.Contains("\"personsInternalCodePlacement\": \"TRANSITIONAL_BUILDINGBLOCKS_PER_ADR_0014\"", manifest);
-        Assert.Contains("پیش از G1 authorization", adr, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("\"personsInternalCodePlacement\": \"MODULE_OWNED_PROJECTS_PER_ADR_0016\"", manifest);
+        Assert.Contains("\"g1Authorized\": false", manifest);
+        Assert.Contains("ADR-0016", adr, StringComparison.OrdinalIgnoreCase);
 
-        var personsRoot = Path.Combine(root, "src", "Modules", "Persons");
-        var implementationFiles = Directory.EnumerateFiles(personsRoot, "*.cs", SearchOption.AllDirectories)
-            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}Contracts{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .ToArray();
-        Assert.Empty(implementationFiles);
+        AssertReferences(root, "src/Modules/Persons/Domain/MDGsm.Persons.Domain.csproj");
+        AssertReferences(root, "src/Modules/Persons/Application/MDGsm.Persons.Application.csproj",
+            "..\\Domain\\MDGsm.Persons.Domain.csproj",
+            "..\\Contracts\\MDGsm.Persons.Contracts.csproj");
+        AssertReferences(root, "src/Modules/Persons/Infrastructure/MDGsm.Persons.Infrastructure.csproj",
+            "..\\Application\\MDGsm.Persons.Application.csproj",
+            "..\\Domain\\MDGsm.Persons.Domain.csproj",
+            "..\\Contracts\\MDGsm.Persons.Contracts.csproj");
+
+        foreach (var legacyDirectory in new[]
+        {
+            "src/BuildingBlocks/MDGsm.Domain/Persons",
+            "src/BuildingBlocks/MDGsm.Application/Persons",
+            "src/BuildingBlocks/MDGsm.Infrastructure/Persons"
+        })
+        {
+            var directory = Path.Combine(root, legacyDirectory.Replace('/', Path.DirectorySeparatorChar));
+            if (Directory.Exists(directory))
+                Assert.Empty(Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories));
+        }
+
+        foreach (var moduleDirectory in new[] { "Domain", "Application", "Infrastructure" })
+        {
+            var directory = Path.Combine(root, "src", "Modules", "Persons", moduleDirectory);
+            Assert.NotEmpty(Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories));
+        }
     }
 
     [Fact]

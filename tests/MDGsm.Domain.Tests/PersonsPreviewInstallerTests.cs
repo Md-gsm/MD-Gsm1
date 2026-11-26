@@ -22,7 +22,7 @@ public sealed class PersonsPreviewInstallerTests
 
         var codeBehind = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml.cs"));
         var xaml = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml"));
-        Assert.Contains("ShowPersonsPreview();", codeBehind);
+        Assert.Contains("ShowPersonsWorkspace();", codeBehind);
         Assert.Contains("x:Name=\"PersonsPreviewView\"", xaml);
         Assert.Contains("MouseEnter=\"NavMenuButton_MouseEnter\"", xaml);
         Assert.Contains("MouseLeave=\"HeaderRoot_MouseLeave\"", xaml);
@@ -111,35 +111,144 @@ public sealed class PersonsPreviewInstallerTests
     }
 
     [Fact]
-    public void Preview_add_handler_is_in_memory_only_and_explicitly_demonstration_scoped()
+    public void Persons_workspace_uses_authenticated_server_API_and_has_no_synthetic_person_store()
     {
         var root = FindSolutionRoot();
         var codeBehind = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml.cs"));
-        var start = codeBehind.IndexOf("private void SavePreviewPersonButton_Click", StringComparison.Ordinal);
-        Assert.True(start >= 0, "Preview-only add handler must exist.");
-        var end = codeBehind.IndexOf("private void CancelNewPersonButton_Click", start, StringComparison.Ordinal);
-        Assert.True(end > start, "Preview-only add handler must have a clear end boundary.");
-        var handler = codeBehind[start..end];
+        var workspace = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "PersonsWorkspace.cs"));
+        var apiClient = File.ReadAllText(Path.Combine(root, "src", "Host", "Client", "PersonsApiClient.cs"));
+        var xaml = File.ReadAllText(Path.Combine(root, "src", "Host", "Desktop", "MainWindow.xaml"));
+        var api = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
 
-        Assert.Contains("_allPreviewPersons.Insert(0, row)", handler);
-        Assert.DoesNotContain("_apiClient", handler);
-        Assert.False(handler.Contains("DbContext", StringComparison.OrdinalIgnoreCase));
-        Assert.False(handler.Contains("SaveChanges", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains("فقط نمایشی", handler);
+        Assert.Contains("InitializePersonsWorkspace();", codeBehind);
+        Assert.Contains("IdentityAccessApiClient", workspace);
+        Assert.Contains("PersonsApiClient", workspace);
+        Assert.Contains("PersonsLoginButton_Click", workspace);
+        Assert.Contains("PersonsChangePasswordButton_Click", workspace);
+        Assert.Contains("PersonsLogoutButton_Click", workspace);
+        Assert.Contains("QuickRegisterNaturalAsync", workspace);
+        Assert.Contains("QuickRegisterLegalAsync", workspace);
+        Assert.Contains("Idempotency-Key", apiClient);
+        Assert.Contains("Persons:WriteApiEnabled", api);
+        Assert.Contains("x:Name=\"PersonsLoginPanel\"", xaml);
+        Assert.Contains("x:Name=\"NaturalGivenNameBox\"", xaml);
+        Assert.Contains("x:Name=\"LegalNameBox\"", xaml);
+        Assert.Contains("x:Name=\"PersonsCandidatesPanel\"", xaml);
+        Assert.Contains("x:Name=\"PersonsRetryPanel\"", xaml);
+        Assert.DoesNotContain("PersonPreviewRow", codeBehind);
+        Assert.DoesNotContain("DEMO-000", codeBehind);
+        Assert.DoesNotContain("_allPreviewPersons", codeBehind);
+        Assert.DoesNotContain("SavePreviewPersonButton_Click", codeBehind);
     }
 
     [Fact]
-    public void Windows_installer_uses_self_contained_publish_and_does_not_call_python()
+    public void Windows_installer_uses_program_files_and_installs_api_as_a_local_service()
     {
         var root = FindSolutionRoot();
         var buildScript = File.ReadAllText(Path.Combine(root, "scripts", "Build-Windows-Installer.ps1"));
-        var iss = File.ReadAllText(Path.Combine(root, "installer", "MDGsm-Persons-Preview.iss"));
+        var iss = File.ReadAllText(Path.Combine(root, "installer", "MDGsm-Setup.iss"));
+        var serviceScript = File.ReadAllText(Path.Combine(root, "installer", "Install-MDGsmApiService.ps1"));
+        var apiProject = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "MDGsm.Api.csproj"));
+        var apiProgram = File.ReadAllText(Path.Combine(root, "src", "Host", "Api", "Program.cs"));
 
         Assert.Contains("--runtime win-x64 --self-contained true", buildScript);
+        Assert.Contains("dotnet publish $apiProject", buildScript);
         Assert.Contains("ISCC.exe", buildScript);
+        Assert.Contains("DefaultDirName={autopf}\\MD-Gsm", iss);
+        Assert.Contains("DisableDirPage=yes", iss);
+        Assert.Contains("PrivilegesRequired=admin", iss);
+        Assert.Contains("ArchitecturesAllowed=x64compatible", iss);
+        Assert.Contains("ArchitecturesInstallIn64BitMode=x64compatible", iss);
+        Assert.DoesNotContain("#pragma codepage", iss); // Inno Setup 6.3+ reads UTF-8 scripts directly; this is not a valid ISPP pragma.
+        Assert.Contains("RunOnceId: \"MDGsmApiServiceCleanup\"", iss);
+        Assert.Contains("DestDir: \"{app}\\Api\"", iss);
         Assert.Contains("MDGsm.Desktop.exe", iss);
+        Assert.Contains("Install-MDGsmApiService.ps1", iss);
+        Assert.Contains("Uninstall-MDGsmApiService.ps1", iss);
+        Assert.Contains("NT AUTHORITY\\LocalService", serviceScript);
+        Assert.Contains("sidtype", serviceScript);
+        Assert.Contains("--provision-persons-workflow-key", serviceScript);
+        Assert.DoesNotContain("Get-Acl", serviceScript);
+        Assert.DoesNotContain("Test-Path -LiteralPath $keyFile", serviceScript);
+        Assert.Contains("[ValidateSet('Prepare', 'Install', 'Restore')]", serviceScript);
+        Assert.Contains("Test-KeyProvisionedMarker", serviceScript);
+        Assert.Contains("Set-KeyProvisionedMarker", serviceScript);
+        Assert.Contains("Restore-ServiceState", serviceScript);
+        Assert.Contains("refusing to remove or take over that service", serviceScript);
+        Assert.Contains("refusing to reconfigure an unexpected service", serviceScript);
+        Assert.Contains("Rollback restored the pre-install Running state and loopback API health", serviceScript);
+        var keyProvider = File.ReadAllText(Path.Combine(root, "src", "Modules", "Persons", "Infrastructure", "WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.cs"));
+        Assert.Contains("ValidateKeyStorageForCurrentService", keyProvider);
+        Assert.Contains("ValidateProtectedKeyStorage", keyProvider);
+        Assert.Contains("GetOwner(typeof(SecurityIdentifier))", keyProvider);
+        Assert.Contains("SetOwner(ownerSid)", keyProvider);
+        Assert.Contains("SeRestorePrivilege", keyProvider);
+        Assert.Contains("WellKnownSidType.LocalServiceSid", keyProvider);
+        Assert.Contains("identity.Groups.Contains(serviceSid)", keyProvider);
+        Assert.Contains("GetAccessRules(", keyProvider);
+        Assert.Contains("ProvisionNewKeyForService", apiProgram);
+        var keyStartupValidator = File.ReadAllText(Path.Combine(root, "src", "Modules", "Persons", "Infrastructure", "TemporaryWorkflowKeyStartupValidator.cs"));
+        Assert.Contains("ValidateKeyStorageForCurrentService", keyStartupValidator);
+        Assert.Contains("[SupportedOSPlatform(\"windows\")]", keyStartupValidator);
+        Assert.Contains("CloseApplications=yes", iss);
+        Assert.Contains("function PrepareToInstall", iss);
+        Assert.Contains("ServiceStatePath := ExpandConstant('{tmp}", iss);
+        Assert.Contains("ServiceSetupScriptPath := ExpandConstant('{tmp}", iss);
+        Assert.Contains("Exec(PowerShellPath, Parameters, ExpandConstant('{tmp}')", iss);
+        Assert.DoesNotContain("Exec(PowerShellPath, Parameters, ExpandConstant('{app}')", iss);
+        Assert.Contains("RunApiServicePhase('Install')", iss);
+        Assert.Contains("Phase \"Restore\"", iss);
+        Assert.Contains("ProgramData", serviceScript);
+        Assert.Contains("UseWindowsService", apiProgram);
+        Assert.Contains("AddEventLog", apiProgram);
+        Assert.Contains("settings.SourceName = \"MDGsm.Api\"", apiProgram);
+        Assert.Contains("[System.Diagnostics.EventLog]::CreateEventSource($eventSource, 'Application')", serviceScript);
+        Assert.Contains("StackTrace={StackTrace}", apiProgram);
+        Assert.Contains("Microsoft.Extensions.Hosting.WindowsServices", apiProject);
+        Assert.DoesNotContain("Preview-only", iss);
         Assert.False(buildScript.Contains("python.exe", StringComparison.OrdinalIgnoreCase));
         Assert.False(buildScript.Contains("python scripts", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Windows_service_installer_repair_and_uninstall_preserve_programdata_key()
+    {
+        var root = FindSolutionRoot();
+        var installScript = File.ReadAllText(Path.Combine(root, "installer", "Install-MDGsmApiService.ps1"));
+        var uninstallScript = File.ReadAllText(Path.Combine(root, "installer", "Uninstall-MDGsmApiService.ps1"));
+        var integrationScript = File.ReadAllText(Path.Combine(root, "scripts", "Test-WindowsServiceInstaller.ps1"));
+        var provider = File.ReadAllText(Path.Combine(root, "src", "Modules", "Persons", "Infrastructure", "WindowsDpapiTemporaryWorkflowEncryptionKeyProvider.cs"));
+
+        Assert.Contains("FileMode.CreateNew", provider);
+        Assert.Contains("--provision-persons-workflow-key", installScript);
+        Assert.Contains("ProvisionNewKeyForService", provider);
+        Assert.Contains("An existing installation did not attest its protected key during Prepare", installScript);
+        Assert.Contains("one-time provisioning skipped", installScript);
+        Assert.DoesNotContain("Test-Path -LiteralPath $keyFile", installScript);
+        Assert.Contains("The DPAPI blob remains under ProgramData and is never read by Setup", installScript);
+        Assert.Contains("WellKnownSidType.LocalSystemSid", provider);
+        Assert.DoesNotContain("Remove-Item -LiteralPath $keyDirectory", uninstallScript);
+        Assert.DoesNotContain("WorkflowEncryption", uninstallScript);
+        Assert.Contains("did not reach Stopped state", uninstallScript);
+        Assert.Contains("workflow-key.dpapi", integrationScript);
+        Assert.Contains("unins000.exe", integrationScript);
+        Assert.Contains("Level = @(1, 2, 3)", integrationScript);
+        Assert.Contains("Event property data:", integrationScript);
+        Assert.Contains("$event.ToXml()", integrationScript);
+        Assert.Contains("/api/v1/system/info", integrationScript);
+        Assert.Contains("ReadAllBytes($keyFile)", integrationScript);
+        Assert.Contains("ReadAllBytes($keyFile)", integrationScript);
+        Assert.Contains("post-uninstall-reinstall", integrationScript);
+        Assert.Contains("Invoke-SystemUninstaller", integrationScript);
+        Assert.DoesNotContain("Get-FileHash -LiteralPath $keyFile", integrationScript);
+        Assert.DoesNotContain("Get-Acl -LiteralPath $keyFile", integrationScript);
+        Assert.DoesNotContain("Test-Path -LiteralPath $keyFile", integrationScript);
+        Assert.DoesNotContain("Test-Path -LiteralPath $keyDirectory", integrationScript);
+        Assert.Contains("rollback-restored-running", integrationScript);
+        Assert.Contains("rollback-restored-stopped", integrationScript);
+        Assert.Contains("one-time provisioning skipped", integrationScript);
+        Assert.Contains("Assert-KeyProvisionedMarker", integrationScript);
+        Assert.Contains("NT SERVICE", integrationScript);
     }
 
     private static string FindSolutionRoot()

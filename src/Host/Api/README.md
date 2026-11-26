@@ -6,10 +6,11 @@ The API host is the server-side boundary for persistence, database connections, 
 
 ## Protected Persons request boundary
 
-- Requests under `/api/v1/persons` require a single opaque Bearer token in the Authorization header.
+- Requests under `/api/v2/persons` require a single opaque Bearer token in the Authorization header.
 - The host hashes the token and resolves its digest against PostgreSQL on every request. Resolution requires a non-revoked, unexpired session, an enabled account, and matching current credential version.
 - A successful request renews the server-side lease and installs the account ID as an authenticated server principal. Client-provided account/actor IDs are never read.
-- The Persons endpoint requires the live `persons.read` permission and obtains its audit actor only from `IAuthenticatedActorContext`; sensitive fields are separately authorized through the live `persons.sensitive.read` permission store.
+- The protected `GET /api/v2/persons/{partyId}` endpoint requires `persons.read`; the audit actor comes only from `IAuthenticatedActorContext`. Sensitive fields are separately authorized through live `persons.sensitive.read` permission checks.
+- PR #96 (Draft, not merged) adds canonical `POST /api/v2/persons` and `POST /api/v2/persons/legal` routes. Both call the transactional duplicate-resolution workflows, require `persons.create` and `persons.read`, require `Idempotency-Key`, and remain disabled unless the server-side `Persons:WriteApiEnabled` setting is explicitly enabled. There is no direct-create HTTP bypass.
 - Invalid/missing sessions return 401; unavailable session infrastructure returns 503; persistence/permission failures do not fall back to allow.
 ## IdentityAccess HTTP login and forced password change
 
@@ -19,3 +20,14 @@ The API host is the server-side boundary for persistence, database connections, 
 - `POST /api/v1/identity/password/change` requires the issued Bearer token. A session marked `MustChangePassword` can call only this endpoint; all Persons routes return 403 until the password is changed. Password change increments credential version and revokes every existing session, so the client must log in again.
 - The HTTP login route is disabled unless `IdentityAccess:HttpLoginEnabled=true` is explicitly set. The default is disabled. This is a feature gate, not production authorization: no production listener, TLS topology, production migration, permission seed, bootstrap credential, or G1 activation is enabled by this change.
 - The disposable PostgreSQL HTTP end-to-end test starts the real API host, obtains a token over HTTP, verifies forced-change restriction, changes the password, proves the old token is revoked, logs in again, and reaches the protected Persons permission boundary.
+
+ 
+## Windows API service installation boundary (PR #96 candidate)
+
+- Desktop files are installed under C:\\Program Files\\MD-Gsm\\ and the API host under C:\\Program Files\\MD-Gsm\\Api\\.
+- The API runs as Windows Service MDGsmApi, logon account NT AUTHORITY\\LocalService, with SCM service SID NT SERVICE\\MDGsmApi enabled.
+- Only that service SID can read the DPAPI-protected Persons workflow key. LocalSystem retains Full Control for OS-level maintenance. Setup's interactive administrator is not granted runtime access.
+- Key material is stored separately under C:\\ProgramData\\MD-Gsm\\Keys\\Persons\\MDGsmApi\\. ProgramData is not an application installation directory.
+- API startup validates that the running service identity can read and unprotect the configured key. Missing, malformed, or inaccessible key material fails closed.
+- Repair never re-provisions an existing key. Uninstall removes the service and Program Files application but intentionally preserves ProgramData key material.
+- This candidate binds only to loopback HTTP on port 5080, has no database configured by the installer, and does not enable Persons promotion, Persons writes, IdentityAccess login, database migrations, or production/G1 behavior.

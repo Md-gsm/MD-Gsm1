@@ -1,49 +1,77 @@
 {
-  "registryVersion": "1.4",
+  "registryVersion": "1.9",
   "module": "Persons",
   "ownerPaths": [
     "src/Modules/Persons",
-    "src/BuildingBlocks/MDGsm.Domain/Persons",
-    "src/BuildingBlocks/MDGsm.Application/Persons",
-    "src/BuildingBlocks/MDGsm.Infrastructure/Persons",
     "database/migrations/persons",
-    "database/migrations/0008_persons_party_merge.sql"
+    "database/migrations/0008_persons_party_merge.sql",
+    "database/migrations/0012_persons_workflow_promotion_results.sql",
+    "database/migrations/0013_persons_outbox.sql",
+    "database/migrations/0015_persons_lifecycle_history.sql"
   ],
   "registeredConsumers": [
-    {
-      "module": "ApiHost",
-      "path": "src/Host/Api/Program.cs",
-      "contractVersion": "Persons.Contracts/2.0",
-      "mergeProtocolVersion": "1.0",
-      "purpose": "Protected GET party-details endpoint; actor identity comes from validated IdentityAccess session context."
-    },
     {
       "module": "Finance",
       "path": "database/migrations/0006_finance_party_accounts.sql",
       "contractVersion": "Finance.Schema/1.0; Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
-      "purpose": "Finance-owned one-to-one Party subledger account identity; no balance or ledger data."
+      "purpose": "Finance-owned one-to-one Party subledger account identity; no balance or ledger data.",
+      "mergeClassification": "PERSISTED_ACTIVE_REFERENCE",
+      "mergeParticipant": false
+    },
+    {
+      "module": "ApiHost",
+      "path": "src/Host/Api/Program.cs",
+      "contractVersion": "Persons.Contracts/2.0",
+      "mergeProtocolVersion": "1.0",
+      "purpose": "Protected GET Party details and canonical feature-gated natural/legal registration routes. All writes perform duplicate resolution, require persons.read and persons.create, and derive actor from a validated IdentityAccess session.",
+      "mergeClassification": "NON_PERSISTENT_TRANSPORT",
+      "mergeParticipant": false
+    },
+    {
+      "module": "HostClient",
+      "path": "src/Host/Client/PersonsApiClient.cs",
+      "contractVersion": "Persons.Contracts/2.0",
+      "mergeProtocolVersion": "1.0",
+      "purpose": "Authenticated HTTP adapter transports opaque PartyId path/query values and versioned masked Party detail/quick-registration contracts; it does not own Party data or authorize sensitive reads.",
+      "mergeClassification": "NON_PERSISTENT_TRANSPORT",
+      "mergeParticipant": false
+    },
+    {
+      "module": "DesktopHost",
+      "path": "src/Host/Desktop/PersonsWorkspace.cs",
+      "contractVersion": "Persons.Contracts/2.0",
+      "mergeProtocolVersion": "1.0",
+      "purpose": "WPF client uses opaque PartyId only to present authenticated quick-registration outcomes and masked duplicate candidates; it does not own Party records or perform persistence.",
+      "mergeClassification": "NON_PERSISTENT_TRANSPORT",
+      "mergeParticipant": false
     },
     {
       "module": "Finance",
       "path": "src/Modules/Finance/Contracts/PartyAccountReference.cs",
       "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
-      "purpose": "Published reference to Finance-owned Party account identity."
+      "purpose": "Published reference to Finance-owned Party account identity.",
+      "mergeClassification": "CONTRACT_ONLY_REFERENCE",
+      "mergeParticipant": false
     },
     {
       "module": "Finance",
       "path": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountMergeParticipant.cs",
       "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
-      "purpose": "Finance participant for controlled Party merge; preserves ledger history and blocks dual-account conflicts."
+      "purpose": "Finance participant for controlled Party merge; preserves ledger history and blocks dual-account conflicts.",
+      "mergeClassification": "PERSISTED_ACTIVE_REFERENCE",
+      "mergeParticipant": true
     },
     {
       "module": "Finance",
       "path": "src/Modules/Finance/Infrastructure/Accounts/PostgresPartyAccountProvisioner.cs",
       "contractVersion": "Finance.Contracts/1.1; Persons.Contracts/2.0",
       "mergeProtocolVersion": "1.0",
-      "purpose": "Transaction-bound idempotent provisioning of Finance-owned Party account identity."
+      "purpose": "Transaction-bound idempotent provisioning of Finance-owned Party account identity.",
+      "mergeClassification": "PERSISTED_ACTIVE_REFERENCE",
+      "mergeParticipant": false
     }
   ],
   "registryPolicy": {
@@ -58,7 +86,18 @@
     "legacyIdentifierForbidden": [
       "PersonId",
       "person_id"
-    ]
+    ],
+    "allowedMergeClassifications": [
+      "PERSISTED_ACTIVE_REFERENCE",
+      "CONTRACT_ONLY_REFERENCE",
+      "NON_PERSISTENT_TRANSPORT"
+    ],
+    "mergeClassificationDefinitions": {
+      "PERSISTED_ACTIVE_REFERENCE": "The source persists an active PartyId reference; its owning module must declare an explicit merge participant or a blocking disposition.",
+      "CONTRACT_ONLY_REFERENCE": "The source publishes a typed PartyId reference but does not persist a runtime row; the contract itself is not rewritten by merge.",
+      "NON_PERSISTENT_TRANSPORT": "The source only transports PartyId in an authenticated request/response or transient UI state; it has no persisted reference to transfer."
+    },
+    "mergeParticipantRegistrationRequired": true
   },
   "plannedNotYetImplemented": [
     {

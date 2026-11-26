@@ -1,5 +1,9 @@
 # Desktop Host
 
-This directory contains the WPF `MDGsm.Desktop` presentation host. It references the HTTP client building block under `src/BuildingBlocks/MDGsm.Client` and communicates with the API through versioned HTTP contracts.
+The WPF Desktop host communicates with the API through the MDGsm.Client HTTP boundary and versioned IdentityAccess and Persons contracts. It must never reference module Infrastructure, Npgsql, EF Core, or a PostgreSQL connection directly.
 
-Desktop must never reference module Infrastructure, Npgsql, EF Core, or a PostgreSQL connection directly. Its Persons interface is a synthetic preview only; it does not create Persons records, call a Persons API, or persist business data.
+The Persons workspace uses the authenticated IdentityAccess session and the canonical natural/legal registration API. Each create path performs transactional duplicate resolution; the user can select an existing masked candidate or explicitly choose ForceNew. A successful result exposes a masked/non-sensitive details action through the versioned Party detail API. The bearer token and pending operation key are held in memory only; credentials and tokens are never written to disk or logs. The first-login password-change response is honored before showing the registration workspace.
+
+The client uses Api:BaseUrl and Api:TimeoutSeconds from appsettings.json. HTTP is accepted only for loopback development; a remote API endpoint must use HTTPS. Persons:WriteApiEnabled is a server-side feature gate and is never enabled or overridden by the Desktop client. When disabled, the server returns 503 and the UI does not fabricate success or create local substitute records.
+
+Search/list HTTP exposure remains withheld pending persistent per-actor/purpose quotas, abuse-lock and audited admin-unlock controls. The Desktop workspace therefore does not display synthetic DEMO persons or pretend that an in-memory list is the real database.

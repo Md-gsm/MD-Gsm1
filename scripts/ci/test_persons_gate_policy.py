@@ -29,9 +29,12 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest["temporaryDataRuntimeImplemented"] = False
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             for relative in (
-                "src/BuildingBlocks/MDGsm.Infrastructure/Persons/PostgresTemporaryWorkflowStore.cs",
-                "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorkflowRetentionWorker.cs",
+                "src/Modules/Persons/Infrastructure/PostgresTemporaryWorkflowStore.cs",
+                "src/Modules/Persons/Infrastructure/TemporaryWorkflowRetentionWorker.cs",
                 "database/migrations/0007_persons_temporary_workflows.sql",
+                "database/migrations/0012_persons_workflow_promotion_results.sql",
+                "src/Modules/Persons/Infrastructure/PostgresTemporaryWorkflowPromotionService.cs",
+                "src/Modules/Persons/Infrastructure/PersonsInfrastructureRegistration.cs",
             ):
                 target = dst / relative
                 if target.exists():
@@ -42,6 +45,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
                 "\\n".join(
                     line for line in registration_text.splitlines()
                     if "PostgresTemporaryWorkflowStore" not in line
+                    and "PostgresTemporaryWorkflowPromotionService" not in line
                     and "TemporaryWorkflowRetentionWorker" not in line
                 ) + "\\n",
                 encoding="utf-8",
@@ -60,7 +64,7 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             manifest["temporaryDataRuntimeImplemented"] = True
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            marker = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
+            marker = dst / "src/Modules/Persons/Infrastructure/TemporaryWorker.cs"
             marker.write_text("public sealed class TemporaryDataRetentionWorker {}", encoding="utf-8")
             retention_test = dst / "tests/MDGsm.Domain.Tests/Persons/PersonsTemporaryDataRetentionTests.cs"
             if retention_test.exists():
@@ -76,10 +80,32 @@ class PersonsGatePolicyTests(unittest.TestCase):
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             manifest["temporaryDataRuntimeImplemented"] = False
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            marker = dst / "src/BuildingBlocks/MDGsm.Infrastructure/Persons/TemporaryWorker.cs"
+            marker = dst / "src/Modules/Persons/Infrastructure/TemporaryWorker.cs"
             marker.write_text("public sealed class TemporaryDataRetentionWorker {}", encoding="utf-8")
             with self.assertRaises(gates.GateFailure):
                 gates.run_retention(dst)
+
+    def test_missing_merge_classification_fails_registry_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            registry_path = dst / "docs/persons/consumer-registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["registeredConsumers"][0].pop("mergeClassification", None)
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "mergeClassification"):
+                gates.run_registry(dst)
+
+    def test_duplicate_merge_consumer_registration_fails_registry_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "repo"
+            shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns(".git", "bin", "obj", "TestResults", "__pycache__"))
+            registry_path = dst / "docs/persons/consumer-registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["registeredConsumers"].append(dict(registry["registeredConsumers"][0]))
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            with self.assertRaisesRegex(gates.GateFailure, "Duplicate PartyId consumer registrations"):
+                gates.run_registry(dst)
 
     def test_unknown_partyid_consumer_fails_registry_gate(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -151,7 +177,10 @@ class PersonsGatePolicyTests(unittest.TestCase):
             trx_dir = Path(tmp)
             (trx_dir / "sample.trx").write_text(
                 '<TestRun><Results><UnitTestResult outcome="Passed" testName="synthetic_test" />'
-                '<UnitTestResult outcome="Passed" testName="another_synthetic_test" /></Results></TestRun>',
+                '<UnitTestResult outcome="Passed" testName="another_synthetic_test" />'
+                '<UnitTestResult outcome="Passed" testName="RAW-TEMPORARY-PII-CI-ARTIFACT-SENTINEL">'
+                '<Output><StdOut>RAW-TEMPORARY-PII-CI-ARTIFACT-SENTINEL</StdOut></Output>'
+                '</UnitTestResult></Results></TestRun>',
                 encoding="utf-8",
             )
             env = {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "123", "GITHUB_RUN_ATTEMPT": "1"}
@@ -159,12 +188,13 @@ class PersonsGatePolicyTests(unittest.TestCase):
         self.assertEqual("a" * 40, report["commitSha"])
         self.assertRegex(report["schemaFingerprintSha256"], r"^[0-9a-f]{64}$")
         self.assertEqual(len(evidence_writer.UPSTREAM_JOBS), report["gateOutcomeCounts"]["PASS"])
-        self.assertEqual(2, report["testCounts"]["total"])
-        self.assertEqual(2, report["testCounts"]["passed"])
+        self.assertEqual(3, report["testCounts"]["total"])
+        self.assertEqual(3, report["testCounts"]["passed"])
         self.assertFalse(report["redaction"]["containsRawPersonalData"])
         self.assertFalse(report["redaction"]["containsRequestPayloads"])
         self.assertFalse(report["redaction"]["containsCredentials"])
         self.assertNotIn("private-person-name", json.dumps(report))
+        self.assertNotIn("RAW-TEMPORARY-PII-CI-ARTIFACT-SENTINEL", json.dumps(report))
 
     def test_persons_api_route_without_contract_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -181,14 +211,25 @@ class PersonsGatePolicyTests(unittest.TestCase):
             with self.assertRaises(gates.GateFailure):
                 gates.run_api(dst)
 
-    def test_unimplemented_acceptance_criteria_remain_unmapped(self):
+    def test_acceptance_criteria_map_matches_manifest_without_authorizing_g1(self):
         mapping = gates.load_json(ROOT / "docs/persons/acceptance-gate-map.json")
-        for item in mapping["criteria"]:
-            if item["status"] == "UNMAPPED":
-                self.assertIsNone(item.get("testFile"))
-                self.assertIsNone(item.get("automatedTest"))
+        self.assertEqual(["AC-%02d" % number for number in range(31, 50)],
+                         [item["id"] for item in mapping["criteria"]])
+        self.assertEqual({"IMPLEMENTED"}, {item["status"] for item in mapping["criteria"]})
         manifest = gates.load_json(ROOT / "docs/persons/persons-module-manifest.json")
-        self.assertFalse(manifest["g1Prerequisites"]["acceptanceCriteriaAc31ToAc49Mapped"])
+        self.assertTrue(manifest["g1Prerequisites"]["acceptanceCriteriaAc31ToAc49Mapped"])
+        self.assertFalse(manifest["g1Authorized"])
+        for item in mapping["criteria"]:
+            primary = list(ROOT.rglob(item["testFile"]))
+            self.assertTrue(primary, item["id"])
+            self.assertTrue(any(item["automatedTest"] in path.read_text(encoding="utf-8")
+                                for path in primary), item["id"])
+            for supporting in item.get("supportingTests", []):
+                candidates = list(ROOT.rglob(supporting["testFile"]))
+                self.assertTrue(candidates, (item["id"], supporting["testFile"]))
+                self.assertTrue(any(supporting["automatedTest"] in path.read_text(encoding="utf-8")
+                                    for path in candidates),
+                                (item["id"], supporting["automatedTest"]))
 
     def test_g1_cannot_be_authorized_with_unmapped_acceptance_criteria(self):
         with tempfile.TemporaryDirectory() as tmp:

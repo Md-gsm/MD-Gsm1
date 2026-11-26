@@ -1,4 +1,5 @@
 using MDGsm.Infrastructure.Persistence;
+using Npgsql;
 
 if (args.Any(argument => argument is "--help" or "-h"))
 {
@@ -54,6 +55,7 @@ try
 }
 catch (Exception exception) when (exception is not OperationCanceledException)
 {
-    Console.Error.WriteLine($"FAIL: database migration runner stopped ({exception.GetType().Name}). No credentials were logged.");
+    var safeMessage = exception is InvalidOperationException ? exception.Message : exception.GetType().Name;
+    Console.Error.WriteLine($"FAIL: database migration runner stopped ({exception.GetType().Name}): {safeMessage}. No credentials were logged.");
     return 1;
 }

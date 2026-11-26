@@ -3,7 +3,7 @@ info:
   title: MD-Gsm Persons API
   version: 2.0.0
   description: >
-    Versioned contract. The protected party-details GET endpoint is implemented and requires a validated IdentityAccess session and server-side permission checks. Search and create routes remain contract-only; G1 is not authorized.
+    Versioned contract. The protected party-details GET endpoint is implemented and requires a validated IdentityAccess session and server-side permission checks. Search HTTP is implemented behind Persons:SearchApiEnabled (default false), persistent quota/abuse controls and fail-closed global-read authorization. Natural/legal registration POST routes always use duplicate resolution and are implemented behind Persons:WriteApiEnabled (default false); no lower-level HTTP route bypasses the quick-registration decision. Enabling writes is not authorized until the independent Persons G1/release gates pass.
 servers:
   - url: https://{host}
     variables:
@@ -12,34 +12,60 @@ servers:
 security:
   - opaqueBearer: []
 paths:
-  /api/v2/persons:
+  /api/v2/persons/search:
     get:
-      operationId: searchParties
-      summary: Search active parties by name or last four mobile digits
+      operationId: searchPersons
+      summary: Search the Party directory
       description: >-
-        A term is required: either a name of at least two characters or exactly four digits matching the end of a mobile number.
-        At most 10 results are returned and mobile numbers are masked (only the last two digits are visible).
-        Per-actor rate limits are enforced by the API (owner-approved policy on PR #11).
+        Requires a validated session and persons.read. This is a global, rowless search using
+        the same fail-closed global-read policy as Party details; Technician is denied until
+        authoritative assignment-based row scope exists.
+        Responses contain only PartyId, type, display name and masked mobile; internal roles,
+        city and creation timestamp are not returned. Search HTTP is absent unless
+        Persons:SearchApiEnabled is explicitly enabled (default false).
       parameters:
         - in: query
-          name: q
+          name: term
           required: true
           schema: { type: string, minLength: 2, maxLength: 160 }
+          description: Name search (2-160 normalized characters) or exactly four mobile suffix digits.
         - in: query
           name: limit
+          required: false
           schema: { type: integer, minimum: 1, maximum: 10, default: 10 }
+      x-feature-flag: Persons:SearchApiEnabled
       responses:
         '200':
-          description: Party list
+          description: Minimal search result list
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PartyListResponse' }
-        '401': { description: Missing, invalid, expired, or revoked opaque session token }
-        '403': { description: Authenticated user lacks Persons read permission }
+              schema:
+                type: object
+                required: [items, requestId]
+                properties:
+                  requestId: { type: string }
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [partyId, partyType, displayName, maskedMobile]
+                      properties:
+                        partyId: { type: string, format: uuid }
+                        partyType: { type: string, enum: [NaturalPerson, LegalEntity] }
+                        displayName: { type: string }
+                        maskedMobile: { type: [string, 'null'] }
+        '401': { description: Missing or invalid session }
+        '403': { description: Missing persons.read or global-read scope authorization }
+        '422': { description: Search term validation failed }
+        '429': { description: Actor rate-limited or Abuse Locked; Retry-After is returned }
+  /api/v2/persons:
     post:
-      operationId: createNaturalParty
-      summary: Register a natural person
-      description: The actor identity is derived from the validated server session, never from the request body. Registration is idempotent by the Idempotency-Key header (V1: key only, no payload comparison).
+      operationId: quickRegisterNaturalParty
+      summary: Resolve or register a natural person
+      description: >-
+        Every natural-person creation path performs duplicate resolution. Requires persons.create and persons.read.
+        ForceNew never bypasses duplicate checks. If candidates exist, the server returns them first; creating a distinct Party then requires ConfirmDistinctParty=true after review. Actor is derived from the validated server session.
+        Search/list HTTP is intentionally not exposed until persistent quotas and abuse-lock controls are approved and implemented.
       parameters:
         - in: header
           name: Idempotency-Key
@@ -49,18 +75,23 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateNaturalPartyRequest' }
+            schema: { $ref: '#/components/schemas/QuickRegisterNaturalPartyRequest' }
+      x-feature-flag: Persons:WriteApiEnabled
       responses:
-        '201': { description: Party created }
+        '201': { description: A new Party was created }
+        '200': { description: An existing Party was reused, the operation was replayed, or candidate selection is required }
         '401': { description: Missing or invalid session }
-        '403': { description: Missing write permission }
-        '409': { description: Duplicate national identifier or contact conflict }
+        '403': { description: Missing read or create permission }
+        '409': { description: Cross-actor idempotency replay or invalid selected candidate }
         '422': { description: Validation failure }
+        '503': { description: Persons write API is disabled }
   /api/v2/persons/legal:
     post:
-      operationId: createLegalParty
-      summary: Register a legal entity
-      description: Idempotent by the Idempotency-Key header (V1: key only, no payload comparison).
+      operationId: quickRegisterLegalParty
+      summary: Resolve or register a legal entity
+      description: >-
+        Every legal-entity creation path performs duplicate resolution. Requires persons.create and persons.read.
+        ForceNew never bypasses duplicate checks. If candidates exist, the server returns them first; creating a distinct Party then requires ConfirmDistinctParty=true after review. Actor is derived from the validated server session.
       parameters:
         - in: header
           name: Idempotency-Key
@@ -70,29 +101,93 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateLegalPartyRequest' }
+            schema: { $ref: '#/components/schemas/QuickRegisterLegalPartyRequest' }
+      x-feature-flag: Persons:WriteApiEnabled
       responses:
-        '201': { description: Legal party created }
+        '201': { description: A new legal Party was created }
+        '200': { description: An existing legal Party was reused, the operation was replayed, or candidate selection is required }
         '401': { description: Missing or invalid session }
-        '403': { description: Missing write permission }
-        '409': { description: Duplicate legal identifier }
+        '403': { description: Missing read or create permission }
+        '409': { description: Cross-actor idempotency replay or invalid selected candidate }
         '422': { description: Validation failure }
+        '503': { description: Persons write API is disabled }
+  /api/v2/persons/workflows/{workflowRecordId}/promotion-preview:
+    get:
+      operationId: previewTemporaryWorkflowPromotion
+      summary: Preview an owned temporary workflow before promotion
+      description: >-
+        Requires a validated session, persons.workflow.promote and persons.read. Returns a minimal preview;
+        it does not promote or expose ciphertext. The route is mapped only when Persons:WorkflowPromotionApiEnabled
+        is explicitly true and an approved ITemporaryWorkflowEncryptionKeyProvider is registered. Default false.
+      parameters:
+        - in: path
+          name: workflowRecordId
+          required: true
+          schema: { type: string, format: uuid }
+      x-feature-flag: Persons:WorkflowPromotionApiEnabled
+      responses:
+        '200': { description: Safe preview of the authenticated workflow payload }
+        '403': { description: Missing promotion or read permission }
+        '404': { description: Workflow unavailable or not owned by the actor }
+        '422': { description: Payload authentication or validation failed }
+  /api/v2/persons/workflows/{workflowRecordId}/promote:
+    post:
+      operationId: promoteTemporaryWorkflow
+      summary: Atomically promote a temporary workflow into a Party
+      description: >-
+        Requires persons.workflow.promote plus persons.create for a new Party or persons.update for an existing Party,
+        and persons.read for duplicate review. Exactly one of CreateNewParty or SelectedPartyId must be supplied.
+        ForceNew does not bypass duplicate checks; ConfirmDistinctParty is required after candidate review.
+        Party creation/selection, workflow closure, payload deletion, PII-free tombstone, and PartyRegistered Outbox
+        (new Party only) commit atomically. Same ActorId and OperationId replays the stored result; another OperationId
+        after success is rejected. Route is disabled by default pending key custody and explicit host activation.
+      parameters:
+        - in: path
+          name: workflowRecordId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TemporaryWorkflowPromotionRequest' }
+      x-feature-flag: Persons:WorkflowPromotionApiEnabled
+      responses:
+        '200': { description: Created, existing Party selected, duplicate review required, or replay result }
+        '403': { description: Missing permission }
+        '404': { description: Workflow not found or not owned by actor }
+        '409': { description: Already promoted, idempotency conflict, or unavailable workflow }
+        '422': { description: Invalid request or encrypted payload }
   /api/v2/persons/{partyId}:
     get:
       operationId: getParty
       summary: Read one party
       description: >-
-        Every read is audited with the server-derived actor. Sensitive fields (national identifier, economic code, internal note, full contact values and address) are returned only to callers holding the sensitive-read permission;
-        otherwise they are masked or omitted and sensitiveFieldsIncluded is false. Finance-owned credit limits, pricing discounts and payment-instrument metadata are not part of the Persons contract.
+        Every read is audited with the server-derived actor. Sensitive fields are masked or omitted unless
+        includeSensitive is true and the server authorizes the caller. The response is mapped to the
+        versioned PartyResponse contract. Finance-owned credit limits, pricing discounts and payment-instrument
+        metadata are not part of the Persons contract.
       parameters:
         - in: path
           name: partyId
           required: true
           schema: { type: string, format: uuid }
+        - in: query
+          name: includeSensitive
+          required: false
+          schema: { type: boolean, default: false }
       responses:
-        '200': { description: Party details }
+        '200':
+          description: Party details mapped to the published Persons response contract
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PartyResponse' }
         '401': { description: Missing or invalid session }
-        '403': { description: Missing read permission }
+        '403': { description: Missing read permission or sensitive-read authorization }
         '404': { description: Party not found }
 components:
   securitySchemes:
@@ -104,6 +199,74 @@ components:
         Random opaque token. The server stores only its cryptographic hash and
         checks session/account/revocation state against PostgreSQL on every request.
   schemas:
+    QuickRegisterNaturalPartyRequest:
+      type: object
+      required: [party]
+      properties:
+        party: { $ref: '#/components/schemas/CreateNaturalPartyRequest' }
+        forceNew: { type: boolean, default: false }
+        selectedPartyId: { type: string, format: uuid, nullable: true }
+        confirmDistinctParty: { type: boolean, default: false, description: Requires an explicit reviewed ForceNew decision when duplicate candidates exist. }
+    QuickRegisterLegalPartyRequest:
+      type: object
+      required: [party]
+      properties:
+        party: { $ref: '#/components/schemas/CreateLegalPartyRequest' }
+        forceNew: { type: boolean, default: false }
+        selectedPartyId: { type: string, format: uuid, nullable: true }
+        confirmDistinctParty: { type: boolean, default: false, description: Requires an explicit reviewed ForceNew decision when duplicate candidates exist. }
+    TemporaryWorkflowPromotionRequest:
+      type: object
+      required: [createNewParty]
+      properties:
+        createNewParty: { type: boolean, description: Explicit choice to create a new Party; mutually exclusive with selectedPartyId. }
+        selectedPartyId: { type: [string, 'null'], format: uuid, description: Explicitly selected existing PartyId. }
+        confirmDistinctParty: { type: boolean, default: false, description: Required only after duplicate candidates are displayed and the user confirms a distinct new Party. }
+    TemporaryWorkflowPromotionPreview:
+      type: object
+      required: [workflowRecordId, payloadSchemaVersion, partyType, displayName, hasNationalIdentifier, hasAddress, expiresAtUtc]
+      properties:
+        workflowRecordId: { type: string, format: uuid }
+        payloadSchemaVersion: { type: integer }
+        partyType: { type: string, enum: [NaturalPerson, LegalEntity] }
+        displayName: { type: string }
+        maskedPrimaryMobile: { type: [string, 'null'] }
+        hasNationalIdentifier: { type: boolean }
+        hasAddress: { type: boolean }
+        expiresAtUtc: { type: string, format: date-time }
+    TemporaryWorkflowPromotionResponse:
+      type: object
+      required: [outcome, created, replayed, candidates]
+      properties:
+        outcome: { type: string, enum: [Created, Existing, DuplicateReviewRequired, Replayed] }
+        partyId: { type: [string, 'null'], format: uuid }
+        created: { type: boolean }
+        replayed: { type: boolean }
+        candidates:
+          type: array
+          items: { $ref: '#/components/schemas/PartyQuickRegistrationCandidate' }
+    PartyQuickRegistrationCandidate:
+      type: object
+      required: [partyId, partyType, displayName, roles, partyIsActive, isMerged, hasActiveMobile, maskedMobile]
+      properties:
+        partyId: { type: string, format: uuid }
+        partyType: { type: string, enum: [NaturalPerson, LegalEntity] }
+        displayName: { type: string }
+        roles: { type: array, items: { type: string, enum: [Customer, Colleague] } }
+        partyIsActive: { type: boolean }
+        isMerged: { type: boolean }
+        hasActiveMobile: { type: boolean }
+        maskedMobile: { type: string }
+    PartyQuickRegistrationResponse:
+      type: object
+      required: [outcome, created, candidates]
+      properties:
+        outcome: { type: string, enum: [Created, ExistingPartyMatched, SelectionRequired, Replayed] }
+        partyId: { type: string, format: uuid, nullable: true }
+        created: { type: boolean }
+        candidates:
+          type: array
+          items: { $ref: '#/components/schemas/PartyQuickRegistrationCandidate' }
     PartyAddress:
       type: object
       required: [countryCode, province, city, postalCode, addressLine]
@@ -136,8 +299,14 @@ components:
         email: { type: [string, 'null'], format: email }
         address: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
         communication: { $ref: '#/components/schemas/CommunicationPreferences' }
-        acquaintanceSource: { type: [string, 'null'] }
+        acquaintanceSource:
+          type: [string, 'null']
+          enum: [Unknown, PersonalReferral, ExistingCustomer, Online, Advertisement, WalkIn, Other, null]
         internalNote: { type: [string, 'null'], maxLength: 2000 }
+        workClassification:
+          type: [string, 'null']
+          enum: [Staff, Employee, Technician, null]
+          description: Applies only to a natural person with the Colleague role.
     CreateLegalPartyRequest:
       type: object
       required: [legalName, roles]
@@ -156,8 +325,40 @@ components:
         email: { type: [string, 'null'], format: email }
         address: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
         communication: { $ref: '#/components/schemas/CommunicationPreferences' }
-        acquaintanceSource: { type: [string, 'null'] }
+        acquaintanceSource:
+          type: [string, 'null']
+          enum: [Unknown, PersonalReferral, ExistingCustomer, Online, Advertisement, WalkIn, Other, null]
         internalNote: { type: [string, 'null'], maxLength: 2000 }
+        workClassification:
+          type: [string, 'null']
+          description: Must be null for a legal entity; the server rejects any non-empty value.
+    PartyResponse:
+      type: object
+      required: [partyId, partyType, displayName, roles, contacts, createdAtUtc, sensitiveFieldsIncluded]
+      properties:
+        partyId: { type: string, format: uuid }
+        partyType: { type: string, enum: [NaturalPerson, LegalEntity] }
+        displayName: { type: string }
+        roles: { type: array, items: { type: string, enum: [Customer, Colleague] } }
+        nationalIdentifier: { type: [string, 'null'] }
+        economicCode: { type: [string, 'null'] }
+        responsiblePersonName: { type: [string, 'null'] }
+        contacts:
+          type: array
+          items:
+            type: object
+            required: [kind, value, isPrimary, isMessagingAllowed]
+            properties:
+              kind: { type: string, enum: [Mobile, Landline, Email] }
+              value: { type: string, description: Masked unless sensitive-read permission is granted. }
+              isPrimary: { type: boolean }
+              isMessagingAllowed: { type: boolean }
+        primaryAddress: { anyOf: [{ $ref: '#/components/schemas/PartyAddress' }, { type: 'null' }] }
+        communication: { anyOf: [{ $ref: '#/components/schemas/CommunicationPreferences' }, { type: 'null' }] }
+        acquaintanceSource: { type: [string, 'null'] }
+        createdAtUtc: { type: string, format: date-time }
+        sensitiveFieldsIncluded: { type: boolean }
+        workClassification: { type: [string, 'null'] }
     PartyListResponse:
       type: object
       required: [items, limit, hasMore]

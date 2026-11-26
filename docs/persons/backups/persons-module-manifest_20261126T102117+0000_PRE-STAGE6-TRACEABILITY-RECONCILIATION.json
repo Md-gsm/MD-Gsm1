@@ -1,0 +1,96 @@
+{
+  "manifestVersion": "1.4",
+  "module": "Persons",
+  "repositoryStage": "G1_CONTRACTS",
+  "implementationState": "PARTIAL",
+  "g1Authorized": false,
+  "personsApiImplemented": true,
+  "temporaryDataRuntimeImplemented": true,
+  "mergeExecutionImplemented": true,
+  "securityRuntimeImplemented": true,
+  "personsBusinessMigrationsPresent": true,
+  "applicationMigrationRunnerImplemented": true,
+  "windowsPostgres18CiIntegrationConfigured": true,
+  "moduleContractsProjectsPresent": true,
+  "moduleContractsProjectsIncludedInSolution": true,
+  "apiReferencesModuleContracts": true,
+  "acceptanceCriteriaVerificationPlanPresent": true,
+  "currentPolicy": {
+    "temporaryDataTtlDefaultDays": 7,
+    "temporaryDataMaxAgeDays": 30,
+    "temporaryDataWorkerIntervalMinutes": 15,
+    "temporaryDataPurgeDeadlineMinutes": 30,
+    "temporaryDataFailureAlertDeadlineMinutes": 5,
+    "temporaryDataMaxRenewals": 1,
+    "autoMergeAllowed": false
+  },
+  "g1Prerequisites": {
+    "temporaryDataPolicyApproved": true,
+    "mergeChecklistApproved": true,
+    "requiredStatusChecksConfiguredInScm": true,
+    "negativeCiEnforcementTestPassed": true,
+    "jobOwnersAssigned": true,
+    "acceptanceCriteriaAc31ToAc49Mapped": true,
+    "architectureAligned": false,
+    "windowsPostgres18Validated": true,
+    "applicationMigrationRunnerValidated": true
+  },
+  "note": "On PR #96's feature work branch, Persons owns Party/ContactPoint/Address registration and lifecycle, encrypted temporary workflow staging and retention, bounded renewal, explicit promotion, Search control plane, append-only lifecycle history, Party merge participation and the PII-free PartyRegistered source Outbox. Both Finance and Persons implement the current versioned merge participant protocol; Finance-owned financial accounts remain owned by Finance. Stage 6 acceptance map v1.4 maps AC-31..AC-49 to named primary tests and supporting tests, with CI enforcing those references. This branch is not G1-authorized: exact-head CI, independent review, architecture alignment and remaining external evidence are separate requirements. No production database migration, customer key provisioning, feature-flag activation, automatic Outbox delivery or deployment is authorized. Legacy Finance-owned columns in historical migration 0002 remain unchanged pending the separately approved forward-only work in Issue #98.",
+  "validationEvidenceReference": "docs/operations/evidence/g0-ci-validation-2026-10-31.json",
+  "runtimeHostBuildingBlocksRelocated": true,
+  "personsInternalCodePlacement": "MODULE_OWNED_PROJECTS_PER_ADR_0016",
+  "evidenceNote": "Stage 6 tests and AC-31..AC-49 map v1.4 are committed on PR #96's work branch after immutable pre-change backups. Exact-head CI is required for this Stage 6 head; previous green Stage 5 runs do not prove these changes. Re-run Persons Linux/Windows PostgreSQL, foundation, security, API, architecture, registry, E2E, CI policy/enforcement, checksum/evidence, CodeQL and Windows installer gates on the final exact PR #96 head. Existing PR #96 reviews are dismissed older-head reviews; approval on the current final head is still required. PostgreSQL evidence is disposable-only. Keep g1Authorized=false; main is unchanged.",
+  "historicalValidationBeforePr40": {
+    "commit": "194720455d01a5f88b1996ed9b100b7bc7ec363b",
+    "validatedAtUtc": "2026-11-07",
+    "personsModuleGates": {
+      "runId": 42381030785,
+      "result": "SUCCESS",
+      "jobs": "13/13"
+    },
+    "codeql": {
+      "runId": 42381030784,
+      "result": "SUCCESS"
+    },
+    "windowsPreviewInstaller": {
+      "runId": 42381030763,
+      "result": "SUCCESS"
+    },
+    "projectCharterOwnerGate": {
+      "runId": 42381030735,
+      "result": "SUCCESS"
+    },
+    "databaseScope": "Disposable PostgreSQL 18 Linux/Windows CI only; no production or real-data database migration."
+  },
+  "currentMainCommit": "4933cc9abda03568a23979e3ac25a085981ff84e",
+  "currentMainCiStatus": "IN_PROGRESS_ON_EXACT_MAIN_SHA_13_OF_15_CHECK_RUNS",
+  "lastIntegratedValidation": {
+    "pullRequest": 50,
+    "reviewedBy": "mrdeljoe4",
+    "reviewState": "APPROVED",
+    "prHeadCommit": "3c113e77169c8b6e1ab882df2ef49d2c39f0222c",
+    "personsModuleGatesRunId": 42411846550,
+    "personsModuleGatesResult": "SUCCESS",
+    "windowsPostgres18": "SUCCESS",
+    "linuxPostgres18": "SUCCESS",
+    "codeqlRunId": 42411846619,
+    "codeqlResult": "SUCCESS",
+    "windowsPreviewInstallerRunId": 42408907249,
+    "windowsPreviewInstallerResult": "SUCCESS",
+    "projectCharterOwnerGateRunId": 42411846673,
+    "projectCharterOwnerGateResult": "SUCCESS",
+    "mergeCommit": "2754e261d05f1e0410de51dbfbd5909ad638eb33",
+    "mergeCommitCi": "NOT_INDEPENDENTLY_RUN",
+    "databaseScope": "Disposable PostgreSQL 18 Linux/Windows CI only; no production migration.",
+    "currentMainCommit": "f011c94d52bc06c7e213abb6e480180e9ea73f40",
+    "currentMainCiStatus": "SUCCESS",
+    "personsModuleGateJobs": "13/13",
+    "totalCheckRuns": 15,
+    "successfulCheckRuns": 15,
+    "requiredStatusCheckContexts": 14,
+    "codeqlRequired": false,
+    "windowsPreviewInstaller": "NOT_RUN_ON_THIS_MAIN_SHA"
+  },
+  "personsIndependentProjectsPresent": true,
+  "personsIndependentProjectsIncludedInSolution": true
+}

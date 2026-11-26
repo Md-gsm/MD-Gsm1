@@ -8,33 +8,35 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $solution = Join-Path $repoRoot 'MDGsm.sln'
 $desktopProject = Join-Path $repoRoot 'src\Host\Desktop\MDGsm.Desktop.csproj'
-$publishDir = Join-Path $repoRoot 'artifacts\windows-publish'
+$apiProject = Join-Path $repoRoot 'src\Host\Api\MDGsm.Api.csproj'
+$publishRoot = Join-Path $repoRoot 'artifacts\windows-publish'
+$desktopPublishDir = Join-Path $publishRoot 'desktop'
+$apiPublishDir = Join-Path $publishRoot 'api'
 $outputDir = Join-Path $repoRoot 'artifacts\installer'
-$issFile = Join-Path $repoRoot 'installer\MDGsm-Persons-Preview.iss'
+$issFile = Join-Path $repoRoot 'installer\MDGsm-Setup.iss'
 
 if (-not $IsWindows -and $env:OS -ne 'Windows_NT') {
     throw 'The Windows installer must be built on Windows. No application or database was changed.'
 }
-if (-not (Test-Path -LiteralPath $solution)) { throw 'MDGsm.sln was not found.' }
-if (-not (Test-Path -LiteralPath $desktopProject)) { throw 'Desktop project was not found.' }
-if (-not (Test-Path -LiteralPath $issFile)) { throw 'Inno Setup definition was not found.' }
+foreach ($requiredPath in @($solution, $desktopProject, $apiProject, $issFile)) {
+    if (-not (Test-Path -LiteralPath $requiredPath)) { throw "Required build input was not found: $requiredPath" }
+}
 
 $sdks = & dotnet --list-sdks 2>&1
 if ($LASTEXITCODE -ne 0 -or -not ($sdks | Where-Object { $_ -match '^10\.' })) {
-    throw '.NET 10 SDK is required to build the Windows preview installer.'
+    throw '.NET 10 SDK is required to build the Windows installer.'
 }
 
 if ([string]::IsNullOrWhiteSpace($InnoSetupPath)) {
     $candidates = @(
         (Get-Command ISCC.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source),
-        (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
         (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe'),
         (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe')
     ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
     $InnoSetupPath = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 }
 if ([string]::IsNullOrWhiteSpace($InnoSetupPath) -or -not (Test-Path -LiteralPath $InnoSetupPath)) {
-    throw 'Inno Setup 6 (ISCC.exe) is required. Install it once or pass -InnoSetupPath. Python is not required for this installer build.'
+    throw 'Inno Setup 6 (ISCC.exe) is required. Install it once or pass -InnoSetupPath. Python is not required.'
 }
 
 Write-Host '== Restore ==' -ForegroundColor Cyan
@@ -51,34 +53,41 @@ if (-not $SkipTests) {
     if ($LASTEXITCODE -ne 0) { throw 'The .NET test suite failed; installer packaging is blocked.' }
 }
 
-if (Test-Path -LiteralPath $publishDir) { Remove-Item -LiteralPath $publishDir -Recurse -Force }
-New-Item -ItemType Directory -Path $publishDir -Force | Out-Null
+if (Test-Path -LiteralPath $publishRoot) { Remove-Item -LiteralPath $publishRoot -Recurse -Force }
+New-Item -ItemType Directory -Path $desktopPublishDir -Force | Out-Null
+New-Item -ItemType Directory -Path $apiPublishDir -Force | Out-Null
 New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
 
-Write-Host '== Publish self-contained Windows x64 Desktop preview ==' -ForegroundColor Cyan
-& dotnet publish $desktopProject --configuration Release --runtime win-x64 --self-contained true `
-    -p:PublishSingleFile=false -p:PublishReadyToRun=false -p:IncludeNativeLibrariesForSelfExtract=true `
-    -o $publishDir
+Write-Host '== Publish self-contained Windows x64 Desktop ==' -ForegroundColor Cyan
+& dotnet publish $desktopProject --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=false -p:PublishReadyToRun=false -p:IncludeNativeLibrariesForSelfExtract=true -o $desktopPublishDir
 if ($LASTEXITCODE -ne 0) { throw 'Self-contained Desktop publish failed.' }
 
-$exePath = Join-Path $publishDir 'MDGsm.Desktop.exe'
-if (-not (Test-Path -LiteralPath $exePath)) { throw 'Published Desktop executable is missing.' }
-if (-not (Test-Path -LiteralPath (Join-Path $publishDir 'Assets\menu-catalog-fa.json'))) {
-    throw 'Published menu catalog is missing.'
-}
-if (-not (Test-Path -LiteralPath (Join-Path $publishDir 'appsettings.json'))) {
-    throw 'Published appsettings.json is missing.'
+Write-Host '== Publish self-contained Windows x64 API service ==' -ForegroundColor Cyan
+& dotnet publish $apiProject --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=false -p:PublishReadyToRun=false -p:IncludeNativeLibrariesForSelfExtract=true -o $apiPublishDir
+if ($LASTEXITCODE -ne 0) { throw 'Self-contained API publish failed.' }
+
+$desktopExe = Join-Path $desktopPublishDir 'MDGsm.Desktop.exe'
+$apiExe = Join-Path $apiPublishDir 'MDGsm.Api.exe'
+if (-not (Test-Path -LiteralPath $desktopExe)) { throw 'Published Desktop executable is missing.' }
+if (-not (Test-Path -LiteralPath $apiExe)) { throw 'Published API executable is missing.' }
+foreach ($requiredFile in @(
+    (Join-Path $desktopPublishDir 'Assets\menu-catalog-fa.json'),
+    (Join-Path $desktopPublishDir 'appsettings.json'),
+    (Join-Path $apiPublishDir 'appsettings.json'),
+    (Join-Path $apiPublishDir 'appsettings.Production.json')
+)) {
+    if (-not (Test-Path -LiteralPath $requiredFile)) { throw "Published file is missing: $requiredFile" }
 }
 
-Write-Host '== Compile Windows installer ==' -ForegroundColor Cyan
-& $InnoSetupPath "/DPublishDir=$publishDir" "/DOutputDir=$outputDir" $issFile
+Write-Host '== Compile system-wide Windows installer =='
+& $InnoSetupPath "/DPublishDir=$desktopPublishDir" "/DApiPublishDir=$apiPublishDir" "/DOutputDir=$outputDir" $issFile
 if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compilation failed.' }
 
-$installer = Join-Path $outputDir 'MD-Gsm-Persons-Preview-Setup-v0.2.10.exe'
+$installer = Join-Path $outputDir 'MD-Gsm-Setup-v0.3.0.exe'
 if (-not (Test-Path -LiteralPath $installer)) { throw 'Installer EXE was not produced.' }
 
 $hash = Get-FileHash -LiteralPath $installer -Algorithm SHA256
 $hashLine = '{0}  {1}' -f $hash.Hash.ToLowerInvariant(), (Split-Path -Leaf $installer)
 Set-Content -LiteralPath ($installer + '.sha256') -Value $hashLine -Encoding ASCII
-Write-Host "PASS: Windows preview installer created: $installer" -ForegroundColor Green
-Write-Host 'This is a UI preview only: no Persons business database, no database migration, no real-data access, and no Python runtime dependency.' -ForegroundColor Yellow
+Write-Host "PASS: Windows installer created: $installer" -ForegroundColor Green
+Write-Host 'Program files are installed under Program Files\MD-Gsm; the DPAPI key remains under ProgramData\MD-Gsm\Keys\Persons. No database migration or feature activation is performed.' -ForegroundColor Yellow

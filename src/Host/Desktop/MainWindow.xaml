@@ -707,81 +707,279 @@
             <DockPanel Margin="0,0,0,18" LastChildFill="False">
               <StackPanel DockPanel.Dock="Right">
                 <TextBlock Text="اشخاص" Foreground="#0F172A" FontSize="27.5" FontWeight="Bold"/>
-                <TextBlock Text="مرجع یکپارچه هویت اشخاص حقیقی و حقوقی؛ نقش‌ها از هویت جدا هستند." Foreground="#64748B" FontSize="15.4" Margin="0,6,0,0"/>
+                <TextBlock Text="ثبت سریع، تشخیص موارد مشابه و مدیریت هویت حقیقی و حقوقی" Foreground="#64748B" FontSize="15.4" Margin="0,6,0,0"/>
               </StackPanel>
               <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                <Border Background="#FFF7ED" BorderBrush="#FDBA74" BorderThickness="1" CornerRadius="9" Padding="11,7" Margin="0,0,10,0">
-                  <TextBlock Text="پیش‌نمایش — بدون ذخیره" Foreground="#9A3412" FontSize="14.3" FontWeight="SemiBold"/>
+                <Border Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="9" Padding="11,7" Margin="0,0,10,0">
+                  <TextBlock x:Name="PersonsSessionBadgeText" Text="ورود انجام نشده" Foreground="#1D4ED8" FontSize="14.3" FontWeight="SemiBold"/>
                 </Border>
                 <Button Content="بازگشت به داشبورد" Click="BackToDashboardButton_Click" Style="{StaticResource QuickActionButtonStyle}"/>
               </StackPanel>
             </DockPanel>
 
-            <Border Background="#FFF9E8" BorderBrush="#F5D98C" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,16">
-              <TextBlock Text="حالت نمایشی: فقط از داده ساختگی استفاده کنید. جست‌وجو و فرم زیر فقط در حافظه همین اجرا کار می‌کنند. هیچ API، جدول، Migration یا پایگاه داده‌ای تغییر نمی‌کند؛ با بستن برنامه، داده‌های افزوده‌شده حذف می‌شوند."
-                         Foreground="#7A5208" FontSize="14.3" TextWrapping="Wrap"/>
-            </Border>
-
-            <UniformGrid Columns="3" Margin="0,0,0,16">
-              <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="11" Padding="15" Margin="0,0,10,0">
-                <StackPanel><TextBlock Text="هویت پایدار" Foreground="#64748B" FontSize="14.3"/><TextBlock Text="شناسه داخلی" Foreground="#1D4ED8" FontSize="22" FontWeight="Bold" Margin="0,5,0,3"/><TextBlock Text="شناسه داخلی؛ مستقل از نام و تلفن" Foreground="#7B8798" FontSize="13.2"/></StackPanel>
-              </Border>
-              <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="11" Padding="15" Margin="0,0,10,0">
-                <StackPanel><TextBlock Text="نقش‌های مستقل" Foreground="#64748B" FontSize="14.3"/><TextBlock Text="مشتری / تأمین‌کننده" Foreground="#0F766E" FontSize="18.7" FontWeight="Bold" Margin="0,5,0,3"/><TextBlock Text="یک هویت می‌تواند چند نقش داشته باشد" Foreground="#7B8798" FontSize="13.2"/></StackPanel>
-              </Border>
-              <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="11" Padding="15">
-                <StackPanel><TextBlock Text="وضعیت نمونه‌ها" Foreground="#64748B" FontSize="14.3"/><TextBlock x:Name="PersonsPreviewCountText" Text="۴ رکورد نمایشی" Foreground="#7C3AED" FontSize="22" FontWeight="Bold" Margin="0,5,0,3"/><TextBlock Text="بدون اتصال به داده واقعی" Foreground="#7B8798" FontSize="13.2"/></StackPanel>
-              </Border>
-            </UniformGrid>
-
-            <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,15">
+            <Border x:Name="PersonsLoginPanel" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0,0,0,15">
               <StackPanel>
-                <TextBlock Text="جست‌وجو و فهرست اشخاص" Foreground="#1C2E49" FontWeight="Bold" FontSize="16.5"/>
-                <DockPanel Margin="0,12,0,12" LastChildFill="True">
-                  <Button DockPanel.Dock="Right" Content="＋ شخص جدید (نمایشی)" Click="NewPersonButton_Click"
-                          Background="#2563EB" Foreground="#FFFFFF" BorderBrush="#2563EB" BorderThickness="1"
-                          Padding="14,9" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,10,0"/>
-                  <TextBox x:Name="PersonsSearchBox" Height="38" Padding="11,7" FontSize="15.4" VerticalContentAlignment="Center"
-                           BorderBrush="#CBD5E1" BorderThickness="1" Background="#F8FAFC" ToolTip="جست‌وجو در کد، نام، نوع و نقش" TextChanged="PersonsSearchBox_TextChanged"/>
-                </DockPanel>
-                <DataGrid x:Name="PersonsPreviewGrid" ItemsSource="{Binding PreviewPersons}" AutoGenerateColumns="False"
-                          IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserResizeRows="False"
-                          HeadersVisibility="Column" GridLinesVisibility="Horizontal" RowHeaderWidth="0" Height="220"
-                          Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0"
-                          AlternatingRowBackground="#F8FAFC" FontSize="15.4" FlowDirection="RightToLeft"
-                          RowHeight="44" EnableRowVirtualization="False" CanUserReorderColumns="False"
-                          HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled"
-                          SelectionMode="Single" SelectionUnit="FullRow">
-                  <DataGrid.Columns>
-                    <DataGridTextColumn Header="کد نمایشی" Binding="{Binding Code}" Width="110" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
-                    <DataGridTextColumn Header="نام نمایشی" Binding="{Binding DisplayName}" Width="2*" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
-                    <DataGridTextColumn Header="نوع" Binding="{Binding PersonType}" Width="100" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
-                    <DataGridTextColumn Header="نقش‌ها" Binding="{Binding Roles}" Width="2*" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
-                    <DataGridTextColumn Header="تماس" Binding="{Binding ContactLabel}" Width="140" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
-                    <DataGridTextColumn Header="وضعیت" Binding="{Binding StatusLabel}" Width="120" ElementStyle="{StaticResource AlignedDataGridTextStyle}"/>
-                  </DataGrid.Columns>
-                </DataGrid>
-                <TextBlock x:Name="PersonsSearchResultText" Text="۴ مورد نمایشی" Foreground="#64748B" FontSize="13.2" Margin="0,8,0,0"/>
-              </StackPanel>
-            </Border>
-
-            <Border x:Name="NewPersonFormPanel" Visibility="Collapsed" Background="#FFFFFF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="12" Padding="18">
-              <StackPanel>
-                <TextBlock Text="افزودن به پیش‌نمایش" Foreground="#1C2E49" FontWeight="Bold" FontSize="16.5"/>
-                <TextBlock Text="این فرم فقط برای ارزیابی ظاهر و گردش کار است و رکورد را پایدار ذخیره نمی‌کند." Foreground="#64748B" FontSize="14.3" Margin="0,4,0,13"/>
+                <TextBlock Text="ورود امن به سامانه" Foreground="#1C2E49" FontWeight="Bold" FontSize="17"/>
+                <TextBlock Text="برای مشاهده و ثبت اشخاص، با حساب کاربری نرم‌افزار وارد شوید. رمز عبور و توکن فقط در حافظه همین اجرا نگهداری می‌شوند." Foreground="#64748B" FontSize="13.5" Margin="0,5,0,13" TextWrapping="Wrap"/>
                 <Grid>
-                  <Grid.ColumnDefinitions><ColumnDefinition Width="1.2*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1.1*"/></Grid.ColumnDefinitions>
-                  <StackPanel Grid.Column="0"><TextBlock Text="نام نمایشی *" FontSize="14.3" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NewPersonNameBox" Height="36" Padding="9,6"/></StackPanel>
-                  <StackPanel Grid.Column="2"><TextBlock Text="نوع شخص" FontSize="14.3" Foreground="#475569" Margin="0,0,0,5"/><ComboBox x:Name="NewPersonTypeBox" Height="36" SelectedIndex="0"><ComboBoxItem Content="حقیقی"/><ComboBoxItem Content="حقوقی"/></ComboBox></StackPanel>
-                  <StackPanel Grid.Column="4"><TextBlock Text="نقش نمایشی" FontSize="14.3" Foreground="#475569" Margin="0,0,0,5"/><ComboBox x:Name="NewPersonRoleBox" Height="36" SelectedIndex="0"><ComboBoxItem Content="بدون نقش"/><ComboBoxItem Content="مشتری"/><ComboBoxItem Content="تأمین‌کننده"/><ComboBoxItem Content="مشتری، تأمین‌کننده"/></ComboBox></StackPanel>
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="1*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="نام کاربری" Foreground="#475569" Margin="0,0,0,5"/>
+                    <TextBox x:Name="PersonsUsernameBox" Height="38" Padding="10,7" FontSize="14.3" MaxLength="80"/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="2">
+                    <TextBlock Text="گذرواژه" Foreground="#475569" Margin="0,0,0,5"/>
+                    <PasswordBox x:Name="PersonsLoginPasswordBox" Height="38" Padding="10,7" FontSize="14.3" MaxLength="128"/>
+                  </StackPanel>
+                  <Button x:Name="PersonsLoginButton" Grid.Column="4" Content="ورود" Click="PersonsLoginButton_Click"
+                          VerticalAlignment="Bottom" Height="38" MinWidth="110" Padding="18,6"
+                          Background="#2563EB" Foreground="#FFFFFF" BorderBrush="#2563EB" FontWeight="SemiBold"/>
                 </Grid>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,14,0,0">
-                  <Button Content="افزودن به پیش‌نمایش" Click="SavePreviewPersonButton_Click" Background="#0F766E" Foreground="#FFFFFF" BorderBrush="#0F766E" Padding="14,8" Margin="0,0,8,0"/>
-                  <Button Content="انصراف" Click="CancelNewPersonButton_Click" Background="#FFFFFF" Foreground="#334155" BorderBrush="#CBD5E1" Padding="14,8"/>
-                </StackPanel>
-                <TextBlock x:Name="PreviewFormMessageText" Foreground="#B45309" FontSize="14.3" Margin="0,9,0,0" TextWrapping="Wrap"/>
+                <TextBlock x:Name="PersonsLoginMessageText" Foreground="#B45309" FontSize="13.5" Margin="0,10,0,0" TextWrapping="Wrap"/>
               </StackPanel>
             </Border>
+
+            <Border x:Name="PersonsPasswordChangePanel" Visibility="Collapsed" Background="#FFFBEB" BorderBrush="#FCD34D" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0,0,0,15">
+              <StackPanel>
+                <TextBlock Text="تغییر گذرواژه الزامی است" Foreground="#92400E" FontWeight="Bold" FontSize="17"/>
+                <TextBlock Text="حساب شما اجازه انجام عملیات اشخاص را تا زمان تغییر گذرواژه نمی‌دهد. گذرواژه جدید باید حداقل ۱۲ و حداکثر ۱۲۸ نویسه داشته باشد." Foreground="#92400E" FontSize="13.5" Margin="0,5,0,13" TextWrapping="Wrap"/>
+                <Grid>
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="1*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1*"/></Grid.ColumnDefinitions>
+                  <StackPanel Grid.Column="0"><TextBlock Text="گذرواژه فعلی" Foreground="#475569" Margin="0,0,0,5"/><PasswordBox x:Name="PersonsCurrentPasswordBox" Height="38" Padding="10,7" MaxLength="128"/></StackPanel>
+                  <StackPanel Grid.Column="2"><TextBlock Text="گذرواژه جدید" Foreground="#475569" Margin="0,0,0,5"/><PasswordBox x:Name="PersonsNewPasswordBox" Height="38" Padding="10,7" MaxLength="128"/></StackPanel>
+                  <StackPanel Grid.Column="4"><TextBlock Text="تکرار گذرواژه جدید" Foreground="#475569" Margin="0,0,0,5"/><PasswordBox x:Name="PersonsConfirmPasswordBox" Height="38" Padding="10,7" MaxLength="128"/></StackPanel>
+                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,13,0,0">
+                  <Button x:Name="PersonsChangePasswordButton" Content="تغییر و ورود مجدد" Click="PersonsChangePasswordButton_Click"
+                          Background="#B45309" Foreground="#FFFFFF" BorderBrush="#B45309" Padding="16,8" FontWeight="SemiBold"/>
+                  <TextBlock x:Name="PersonsPasswordMessageText" Foreground="#92400E" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <StackPanel x:Name="PersonsWorkspacePanel" Visibility="Collapsed">
+              <Border Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,14">
+                <DockPanel>
+                  <TextBlock x:Name="PersonsSignedInAsText" Text="نشست فعال" Foreground="#334155" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                  <Button DockPanel.Dock="Left" Content="خروج امن" Click="PersonsLogoutButton_Click"
+                          Background="#FFFFFF" Foreground="#475569" BorderBrush="#CBD5E1" Padding="12,5"/>
+                </DockPanel>
+              </Border>
+
+              <Border Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,15">
+                <TextBlock Text="ثبت سریع از API انجام می‌شود. سرور هویت، مجوزها و تشخیص موارد تکراری را کنترل می‌کند. جست‌وجوی فهرست اشخاص هنوز در API فعال نشده است؛ بنابراین این صفحه رکورد ساختگی یا نتیجه محلی تولید نمی‌کند."
+                           Foreground="#1E40AF" FontSize="13.7" TextWrapping="Wrap"/>
+              </Border>
+
+              <TabControl x:Name="PersonsRegistrationTabs" FontSize="14.3" Margin="0,0,0,15">
+                <TabItem Header="شخص حقیقی">
+                  <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" Padding="16">
+                    <StackPanel>
+                      <TextBlock Text="مشخصات هویتی" Foreground="#1C2E49" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"/>
+                      <UniformGrid Columns="2">
+                        <StackPanel Margin="0,0,10,10"><TextBlock Text="نام *" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NaturalGivenNameBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,0,10"><TextBlock Text="نام خانوادگی *" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NaturalFamilyNameBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,10,10"><TextBlock Text="کد ملی" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NaturalNationalIdBox" Height="36" Padding="9,6" MaxLength="20"/></StackPanel>
+                        <StackPanel Margin="0,0,0,10"><TextBlock Text="طبقه‌بندی همکار" Foreground="#475569" Margin="0,0,0,5"/>
+                          <ComboBox x:Name="NaturalWorkClassificationBox" Height="36" SelectedIndex="0">
+                            <ComboBoxItem Content="انتخاب نشده" Tag=""/>
+                            <ComboBoxItem Content="کارمند" Tag="Employee"/>
+                            <ComboBoxItem Content="تکنسین" Tag="Technician"/>
+                            <ComboBoxItem Content="پرسنل" Tag="Staff"/>
+                          </ComboBox>
+                        </StackPanel>
+                      </UniformGrid>
+
+                      <TextBlock Text="راه‌های ارتباطی" Foreground="#1C2E49" FontSize="16" FontWeight="Bold" Margin="0,5,0,10"/>
+                      <UniformGrid Columns="2">
+                        <StackPanel Margin="0,0,10,10"><TextBlock Text="موبایل اصلی" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NaturalPrimaryMobileBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,0,10"><TextBlock Text="موبایل دوم" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NaturalAlternateMobileBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,10,10"><TextBlock Text="تلفن ثابت" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NaturalLandlineBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,0,10"><TextBlock Text="ایمیل" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NaturalEmailBox" Height="36" Padding="9,6"/></StackPanel>
+                      </UniformGrid>
+
+                      <TextBlock Text="نشانی (اختیاری؛ در صورت ورود، همه فیلدها لازم است)" Foreground="#1C2E49" FontSize="16" FontWeight="Bold" Margin="0,5,0,10"/>
+                      <UniformGrid Columns="2">
+                        <StackPanel Margin="0,0,10,10"><TextBlock Text="استان" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NaturalProvinceBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,0,10"><TextBlock Text="شهر" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NaturalCityBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,10,10"><TextBlock Text="کد پستی" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NaturalPostalCodeBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,0,10"><TextBlock Text="کشور" Foreground="#475569" Margin="0,0,0,5"/><TextBox Text="IR" IsReadOnly="True" Height="36" Padding="9,6"/></StackPanel>
+                      </UniformGrid>
+                      <StackPanel Margin="0,0,0,10"><TextBlock Text="نشانی کامل" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="NaturalAddressLineBox" Height="54" Padding="9,6" TextWrapping="Wrap" AcceptsReturn="True"/></StackPanel>
+
+                      <TextBlock Text="نقش‌های تجاری" Foreground="#1C2E49" FontSize="16" FontWeight="Bold" Margin="0,5,0,8"/>
+                      <StackPanel Orientation="Horizontal">
+                        <CheckBox x:Name="NaturalCustomerRoleCheckBox" Content="مشتری" IsChecked="True" Margin="0,0,18,0"/>
+                        <CheckBox x:Name="NaturalColleagueRoleCheckBox" Content="همکار" Margin="0,0,18,0"/>
+                      </StackPanel>
+
+                      <TextBlock Text="منبع آشنایی" Foreground="#475569" Margin="0,12,0,5"/>
+                      <ComboBox x:Name="NaturalAcquaintanceSourceBox" Height="36" SelectedIndex="0">
+                        <ComboBoxItem Content="نامشخص" Tag="Unknown"/>
+                        <ComboBoxItem Content="معرفی شخصی" Tag="PersonalReferral"/>
+                        <ComboBoxItem Content="مشتری قبلی" Tag="ExistingCustomer"/>
+                        <ComboBoxItem Content="اینترنت" Tag="Online"/>
+                        <ComboBoxItem Content="تبلیغات" Tag="Advertisement"/>
+                        <ComboBoxItem Content="مراجعه حضوری" Tag="WalkIn"/>
+                        <ComboBoxItem Content="سایر" Tag="Other"/>
+                      </ComboBox>
+                      <TextBlock Text="یادداشت داخلی" Foreground="#475569" Margin="0,12,0,5"/>
+                      <TextBox x:Name="NaturalInternalNoteBox" Height="65" Padding="9,6" TextWrapping="Wrap" AcceptsReturn="True"/>
+                      <StackPanel Margin="0,12,0,0">
+                        <CheckBox x:Name="NaturalRepairSmsCheckBox" Content="پیامک وضعیت تعمیر" IsChecked="True" Margin="0,0,0,6"/>
+                        <CheckBox x:Name="NaturalReadySmsCheckBox" Content="پیامک آماده تحویل" IsChecked="True" Margin="0,0,0,6"/>
+                        <CheckBox x:Name="NaturalPromotionsSmsCheckBox" Content="پیامک اطلاع‌رسانی و پیشنهادها"/>
+                      </StackPanel>
+                      <CheckBox x:Name="NaturalForceNewCheckBox" Content="ثبت شخص جدید حتی در صورت یافتن موبایل مشابه (فقط در صورت اطمینان)" Margin="0,14,0,0"/>
+                      <Button x:Name="RegisterNaturalButton" Content="ثبت سریع شخص حقیقی و بررسی موارد مشابه"
+                              Click="RegisterNaturalButton_Click" HorizontalAlignment="Left" Margin="0,12,0,0"
+                              Background="#2563EB" Foreground="#FFFFFF" BorderBrush="#2563EB" Padding="18,9" FontWeight="SemiBold"/>
+                    </StackPanel>
+                  </Border>
+                </TabItem>
+
+                <TabItem Header="شخص حقوقی / شرکت">
+                  <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" Padding="16">
+                    <StackPanel>
+                      <TextBlock Text="مشخصات شرکت" Foreground="#1C2E49" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"/>
+                      <UniformGrid Columns="2">
+                        <StackPanel Margin="0,0,10,10"><TextBlock Text="نام شرکت *" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="LegalNameBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,0,10"><TextBlock Text="شناسه ملی شرکت" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="LegalNationalIdBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,10,10"><TextBlock Text="کد اقتصادی" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="LegalEconomicCodeBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,0,10"><TextBlock Text="نام مسئول" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="LegalResponsiblePersonBox" Height="36" Padding="9,6"/></StackPanel>
+                      </UniformGrid>
+
+                      <TextBlock Text="راه‌های ارتباطی شرکت" Foreground="#1C2E49" FontSize="16" FontWeight="Bold" Margin="0,5,0,10"/>
+                      <UniformGrid Columns="2">
+                        <StackPanel Margin="0,0,10,10"><TextBlock Text="موبایل اصلی" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="LegalPrimaryMobileBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,0,10"><TextBlock Text="موبایل دوم" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="LegalAlternateMobileBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,10,10"><TextBlock Text="تلفن ثابت" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="LegalLandlineBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,0,10"><TextBlock Text="ایمیل" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="LegalEmailBox" Height="36" Padding="9,6"/></StackPanel>
+                      </UniformGrid>
+
+                      <TextBlock Text="نشانی شرکت (اختیاری؛ در صورت ورود، همه فیلدها لازم است)" Foreground="#1C2E49" FontSize="16" FontWeight="Bold" Margin="0,5,0,10"/>
+                      <UniformGrid Columns="2">
+                        <StackPanel Margin="0,0,10,10"><TextBlock Text="استان" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="LegalProvinceBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,0,10"><TextBlock Text="شهر" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="LegalCityBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,10,10"><TextBlock Text="کد پستی" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="LegalPostalCodeBox" Height="36" Padding="9,6"/></StackPanel>
+                        <StackPanel Margin="0,0,0,10"><TextBlock Text="کشور" Foreground="#475569" Margin="0,0,0,5"/><TextBox Text="IR" IsReadOnly="True" Height="36" Padding="9,6"/></StackPanel>
+                      </UniformGrid>
+                      <StackPanel Margin="0,0,0,10"><TextBlock Text="نشانی کامل" Foreground="#475569" Margin="0,0,0,5"/><TextBox x:Name="LegalAddressLineBox" Height="54" Padding="9,6" TextWrapping="Wrap" AcceptsReturn="True"/></StackPanel>
+
+                      <TextBlock Text="نقش‌های تجاری" Foreground="#1C2E49" FontSize="16" FontWeight="Bold" Margin="0,5,0,8"/>
+                      <StackPanel Orientation="Horizontal">
+                        <CheckBox x:Name="LegalCustomerRoleCheckBox" Content="مشتری" IsChecked="True" Margin="0,0,18,0"/>
+                        <CheckBox x:Name="LegalColleagueRoleCheckBox" Content="همکار" Margin="0,0,18,0"/>
+                      </StackPanel>
+                      <TextBlock Text="منبع آشنایی" Foreground="#475569" Margin="0,12,0,5"/>
+                      <ComboBox x:Name="LegalAcquaintanceSourceBox" Height="36" SelectedIndex="0">
+                        <ComboBoxItem Content="نامشخص" Tag="Unknown"/>
+                        <ComboBoxItem Content="معرفی شخصی" Tag="PersonalReferral"/>
+                        <ComboBoxItem Content="مشتری قبلی" Tag="ExistingCustomer"/>
+                        <ComboBoxItem Content="اینترنت" Tag="Online"/>
+                        <ComboBoxItem Content="تبلیغات" Tag="Advertisement"/>
+                        <ComboBoxItem Content="مراجعه حضوری" Tag="WalkIn"/>
+                        <ComboBoxItem Content="سایر" Tag="Other"/>
+                      </ComboBox>
+                      <TextBlock Text="یادداشت داخلی" Foreground="#475569" Margin="0,12,0,5"/>
+                      <TextBox x:Name="LegalInternalNoteBox" Height="65" Padding="9,6" TextWrapping="Wrap" AcceptsReturn="True"/>
+                      <StackPanel Margin="0,12,0,0">
+                        <CheckBox x:Name="LegalRepairSmsCheckBox" Content="پیامک وضعیت تعمیر" IsChecked="True" Margin="0,0,0,6"/>
+                        <CheckBox x:Name="LegalReadySmsCheckBox" Content="پیامک آماده تحویل" IsChecked="True" Margin="0,0,0,6"/>
+                        <CheckBox x:Name="LegalPromotionsSmsCheckBox" Content="پیامک اطلاع‌رسانی و پیشنهادها"/>
+                      </StackPanel>
+                      <CheckBox x:Name="LegalForceNewCheckBox" Content="ثبت شرکت جدید حتی در صورت یافتن موبایل مشابه (فقط در صورت اطمینان)" Margin="0,14,0,0"/>
+                      <Button x:Name="RegisterLegalButton" Content="ثبت سریع شرکت و بررسی موارد مشابه"
+                              Click="RegisterLegalButton_Click" HorizontalAlignment="Left" Margin="0,12,0,0"
+                              Background="#2563EB" Foreground="#FFFFFF" BorderBrush="#2563EB" Padding="18,9" FontWeight="SemiBold"/>
+                    </StackPanel>
+                  </Border>
+                </TabItem>
+              </TabControl>
+
+              <Border x:Name="PersonsResultPanel" Visibility="Collapsed" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,15">
+                <StackPanel>
+                  <TextBlock Text="نتیجه درخواست" Foreground="#1C2E49" FontWeight="Bold" FontSize="16"/>
+                  <TextBlock x:Name="PersonsResultText" Foreground="#334155" FontSize="14.2" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                  <TextBlock x:Name="PersonsPartyIdText" Foreground="#1D4ED8" FontSize="13.2" Margin="0,7,0,0" TextWrapping="Wrap"/>
+                  <Button x:Name="ViewPartyDetailsButton" Content="مشاهده جزئیات شخص (اطلاعات پوشانده‌شده)"
+                          Click="ViewPartyDetailsButton_Click" Visibility="Collapsed"
+                          HorizontalAlignment="Right" Margin="0,10,0,0"
+                          Background="#0F766E" Foreground="#FFFFFF" BorderBrush="#0F766E" Padding="14,7"/>
+                  <StackPanel x:Name="PersonsRetryPanel" Visibility="Collapsed" Orientation="Horizontal" Margin="0,12,0,0">
+                    <Button x:Name="PersonsRetryButton" Content="تلاش مجدد با همان شناسه عملیات" Click="PersonsRetryButton_Click"
+                            Background="#2563EB" Foreground="#FFFFFF" BorderBrush="#2563EB" Padding="14,7"/>
+                    <TextBlock Text="برای جلوگیری از ثبت تکراری، درخواست معلق با همان Idempotency-Key تکرار می‌شود." Foreground="#64748B" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <Border x:Name="PersonsCandidatesPanel" Visibility="Collapsed" Background="#FFFBEB" BorderBrush="#FCD34D" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,15">
+                <StackPanel>
+                  <TextBlock Text="اشخاص مشابه پیدا شدند" Foreground="#92400E" FontWeight="Bold" FontSize="16"/>
+                  <TextBlock Text="برای جلوگیری از ساخت هویت تکراری، یکی از موارد زیر را انتخاب کنید. فقط نام، نوع و موبایل پوشانده‌شده نمایش داده می‌شود."
+                             Foreground="#92400E" Margin="0,5,0,10" TextWrapping="Wrap"/>
+                  <ItemsControl ItemsSource="{Binding PersonsCandidates}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Background="#FFFFFF" BorderBrush="#FDE68A" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,7">
+                          <DockPanel>
+                            <Button DockPanel.Dock="Left" Content="انتخاب این شخص" Tag="{Binding}" Click="SelectPersonCandidateButton_Click"
+                                    Background="#B45309" Foreground="#FFFFFF" BorderBrush="#B45309" Padding="12,6">
+                              <Button.Style>
+                                <Style TargetType="Button">
+                                  <Setter Property="IsEnabled" Value="True"/>
+                                  <Style.Triggers>
+                                    <DataTrigger Binding="{Binding PartyIsActive}" Value="False">
+                                      <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsMerged}" Value="True">
+                                      <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                  </Style.Triggers>
+                                </Style>
+                              </Button.Style>
+                            </Button>
+                            <StackPanel>
+                              <TextBlock Text="{Binding DisplayName}" Foreground="#1F2937" FontWeight="SemiBold"/>
+                              <TextBlock Text="{Binding PartyType}" Foreground="#64748B" FontSize="12.5"/>
+                              <TextBlock Text="{Binding MaskedMobile}" Foreground="#64748B" FontSize="12.5"/>
+                              <TextBlock Text="این مورد قابل انتخاب نیست (ادغام‌شده یا غیرفعال)." Foreground="#B91C1C" FontSize="12"
+                                         TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                  <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                      <DataTrigger Binding="{Binding PartyIsActive}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                      </DataTrigger>
+                                      <DataTrigger Binding="{Binding IsMerged}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                      </DataTrigger>
+                                      <DataTrigger Binding="{Binding HasActiveMobile}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                      </DataTrigger>
+                                    </Style.Triggers>
+                                  </Style>
+                                </TextBlock.Style>
+                              </TextBlock>
+                            </StackPanel>
+                          </DockPanel>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Button x:Name="ConfirmDistinctPartyButton"
+                          Content="پس از بررسی، تأیید ساخت شخص مستقل"
+                          Click="ConfirmDistinctPartyButton_Click"
+                          Visibility="Collapsed"
+                          HorizontalAlignment="Right" Margin="0,10,0,0"
+                          Background="#7C2D12" Foreground="#FFFFFF" BorderBrush="#7C2D12" Padding="14,7"/>
+                </StackPanel>
+              </Border>
+
+              <TextBlock x:Name="PersonsMessageText" Foreground="#475569" FontSize="13.5" Margin="0,0,0,5" TextWrapping="Wrap"/>
+            </StackPanel>
           </StackPanel>
         </ScrollViewer>
       </Grid>

@@ -1,5 +1,3 @@
-# Persons Domain — module-owned target location
+# Persons Domain
 
-This is the approved module-owned target location for Persons domain code. The current partial Party domain implementation remains in the transitional BuildingBlocks placement documented by ADR-0014. This directory being reserved does not mean that no Persons runtime exists.
-
-Move or relocate implementation only through the approved architecture workflow; do not duplicate domain ownership or create a parallel model. G1 remains unauthorized.
+Owns Party identity and value objects. This assembly has no project dependencies. Application and other modules may consume only published Persons Contracts, not these internal domain types.

@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Xunit;
+using MDGsm.Infrastructure.Persistence;
+using MDGsm.Persons.Infrastructure;
 
 namespace MDGsm.Domain.Tests.Persons;
 
@@ -27,7 +29,7 @@ public sealed class MigrationResourceTests
         var versions = parsedFiles.Select(match => int.Parse(match.Groups["version"].Value, CultureInfo.InvariantCulture))
             .OrderBy(value => value).ToArray();
         Assert.Equal(versions.Length, versions.Distinct().Count());
-        Assert.Equal(Enumerable.Range(1, versions.Length), versions);
+        Assert.Equal(versions.OrderBy(value => value), versions);
 
         var registryPath = Path.Combine(root, "docs", "data", "MIGRATION_SEQUENCE_REGISTRY_FA.md");
         var registry = File.ReadAllText(registryPath);
@@ -61,6 +63,14 @@ public sealed class MigrationResourceTests
             $"Registry row {row.Version:D4} has an invalid migration path."));
 
         var reserved = registryFiles.Where(row => row.Status.StartsWith("RESERVED", StringComparison.Ordinal)).ToArray();
+        var reservedVersions = reserved.Select(row => row.Version).ToHashSet();
+        if (versions.Length > 0)
+        {
+            foreach (var missingVersion in Enumerable.Range(1, versions[^1]).Except(versions))
+            {
+                Assert.Contains(missingVersion, reservedVersions);
+            }
+        }
         foreach (var row in reserved)
         {
             Assert.Equal(row.Version, int.Parse(Path.GetFileName(row.Path)![..4], CultureInfo.InvariantCulture));
@@ -76,6 +86,30 @@ public sealed class MigrationResourceTests
 
         Assert.Equal(files, implementedPaths);
         Assert.Equal(implementedPaths.Length, implementedPaths.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+
+        // Persons SQL now belongs to its module Infrastructure assembly; platform,
+        // IdentityAccess and Finance SQL remain embedded in shared Infrastructure.
+        var expectedResources = files
+            .Select(file => "MDGsm.Migrations." + Path.GetFileName(file))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+        var migrationAssemblies = new[]
+        {
+            typeof(DatabaseMigrationRunner).Assembly,
+            typeof(PersonsInfrastructureAssemblyMarker).Assembly
+        }.Distinct();
+        var actualResources = migrationAssemblies
+            .SelectMany(assembly => assembly.GetManifestResourceNames())
+            .Where(name => name.StartsWith("MDGsm.Migrations.", StringComparison.Ordinal))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+        var duplicateResources = actualResources.GroupBy(name => name, StringComparer.Ordinal)
+            .Where(group => group.Count() > 1)
+            .Select(group => $"{group.Key} (x{group.Count()})")
+            .ToArray();
+        Assert.True(duplicateResources.Length == 0, $"Duplicate migration resource names: {string.Join(", ", duplicateResources)}");
+        Assert.True(expectedResources.SequenceEqual(actualResources),
+            $"Expected migration resources: {string.Join(", ", expectedResources)}; actual: {string.Join(", ", actualResources)}");
     }
 
     private static string FindRepositoryRoot()

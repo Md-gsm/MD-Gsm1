@@ -19,7 +19,7 @@
 | 33 سقف مطلق ۳۰ روز | `AC33_renewal_never_extends_beyond_absolute_thirty_day_age` و تست PostgreSQL `AC33_AC34_renewal_is_single_use_authorized_and_capped_at_thirty_days` | سقف در Domain و DB آزموده شده؛ ماتریس کامل ساعت/ترتیب تمدید و انقضا موجود نیست. **شواهد جزئی؛ باز.** |
 | 34 یک تمدید مجاز با دلیل | `AC34_only_one_authorized_renewal_with_a_reason_is_accepted`، `AC34_renewal_rejects_missing_reason_or_missing_authorization` و تست PostgreSQL ترکیبی AC33/34 | تمدید مجاز، نبود مجوز/دلیل و تمدید دوم رد می‌شود؛ ماتریس مجوز واقعی IdentityAccess و audit trail کامل ثابت نشده. **شواهد جزئی؛ باز.** |
 | 35 worker idempotent و retry | `AC35_closed_workflow_is_not_readable_and_is_purged_after_expiry`؛ worker دوره‌ای و catch/alert دارد. | close تکراری رد و purge تکراری بی‌اثر است؛ تست مستقیم worker برای خطای گذرا، retry چرخه بعد، شکست alert و SLA پنج‌دقیقه‌ای وجود ندارد. **شواهد جزئی؛ باز.** |
-| 36 عدم حضور در global search/autocomplete | payload موقت در جدول جداست؛ `PostgresPartyRepository.SearchAsync` از Party و ContactPoint فعال جست‌وجو می‌کند. | تست منفی صریح workflow موقت در search/autocomplete یافت نشد. **باز؛ تست پذیرش لازم.** |
+| 36 عدم حضور در global search/autocomplete | payload موقت در جدول جداست؛ `PostgresPartyRepository.SearchAsync` از Party و ContactPoint فعال جست‌وجو می‌کند. | تست منفی صریح workflow موقت در search/autocomplete در main وجود ندارد. **باز؛ تست پذیرش لازم.** |
 | 37 promotion اتمیک/idempotent | Quick Registration و انتخاب Party وجود دارد؛ promotion از temporary workflow به Party در کد بررسی‌شده پیدا نشد. | انتخاب صریح، duplicate check، تراکنش اتمیک و replay برای promotion اثبات نشده. **باز؛ قابلیت/تست لازم.** |
 | 38 عدم افشای PII در telemetry | worker فقط failure code و نوع exception را log می‌کند و exception.Message را ثبت نمی‌کند؛ تست redaction عمومی AC-49 وجود دارد. | تست اختصاصی payload یکتا در تمام log/audit/metrics/artifacts و اثبات عدم حضورش وجود ندارد. **شواهد جزئی؛ باز.** |
 
@@ -34,6 +34,23 @@
 | 43 conflict مانع اجرا | `AC43_two_existing_finance_accounts_are_a_blocking_conflict_and_no_state_changes` | conflict دو حساب Finance و عدم تغییر state آزموده شده؛ ماتریس conflict سایر participantها موجود نیست. **شواهد جزئی؛ باز.** |
 | 44 atomicity/concurrency/idempotency | تست‌های `AC41_AC44_merge_transfers_registered_reference_atomically_and_replays_idempotently`، `AC44_failure_after_apply_rolls_back_every_participant_and_runs_recovery` و `AC44_concurrent_merges_of_one_source_allow_exactly_one_winner` | replay، rollback و یک برنده در رقابت PostgreSQL آزموده‌اند؛ تمام مصرف‌کنندگان و failure pathها پوشش ندارند. **شواهد جزئی؛ باز.** |
 | 45 حفظ snapshot و reconciliation | تست merge شناسه و created_at حساب Finance را پس از انتقال بررسی می‌کند؛ coordinator snapshot تاریخی را immutable فرض می‌کند. | همه snapshotهای تاریخی و reconciliation تمام referenceهای فعال آزموده نشده‌اند. **شواهد جزئی؛ باز.** |
+
+## ۳-الف. شواهد افزوده‌شده در PR #96 (Draft؛ هنوز وارد main نشده‌اند)
+
+موارد زیر فقط روی شاخهٔ PR #96 پیاده‌سازی و آزموده می‌شوند؛ تا زمان merge و بازبینی مستقل، نباید به‌عنوان قابلیت‌های موجود در main گزارش شوند:
+
+| AC | آزمون افزوده‌شده در PR #96 | دامنهٔ اثبات |
+|---|---|---|
+| 35 | `PersonsTemporaryDataRetentionTests.cs::AC35_worker_retries_on_next_cycle_and_logs_only_redacted_failure_codes` به‌همراه تست‌های PostgreSQL تکرار purge/close | worker روی failure گذرا alert code بدون PII می‌فرستد و در چرخه زمان‌بندی بعدی sweep را دوباره اجرا می‌کند؛ خطای alert نیز فقط با نوع exception ثبت می‌شود و message/PII وارد log نمی‌شود. تست PostgreSQL جداگانه تکرار purge/close را بدون عملیات تکراری اثبات می‌کند. |
+| 36 | `PersonsTemporaryWorkflowPostgresTests.cs::AC36_temporary_workflow_payload_does_not_appear_in_Persons_search_or_search_route` | درج ciphertext موقت در PostgreSQL، عدم بازگشت آن از repository search، نبود Search API/autocomplete route و ذخیره‌نشدن marker متنی خام در payload. |
+| 39–40 | `PersonsMergeContractTests.cs::AC39_AC40_AllExternalPartyIdConsumersAreRegisteredAndClassifiedExactlyOnce` | تطبیق scan کد با registry، رد مسیرهای تکراری، الزام یک classification مجاز و حذف مصرف‌کننده ناشناخته. طبقه‌بندی در این نسخه به سطح consumer/source path انجام می‌شود. |
+| 41 | `PersonsMergeContractTests.cs::AC41_FinanceMergeParticipantImplementsVersionedProtocolHooks` | اثبات پیاده‌سازی participant ثبت‌شدهٔ Finance و تمام hookهای Preview/Prepare/Validate/Apply/Verify/Recover با نسخه‌های قرارداد ثبت‌شده. |
+| 42–43 | تست‌های موجود `AC42_preview_is_read_only_and_counts_transferable_finance_references` و `AC43_two_existing_finance_accounts_are_a_blocking_conflict_and_no_state_changes` | preview بدون تغییر state و جلوگیری از merge در تعارض دو حساب Finance. |
+| 44 | `PersonsMergeContractTests.cs::AC44_MergeIsAtomicConcurrentAndIdempotentWithFailureRollback` | suite ترکیبی replay/idempotency، rollback پس از خطای Verify و انتخاب دقیقاً یک برنده در mergeهای هم‌زمان. |
+
+در تکمیل شواهد AC-38 روی شاخه PR #96، تست `PersonsTemporaryDataRetentionTests.cs::AC38_structured_retention_alert_accepts_only_closed_failure_code_and_emits_no_payload` نیز ثبت شد. این تست نشان می‌دهد adapter فعلی alert فقط enum بستهٔ failure code می‌پذیرد و event ساختاریافته payload/PII دریافت یا چاپ نمی‌کند. این شواهد محدود است؛ AC-38 همچنان UNMAPPED می‌ماند تا تمام مسیرهای logging، audit، metrics و CI artifacts با sentinelهای PII پوشش داده شوند.
+
+AC-45 و AC-31..34، AC-37..38 همچنان باز هستند. این تست‌ها فقط بر مصرف‌کنندگان و runtime فعلیِ ثبت‌شده در مخزن تکیه دارند؛ اثبات تمام consumerهای آینده، همهٔ historical snapshotها، تمام failure stageها یا SLA عملیاتی production محسوب نمی‌شوند.
 
 ## ۴. AC-46 تا AC-49 — CI/evidence
 
@@ -68,6 +85,140 @@ PR #47 بسته و `merged=false` است؛ بدنه آن **Superseded / Do Not M
 
 **WG1-01 از نظر ممیزی و تفکیک شواهد این دور تکمیل شد؛ AC-31..AC-45 از نظر پذیرش runtime همچنان OPEN هستند.**
 
-گام بعدی: (1) تست‌های مستقل AC-35..AC-40 برای retry/alert، عدم کشف عمومی، promotion، redaction و classification؛ (2) پیش از تغییر Host/persistence/Contracts مشترک، ثبت هماهنگی WG-0؛ (3) سپس WG1-02 برای create/search و چرخه کامل ContactPoint/Address با API، authorization، DTO minimization، masking، rate-limit و audit؛ (4) انتقال internals در WG1-03 مطابق ADR-0014.
+گام بعدی: (1) AC-31..34 و AC-37..38 برای SLA حذف، authorization/audit تمدید، promotion و redaction جامع؛ (2) AC-45 برای snapshot تاریخی و reconciliation همه ارجاعات؛ (3) پیش از تغییرات schema/Outbox/quota، تصمیم Owner/WG-0 و رزرو migration از مسیر Issue #97/#98؛ (4) چرخه کامل ContactPoint/Address و انتقال internals مطابق ADR-0016 در workstream هماهنگ جداگانه.
 
 این سند فقط ممیزی مستنداتی است؛ runtime، schema، migration، DB، تنظیم زنده GitHub یا تصمیم معماری را تغییر نمی‌دهد. `g1Authorized=false` باقی است.
+
+
+## AC-37 — promotion evidence update (2026-11-25)
+
+**Current criterion status: UNMAPPED / independent review pending.** Do not mark IMPLEMENTED or G1-ready solely from CI.
+
+### PostgreSQL integration test coverage
+
+Test file: `tests/MDGsm.Domain.Tests/Persons/PersonsTemporaryWorkflowPromotionPostgresTests.cs`
+
+- `AC37_authorization_matrix_denies_each_required_permission_before_mutation` — New Party requires promote/read/create; Existing Party requires promote/read; each missing permission is denied before state mutation.
+- `AC37_existing_party_path_does_not_require_create_permission` — positive Existing Party route with create permission denied.
+- `AC37_unprotectable_payload_is_rejected_without_state_change_and_can_retry_after_repair` — corrupted authenticated ciphertext fails closed, retains workflow/payload, and same OperationId succeeds after test-only payload repair.
+- `AC37_workflow_close_failure_rolls_back_and_same_operation_retries` — injected failure while transitioning workflow to promoted rolls back Party/operation/payload/tombstone state and retry succeeds.
+- `AC37_payload_purge_failure_rolls_back_and_same_operation_retries` — injected payload deletion failure rolls back and retry succeeds.
+- `AC37_failure_at_tombstone_insert_rolls_back_and_same_operation_retries` — injected tombstone failure rolls back and retry succeeds.
+- `AC37_failed_outbox_insert_rolls_back_party_workflow_tombstone_and_payload_deletion` — injected Outbox failure rolls back; same operation succeeds after removing the test trigger.
+- Existing tests cover duplicate review, explicit ForceNew confirmation, Existing Party selection, actor-bound replay, concurrent idempotency, PII-free tombstone/event envelope, and atomic Party/tombstone/payload/outbox commit.
+
+### Exact-head evidence
+
+- Commit: `44950e2303415e785c4d3dfb545b09d5c1ba27a7`
+- Linux PostgreSQL migration/integration job: run `45670296726`, job `139403651514` — passed; 63 tests passed.
+- Foundation build/test: job `139403651418` — passed.
+- API contract, merge contract, security, E2E disposable, architecture, consumer registry, CI enforcement and spec/checksum gates — passed.
+- Windows PostgreSQL migration, Windows installer integration and CodeQL were still pending at this evidence snapshot.
+
+The canonical mainline migration reservation is being handled by registry-only PR #104; PR #103 merged 0010/0011 only. Migration 0012/0013 remains pending full Linux/Windows disposable evidence and independent review. No real database migration, production key provisioning, runtime flag or G1 authorization is performed.
+
+
+## AC-37 acceptance closure evidence — 2026-11-25
+
+**Decision: AC-37 = IMPLEMENTED on the exact reviewed PR #96 head.** This section supersedes the earlier historical `UNMAPPED / independent review pending` snapshot above; that snapshot is retained as historical audit evidence and is not the current criterion state.
+
+### Exact source and reviewer acceptance
+
+- Repository: `Md-gsm/MD-Gsm1`.
+- PR: #96 — https://github.com/Md-gsm/MD-Gsm1/pull/96
+- Exact reviewed commit: `467527ab5389fdfcda183e546037616aca92bdc1`.
+- Independent review: `mrdeljoe4`, review ID `6063008782`, state `APPROVED`, submitted 2026-11-25 18:37:54 UTC, on the exact commit above.
+- PR state at evidence capture: open, unmerged, `mergeable=true`, `mergeable_state=clean`.
+
+### AC-37 automated evidence
+
+Primary mapped PostgreSQL integration test: `PersonsTemporaryWorkflowPromotionPostgresTests.cs::AC37_new_party_promotion_commits_party_tombstone_payload_purge_and_outbox_atomically`.
+
+Additional tests on the same head cover:
+- `AC37_authorization_matrix_denies_each_required_permission_before_mutation` and `AC37_existing_party_path_does_not_require_create_permission`.
+- `AC37_unprotectable_payload_is_rejected_without_state_change_and_can_retry_after_repair`.
+- `AC37_workflow_close_failure_rolls_back_and_same_operation_retries`.
+- `AC37_payload_purge_failure_rolls_back_and_same_operation_retries`.
+- `AC37_failure_at_tombstone_insert_rolls_back_and_same_operation_retries`.
+- `AC37_failed_outbox_insert_rolls_back_party_workflow_tombstone_and_payload_deletion`.
+- Existing same-head coverage for explicit existing/new Party selection, duplicate review, explicit ForceNew confirmation, same-Actor/same-OperationId replay, cross-Actor rejection, concurrency, PII-free tombstone/event envelope, and atomic Party/tombstone/payload/outbox commit.
+
+### Exact-head CI
+
+- Persons Module Gates run `45674621630`: all required jobs passed, including Linux PostgreSQL migration/integration and Windows PostgreSQL 18 migration, API contract, merge contract, security, disposable E2E, architecture, consumer registry, retention, CI enforcement and evidence.
+- Windows Installer + API Service Integration run `45674621908`: success.
+- CodeQL run `45674621701`: success.
+- Project Charter Owner Gate run `45674621863`: success.
+- Exact commit check-runs: all 17 completed successfully, zero failures and zero pending.
+
+### Scope boundaries that remain in force
+
+- AC-37 covers Promotion, its PII-free result/tombstone/access evidence, conditional source Outbox insertion and the tested atomic/retry behavior. It does not claim that a separate Outbox dispatcher/delivery worker is implemented; delivery lifecycle remains in Issue #97.
+- Migration 0012 and 0013 remain `IMPLEMENTED — DISPOSABLE VERIFICATION PENDING` in `MIGRATION_SEQUENCE_REGISTRY_FA.md`. Per the registry rule, update to `VERIFIED_DISPOSABLE` only after the implementation PR is merged and post-merge disposable application evidence, SQL SHA-256 values and merge commit are recorded.
+- No production database migration, customer key provisioning, live feature flag/API activation, deployment or G1 authorization is included. `g1Authorized=false` remains unchanged.
+- Acceptance Map version 1.3 maps AC-37 to the primary integration test above. AC-31..34, AC-38 and AC-45 remain explicitly UNMAPPED; this closure does not close Issue #97, #98 or #99.
+
+
+## Issue #99 — انتقال فیزیکی internals به پروژه‌های مستقل (2026-11-25)
+
+این بخش وضعیت جاری شاخهٔ `wg1/persons-independent-projects-issue-99-20261125` را ثبت می‌کند؛ بخش‌های تاریخی ممیزی بالا به‌عنوان snapshot زمان خود حفظ شده‌اند.
+
+### ساختار پروژه‌ای اعمال‌شده در شاخه
+
+- Domain: `src/Modules/Persons/Domain/MDGsm.Persons.Domain.csproj` — مستقل و بدون وابستگی پروژه‌ای.
+- Application: `src/Modules/Persons/Application/MDGsm.Persons.Application.csproj` — فقط وابسته به Domain و Contracts.
+- Infrastructure: `src/Modules/Persons/Infrastructure/MDGsm.Persons.Infrastructure.csproj` — فقط وابسته به Application، Domain و Contracts.
+- API Host به Application و Contracts ارجاع می‌دهد؛ به Domain/Infrastructure داخلی Persons ارجاع مستقیم ندارد.
+- IdentityAccess-owned authorization adapters در Shared Infrastructure / IdentityAccess باقی می‌مانند و از portهای Application اشخاص استفاده می‌کنند.
+- کد اجرایی از مسیرهای قدیمی `src/BuildingBlocks/MDGsm.{Domain,Application,Infrastructure}/Persons` خارج شده؛ READMEهای آن مسیرها صرفاً توضیح انتقال هستند.
+
+### DbMigrator و migration resources
+
+SQLهای Persons در اسمبلی `MDGsm.Persons.Infrastructure` به‌صورت EmbeddedResource قرار گرفته‌اند. نام LogicalResourceها بدون تغییر باقی می‌ماند و `DatabaseMigrationRunner` منابع اسمبلی Shared Infrastructure و Persons Infrastructure را با هم می‌خواند. تست `MigrationResourceTests` فهرست منابع دو اسمبلی را با همهٔ فایل‌های SQL و رجیستری مرکزی تطبیق می‌دهد. محتوای فایل‌های SQL و شماره‌گذاری آن‌ها تغییر نکرده است.
+
+### پذیرش و وضعیت
+
+- این تغییر روی شاخهٔ مستقل و stacked نسبت به PR #96 انجام شده و هنوز merge نشده است.
+- اجرای دقیق restore/build/test و PostgreSQL 18 migration replay روی Linux و Windows و review مستقل، شرط پذیرش Issue #99 است.
+- این تغییر به هیچ وجه Search quotas، Abuse Lock، Contact/Address history یا انتقال ستون‌های Finance-owned را تکمیل نمی‌کند؛ Issues #97/#98 همچنان بازند.
+- `g1Authorized=false`؛ هیچ Migration روی دیتابیس واقعی اجرا نشده و هیچ feature flag یا runtime فعال نشده است.
+
+
+### اصلاح مرز دادهٔ Finance در انتقال Issue #99
+
+نوع بلااستفادهٔ `PartyFinancialProfile` از Persons.Domain خارج شد؛ این نوع صرفاً سقف اعتبار، تخفیف، روش پرداخت و چهار رقم کارت را مدل می‌کرد و هیچ مصرف‌کنندهٔ اجرایی در مخزن نداشت. این داده‌ها طبق تصمیم مالک در Issue #98 متعلق به Finance هستند. حذف این مدل کد بلااستفاده، هیچ DDL یا داده‌ای را تغییر نداده است: چهار ستون قدیمی در Migration `0002` عمداً دست‌نخورده باقی مانده‌اند و حذف/انتقال Schema و داده فقط پس از inventory و برنامهٔ forward-only در Issue #98 پیگیری می‌شود.
+
+
+---
+
+## Stage 6 — پذیرش و شواهد AC-31 تا AC-49 (2026-11-26)
+
+**مرجع جاری:** Acceptance Map v1.4 در `docs/persons/acceptance-gate-map.json`. بخش‌های قدیمی این گزارش snapshot تاریخی خود را حفظ می‌کنند و در موارد تعارض با این بخش Stage 6، وضعیت فعلی از Map v1.4 و شواهد commit-bound استخراج می‌شود.
+
+### نتیجه ردیابی
+
+- هر ۱۹ معیار AC-31 تا AC-49 دارای آزمون اصلی نام‌گذاری‌شده‌اند؛ ۱۷ آزمون پشتیبان نیز در نقشه ثبت شده‌اند. CI برای وجود فایل/متد اصلی و همهٔ supporting testها validator اجرا می‌کند.
+- AC-31 تا AC-38 به retention، renewal، search isolation، promotion اتمیک و redaction مربوط‌اند.
+- AC-39/40 کشف source-based مصرف‌کنندگان PartyId و classification یکتای آن‌ها را می‌آزمایند.
+- AC-41 participantهای واقعی Finance و Persons را برای تمام hookهای نسخه‌دار قرارداد بررسی می‌کند.
+- AC-42 preview ترکیبی Finance/Persons را فقط‌خواندنی بررسی می‌کند؛ AC-43 تعارض دو Finance account را پیش از mutation مسدود می‌کند؛ AC-44 idempotency، rollback/recovery و رقابت هم‌زمان را در هر دو participant می‌آزماید.
+- AC-45 snapshotهای history را با HistoryIdهای قبلی و JSON قبل/بعد از Merge مقایسه می‌کند و active referenceهای ContactPoint/Address، provenance، consent، primary flags، tombstone و merge-history را تطبیق می‌دهد. AccountId و CreatedAt حساب Finance نیز ثابت می‌مانند.
+
+### شواهد نامزد دقیق SHA
+
+- کد/آزمون روی SHA `ad5a1144b16268c19cd170a2e2759cddc448e972` ثبت شده است.
+- Persons Module Gates run `45800993885`: در زمان ثبت این snapshot، Windows PostgreSQL در حال اجرا بود؛ jobهای دیگر شامل spec/checksum، foundation، Linux PostgreSQL، security، API، architecture، registry، retention، merge، E2E و CI enforcement موفق بودند.
+- Foundation build/test job `139843963380`: **275 passed, 0 failed, 0 skipped**؛ build بدون warning و error.
+- Linux PostgreSQL job `139843963151`: **82 passed, 0 failed, 0 skipped**؛ Migration Runner در اجرای اول ۱۲ migration را اعمال کرد و اجرای دوم صفر migration جدید اعمال کرد. نسخه‌های 0012 تا 0015 در دیتابیس disposable اجرا شدند.
+- Project Charter Owner Gate run `45800993685`: موفق.
+- Windows PostgreSQL، CodeQL و Windows Installer در زمان ثبت این snapshot pending بودند؛ فقط نتیجه‌ای که روی SHA نهایی همین مرحله read-back شود، برای پذیرش قابل استفاده است.
+
+### محدودیت‌های پذیرش
+
+1. AC-32/35 از نظر کد و آزمون، sweep فوری، اجرای هر ۱۵ دقیقه، drain تمام batchهای due، retry و هشدار redacted را دارند. این شواهد به‌تنهایی تحویل واقعی هشدار در SLA پنج‌دقیقه‌ای یا ظرفیت purge تحت بار تولیدی را اثبات نمی‌کند؛ مقصد alert عملیاتی و آزمون بار محیط استقرار همچنان شرط عملیاتی جداگانه‌اند.
+2. Migration 0006 توضیح می‌دهد `finance_party_accounts` فقط هویت حساب تفصیلی را نگه می‌دارد و balance/ledger rows در آن وجود ندارد. AC-45 وضعیت تمام historyهای موجود Persons و شناسه/زمان حساب Finance را تطبیق می‌دهد؛ با ایجاد persistence دفترکل در آینده، snapshot/reconciliation آن هم باید به قرارداد و participant اضافه شود.
+3. AC-46 تا AC-49 کنترل CI و evidence manifest هستند؛ این چهار مورد Runtime acceptance ماژول محسوب نمی‌شوند.
+4. همهٔ migration proofها فقط روی PostgreSQL disposable هستند؛ هیچ دیتابیس واقعی یا مشتری تغییر نکرده است.
+5. PR #96 همچنان باز و ادغام‌نشده در `main` است. reviewهای قبلی به headهای قدیمی تعلق دارند و برای آخرین SHA معتبر نیستند. `g1Authorized=false` و `architectureAligned=false` باقی می‌مانند.
+
+این بخش، وضعیت پیاده‌سازی/ردیابی و snapshot اولیهٔ CI Stage 6 را ثبت می‌کند؛ بسته‌شدن رسمی Stage 6 هنوز به read-back کامل Windows PostgreSQL، CodeQL، Windows Installer و آزمون‌های Persons روی آخرین SHA مستندشده و بازبینی مستقل همان SHA وابسته است.
