@@ -50,12 +50,10 @@ public sealed class ProtectedDatabaseConnectionStringConfigurationTests
         try
         {
             File.WriteAllBytes(path, protectedBytes);
-            var configuration = new ConfigurationBuilder()
-                .AddProtectedDatabaseConnectionString(path)
-                .Build();
-
             Assert.Throws<InvalidOperationException>(() =>
-                configuration.GetConnectionString(PersistenceRegistration.ConnectionStringName));
+                new ConfigurationBuilder()
+                    .AddProtectedDatabaseConnectionString(path)
+                    .Build());
         }
         finally
         {
@@ -71,11 +69,9 @@ public sealed class ProtectedDatabaseConnectionStringConfigurationTests
         if (!OperatingSystem.IsWindows()) return;
 
         var path = Path.Combine(Path.GetTempPath(), "mdgsm-missing-" + Guid.NewGuid().ToString("N") + ".dpapi");
-        var configuration = new ConfigurationBuilder()
-            .AddProtectedDatabaseConnectionString(path)
-            .Build();
-
         Assert.Throws<InvalidOperationException>(() =>
-            configuration.GetConnectionString(PersistenceRegistration.ConnectionStringName));
+            new ConfigurationBuilder()
+                .AddProtectedDatabaseConnectionString(path)
+                .Build());
     }
 }
