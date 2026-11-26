@@ -119,13 +119,13 @@ public sealed class PersonsOutboxDeliveryPostgresTests
         var firstLease = Assert.Single(await store.LeaseDueAsync(
             workerA, 1, startAt, startAt.AddMinutes(1), default, [eventId]));
         Assert.Equal(eventId, firstLease.Event.EventId);
-        Assert.Equal(Guid.Parse(party.PartyId), firstLease.Event.AggregateId);
+        Assert.Equal(Guid.Parse(party.PartyId), leasedEvent.Event.AggregateId);
         Assert.Equal(1, firstLease.AttemptCount);
 
         var reclaimAt = startAt.AddMinutes(1).AddSeconds(1);
         var secondLease = Assert.Single(await store.LeaseDueAsync(
             workerB, 1, reclaimAt, reclaimAt.AddMinutes(1), default, [eventId]));
-        Assert.Equal(firstLease.Event.EventId, secondLease.Event.EventId);
+        Assert.Equal(leasedEvent.Event.EventId, secondLease.Event.EventId);
         Assert.Equal(2, secondLease.AttemptCount);
 
         Assert.False(await store.MarkDeliveredAsync(
@@ -167,17 +167,21 @@ public sealed class PersonsOutboxDeliveryPostgresTests
     public async Task Retry_keeps_event_identity_and_does_not_make_it_due_before_the_scheduled_time()
     {
         await using var dataSource = await OpenDisposableDataSourceAsync();
+        var operation = Guid.CreateVersion7();
         var party = await new PostgresPartyRepository(dataSource)
-            .AddNaturalAsync(NewNatural(NewMobile()), Actor(), Guid.CreateVersion7(), null, default);
+            .AddNaturalAsync(NewNatural(NewMobile()), Actor(), operation, null, default);
         var store = new PostgresPersonsOutboxDeliveryStore(dataSource);
         var start = DateTimeOffset.UtcNow;
-        var eventId = await EventIdForOperationAsync(dataSource, Guid.Parse(party.PartyId));
-        var firstLease = Assert.Single(await store.LeaseDueAsync("worker-a", 1, start, start.AddMinutes(1), default, [eventId]));
+        var eventId = await EventIdForOperationAsync(dataSource, operation);
+        Assert.Equal(Guid.Parse(party.PartyId), (await store.LeaseDueAsync(
+            "worker-a", 1, start, start.AddMinutes(1), default, [eventId])).Single().Event.AggregateId);
+        var firstLease = await store.LeaseDueAsync("worker-a", 1, start, start.AddMinutes(1), default, [eventId]);
+        var leasedEvent = Assert.Single(firstLease);
 
         Assert.Equal(Guid.Parse(party.PartyId), firstLease.Event.AggregateId);
         var retryAt = start.AddSeconds(30);
         Assert.True(await store.ScheduleRetryAsync(
-            firstLease.Event.EventId, "worker-a", start.AddSeconds(1), retryAt,
+            leasedEvent.Event.EventId, "worker-a", start.AddSeconds(1), retryAt,
             PersonsOutboxDeliveryFailureCodes.PublishFailed, default));
 
         Assert.Empty(await store.LeaseDueAsync(
