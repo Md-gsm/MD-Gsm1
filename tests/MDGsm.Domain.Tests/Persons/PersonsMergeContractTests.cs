@@ -65,25 +65,29 @@ public sealed class PersonsMergeContractTests
     [Fact]
     public void AC41_FinanceMergeParticipantImplementsVersionedProtocolHooks()
     {
-        var participant = new PostgresPartyAccountMergeParticipant();
         var contract = typeof(IPartyMergeParticipant);
-        var implementation = typeof(PostgresPartyAccountMergeParticipant);
-
-        Assert.Contains(contract, implementation.GetInterfaces());
-        Assert.Equal("Finance", participant.Module);
-        Assert.Equal("1.1", participant.ContractVersion);
-        Assert.Equal(PostgresPartyMergeService.ProtocolVersion, participant.MergeProtocolVersion);
-
+        var participants = new IPartyMergeParticipant[]
+        {
+            new PostgresPartyAccountMergeParticipant(),
+            new PostgresPersonsPartyMergeParticipant()
+        };
         var requiredHooks = new[]
         {
             "PreviewAsync", "PrepareAsync", "ValidateAsync", "ApplyAsync", "VerifyAsync", "RecoverAsync"
         };
-        var interfaceMap = implementation.GetInterfaceMap(contract);
-        var implementedHooks = interfaceMap.InterfaceMethods
-            .Select(method => method.Name)
-            .ToHashSet(StringComparer.Ordinal);
-        foreach (var hook in requiredHooks)
-            Assert.Contains(hook, implementedHooks);
+
+        foreach (var participant in participants)
+        {
+            var implementation = participant.GetType();
+            Assert.Contains(contract, implementation.GetInterfaces());
+            Assert.Equal(PostgresPartyMergeService.ProtocolVersion, participant.MergeProtocolVersion);
+            Assert.Equal(participant.Module == "Finance" ? "1.1" : "1.0", participant.ContractVersion);
+            var interfaceMap = implementation.GetInterfaceMap(contract);
+            var implementedHooks = interfaceMap.InterfaceMethods.Select(method => method.Name)
+                .ToHashSet(StringComparer.Ordinal);
+            foreach (var hook in requiredHooks)
+                Assert.Contains(hook, implementedHooks);
+        }
 
         var root = FindRepositoryRoot();
         using var registryDocument = JsonDocument.Parse(File.ReadAllText(
@@ -114,18 +118,23 @@ public sealed class PersonsMergeContractTests
         var source = await CreatePartyAsync(dataSource, "Source");
         var target = await CreatePartyAsync(dataSource, "Target");
         var accountId = await CreateFinanceAccountAsync(dataSource, source);
-        var service = new PostgresPartyMergeService(dataSource, [new PostgresPartyAccountMergeParticipant()]);
+        await CreateContactPointAsync(dataSource, source, 1, "09120000001", true, true);
+        await CreateAddressAsync(dataSource, source, "AC42-source-address", true);
+        var service = new PostgresPartyMergeService(dataSource,
+            [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant()]);
 
         var preview = await service.PreviewAsync(source, target, "ci-merge-actor");
 
         Assert.True(preview.CanMerge);
-        Assert.Equal(1, preview.ActiveReferences);
-        Assert.Equal(1, preview.TransferableReferences);
-        Assert.Equal(0, preview.HistoricalReferences);
+        Assert.Equal(3, preview.ActiveReferences);
+        Assert.Equal(3, preview.TransferableReferences);
+        Assert.True(preview.HistoricalReferences > 0);
         Assert.Equal(0, preview.BlockingConflicts);
-        Assert.Single(preview.Participants);
+        Assert.Equal(2, preview.Participants.Count);
         Assert.Equal(accountId, await FindAccountIdAsync(dataSource, source));
         Assert.True(await IsActiveAsync(dataSource, source));
+        Assert.Equal(1L, await CountActiveContactPointsAsync(dataSource, source));
+        Assert.Equal(1L, await CountActiveAddressesAsync(dataSource, source));
     }
 
     [Fact]
@@ -137,7 +146,10 @@ public sealed class PersonsMergeContractTests
         var target = await CreatePartyAsync(dataSource, "Target");
         var accountId = await CreateFinanceAccountAsync(dataSource, source);
         var createdAt = await FindAccountCreatedAtAsync(dataSource, source);
-        var service = new PostgresPartyMergeService(dataSource, [new PostgresPartyAccountMergeParticipant()]);
+        await CreateContactPointAsync(dataSource, source, 1, "09120000002", true, true);
+        await CreateAddressAsync(dataSource, source, "AC44-source-address", true);
+        var service = new PostgresPartyMergeService(dataSource,
+            [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant()]);
         var operation = Guid.CreateVersion7();
         var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
 
@@ -152,6 +164,10 @@ public sealed class PersonsMergeContractTests
         Assert.Equal(createdAt, await FindAccountCreatedAtAsync(dataSource, target));
         Assert.Equal(1L, await CountMergeRecordsAsync(dataSource, operation));
         Assert.Null(await FindAccountIdAsync(dataSource, source));
+        Assert.Equal(0L, await CountActiveContactPointsAsync(dataSource, source));
+        Assert.Equal(0L, await CountActiveAddressesAsync(dataSource, source));
+        Assert.Equal(1L, await CountActiveContactPointsAsync(dataSource, target));
+        Assert.Equal(1L, await CountActiveAddressesAsync(dataSource, target));
     }
 
     [Fact]
@@ -163,7 +179,12 @@ public sealed class PersonsMergeContractTests
         var target = await CreatePartyAsync(dataSource, "Target");
         var sourceAccount = await CreateFinanceAccountAsync(dataSource, source);
         var targetAccount = await CreateFinanceAccountAsync(dataSource, target);
-        var service = new PostgresPartyMergeService(dataSource, [new PostgresPartyAccountMergeParticipant()]);
+        await CreateContactPointAsync(dataSource, source, 1, "09120000003", true, true);
+        await CreateAddressAsync(dataSource, source, "AC43-source-address", true);
+        await CreateContactPointAsync(dataSource, target, 1, "09120000004", true, false);
+        await CreateAddressAsync(dataSource, target, "AC43-target-address", true);
+        var service = new PostgresPartyMergeService(dataSource,
+            [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant()]);
         var preview = await service.PreviewAsync(source, target, "ci-merge-actor");
 
         Assert.False(preview.CanMerge);
@@ -175,6 +196,10 @@ public sealed class PersonsMergeContractTests
         Assert.True(await IsActiveAsync(dataSource, target));
         Assert.Equal(sourceAccount, await FindAccountIdAsync(dataSource, source));
         Assert.Equal(targetAccount, await FindAccountIdAsync(dataSource, target));
+        Assert.Equal(1L, await CountActiveContactPointsAsync(dataSource, source));
+        Assert.Equal(1L, await CountActiveContactPointsAsync(dataSource, target));
+        Assert.Equal(1L, await CountActiveAddressesAsync(dataSource, source));
+        Assert.Equal(1L, await CountActiveAddressesAsync(dataSource, target));
     }
 
     [Fact]
@@ -196,9 +221,11 @@ public sealed class PersonsMergeContractTests
         var source = await CreatePartyAsync(dataSource, "Source");
         var target = await CreatePartyAsync(dataSource, "Target");
         var sourceAccount = await CreateFinanceAccountAsync(dataSource, source);
+        await CreateContactPointAsync(dataSource, source, 1, "09120000005", true, true);
+        await CreateAddressAsync(dataSource, source, "AC44-rollback-address", true);
         var failing = new FailingMergeParticipant();
         var service = new PostgresPartyMergeService(dataSource,
-            [new PostgresPartyAccountMergeParticipant(), failing]);
+            [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant(), failing]);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.MergeAsync(
             source, target, Guid.CreateVersion7(), "ci-merge-actor", DateTimeOffset.UtcNow));
@@ -208,6 +235,10 @@ public sealed class PersonsMergeContractTests
         Assert.Null(await FindMergedIntoAsync(dataSource, source));
         Assert.Equal(sourceAccount, await FindAccountIdAsync(dataSource, source));
         Assert.Null(await FindAccountIdAsync(dataSource, target));
+        Assert.Equal(1L, await CountActiveContactPointsAsync(dataSource, source));
+        Assert.Equal(0L, await CountActiveContactPointsAsync(dataSource, target));
+        Assert.Equal(1L, await CountActiveAddressesAsync(dataSource, source));
+        Assert.Equal(0L, await CountActiveAddressesAsync(dataSource, target));
     }
 
     [Fact]
@@ -219,7 +250,10 @@ public sealed class PersonsMergeContractTests
         var firstTarget = await CreatePartyAsync(dataSource, "First");
         var secondTarget = await CreatePartyAsync(dataSource, "Second");
         await CreateFinanceAccountAsync(dataSource, source);
-        var service = new PostgresPartyMergeService(dataSource, [new PostgresPartyAccountMergeParticipant()]);
+        await CreateContactPointAsync(dataSource, source, 1, "09120000006", true, true);
+        await CreateAddressAsync(dataSource, source, "AC44-concurrent-address", true);
+        var service = new PostgresPartyMergeService(dataSource,
+            [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant()]);
         var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
 
         async Task<bool> Attempt(Guid target, Guid operation)
@@ -244,6 +278,12 @@ public sealed class PersonsMergeContractTests
         Assert.Contains(await FindMergedIntoAsync(dataSource, source), new Guid?[] { firstTarget, secondTarget });
         Assert.Equal(1L, await FindAccountCountForPartyAsync(dataSource, firstTarget) +
                         await FindAccountCountForPartyAsync(dataSource, secondTarget));
+        var winner = (await FindMergedIntoAsync(dataSource, source))!.Value;
+        var loser = winner == firstTarget ? secondTarget : firstTarget;
+        Assert.Equal(1L, await CountActiveContactPointsAsync(dataSource, winner));
+        Assert.Equal(1L, await CountActiveAddressesAsync(dataSource, winner));
+        Assert.Equal(0L, await CountActiveContactPointsAsync(dataSource, loser));
+        Assert.Equal(0L, await CountActiveAddressesAsync(dataSource, loser));
     }
 
     private static async Task<long> FindAccountCountForPartyAsync(NpgsqlDataSource dataSource, Guid partyId)
@@ -289,6 +329,64 @@ public sealed class PersonsMergeContractTests
         command.Parameters.AddWithValue("family", "Test");
         await command.ExecuteNonQueryAsync();
         return id;
+    }
+
+    private static async Task<Guid> CreateContactPointAsync(
+        NpgsqlDataSource dataSource, Guid partyId, short kind, string value, bool isPrimary, bool messagingAllowed)
+    {
+        var id = Guid.CreateVersion7();
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("""
+            INSERT INTO persons_contact_points
+                (contact_point_id, party_id, kind, value, is_primary, is_messaging_allowed, is_active, created_by)
+            VALUES (@id, @party, @kind, @value, @primary, @messaging, true, 'ci-merge');
+            """, connection);
+        command.Parameters.AddWithValue("id", id);
+        command.Parameters.AddWithValue("party", partyId);
+        command.Parameters.AddWithValue("kind", kind);
+        command.Parameters.AddWithValue("value", value);
+        command.Parameters.AddWithValue("primary", isPrimary);
+        command.Parameters.AddWithValue("messaging", messagingAllowed);
+        await command.ExecuteNonQueryAsync();
+        return id;
+    }
+
+    private static async Task<Guid> CreateAddressAsync(
+        NpgsqlDataSource dataSource, Guid partyId, string addressLine, bool isPrimary)
+    {
+        var id = Guid.CreateVersion7();
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand("""
+            INSERT INTO persons_addresses
+                (address_id, party_id, country_code, province, city, postal_code, address_line,
+                 is_primary, is_active, created_by)
+            VALUES (@id, @party, 'IR', 'تهران', 'تهران', '1111111111', @line,
+                    @primary, true, 'ci-merge');
+            """, connection);
+        command.Parameters.AddWithValue("id", id);
+        command.Parameters.AddWithValue("party", partyId);
+        command.Parameters.AddWithValue("line", addressLine);
+        command.Parameters.AddWithValue("primary", isPrimary);
+        await command.ExecuteNonQueryAsync();
+        return id;
+    }
+
+    private static async Task<long> CountActiveContactPointsAsync(NpgsqlDataSource dataSource, Guid partyId)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT count(*) FROM persons_contact_points WHERE party_id = @party AND is_active;", connection);
+        command.Parameters.AddWithValue("party", partyId);
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
+    private static async Task<long> CountActiveAddressesAsync(NpgsqlDataSource dataSource, Guid partyId)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT count(*) FROM persons_addresses WHERE party_id = @party AND is_active;", connection);
+        command.Parameters.AddWithValue("party", partyId);
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
     }
 
     private static async Task<Guid> CreateFinanceAccountAsync(NpgsqlDataSource dataSource, Guid partyId)
