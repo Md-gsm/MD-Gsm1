@@ -338,10 +338,8 @@ if (builder.Configuration.GetValue<bool>("Persons:SearchApiEnabled") &&
         [FromServices] IPersonsSearchControl searchControl, CancellationToken cancellationToken) =>
     {
         var accountId = AccountId.From(actor.AccountId);
-        // Search is global and rowless: general read permission is not sufficient.
-        // A dedicated permission prevents low-privilege roles from enumerating the Party directory.
-        if (!await PersonsGlobalReadAuthorization.CanReadAsync(permissions, accountId, cancellationToken) ||
-            !await permissions.HasPermissionAsync(accountId, "persons.search", cancellationToken))
+        // Search is global and rowless; use the same fail-closed role scope as Party details.
+        if (!await PersonsGlobalReadAuthorization.CanReadAsync(permissions, accountId, cancellationToken))
         {
             await searchControl.RecordSecurityViolationAsync(actor.AccountId.ToString("D"),
                 PersonsSearchSecurityViolation.PermissionDenied, context.TraceIdentifier, cancellationToken);
