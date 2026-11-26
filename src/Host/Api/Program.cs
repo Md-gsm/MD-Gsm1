@@ -395,6 +395,101 @@ if (builder.Configuration.GetValue<bool>("Persons:SearchApiEnabled") &&
     });
 }
 
+ 
+if (builder.Configuration.GetValue<bool>("Persons:LifecycleApiEnabled") &&
+    builder.Services.Any(descriptor => descriptor.ServiceType == typeof(IPartyLifecycleService)))
+{
+    static IResult MapLifecycleResult(PartyLifecycleChangeResult result) => result.Status switch
+    {
+        PartyLifecycleChangeStatus.Applied => Results.NoContent(),
+        PartyLifecycleChangeStatus.NotFound => Results.NotFound(),
+        PartyLifecycleChangeStatus.VersionConflict => Results.Conflict(new { error = "persons_lifecycle_version_conflict", currentRowVersion = result.CurrentRowVersion }),
+        PartyLifecycleChangeStatus.PartyInactiveOrMerged => Results.Conflict(new { error = "persons_party_inactive_or_merged", currentRowVersion = result.CurrentRowVersion }),
+        _ => Results.Conflict(new { error = "persons_lifecycle_conflict" })
+    };
+
+    app.MapPatch("/api/v2/persons/{partyId:guid}/lifecycle", async (
+        Guid partyId, SetPartyActiveRequest request, HttpContext context,
+        IAuthenticatedActorContext actor, [FromServices] IRolePermissionStore permissions,
+        [FromServices] IPartyLifecycleService lifecycleService, CancellationToken cancellationToken) =>
+    {
+        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.update", cancellationToken))
+            return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
+        try
+        {
+            var result = await lifecycleService.SetPartyActiveAsync(partyId, request.IsActive,
+                request.ExpectedRowVersion, actor.AccountId.ToString("D"), request.Reason, cancellationToken);
+            return MapLifecycleResult(result);
+        }
+        catch (ArgumentException) { return Results.BadRequest(new { error = "persons_lifecycle_request_invalid" }); }
+    });
+
+    app.MapPatch("/api/v2/persons/contact-points/{contactPointId:guid}/lifecycle", async (
+        Guid contactPointId, SetContactPointActiveRequest request,
+        IAuthenticatedActorContext actor, [FromServices] IRolePermissionStore permissions,
+        [FromServices] IPartyLifecycleService lifecycleService, CancellationToken cancellationToken) =>
+    {
+        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.contact.update", cancellationToken))
+            return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
+        try
+        {
+            return MapLifecycleResult(await lifecycleService.SetContactPointActiveAsync(contactPointId, request.IsActive,
+                request.ExpectedRowVersion, actor.AccountId.ToString("D"), request.Reason, cancellationToken));
+        }
+        catch (ArgumentException) { return Results.BadRequest(new { error = "persons_lifecycle_request_invalid" }); }
+        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
+        { return Results.Conflict(new { error = "persons_contact_duplicate" }); }
+    });
+
+    app.MapPatch("/api/v2/persons/contact-points/{contactPointId:guid}", async (
+        Guid contactPointId, UpdateContactPointRequest request,
+        IAuthenticatedActorContext actor, [FromServices] IRolePermissionStore permissions,
+        [FromServices] IPartyLifecycleService lifecycleService, CancellationToken cancellationToken) =>
+    {
+        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.contact.update", cancellationToken))
+            return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
+        try
+        {
+            return MapLifecycleResult(await lifecycleService.UpdateContactPointValueAsync(contactPointId, request.Value,
+                request.ExpectedRowVersion, actor.AccountId.ToString("D"), request.Reason, cancellationToken));
+        }
+        catch (ArgumentException) { return Results.BadRequest(new { error = "persons_lifecycle_request_invalid" }); }
+        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
+        { return Results.Conflict(new { error = "persons_contact_duplicate" }); }
+    });
+
+    app.MapPatch("/api/v2/persons/addresses/{addressId:guid}/lifecycle", async (
+        Guid addressId, SetAddressActiveRequest request,
+        IAuthenticatedActorContext actor, [FromServices] IRolePermissionStore permissions,
+        [FromServices] IPartyLifecycleService lifecycleService, CancellationToken cancellationToken) =>
+    {
+        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.address.update", cancellationToken))
+            return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
+        try
+        {
+            return MapLifecycleResult(await lifecycleService.SetAddressActiveAsync(addressId, request.IsActive,
+                request.ExpectedRowVersion, actor.AccountId.ToString("D"), request.Reason, cancellationToken));
+        }
+        catch (ArgumentException) { return Results.BadRequest(new { error = "persons_lifecycle_request_invalid" }); }
+    });
+
+    app.MapPatch("/api/v2/persons/addresses/{addressId:guid}", async (
+        Guid addressId, UpdateAddressRequest request,
+        IAuthenticatedActorContext actor, [FromServices] IRolePermissionStore permissions,
+        [FromServices] IPartyLifecycleService lifecycleService, CancellationToken cancellationToken) =>
+    {
+        if (!await permissions.HasPermissionAsync(AccountId.From(actor.AccountId), "persons.address.update", cancellationToken))
+            return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
+        try
+        {
+            return MapLifecycleResult(await lifecycleService.UpdateAddressAsync(addressId, request.CountryCode,
+                request.Province, request.City, request.PostalCode, request.AddressLine, request.ExpectedRowVersion,
+                actor.AccountId.ToString("D"), request.Reason, cancellationToken));
+        }
+        catch (ArgumentException) { return Results.BadRequest(new { error = "persons_lifecycle_request_invalid" }); }
+    });
+}
+
 }
 
 if (!personsPersistenceAvailable)
@@ -525,3 +620,9 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
 public partial class Program;
 
 public sealed record AdminSearchUnlockRequest(string Reason);
+
+public sealed record SetPartyActiveRequest(bool IsActive, long ExpectedRowVersion, string Reason);
+public sealed record SetContactPointActiveRequest(bool IsActive, long ExpectedRowVersion, string Reason);
+public sealed record UpdateContactPointRequest(string Value, long ExpectedRowVersion, string Reason);
+public sealed record SetAddressActiveRequest(bool IsActive, long ExpectedRowVersion, string Reason);
+public sealed record UpdateAddressRequest(string CountryCode, string Province, string City, string PostalCode, string AddressLine, long ExpectedRowVersion, string Reason);
