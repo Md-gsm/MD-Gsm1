@@ -105,7 +105,6 @@ BEGIN
     IF TG_OP = 'UPDATE' THEN
         NEW.last_change_reason := coalesce(
             nullif(current_setting('persons.lifecycle_reason', true), ''),
-            nullif(NEW.last_change_reason, ''),
             'unclassified-update');
     END IF;
     RETURN NEW;
@@ -265,10 +264,9 @@ CREATE TRIGGER persons_lifecycle_history_no_delete
     BEFORE DELETE OR TRUNCATE ON persons_lifecycle_history
     FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
 
-CREATE RULE persons_lifecycle_history_no_update
-    ON UPDATE TO persons_lifecycle_history DO INSTEAD NOTHING;
-CREATE RULE persons_lifecycle_history_no_delete_rule
-    ON DELETE TO persons_lifecycle_history DO INSTEAD NOTHING;
+CREATE TRIGGER persons_lifecycle_history_no_mutation
+    BEFORE UPDATE OR DELETE OR TRUNCATE ON persons_lifecycle_history
+    FOR EACH STATEMENT EXECUTE FUNCTION persons_prevent_lifecycle_delete();
 REVOKE ALL ON persons_lifecycle_history FROM PUBLIC;
 REVOKE DELETE, TRUNCATE ON persons, persons_contact_points, persons_addresses FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION persons_capture_lifecycle_history() FROM PUBLIC;
