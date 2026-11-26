@@ -36,6 +36,7 @@ public static class PersonsInfrastructureRegistration
 
         services.AddScoped<IPartyRepository, PostgresPartyRepository>();
         services.AddScoped<IPartyLifecycleService, PostgresPartyLifecycleService>();
+        services.AddScoped<IPartyLifecycleHistoryReader, PostgresPartyLifecycleHistoryReader>();
         services.AddScoped<IPartyMergeParticipant, PostgresPersonsPartyMergeParticipant>();
         services.AddScoped<IPersonsSearchControl, PostgresPersonsSearchControl>();
         services.AddScoped<IPartyReferenceValidator, PostgresPartyReferenceValidator>();
