@@ -118,7 +118,7 @@ public sealed class PersonsMergeContractTests
         var source = await CreatePartyAsync(dataSource, "Source");
         var target = await CreatePartyAsync(dataSource, "Target");
         var accountId = await CreateFinanceAccountAsync(dataSource, source);
-        await CreateContactPointAsync(dataSource, source, 1, "09120000001", true, true);
+        await CreateContactPointAsync(dataSource, source, 1, "+98120000001", true, true);
         await CreateAddressAsync(dataSource, source, "AC42-source-address", true);
         var service = new PostgresPartyMergeService(dataSource,
             [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant()]);
@@ -146,7 +146,7 @@ public sealed class PersonsMergeContractTests
         var target = await CreatePartyAsync(dataSource, "Target");
         var accountId = await CreateFinanceAccountAsync(dataSource, source);
         var createdAt = await FindAccountCreatedAtAsync(dataSource, source);
-        await CreateContactPointAsync(dataSource, source, 1, "09120000002", true, true);
+        await CreateContactPointAsync(dataSource, source, 1, "+98120000002", true, true);
         await CreateAddressAsync(dataSource, source, "AC44-source-address", true);
         var service = new PostgresPartyMergeService(dataSource,
             [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant()]);
@@ -179,9 +179,9 @@ public sealed class PersonsMergeContractTests
         var target = await CreatePartyAsync(dataSource, "Target");
         var sourceAccount = await CreateFinanceAccountAsync(dataSource, source);
         var targetAccount = await CreateFinanceAccountAsync(dataSource, target);
-        await CreateContactPointAsync(dataSource, source, 1, "09120000003", true, true);
+        await CreateContactPointAsync(dataSource, source, 1, "+98120000003", true, true);
         await CreateAddressAsync(dataSource, source, "AC43-source-address", true);
-        await CreateContactPointAsync(dataSource, target, 1, "09120000004", true, false);
+        await CreateContactPointAsync(dataSource, target, 1, "+98120000004", true, false);
         await CreateAddressAsync(dataSource, target, "AC43-target-address", true);
         var service = new PostgresPartyMergeService(dataSource,
             [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant()]);
@@ -221,7 +221,7 @@ public sealed class PersonsMergeContractTests
         var source = await CreatePartyAsync(dataSource, "Source");
         var target = await CreatePartyAsync(dataSource, "Target");
         var sourceAccount = await CreateFinanceAccountAsync(dataSource, source);
-        await CreateContactPointAsync(dataSource, source, 1, "09120000005", true, true);
+        await CreateContactPointAsync(dataSource, source, 1, "+98120000005", true, true);
         await CreateAddressAsync(dataSource, source, "AC44-rollback-address", true);
         var failing = new FailingMergeParticipant();
         var service = new PostgresPartyMergeService(dataSource,
@@ -250,7 +250,7 @@ public sealed class PersonsMergeContractTests
         var firstTarget = await CreatePartyAsync(dataSource, "First");
         var secondTarget = await CreatePartyAsync(dataSource, "Second");
         await CreateFinanceAccountAsync(dataSource, source);
-        await CreateContactPointAsync(dataSource, source, 1, "09120000006", true, true);
+        await CreateContactPointAsync(dataSource, source, 1, "+98120000006", true, true);
         await CreateAddressAsync(dataSource, source, "AC44-concurrent-address", true);
         var service = new PostgresPartyMergeService(dataSource,
             [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant()]);
