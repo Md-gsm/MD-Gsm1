@@ -7,7 +7,7 @@ namespace MDGsm.Domain.Tests.Persons;
 
 public sealed class PersonsOutboxDeliveryPostgresTests
 {
-    private static readonly DateTimeOffset Start=new(2026,11,26,9,0,0,TimeSpan.Zero);
+    private static readonly DateTimeOffset Start=new(2000,1,1,0,0,0,TimeSpan.Zero);
     [Fact][Trait("Category","Integration")]
     public async Task Due_event_is_leased_once_and_acknowledged()
     {
