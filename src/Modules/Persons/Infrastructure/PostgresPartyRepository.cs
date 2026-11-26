@@ -14,11 +14,16 @@ namespace MDGsm.Persons.Infrastructure;
 /// <see cref="DuplicatePartyIdentifierException"/> an ambient transaction is aborted by PostgreSQL and must be rolled back.
 /// Actor identity must come from the trusted API boundary.
 /// </summary>
-public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartySensitiveDataAuthorizer? sensitiveDataAuthorizer = null) : IPartyRepository
+public sealed class PostgresPartyRepository(
+    NpgsqlDataSource dataSource,
+    IPartySensitiveDataAuthorizer? sensitiveDataAuthorizer = null,
+    TimeProvider? timeProvider = null) : IPartyRepository
 {
     private readonly IPartySensitiveDataAuthorizer _sensitiveDataAuthorizer = sensitiveDataAuthorizer ?? new DenyByDefaultPartySensitiveDataAuthorizer();
+    private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     public Task<PartyRegistrationResult> AddNaturalAsync(
-        RegisterNaturalParty request, string actorId, Guid operationId, DbTransaction? transaction, CancellationToken cancellationToken)
+        RegisterNaturalParty request, string actorId, Guid operationId, DbTransaction? transaction, CancellationToken cancellationToken,
+        PartyRegisteredOutboxContext? outboxContext = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         PartyRegistrationRules.ValidateRoles(request.Roles);
@@ -27,11 +32,12 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         var nationalId = PartyIdentifiers.NormalizeIranianNationalId(request.NationalId);
         return InsertAsync(party.Id, PartyType.NaturalPerson, request.Roles,
             party.GivenName, party.FamilyName, null, nationalId, null, null, null,
-            request, actorId, operationId, transaction, cancellationToken);
+            request, actorId, operationId, transaction, outboxContext, cancellationToken);
     }
 
     public Task<PartyRegistrationResult> AddLegalAsync(
-        RegisterLegalParty request, string actorId, Guid operationId, DbTransaction? transaction, CancellationToken cancellationToken)
+        RegisterLegalParty request, string actorId, Guid operationId, DbTransaction? transaction, CancellationToken cancellationToken,
+        PartyRegisteredOutboxContext? outboxContext = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         PartyRegistrationRules.ValidateRoles(request.Roles);
@@ -42,37 +48,40 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         var responsible = OptionalText(request.ResponsiblePersonName, 200, nameof(request.ResponsiblePersonName));
         return InsertAsync(party.Id, PartyType.LegalPerson, request.Roles,
             null, null, party.LegalName, null, legalNationalId, economicCode, responsible,
-            request, actorId, operationId, transaction, cancellationToken);
+            request, actorId, operationId, transaction, outboxContext, cancellationToken);
     }
 
     public Task<PartyQuickRegistrationResult> QuickRegisterNaturalAsync(
         RegisterNaturalParty request, string actorId, Guid operationId, bool forceNew,
-        string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken, bool confirmDistinctParty = false)
+        string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken, bool confirmDistinctParty = false,
+        PartyRegisteredOutboxContext? outboxContext = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         PartyRegistrationRules.ValidateRoles(request.Roles);
         PartyRegistrationRules.ValidateWorkClassification(PartyType.NaturalPerson, request.Roles, request.WorkClassification);
         return QuickRegisterAsync(request, PartyType.NaturalPerson,
             PersianText.Normalize($"{request.GivenName} {request.FamilyName}"),
-            actorId, operationId, forceNew, selectedPartyId, confirmDistinctParty, transaction,
+            actorId, operationId, forceNew, selectedPartyId, confirmDistinctParty, outboxContext, transaction,
             () => AddNaturalAsync(request, actorId, operationId, transaction, cancellationToken), cancellationToken);
     }
 
     public Task<PartyQuickRegistrationResult> QuickRegisterLegalAsync(
         RegisterLegalParty request, string actorId, Guid operationId, bool forceNew,
-        string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken, bool confirmDistinctParty = false)
+        string? selectedPartyId, DbTransaction transaction, CancellationToken cancellationToken, bool confirmDistinctParty = false,
+        PartyRegisteredOutboxContext? outboxContext = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         PartyRegistrationRules.ValidateRoles(request.Roles);
         PartyRegistrationRules.ValidateWorkClassification(PartyType.LegalPerson, request.Roles, request.WorkClassification);
         return QuickRegisterAsync(request, PartyType.LegalPerson, PersianText.Normalize(request.LegalName),
-            actorId, operationId, forceNew, selectedPartyId, confirmDistinctParty, transaction,
+            actorId, operationId, forceNew, selectedPartyId, confirmDistinctParty, outboxContext, transaction,
             () => AddLegalAsync(request, actorId, operationId, transaction, cancellationToken), cancellationToken);
     }
 
     private async Task<PartyQuickRegistrationResult> QuickRegisterAsync(
         IPartyRegistrationCommon request, PartyType requestedType, string requestedName,
         string actorId, Guid operationId, bool forceNew, string? selectedPartyId, bool confirmDistinctParty,
+        PartyRegisteredOutboxContext? outboxContext,
         DbTransaction ambientTransaction, Func<Task<PartyRegistrationResult>> create,
         CancellationToken cancellationToken)
     {
@@ -320,7 +329,8 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
         string? givenName, string? familyName, string? legalName,
         string? nationalId, string? legalNationalId, string? economicCode, string? responsible,
         IPartyRegistrationCommon request, string actorId, Guid operationId,
-        DbTransaction? ambientTransaction, CancellationToken cancellationToken)
+        DbTransaction? ambientTransaction, PartyRegisteredOutboxContext? outboxContext,
+        CancellationToken cancellationToken)
     {
         var actor = RequireActor(actorId);
         if (operationId == Guid.Empty)
@@ -452,8 +462,61 @@ public sealed class PostgresPartyRepository(NpgsqlDataSource dataSource, IPartyS
                 await operationCommand.ExecuteNonQueryAsync(cancellationToken);
             }
 
+            await InsertPartyRegisteredOutboxAsync(
+                connection, transaction, partyId.Value, actor, operationId, outboxContext,
+                _timeProvider.GetUtcNow(), cancellationToken);
+
             return new PartyRegistrationResult(partyId.ToString(), true);
         }, cancellationToken);
+    }
+
+    private static async Task InsertPartyRegisteredOutboxAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid partyId,
+        string actor,
+        Guid operationId,
+        PartyRegisteredOutboxContext? context,
+        DateTimeOffset defaultOccurredAtUtc,
+        CancellationToken cancellationToken)
+    {
+        var eventId = Guid.CreateVersion7();
+        var occurredAtUtc = (context?.OccurredAtUtc ?? defaultOccurredAtUtc).ToUniversalTime();
+
+        await using (var eventCommand = new NpgsqlCommand("""
+            INSERT INTO persons_outbox_events
+                (event_id, event_type, contract_version, aggregate_id, actor_reference,
+                 occurred_at_utc, correlation_id, causation_id, idempotency_key)
+            VALUES
+                (@event, 'PartyRegistered', @version, @party, @actor,
+                 @occurred, @correlation, @causation, @operation);
+            """, connection, transaction))
+        {
+            eventCommand.Parameters.AddWithValue("event", eventId);
+            eventCommand.Parameters.AddWithValue("version", PersonsOutboxEventContract.PartyRegisteredVersion);
+            eventCommand.Parameters.AddWithValue("party", partyId);
+            eventCommand.Parameters.AddWithValue("actor", actor);
+            eventCommand.Parameters.AddWithValue("occurred", occurredAtUtc);
+            eventCommand.Parameters.Add(new NpgsqlParameter("correlation", NpgsqlDbType.Uuid)
+            {
+                Value = (object?)context?.CorrelationId ?? DBNull.Value
+            });
+            eventCommand.Parameters.Add(new NpgsqlParameter("causation", NpgsqlDbType.Uuid)
+            {
+                Value = (object?)context?.CausationId ?? DBNull.Value
+            });
+            eventCommand.Parameters.AddWithValue("operation", operationId);
+            await eventCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await using var deliveryCommand = new NpgsqlCommand("""
+            INSERT INTO persons_outbox_deliveries
+                (event_id, delivery_status, attempt_count, next_attempt_at_utc)
+            VALUES (@event, 'pending', 0, @now);
+            """, connection, transaction);
+        deliveryCommand.Parameters.AddWithValue("event", eventId);
+        deliveryCommand.Parameters.AddWithValue("now", occurredAtUtc);
+        await deliveryCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<PartyListItem>> SearchAsync(
