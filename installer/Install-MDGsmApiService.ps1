@@ -134,6 +134,29 @@ function Wait-ApiLiveness {
     if (-not $healthy) { throw "MDGsmApi did not return HTTP 200 from its loopback liveness endpoint." }
 }
 
+function Wait-ApiReadiness {
+    $healthUri = 'http://127.0.0.1:5080/health/ready'
+    $deadline = (Get-Date).AddSeconds(90)
+    $healthy = $false
+    while (-not $healthy -and (Get-Date) -lt $deadline) {
+        try {
+            $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUri -TimeoutSec 5
+            if ($response.StatusCode -eq 200) {
+                $payload = $response.Content | ConvertFrom-Json
+                $healthy = ($payload.status -eq 'ready' -and
+                    $payload.dependency -eq 'postgresql' -and
+                    $payload.identity -eq 'verified' -and
+                    $payload.serverMajor -eq 18)
+            }
+        } catch {
+            Start-Sleep -Milliseconds 1000
+        }
+    }
+    if (-not $healthy) {
+        throw "MDGsmApi did not prove PostgreSQL 18 readiness under the configured runtime LOGIN within 90 seconds."
+    }
+}
+
 function Restore-ServiceState {
     $state = Read-ServiceState
     $service = Get-ServiceRecord
@@ -329,6 +352,21 @@ function Invoke-InstallPhase {
             Write-SetupLog 'Application Event Log source was created by elevated Setup.'
         }
 
+        $script:setupStage = 'provision central PostgreSQL database and API LOGIN'
+        $provisionerPath = Join-Path $InstallDirectory 'Provision-MDGsmCentralDatabase.ps1'
+        if (-not (Test-Path -LiteralPath $provisionerPath -PathType Leaf)) {
+            throw "The central PostgreSQL provisioner is missing from the installation package."
+        }
+        Write-SetupLog 'Running central PostgreSQL 18 provision-or-verify. This step does not apply application schema migrations.'
+        $provisionOutput = @(& $provisionerPath -InstallDirectory $InstallDirectory 2>&1)
+        $provisionExitCode = $LASTEXITCODE
+        foreach ($line in @($provisionOutput)) {
+            Write-SetupLog ('Database provisioner: ' + [string]$line)
+        }
+        if ($provisionExitCode -ne 0) {
+            throw "Central PostgreSQL provisioning failed (exit $provisionExitCode); API service start is blocked."
+        }
+
         $script:setupStage = 'validate service account and start service'
         $service = Get-ServiceRecord
         if ($service.StartName -ne $serviceAccount) {
@@ -340,7 +378,9 @@ function Invoke-InstallPhase {
 
         $script:setupStage = 'verify loopback API liveness'
         Wait-ApiLiveness
-        Write-SetupLog 'Installation completed successfully; service running and loopback liveness verified.'
+        $script:setupStage = 'verify actual PostgreSQL runtime readiness'
+        Wait-ApiReadiness
+        Write-SetupLog 'Installation completed successfully; API liveness and PostgreSQL 18 runtime identity/readiness verified.'
         Remove-Item -LiteralPath $ServiceStatePath -Force -ErrorAction Stop
         Write-Host 'MD-Gsm API service is running as LocalService with the MDGsmApi service SID.'
         Write-Host 'The DPAPI key remains under ProgramData; Setup did not read the protected key file.'
