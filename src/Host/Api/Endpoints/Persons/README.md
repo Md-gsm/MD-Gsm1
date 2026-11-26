@@ -9,9 +9,9 @@ Both POST routes use `QuickRegisterNaturalAsync` / `QuickRegisterLegalAsync` ins
 
 All Persons routes require a PostgreSQL-validated IdentityAccess bearer session. Registration additionally requires live `persons.create` and `persons.read` checks, a UUID `Idempotency-Key`, and server-derived actor identity. Candidate disclosure is recorded in the append-only access audit before candidate data is returned.
 
-All write routes are fail-closed behind `Persons:WriteApiEnabled`, whose default is false. The Desktop client cannot set or override this server configuration. Search/list HTTP exposure remains withheld until persistent per-actor/per-purpose quotas, a global warning counter, abuse-lock criteria and audited admin unlock are approved and implemented.
+All write routes are fail-closed behind `Persons:WriteApiEnabled`, whose default is false. The Desktop client cannot set or override this server configuration. Search HTTP is implemented with persistent per-actor/per-purpose quotas, a global warning counter, the approved abuse-lock policy and audited admin unlock; it remains absent unless `Persons:SearchApiEnabled` is explicitly enabled (default false).
 
-These routes are a partial implementation candidate, not Persons G1 authorization, production readiness, schema-change authorization or production activation. Contact/Address lifecycle, persistent search controls, Outbox, complete merge-consumer acceptance and independent security review remain open.
+These routes are a partial implementation candidate, not Persons G1 authorization, production readiness, schema-change authorization or production activation. Contact/Address lifecycle, Outbox, complete merge-consumer acceptance and independent security review remain open. Search activation remains disabled pending the applicable G1/release gates and fresh independent review.
 
 ## Search security boundary (PR #96)
 
