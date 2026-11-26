@@ -44,8 +44,8 @@ public sealed class PersonsOutboxRegistrationTests
 
         services.AddPersonsOutboxDispatcher();
 
-        var descriptor = Assert.Single(services.Where(
-            item => item.ServiceType == typeof(PersonsOutboxDispatcher)));
+        var descriptor = Assert.Single(services,
+            item => item.ServiceType == typeof(PersonsOutboxDispatcher));
         Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime);
         Assert.DoesNotContain(services, item =>
             item.ServiceType == typeof(Microsoft.Extensions.Hosting.IHostedService) &&
