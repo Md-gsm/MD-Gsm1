@@ -3,7 +3,7 @@ info:
   title: MD-Gsm Persons API
   version: 2.0.0
   description: >
-    Versioned contract. The protected party-details GET endpoint is implemented and requires a validated IdentityAccess session and server-side permission checks. Search remains contract-only. Natural/legal registration POST routes always use duplicate resolution and are implemented behind Persons:WriteApiEnabled (default false); no lower-level HTTP route bypasses the quick-registration decision. Enabling writes is not authorized until the independent Persons G1/release gates pass.
+    Versioned contract. The protected party-details GET endpoint is implemented and requires a validated IdentityAccess session and server-side permission checks. Search HTTP is implemented behind Persons:SearchApiEnabled (default false), persistent quota/abuse controls and fail-closed global-read authorization. Natural/legal registration POST routes always use duplicate resolution and are implemented behind Persons:WriteApiEnabled (default false); no lower-level HTTP route bypasses the quick-registration decision. Enabling writes is not authorized until the independent Persons G1/release gates pass.
 servers:
   - url: https://{host}
     variables:
