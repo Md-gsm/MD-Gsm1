@@ -2,6 +2,7 @@ using System.Data;
 using System.Text.Json;
 using MDGsm.Persons.Application;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace MDGsm.Persons.Infrastructure;
 
@@ -37,8 +38,8 @@ public sealed class PostgresPartyLifecycleHistoryReader(NpgsqlDataSource dataSou
             """, connection))
         {
             command.Parameters.AddWithValue("party", partyId);
-            command.Parameters.AddWithValue("before_time", (object?)before?.OccurredAtUtc ?? DBNull.Value);
-            command.Parameters.AddWithValue("before_id", (object?)before?.HistoryId ?? DBNull.Value);
+            command.Parameters.Add("before_time", NpgsqlDbType.TimestampTz).Value = (object?)before?.OccurredAtUtc ?? DBNull.Value;
+            command.Parameters.Add("before_id", NpgsqlDbType.Uuid).Value = (object?)before?.HistoryId ?? DBNull.Value;
             command.Parameters.AddWithValue("limit", limit);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
