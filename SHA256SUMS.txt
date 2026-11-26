@@ -407,6 +407,7 @@ b6bae2f1e32c29014d94875e4755bc3b9ea97ca5f8364f00e4320791befd360d  docs/security/
 021ca79ad06e9fc1ac657008d9592ad48edaed6e718cbe343acfd0407df53daa  docs/security/authorization-and-dashboard-policy.md
 b043b8afd727aa710e340344d5ea9c1e449e50de5389064322bc76f863b9e38e  docs/security/backups/MDG-SECURITY-PERSONS-TEMP-WORKFLOW-DPAPI-001_v0.1_20261125T164550+0330_PRE-SERVICE-IDENTITY-CHANGE.md
 b1608ccd20c2209a2f1719a20fd5c2d3bd1ea8a4b72399e5691612599dbbede4  docs/security/backups/MDG-SECURITY-PERSONS-TEMP-WORKFLOW-DPAPI-001_v0.1_20261125T164550+0330_PRE-SERVICE-IDENTITY-CHANGE.md.meta.md
+9d482fe77a20ac7925ca79af4894c0224c90946a3cc75154f84d1f7327347098  docs/security/MDG-SECURITY-O46-LOCK-AND-RECONCILIATION-CONTRACT-PROPOSAL-001_v0.1.md
 7f020e5f1c4637cc573b2d8fae313c03e0b2374d2e08d6f3fda665bdfdc63778  docs/security/identityaccess-authorization-runtime-contract-fa.md
 8b4d16325fc76a1b38a9bca4eaabcfdfae7f37f0b36edae6a68ced5f922e266d  docs/security/identityaccess-five-open-items-fa.md
 0ea164b7b923b31e86c9e299761d43fcbd01226561a0c64e29ccd845c41ec8a3  docs/security/identityaccess-g1-review-handoff-fa.md
