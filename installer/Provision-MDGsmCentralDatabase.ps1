@@ -448,8 +448,25 @@ try {
     Write-Host 'No application schema migrations were executed.'
 }
 catch {
-    Write-Error 'Central PostgreSQL provisioning failed closed. No database migration was executed.'
-    throw
+    $failure = $_
+    $safeMessage = [string]$failure.Exception.Message
+    $secretValues = @()
+    if ($null -ne $script:clusterSecrets) {
+        $secretValues += [string]$script:clusterSecrets.SuperuserPassword
+        $secretValues += [string]$script:clusterSecrets.ServicePassword
+    }
+    if (-not [string]::IsNullOrWhiteSpace([string]$apiPassword)) {
+        $secretValues += [string]$apiPassword
+    }
+    foreach ($secretValue in $secretValues) {
+        if (-not [string]::IsNullOrWhiteSpace($secretValue)) {
+            $safeMessage = $safeMessage.Replace($secretValue, '[REDACTED]')
+        }
+    }
+    $safeMessage = $safeMessage -replace '(?i)(password|pwd)\s*=\s*[^;,\s]+', '$1=[REDACTED]'
+    $safeMessage = $safeMessage -replace '(?i)PGPASSWORD\s*=\s*[^;,\s]+', 'PGPASSWORD=[REDACTED]'
+    Write-Output ('PROVISIONING FAILURE: {0}: {1}' -f $failure.Exception.GetType().Name, $safeMessage)
+    throw [System.InvalidOperationException]::new("Central PostgreSQL provisioning failed: $safeMessage")
 }
 finally {
     $script:clusterSecrets = $null
