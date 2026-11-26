@@ -35,6 +35,7 @@ public static class PersonsInfrastructureRegistration
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddScoped<IPartyRepository, PostgresPartyRepository>();
+        services.AddScoped<IPersonsSearchControl, PostgresPersonsSearchControl>();
         services.AddScoped<IPartyReferenceValidator, PostgresPartyReferenceValidator>();
         services.AddScoped<IPartyMergeCoordinator, PostgresPartyMergeService>();
         services.AddSingleton<PostgresTemporaryWorkflowStore>();
