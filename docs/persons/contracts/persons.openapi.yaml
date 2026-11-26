@@ -17,9 +17,9 @@ paths:
       operationId: searchPersons
       summary: Search the Party directory
       description: >-
-        Requires a validated session, persons.read and the separate persons.search permission.
-        This is a global, rowless search; only SuperAdmin receives persons.search in the initial
-        permission matrix. Other roles are denied until an explicit permission grant is approved.
+        Requires a validated session and persons.read. This is a global, rowless search using
+        the same fail-closed global-read policy as Party details; Technician is denied until
+        authoritative assignment-based row scope exists.
         Responses contain only PartyId, type, display name and masked mobile; internal roles,
         city and creation timestamp are not returned. Search HTTP is absent unless
         Persons:SearchApiEnabled is explicitly enabled (default false).
@@ -55,7 +55,7 @@ paths:
                         displayName: { type: string }
                         maskedMobile: { type: [string, 'null'] }
         '401': { description: Missing or invalid session }
-        '403': { description: Missing persons.read or persons.search permission }
+        '403': { description: Missing persons.read or global-read scope authorization }
         '422': { description: Search term validation failed }
         '429': { description: Actor rate-limited or Abuse Locked; Retry-After is returned }
   /api/v2/persons:
