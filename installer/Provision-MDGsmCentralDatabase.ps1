@@ -61,7 +61,7 @@ function Set-RestrictedDirectoryAcl([string] $Path, [bool] $AllowApiService) {
             [System.Security.AccessControl.AccessControlType]::Allow)
         $acl.AddAccessRule($rule)
     }
-    Set-Acl -LiteralPath $Path -AclObject $acl
+    [System.IO.Directory]::SetAccessControl($Path, $acl)
 }
 
 function Set-RestrictedFileAcl([string] $Path, [bool] $AllowApiService) {
@@ -83,7 +83,7 @@ function Set-RestrictedFileAcl([string] $Path, [bool] $AllowApiService) {
             [System.Security.AccessControl.AccessControlType]::Allow)
         $acl.AddAccessRule($rule)
     }
-    Set-Acl -LiteralPath $Path -AclObject $acl
+    [System.IO.File]::SetAccessControl($Path, $acl)
 }
 
 function Protect-Text([string] $Text, [string] $Path, [bool] $AllowApiService) {
@@ -154,7 +154,7 @@ function Set-PostgresDataRootAcl {
         [System.Security.AccessControl.PropagationFlags]::None,
         [System.Security.AccessControl.AccessControlType]::Allow)
     $acl.AddAccessRule($serviceRule)
-    Set-Acl -LiteralPath $pgDataRoot -AclObject $acl
+    [System.IO.Directory]::SetAccessControl($pgDataRoot, $acl)
 }
 
 function Ensure-PostgresServiceAccount {
