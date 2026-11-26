@@ -123,7 +123,7 @@ public sealed class PersonsLifecyclePostgresTests
             await using var contact = new NpgsqlCommand("""
                 INSERT INTO persons_contact_points
                     (contact_point_id, party_id, kind, value, is_primary, is_messaging_allowed, is_active, created_by)
-                VALUES (@id, @source, @kind, 'merge-source@example.test', false, true, true, @actor);
+                VALUES (@id, @source, @kind, '02177700000', false, true, true, @actor);
                 """, connection);
             contact.Parameters.AddWithValue("id", Guid.CreateVersion7());
             contact.Parameters.AddWithValue("source", sourceId);
@@ -164,7 +164,7 @@ public sealed class PersonsLifecyclePostgresTests
               (SELECT origin_party_id FROM persons_addresses WHERE party_id=@target AND is_active
                  AND address_line='نشانی غیرتکراری مبدأ'),
               (SELECT origin_party_id FROM persons_contact_points WHERE party_id=@target AND kind=2 AND is_active
-                 AND value='merge-source@example.test');
+                 AND value='02177700000');
             """, verifyConnection);
         verify.Parameters.AddWithValue("source", sourceId);
         verify.Parameters.AddWithValue("target", targetId);
