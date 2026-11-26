@@ -48,6 +48,7 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#ApiPublishDir}\*"; DestDir: "{app}\Api"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourcePath}\Install-MDGsmApiService.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourcePath}\Provision-MDGsmCentralDatabase.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourcePath}\Install-MDGsmApiService.ps1"; Flags: dontcopy
 Source: "{#SourcePath}\Uninstall-MDGsmApiService.ps1"; DestDir: "{app}"; Flags: ignoreversion
 
