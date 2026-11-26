@@ -237,7 +237,7 @@ public sealed class PostgresPersonsSearchControl(
         command.Parameters.AddWithValue("kind", windowKind);
         command.Parameters.AddWithValue("start", windowStart);
         command.Parameters.AddWithValue("updated", now);
-        return (long)(await command.ExecuteScalarAsync(cancellationToken) ?? 0L);
+        return Convert.ToInt64(await command.ExecuteScalarAsync(cancellationToken) ?? 0);
     }
 
     private static async Task<long> IncrementGlobalCounterAsync(NpgsqlConnection connection, NpgsqlTransaction transaction,
