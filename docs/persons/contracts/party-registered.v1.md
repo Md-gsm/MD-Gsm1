@@ -6,10 +6,9 @@ Status: implementation contract for AC-37; source Outbox schema is in migration 
 
 PartyRegistered is the first and only Persons source event enabled by the approved AC-37 scope.
 
-- Emit exactly once when a new Party is created by successful temporary-workflow promotion.
-- Do not emit when promotion attaches an explicitly selected existing Party or resolves to an existing Party.
-- Replays return the stored promotion result and do not emit another event.
-- PartyMerged is out of scope and must not be emitted by this contract.
+- Emit exactly once in the same transaction whenever a new Party is created by a Persons-owned creation operation, including successful temporary-workflow promotion.
+- Do not emit when duplicate resolution attaches an existing Party, when a selected existing Party is reused, or when an idempotent operation is replayed.
+- A Party merge does not create a new Party and emits no PartyRegistered event. PartyMerged remains out of scope and must not be emitted by this contract.
 
 ## Versioned envelope
 
@@ -23,14 +22,14 @@ PartyRegistered is the first and only Persons source event enabled by the approv
 | occurredAtUtc | timestamp | Server UTC event time |
 | correlationId | UUID or null | Request correlation |
 | causationId | UUID or null | Source WorkflowId |
-| idempotencyKey | UUID | Source Promotion OperationId |
+| idempotencyKey | UUID | Source OperationId that created the Party; for temporary-workflow promotion this is its Promotion OperationId |
 
 The source envelope contains no arbitrary JSON payload. In particular, it contains no name, national identifier, mobile number, email address, address, internal note, raw workflow payload, or encryption material. The PartyId and opaque actor reference are identifiers, not descriptive personal fields.
 
 ## Transaction and delivery semantics
 
-Party creation, workflow promotion state, ciphertext deletion, the immutable promotion tombstone, the PartyRegistered event, and its initial pending delivery row are inserted and committed in one PostgreSQL transaction. The application service inserts both Outbox rows on the same transaction; PostgreSQL rollback removes both if either insert or any other promotion step fails. Disposable PostgreSQL integration tests verify this rollback behavior.
+Party creation, its source operation record, the immutable PartyRegistered event, and the initial pending delivery row are inserted by the Persons repository in one PostgreSQL transaction. For temporary-workflow promotion, the same caller-owned transaction also includes workflow promotion state, ciphertext deletion, and the immutable promotion tombstone. The promotion service passes correlation/causation metadata to the repository and does not insert a second event. PostgreSQL rollback removes the Party, source operation, event, delivery row, workflow changes, tombstone, and ciphertext deletion together if any step fails. Disposable PostgreSQL integration tests verify this rollback behavior.
 
-Delivery is at-least-once. Retries update the delivery state and retain the original eventId; consumers must deduplicate by eventId. Event envelopes are immutable. Delivery state is mutable and supports pending, leased, delivered, and quarantined states.
+Delivery is at-least-once. A database-backed delivery store atomically leases due or expired rows with `FOR UPDATE SKIP LOCKED`; each attempt increments the attempt count and retains the original eventId. Acknowledgement and retry scheduling are fenced by both lease owner and an unexpired lease. A stale worker cannot acknowledge or reschedule a lease claimed by another worker. A retry or process restart reuses the same EventId; consumers must deduplicate by EventId. Event envelopes are immutable. Delivery state is mutable and supports pending, leased, delivered, and quarantined states. Retry delay and lease duration are supplied by the explicitly invoked dispatcher; this contract adds no worker schedule, broker, retry ceiling, or automatic quarantine policy.
 
-This contract does not authorize creation of a worker principal, database grants, a runtime worker, API activation, or production delivery.
+The infrastructure registers the database delivery store and a one-batch dispatcher but does not register a publisher, hosted/background worker, scheduler, broker, worker principal, or database grants. A host must explicitly provide an approved `IPersonsOutboxPublisher` and invoke the dispatcher. This contract does not authorize API activation or production delivery.
