@@ -490,6 +490,43 @@ if (builder.Configuration.GetValue<bool>("Persons:LifecycleApiEnabled") &&
     });
 }
 
+ 
+if (builder.Configuration.GetValue<bool>("Persons:HistoryApiEnabled") &&
+    builder.Services.Any(descriptor => descriptor.ServiceType == typeof(IPartyLifecycleHistoryReader)))
+{
+    app.MapGet("/api/v2/persons/{partyId:guid}/history", async (
+        Guid partyId, int? limit, DateTimeOffset? beforeOccurredAtUtc, Guid? beforeHistoryId,
+        IAuthenticatedActorContext actor, [FromServices] IRolePermissionStore permissions,
+        [FromServices] IPartyLifecycleHistoryReader historyReader, CancellationToken cancellationToken) =>
+    {
+        var accountId = AccountId.From(actor.AccountId);
+        if (!await permissions.HasPermissionAsync(accountId, "persons.read", cancellationToken) ||
+            !await permissions.HasPermissionAsync(accountId, "persons.read.sensitive", cancellationToken) ||
+            !await permissions.HasPermissionAsync(accountId, "persons.history.read", cancellationToken))
+            return (IResult)Results.StatusCode(StatusCodes.Status403Forbidden);
+
+        if ((beforeOccurredAtUtc is null) != (beforeHistoryId is null))
+            return (IResult)Results.BadRequest(new { error = "persons_history_cursor_invalid" });
+        var cursor = beforeOccurredAtUtc is null
+            ? null
+            : new PartyLifecycleHistoryCursor(beforeOccurredAtUtc.Value, beforeHistoryId!.Value);
+        try
+        {
+            var page = await historyReader.GetAsync(partyId, limit ?? 50, cursor,
+                actor.AccountId.ToString("D"), cancellationToken);
+            return (IResult)Results.Ok(page);
+        }
+        catch (ArgumentException)
+        {
+            return (IResult)Results.BadRequest(new { error = "persons_history_request_invalid" });
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return (IResult)Results.BadRequest(new { error = "persons_history_request_invalid" });
+        }
+    });
+}
+
 }
 
 if (!personsPersistenceAvailable)
