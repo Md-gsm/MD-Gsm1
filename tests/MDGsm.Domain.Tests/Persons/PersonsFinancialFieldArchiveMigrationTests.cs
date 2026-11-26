@@ -105,14 +105,14 @@ public sealed class PersonsFinancialFieldArchiveMigrationTests
             }
 
             var expected = fixtures.ToDictionary(item => item.PartyId);
-            await using (var read = new NpgsqlCommand("""
+            await using (var read = new NpgsqlCommand($"""
                 SELECT party_id, credit_limit_rial, default_discount_percent, default_payment_method,
                        bank_card_last_four, source_created_at_utc, source_created_by,
                        source_updated_at_utc, source_updated_by, source_row_version,
                        credit_limit_disposition, default_discount_disposition,
                        default_payment_method_disposition, bank_card_last_four_disposition,
                        archive_migration_version
-                FROM """ + archiveSchema + """.persons_financial_field_archive
+                FROM {archiveSchema}.persons_financial_field_archive
                 ORDER BY party_id;
                 """, connection))
             await using (var reader = await read.ExecuteReaderAsync())
