@@ -34,9 +34,9 @@ public sealed class PersonsTemporaryDataRetentionTests
     {
         var services = new ServiceCollection();
         services.AddPersonsInfrastructure();
-        var registration = Assert.Single(services.Where(descriptor =>
+        var registration = Assert.Single(services, descriptor =>
             descriptor.ServiceType == typeof(IHostedService) &&
-            descriptor.ImplementationType == typeof(TemporaryWorkflowRetentionWorker)));
+            descriptor.ImplementationType == typeof(TemporaryWorkflowRetentionWorker));
         Assert.Equal(typeof(TemporaryWorkflowRetentionWorker), registration.ImplementationType);
         Assert.Equal(15, TemporaryWorkflowRetentionWorker.DefaultSweepIntervalMinutes);
 
