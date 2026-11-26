@@ -6,7 +6,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $pgServiceName = 'MDGsmPostgreSQL18'
-$pgInstallRoot = Join-Path $env:ProgramFiles 'PostgreSQL\18'
+$pgInstallRoot = Join-Path $env:ProgramFiles 'MD-Gsm-PostgreSQL\18'
 $pgDataRoot = Join-Path $env:ProgramData 'MD-Gsm\PostgreSQL\18'
 $pgDataDirectory = Join-Path $pgDataRoot 'data'
 $provisioningRoot = Join-Path $env:ProgramData 'MD-Gsm\Provisioning'
