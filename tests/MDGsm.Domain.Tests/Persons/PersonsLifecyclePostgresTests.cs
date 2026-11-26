@@ -116,6 +116,34 @@ public sealed class PersonsLifecyclePostgresTests
             await command.ExecuteNonQueryAsync();
         }
 
+        // Add nonduplicate source-owned contact/address records so the merge test proves
+        // both duplicate retention and provenance-preserving transfer.
+        await using (var connection = await dataSource.OpenConnectionAsync())
+        {
+            await using var contact = new NpgsqlCommand("""
+                INSERT INTO persons_contact_points
+                    (contact_point_id, party_id, kind, value, is_primary, is_messaging_allowed, is_active, created_by)
+                VALUES (@id, @source, @kind, 'merge-source@example.test', false, true, true, @actor);
+                """, connection);
+            contact.Parameters.AddWithValue("id", Guid.CreateVersion7());
+            contact.Parameters.AddWithValue("source", sourceId);
+            contact.Parameters.AddWithValue("kind", (short)2);
+            contact.Parameters.AddWithValue("actor", actor);
+            await contact.ExecuteNonQueryAsync();
+
+            await using var address = new NpgsqlCommand("""
+                INSERT INTO persons_addresses
+                    (address_id, party_id, country_code, province, city, postal_code, address_line,
+                     is_primary, is_active, created_by)
+                VALUES (@id, @source, 'IR', 'تهران', 'تهران', '9876543210', 'نشانی غیرتکراری مبدأ',
+                        false, true, @actor);
+                """, connection);
+            address.Parameters.AddWithValue("id", Guid.CreateVersion7());
+            address.Parameters.AddWithValue("source", sourceId);
+            address.Parameters.AddWithValue("actor", actor);
+            await address.ExecuteNonQueryAsync();
+        }
+
         var merge = new PostgresPartyMergeService(dataSource,
             [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant()]);
         var operation = Guid.CreateVersion7();
@@ -131,7 +159,12 @@ public sealed class PersonsLifecyclePostgresTests
               (SELECT origin_party_id FROM persons_contact_points WHERE party_id=@target AND kind=1 AND is_active),
               (SELECT count(*) FROM persons_addresses WHERE party_id=@source AND is_active),
               (SELECT count(*) FROM persons_addresses WHERE party_id=@target AND is_active),
-              (SELECT origin_party_id FROM persons_addresses WHERE party_id=@target AND is_active);
+              (SELECT origin_party_id FROM persons_addresses WHERE party_id=@target AND is_active
+                 AND address_line='نشانی آزمایشی'),
+              (SELECT origin_party_id FROM persons_addresses WHERE party_id=@target AND is_active
+                 AND address_line='نشانی غیرتکراری مبدأ'),
+              (SELECT origin_party_id FROM persons_contact_points WHERE party_id=@target AND kind=2 AND is_active
+                 AND value='merge-source@example.test');
             """, verifyConnection);
         verify.Parameters.AddWithValue("source", sourceId);
         verify.Parameters.AddWithValue("target", targetId);
@@ -145,9 +178,10 @@ public sealed class PersonsLifecyclePostgresTests
         Assert.True(duplicateOrigin == targetId,
             $"Exact duplicate origin mismatch: source={sourceId}; target={targetId}; origin={duplicateOrigin}");
         Assert.Equal(0L, reader.GetInt64(4));
-        Assert.Equal(1L, reader.GetInt64(5));
-        // The exact duplicate address remains target-origin; source provenance is retained in history.
-        Assert.Equal(targetId, reader.GetGuid(6));
+        Assert.Equal(2L, reader.GetInt64(5));
+        Assert.Equal(targetId, reader.GetGuid(6)); // duplicate target address remains target-origin
+        Assert.Equal(sourceId, reader.GetGuid(7)); // nonduplicate transferred address retains source origin
+        Assert.Equal(sourceId, reader.GetGuid(8)); // nonduplicate transferred contact retains source origin
         await reader.DisposeAsync();
 
         await using var historyConnection = await dataSource.OpenConnectionAsync();
