@@ -101,16 +101,25 @@ public sealed class PostgresPersonsPartyMergeParticipant : IPartyMergeParticipan
         var (postgres, tx) = RequireTransaction(connection, transaction);
         await SetReasonAsync(postgres, tx, "merge-deduplicated-contact", cancellationToken);
         await using (var dedupeContacts = new NpgsqlCommand("""
-            WITH duplicates AS (
-                SELECT s.contact_point_id AS source_id, t.contact_point_id AS target_id,
-                       s.kind, s.is_primary AS source_primary, s.is_messaging_allowed AS source_messaging,
-                       EXISTS (SELECT 1 FROM persons_contact_points p
-                           WHERE p.party_id=@target AND p.kind=s.kind AND p.is_active AND p.is_primary) AS target_has_primary
+            WITH source_ids AS (
+                SELECT s.contact_point_id AS source_id, s.kind, s.is_primary, s.is_messaging_allowed
                 FROM persons_contact_points s
                 JOIN persons_contact_points t
                   ON t.party_id=@target AND t.kind=s.kind AND t.is_active
                  AND lower(btrim(t.value))=lower(btrim(s.value))
                 WHERE s.party_id=@source AND s.is_active
+            ), duplicates AS (
+                SELECT t.contact_point_id AS target_id, s.kind,
+                       bool_or(s.is_primary) AS source_primary,
+                       bool_and(s.is_messaging_allowed) AS source_messaging,
+                       EXISTS (SELECT 1 FROM persons_contact_points p
+                           WHERE p.party_id=@target AND p.kind=s.kind AND p.is_active AND p.is_primary) AS target_has_primary
+                FROM persons_contact_points t
+                JOIN source_ids s ON s.kind=t.kind
+                JOIN persons_contact_points source_row ON source_row.contact_point_id=s.source_id
+                    AND lower(btrim(source_row.value))=lower(btrim(t.value))
+                WHERE t.party_id=@target AND t.is_active
+                GROUP BY t.contact_point_id, s.kind
             ), update_target AS (
                 UPDATE persons_contact_points t
                 SET is_messaging_allowed = t.is_messaging_allowed AND d.source_messaging,
@@ -120,7 +129,7 @@ public sealed class PostgresPersonsPartyMergeParticipant : IPartyMergeParticipan
             )
             UPDATE persons_contact_points s
             SET is_active=false, is_primary=false
-            FROM duplicates d WHERE s.contact_point_id=d.source_id;
+            WHERE s.contact_point_id IN (SELECT source_id FROM source_ids);
             """, postgres, tx))
         {
             dedupeContacts.Parameters.AddWithValue("source", context.SourcePartyId);
@@ -130,11 +139,9 @@ public sealed class PostgresPersonsPartyMergeParticipant : IPartyMergeParticipan
 
         await SetReasonAsync(postgres, tx, "merge-deduplicated-address", cancellationToken);
         await using (var dedupeAddresses = new NpgsqlCommand("""
-            WITH duplicates AS (
-                SELECT s.address_id AS source_id, t.address_id AS target_id,
-                       s.is_primary AS source_primary,
-                       EXISTS (SELECT 1 FROM persons_addresses p
-                           WHERE p.party_id=@target AND p.is_active AND p.is_primary) AS target_has_primary
+            WITH source_ids AS (
+                SELECT s.address_id AS source_id, s.is_primary,
+                       s.country_code, s.province, s.city, s.postal_code, s.address_line
                 FROM persons_addresses s
                 JOIN persons_addresses t
                   ON t.party_id=@target AND t.is_active
@@ -144,6 +151,19 @@ public sealed class PostgresPersonsPartyMergeParticipant : IPartyMergeParticipan
                  AND btrim(t.postal_code)=btrim(s.postal_code)
                  AND lower(btrim(t.address_line))=lower(btrim(s.address_line))
                 WHERE s.party_id=@source AND s.is_active
+            ), duplicates AS (
+                SELECT t.address_id AS target_id,
+                       bool_or(s.is_primary) AS source_primary,
+                       EXISTS (SELECT 1 FROM persons_addresses p
+                           WHERE p.party_id=@target AND p.is_active AND p.is_primary) AS target_has_primary
+                FROM persons_addresses t
+                JOIN source_ids s ON t.country_code=s.country_code
+                    AND lower(btrim(t.province))=lower(btrim(s.province))
+                    AND lower(btrim(t.city))=lower(btrim(s.city))
+                    AND btrim(t.postal_code)=btrim(s.postal_code)
+                    AND lower(btrim(t.address_line))=lower(btrim(s.address_line))
+                WHERE t.party_id=@target AND t.is_active
+                GROUP BY t.address_id
             ), update_target AS (
                 UPDATE persons_addresses t
                 SET is_primary = CASE WHEN NOT d.target_has_primary AND d.source_primary THEN true ELSE t.is_primary END
@@ -152,7 +172,7 @@ public sealed class PostgresPersonsPartyMergeParticipant : IPartyMergeParticipan
             )
             UPDATE persons_addresses s
             SET is_active=false, is_primary=false
-            FROM duplicates d WHERE s.address_id=d.source_id;
+            WHERE s.address_id IN (SELECT source_id FROM source_ids);
             """, postgres, tx))
         {
             dedupeAddresses.Parameters.AddWithValue("source", context.SourcePartyId);
