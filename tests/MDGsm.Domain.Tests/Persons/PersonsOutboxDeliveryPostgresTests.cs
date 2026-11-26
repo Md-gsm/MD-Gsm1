@@ -173,10 +173,10 @@ public sealed class PersonsOutboxDeliveryPostgresTests
         var store = new PostgresPersonsOutboxDeliveryStore(dataSource);
         var start = DateTimeOffset.UtcNow;
         var eventId = await EventIdForOperationAsync(dataSource, operation);
-        Assert.Equal(Guid.Parse(party.PartyId), (await store.LeaseDueAsync(
-            "worker-a", 1, start, start.AddMinutes(1), default, [eventId])).Single().Event.AggregateId);
-        var firstLease = await store.LeaseDueAsync("worker-a", 1, start, start.AddMinutes(1), default, [eventId]);
+        var firstLease = await store.LeaseDueAsync(
+            "worker-a", 1, start, start.AddMinutes(1), default, [eventId]);
         var leasedEvent = Assert.Single(firstLease);
+        Assert.Equal(Guid.Parse(party.PartyId), leasedEvent.Event.AggregateId);
 
         Assert.Equal(Guid.Parse(party.PartyId), firstLease.Event.AggregateId);
         var retryAt = start.AddSeconds(30);
