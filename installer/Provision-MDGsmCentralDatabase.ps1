@@ -164,7 +164,11 @@ function Ensure-PostgresServiceAccount {
     if ($null -ne $localUser -and $state.Status -ne 'provisioning') {
         throw 'The PostgreSQL service account exists outside an incomplete product provisioning operation; Setup will not take it over.'
     }
-    $securePassword = ConvertTo-SecureString $script:clusterSecrets.ServicePassword -AsPlainText -Force
+    $securePassword = [System.Security.SecureString]::new()
+    foreach ($character in $script:clusterSecrets.ServicePassword.ToCharArray()) {
+        $securePassword.AppendChar($character)
+    }
+    $securePassword.MakeReadOnly()
     if ($null -eq $localUser) {
         New-LocalUser -Name $accountName -Password $securePassword -AccountNeverExpires -PasswordNeverExpires -UserMayNotChangePassword -Description 'MD-Gsm managed PostgreSQL 18 service account' | Out-Null
     }
