@@ -1,0 +1,148 @@
+using MDGsm.Finance.Infrastructure.Accounts;
+using MDGsm.Persons.Application;
+using MDGsm.Persons.Contracts;
+using MDGsm.Persons.Domain;
+using MDGsm.Persons.Infrastructure;
+using Npgsql;
+using Xunit;
+
+namespace MDGsm.Domain.Tests.Persons;
+
+public sealed class PersonsLifecyclePostgresTests
+{
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Contact_and_party_lifecycle_enforce_versions_and_capture_history()
+    {
+        await using var dataSource = await OpenDisposableDataSourceAsync();
+        var repository = new PostgresPartyRepository(dataSource);
+        var actor = Guid.CreateVersion7().ToString("D");
+        var party = await repository.AddNaturalAsync(NewNatural("09125550181"), actor, Guid.CreateVersion7(), null, default);
+        var lifecycle = new PostgresPartyLifecycleService(dataSource, TimeProvider.System);
+
+        Guid contactId;
+        await using (var connection = await dataSource.OpenConnectionAsync())
+        await using (var command = new NpgsqlCommand("""
+            SELECT contact_point_id FROM persons_contact_points
+            WHERE party_id=@party AND kind=1 AND is_active;
+            """, connection))
+        {
+            command.Parameters.AddWithValue("party", Guid.Parse(party.PartyId));
+            contactId = (Guid)(await command.ExecuteScalarAsync())!;
+        }
+
+        var inactive = await lifecycle.SetContactPointActiveAsync(contactId, false, 1, actor, "customer requested pause", default);
+        Assert.Equal(PartyLifecycleChangeStatus.Applied, inactive.Status);
+        Assert.Equal(2L, inactive.CurrentRowVersion);
+
+        var reactivated = await lifecycle.SetContactPointActiveAsync(contactId, true, 2, actor, "customer reactivated contact", default);
+        Assert.Equal(PartyLifecycleChangeStatus.Applied, reactivated.Status);
+        Assert.Equal(3L, reactivated.CurrentRowVersion);
+
+        var updated = await lifecycle.UpdateContactPointValueAsync(contactId, "+989125550182", 3, actor, "corrected mobile", default);
+        Assert.Equal(PartyLifecycleChangeStatus.Applied, updated.Status);
+        Assert.Equal(4L, updated.CurrentRowVersion);
+
+        var stale = await lifecycle.SetContactPointActiveAsync(contactId, false, 3, actor, "stale update", default);
+        Assert.Equal(PartyLifecycleChangeStatus.VersionConflict, stale.Status);
+        Assert.Equal(4L, stale.CurrentRowVersion);
+
+        var partyInactive = await lifecycle.SetPartyActiveAsync(Guid.Parse(party.PartyId), false, 1, actor, "customer account inactive", default);
+        Assert.Equal(PartyLifecycleChangeStatus.Applied, partyInactive.Status);
+        Assert.Equal(2L, partyInactive.CurrentRowVersion);
+        var partyActive = await lifecycle.SetPartyActiveAsync(Guid.Parse(party.PartyId), true, 2, actor, "customer account restored", default);
+        Assert.Equal(PartyLifecycleChangeStatus.Applied, partyActive.Status);
+        Assert.Equal(3L, partyActive.CurrentRowVersion);
+
+        await using var historyConnection = await dataSource.OpenConnectionAsync();
+        await using var history = new NpgsqlCommand("""
+            SELECT count(*) FROM persons_lifecycle_history
+            WHERE entity_type='contact_point' AND entity_id=@id AND actor_id=@actor
+              AND change_type IN ('deactivated','reactivated','updated');
+            """, historyConnection);
+        history.Parameters.AddWithValue("id", contactId);
+        history.Parameters.AddWithValue("actor", actor);
+        Assert.Equal(3L, (long)(await history.ExecuteScalarAsync())!);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Party_merge_transfers_nonduplicates_and_preserves_duplicate_provenance_and_restrictive_consent()
+    {
+        await using var dataSource = await OpenDisposableDataSourceAsync();
+        var repository = new PostgresPartyRepository(dataSource);
+        var actor = Guid.CreateVersion7().ToString("D");
+        var source = await repository.AddNaturalAsync(NewNatural("09125550191"), actor, Guid.CreateVersion7(), null, default);
+        var target = await repository.AddNaturalAsync(NewNatural("09125550191"), actor, Guid.CreateVersion7(), null, default);
+        var sourceId = Guid.Parse(source.PartyId);
+        var targetId = Guid.Parse(target.PartyId);
+
+        await using (var connection = await dataSource.OpenConnectionAsync())
+        await using (var command = new NpgsqlCommand("""
+            UPDATE persons_contact_points SET is_messaging_allowed=false
+            WHERE party_id=@target AND kind=1 AND is_active;
+            """, connection))
+        {
+            command.Parameters.AddWithValue("target", targetId);
+            await command.ExecuteNonQueryAsync();
+        }
+
+        var merge = new PostgresPartyMergeService(dataSource,
+            [new PostgresPartyAccountMergeParticipant(), new PostgresPersonsPartyMergeParticipant()]);
+        var operation = Guid.CreateVersion7();
+        var result = await merge.MergeAsync(sourceId, targetId, operation, actor, TimeProvider.System.GetUtcNow(), default);
+        Assert.False(result.Replayed);
+
+        await using var verifyConnection = await dataSource.OpenConnectionAsync();
+        await using var verify = new NpgsqlCommand("""
+            SELECT
+              (SELECT count(*) FROM persons_contact_points WHERE party_id=@source AND is_active),
+              (SELECT count(*) FROM persons_contact_points WHERE party_id=@target AND kind=1 AND is_active),
+              (SELECT is_messaging_allowed FROM persons_contact_points WHERE party_id=@target AND kind=1 AND is_active),
+              (SELECT origin_party_id FROM persons_contact_points WHERE party_id=@target AND kind=1 AND is_active),
+              (SELECT count(*) FROM persons_addresses WHERE party_id=@source AND is_active),
+              (SELECT count(*) FROM persons_addresses WHERE party_id=@target AND is_active),
+              (SELECT origin_party_id FROM persons_addresses WHERE party_id=@target AND is_active);
+            """, verifyConnection);
+        verify.Parameters.AddWithValue("source", sourceId);
+        verify.Parameters.AddWithValue("target", targetId);
+        await using var reader = await verify.ExecuteReaderAsync();
+        Assert.True(await reader.ReadAsync());
+        Assert.Equal(0L, reader.GetInt64(0));
+        Assert.Equal(1L, reader.GetInt64(1));
+        Assert.False(reader.GetBoolean(2));
+        Assert.Equal(sourceId, reader.GetGuid(3));
+        Assert.Equal(0L, reader.GetInt64(4));
+        Assert.Equal(1L, reader.GetInt64(5));
+        Assert.Equal(sourceId, reader.GetGuid(6));
+        await reader.DisposeAsync();
+
+        await using var historyConnection = await dataSource.OpenConnectionAsync();
+        await using var history = new NpgsqlCommand("""
+            SELECT count(*) FROM persons_lifecycle_history
+            WHERE operation_id=@operation AND change_type IN ('merge-source','merge-transfer','merge-deduplicated');
+            """, historyConnection);
+        history.Parameters.AddWithValue("operation", operation);
+        Assert.True((long)(await history.ExecuteScalarAsync())! >= 3L);
+    }
+
+    private static RegisterNaturalParty NewNatural(string mobile) =>
+        new("آزمایش", "تاریخی", PartyBusinessRoles.Customer, Random.Shared.NextInt64(1_000_000_000L, 9_999_999_999L).ToString(),
+            mobile, null, null, null, "تهران", "تهران", "1234567890", "نشانی آزمایشی",
+            PartyAcquaintanceSource.Unknown, "", PartyCommunicationPreferences.Default);
+
+    private static async Task<NpgsqlDataSource> OpenDisposableDataSourceAsync()
+    {
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__MDGsmDatabase");
+        Assert.False(string.IsNullOrWhiteSpace(connectionString),
+            "Lifecycle integration tests require the disposable PostgreSQL database supplied by CI.");
+        var dataSource = NpgsqlDataSource.Create(connectionString!);
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var marker = new NpgsqlCommand(
+            "SELECT coalesce(shobj_description(oid, 'pg_database'), '') FROM pg_database WHERE datname=current_database();",
+            connection);
+        var comment = (string?)await marker.ExecuteScalarAsync();
+        Assert.Contains("MDGSM_DISPOSABLE_TEST_DB", comment ?? string.Empty);
+        return dataSource;
+    }
+}
