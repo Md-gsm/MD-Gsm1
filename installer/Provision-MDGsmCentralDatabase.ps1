@@ -181,7 +181,7 @@ function Write-State($State) {
     Set-RestrictedDirectoryAcl $stateDirectory $false
     $tempPath = $statePath + '.tmp'
     $json = $State | ConvertTo-Json -Depth 5
-    [System.IO.File]::WriteAllText($tempPath, $json, [System.UTF8Encoding]::new($false))
+    [System.IO.File]::WriteAllText($tempPath, $json, [System.Text.UTF8Encoding]::new($false))
     Set-RestrictedFileAcl $tempPath $false
     if (Test-Path -LiteralPath $statePath) {
         [System.IO.File]::Replace($tempPath, $statePath, $null, $true)
