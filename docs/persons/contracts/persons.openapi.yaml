@@ -257,6 +257,15 @@ components:
         isMerged: { type: boolean }
         hasActiveMobile: { type: boolean }
         maskedMobile: { type: string }
+        canonicalPartyId:
+          type: [string, 'null']
+          format: uuid
+          description: >-
+            Canonical root PartyId reached by following mergedIntoPartyId links. Present only for merged historical sources;
+            null when the stored merge chain cannot be resolved. A merged source remains non-selectable.
+        canonicalDisplayName:
+          type: [string, 'null']
+          description: Display name of the canonical root Party; shown only to identify the destination, not to enable source selection.
     PartyQuickRegistrationResponse:
       type: object
       required: [outcome, created, candidates]

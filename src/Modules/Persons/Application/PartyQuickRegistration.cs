@@ -18,7 +18,9 @@ public sealed record PartyQuickRegistrationCandidate(
     bool PartyIsActive,
     bool IsMerged,
     bool HasActiveMobile,
-    string MaskedMobile);
+    string MaskedMobile,
+    string? CanonicalPartyId = null,
+    string? CanonicalDisplayName = null);
 
 public sealed record PartyQuickRegistrationResult(
     PartyQuickRegistrationOutcome Outcome,
