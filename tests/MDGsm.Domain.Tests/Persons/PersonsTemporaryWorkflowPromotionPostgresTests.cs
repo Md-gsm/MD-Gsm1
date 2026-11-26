@@ -83,6 +83,56 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task AC38_temporary_payload_is_excluded_from_audit_metadata_and_metric_telemetry()
+    {
+        await using var dataSource = OpenDataSource();
+        const string privateName = "AC38-RAW-TEMPORARY-PII-NEVER-LEAVES-CIPHERTEXT";
+        var workflowId = await CreateWorkflowAsync(dataSource, NewMobile(), givenName: privateName);
+
+        var metricTags = new List<string>();
+        using var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, meterListener) =>
+            meterListener.EnableMeasurementEvents(instrument);
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, state) =>
+        {
+            foreach (var tag in tags)
+                metricTags.Add($"{instrument.Meter.Name}/{instrument.Name}:{tag.Key}={tag.Value}");
+        });
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, state) =>
+        {
+            foreach (var tag in tags)
+                metricTags.Add($"{instrument.Meter.Name}/{instrument.Name}:{tag.Key}={tag.Value}");
+        });
+        listener.Start();
+
+        var preview = await CreateService(dataSource).PreviewAsync(
+            workflowId, Actor, Guid.CreateVersion7(), default);
+        Assert.Contains(privateName, preview.DisplayName, StringComparison.Ordinal);
+
+        foreach (var tableName in new[]
+        {
+            "persons_temporary_workflows",
+            "persons_temporary_workflow_access_audit",
+            "persons_temporary_workflow_promotions",
+            "persons_outbox_events",
+            "persons_access_audit",
+            "persons_lifecycle_history"
+        })
+        {
+            await AssertTableDoesNotContainAsync(dataSource, tableName, privateName);
+        }
+
+        var ciphertext = await ReadPayloadBytesAsync(dataSource, workflowId);
+        Assert.NotEmpty(ciphertext);
+        Assert.True(ciphertext.AsSpan().IndexOf(Encoding.UTF8.GetBytes(privateName)) < 0,
+            "The temporary payload must be encrypted at rest.");
+
+        var exportedTags = string.Join(Environment.NewLine, metricTags);
+        Assert.DoesNotContain(privateName, exportedTags);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task AC37_closed_and_expired_workflows_are_rejected_without_deleting_payload()
     {
         await using var dataSource = OpenDataSource();
@@ -517,6 +567,27 @@ public sealed class PersonsTemporaryWorkflowPromotionPostgresTests
         var retry = await CreateService(dataSource).PromoteAsync(
             NewCommand(workflowId, operationId, createNew: true), default);
         Assert.Equal(TemporaryWorkflowPromotionOutcome.Created, retry.Outcome);
+    }
+
+    private static async Task AssertTableDoesNotContainAsync(
+        NpgsqlDataSource dataSource, string tableName, string marker)
+    {
+        var allowedTables = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "persons_temporary_workflows",
+            "persons_temporary_workflow_access_audit",
+            "persons_temporary_workflow_promotions",
+            "persons_outbox_events",
+            "persons_access_audit",
+            "persons_lifecycle_history"
+        };
+        Assert.Contains(tableName, allowedTables);
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            $"SELECT count(*) FROM public.{tableName} AS item WHERE to_jsonb(item)::text LIKE @marker;",
+            connection);
+        command.Parameters.AddWithValue("marker", $"%{marker}%");
+        Assert.Equal(0L, Convert.ToInt64(await command.ExecuteScalarAsync()));
     }
 
     private static PostgresTemporaryWorkflowPromotionService CreateService(
