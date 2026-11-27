@@ -155,7 +155,7 @@ function Test-Rsa3072OrStronger([System.Security.Cryptography.X509Certificates.X
     finally { $rsa.Dispose() }
 }
 
-function Get-OrCreateRootAuthority([bool] $HadPriorNetworkConfiguration) {
+function Get-OrCreateRootAuthority([bool] $HadPriorNetworkConfiguration, [string] $ExpectedPriorRootThumbprint) {
     $subject = 'CN=MD-Gsm Internal API Root CA'
     $namedRootCertificates = @(Get-ChildItem -Path Cert:\LocalMachine\My |
         Where-Object { $_.Subject -eq $subject -and (Test-IsCertificateAuthority $_) })
@@ -389,8 +389,10 @@ $network = Get-PrimaryPrivateNetwork
 if ($network.Mode -eq 'Loopback') { Write-NetworkLog $network.Reason }
 else { Write-NetworkLog ('Detected network ' + $network.Cidr + ' on ' + $network.InterfaceAlias + ' using Windows profile ' + $network.Profile + '.') }
 
-$hadPriorNetworkConfiguration = $null -ne $oldConfig -and
+$hadPriorNetworkConfiguration = [bool](
+    ($null -ne $oldConfig) -and
     -not [string]::IsNullOrWhiteSpace([string]$oldConfig.Network.CertificateThumbprint)
+)
 $expectedPriorRootThumbprint = if ($null -eq $oldConfig) { '' } else { [string]$oldConfig.Network.RootCaThumbprint }
 $root = Get-OrCreateRootAuthority -HadPriorNetworkConfiguration $hadPriorNetworkConfiguration -ExpectedPriorRootThumbprint $expectedPriorRootThumbprint
 $serverCertificate = Get-OrCreateServerCertificate -Root $root -HostName $network.HostName -NameType $network.CertificateNameType
