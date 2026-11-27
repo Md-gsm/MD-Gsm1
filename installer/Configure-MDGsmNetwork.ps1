@@ -53,18 +53,27 @@ function Get-Ipv4Cidr([string] $Address, [int] $PrefixLength) {
 function Get-PrimaryPrivateNetwork {
     $routes = @(Get-NetRoute -AddressFamily IPv4 -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue |
         Where-Object { -not [string]::IsNullOrWhiteSpace($_.NextHop) -and $_.NextHop -ne '0.0.0.0' })
-    $candidates = New-Object System.Collections.Generic.List[object]
+    $candidates = [System.Collections.Generic.List[object]]::new()
+
     foreach ($route in $routes) {
-        $profile = Get-NetConnectionProfile -InterfaceIndex $route.InterfaceIndex -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($null -eq $profile -or $profile.NetworkCategory -notin @('Private', 'DomainAuthenticated')) { continue }
-        $interface = Get-NetIPInterface -InterfaceIndex $route.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue | Select-Object -First 1
+        $profile = Get-NetConnectionProfile -InterfaceIndex $route.InterfaceIndex -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+        if ($null -eq $profile -or $profile.NetworkCategory -notin @('Private', 'DomainAuthenticated')) {
+            continue
+        }
+
+        $interface = Get-NetIPInterface -InterfaceIndex $route.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+            Select-Object -First 1
         if ($null -eq $interface) { continue }
+
         $addresses = @(Get-NetIPAddress -InterfaceIndex $route.InterfaceIndex -AddressFamily IPv4 -AddressState Preferred -ErrorAction SilentlyContinue |
             Where-Object {
                 $_.PrefixLength -ge 1 -and $_.PrefixLength -le 30 -and
                 $_.IPAddress -notmatch '^(127\.|169\.254\.|0\.)' -and -not $_.SkipAsSource
-            } | Sort-Object -Property SkipAsSource, IPAddress)
+            } |
+            Sort-Object -Property SkipAsSource, IPAddress)
         if ($addresses.Count -eq 0) { continue }
+
         $address = $addresses[0]
         $candidates.Add([pscustomobject]@{
             InterfaceIndex = [int]$route.InterfaceIndex
@@ -82,36 +91,55 @@ function Get-PrimaryPrivateNetwork {
     if ($candidates.Count -eq 0) {
         return [pscustomobject]@{
             Mode = 'Loopback'; HostName = 'localhost'; BindAddress = '127.0.0.1'
-            Cidr = $null; InterfaceAlias = $null; Profile = $null
+            Cidr = $null; InterfaceAlias = $null; Profile = $null; CertificateNameType = 'DNS'
             Reason = 'No active Domain or Private IPv4 network with a default route was detected. Remote access remains disabled.'
         }
     }
 
     $ordered = @($candidates | Sort-Object -Property Score, InterfaceIndex, Address)
     $bestScore = [int]$ordered[0].Score
-    $best = @($ordered | Where-Object { $_.Score -eq $bestScore } | Sort-Object -Property InterfaceIndex, Address)
+    $best = @($ordered | Where-Object { $_.Score -eq $bestScore } |
+        Sort-Object -Property InterfaceIndex, Address)
     $bestInterfaces = @($best | Select-Object -ExpandProperty InterfaceIndex -Unique)
-    if ($bestInterfaces.Count -gt 1) {
+    if ($bestInterfaces.Count -ne 1) {
         return [pscustomobject]@{
             Mode = 'Loopback'; HostName = 'localhost'; BindAddress = '127.0.0.1'
-            Cidr = $null; InterfaceAlias = $null; Profile = $null
+            Cidr = $null; InterfaceAlias = $null; Profile = $null; CertificateNameType = 'DNS'
             Reason = 'Several private network interfaces have the same route priority. Remote access remains disabled rather than selecting an ambiguous network.'
         }
     }
 
     $selected = $best[0]
     $computer = Get-CimInstance Win32_ComputerSystem
-    $computer = Get-CimInstance Win32_ComputerSystem
     $hostName = [string]$selected.Address
     $certificateNameType = 'IPAddress'
-    if ($computer.PartOfDomain -and -not [string]::IsNullOrWhiteSpace($computer.Domain) -and
-        -not [string]::IsNullOrWhiteSpace($computer.DNSHostName)) {
+
+    # Domain DNS is reliable for domain-joined workstations. In a workgroup,
+    # use the selected interface IP and an IP SAN instead of assuming that
+    # another computer can resolve the server's NetBIOS computer name.
+    if ($computer.PartOfDomain -and
+        -not [string]::IsNullOrWhiteSpace([string]$computer.Domain) -and
+        -not [string]::IsNullOrWhiteSpace([string]$computer.DNSHostName)) {
         $hostName = ('{0}.{1}' -f $computer.DNSHostName, $computer.Domain).TrimEnd('.').ToLowerInvariant()
         $certificateNameType = 'DNS'
     }
 
     if ($certificateNameType -eq 'DNS' -and
-        ($hostName.Length -gt 253 -or $hostName -notmatch '^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?
+        ($hostName.Length -gt 253 -or $hostName -notmatch '^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$')) {
+        return [pscustomobject]@{
+            Mode = 'Loopback'; HostName = 'localhost'; BindAddress = '127.0.0.1'
+            Cidr = $null; InterfaceAlias = $null; Profile = $null; CertificateNameType = 'DNS'
+            Reason = 'Windows did not provide a usable domain DNS host name. Remote access remains disabled.'
+        }
+    }
+
+    return [pscustomobject]@{
+        Mode = 'Https'; HostName = $hostName; BindAddress = $selected.Address
+        Cidr = $selected.Cidr; InterfaceAlias = $selected.InterfaceAlias
+        CertificateNameType = $certificateNameType
+        Profile = if ($selected.NetworkCategory -eq 'DomainAuthenticated') { 'Domain' } else { 'Private' }
+        Reason = 'Selected the active private network with the lowest combined route and interface metric.'
+    }
 }
 
 function Test-IsCertificateAuthority([System.Security.Cryptography.X509Certificates.X509Certificate2] $Certificate) {
