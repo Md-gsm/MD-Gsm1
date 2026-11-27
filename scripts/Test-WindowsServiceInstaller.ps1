@@ -285,8 +285,16 @@ function Invoke-SystemInstaller([string] $Phase) {
             'Inno Setup did not create an installation log.'
         }
         $code = if ($null -eq $process) { 'no-process-result' } else { [string]$process.ExitCode }
+        $diagnostics = ''
+        try {
+            $diagnostics = Get-ServiceFailureDiagnostics $Phase
+        } catch {
+            $diagnostics = "Could not collect service setup diagnostics: " + $_.Exception.ToString()
+        }
         throw ("Installer phase '" + $Phase + "' failed with exit code " + $code + "." +
-            [Environment]::NewLine + $tail)
+            [Environment]::NewLine + $tail +
+            [Environment]::NewLine + "=== PREPARE / SERVICE SETUP DIAGNOSTICS ===" +
+            [Environment]::NewLine + $diagnostics)
     }
     if (-not (Test-Path -LiteralPath $log -PathType Leaf)) {
         throw "Installer phase '$Phase' returned success without an Inno Setup log."
