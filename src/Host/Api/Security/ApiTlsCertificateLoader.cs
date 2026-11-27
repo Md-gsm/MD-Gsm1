@@ -14,6 +14,7 @@ internal static class ApiTlsCertificateLoader
 {
     private const string ServerAuthenticationOid = "1.3.6.1.5.5.7.3.1";
     private const string SubjectAlternativeNameOid = "2.5.29.17";
+    private const string Sha256WithRsaOid = "1.2.840.113549.1.1.11";
 
     public static X509Certificate2 LoadFromLocalMachine(
         string thumbprint,
@@ -53,6 +54,10 @@ internal static class ApiTlsCertificateLoader
                 now >= certificate.NotAfter.ToUniversalTime())
                 throw new InvalidOperationException(
                     "The configured API TLS certificate is not currently valid or its private key is unavailable.");
+
+            if (!string.Equals(certificate.SignatureAlgorithm.Value, Sha256WithRsaOid, StringComparison.Ordinal))
+                throw new InvalidOperationException(
+                    "The configured API TLS certificate signature algorithm is not SHA-256 with RSA.");
 
             using (var publicKey = certificate.GetRSAPublicKey())
             {
@@ -101,6 +106,10 @@ internal static class ApiTlsCertificateLoader
             var actualRootThumbprint = rootCertificate.Thumbprint;
             if (!string.Equals(actualRootThumbprint, normalizedRootThumbprint, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("The configured API TLS certificate does not terminate at the pinned MD-Gsm root CA.");
+
+            if (!string.Equals(rootCertificate.SignatureAlgorithm.Value, Sha256WithRsaOid, StringComparison.Ordinal))
+                throw new InvalidOperationException(
+                    "The pinned MD-Gsm root CA signature algorithm is not SHA-256 with RSA.");
 
             using (var rootPublicKey = rootCertificate.GetRSAPublicKey())
             {
