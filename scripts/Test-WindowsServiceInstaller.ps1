@@ -701,6 +701,72 @@ function Invoke-TlsNegativeProbes([string] $RootThumbprint) {
     }
 }
 
+function Assert-ProductionRequiresHttpsConfiguration {
+    $networkConfigPath = Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json'
+    $hiddenConfigPath = $networkConfigPath + '.production-negative-test'
+    $apiExe = Join-Path $installDirectory 'Api\MDGsm.Api.exe'
+    $stdoutPath = Join-Path $env:TEMP 'MD-Gsm-NoNetworkConfig.stdout.log'
+    $stderrPath = Join-Path $env:TEMP 'MD-Gsm-NoNetworkConfig.stderr.log'
+    $oldEnvironment = $env:ASPNETCORE_ENVIRONMENT
+    $oldDotnetEnvironment = $env:DOTNET_ENVIRONMENT
+
+    Stop-Service -Name $serviceName -Force
+    $deadline = (Get-Date).AddSeconds(30)
+    do {
+        Start-Sleep -Milliseconds 500
+        $service = Get-Service -Name $serviceName
+    } while ($service.Status -ne 'Stopped' -and (Get-Date) -lt $deadline)
+    if ($service.Status -ne 'Stopped') {
+        throw 'Could not stop the API before the production no-network-config test.'
+    }
+
+    try {
+        Move-Item -LiteralPath $networkConfigPath -Destination $hiddenConfigPath -Force
+        $env:ASPNETCORE_ENVIRONMENT = 'Production'
+        $env:DOTNET_ENVIRONMENT = 'Production'
+        $process = Start-Process -FilePath $apiExe -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+        if (-not $process.WaitForExit(12000)) {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            throw 'The Production API continued running when its HTTPS network configuration was absent.'
+        }
+
+        $output = ''
+        if (Test-Path -LiteralPath $stdoutPath) { $output += Get-Content -LiteralPath $stdoutPath -Raw }
+        if (Test-Path -LiteralPath $stderrPath) { $output += Get-Content -LiteralPath $stderrPath -Raw }
+        if ($process.ExitCode -eq 0 -or
+            $output -notlike '*Production API startup requires the machine-local HTTPS network configuration*') {
+            throw ('Production API did not fail closed with the expected startup error. ExitCode=' + $process.ExitCode + '; output=' + $output)
+        }
+
+        if (@(Get-NetTCPConnection -LocalPort 5080 -State Listen -ErrorAction SilentlyContinue).Count -gt 0 -or
+            @(Get-NetTCPConnection -LocalPort 5081 -State Listen -ErrorAction SilentlyContinue).Count -gt 0) {
+            throw 'An API TCP listener remained active after the Production HTTPS configuration was removed.'
+        }
+        Write-Host 'PASS: Production API refuses to start without machine-local HTTPS configuration; no HTTP or HTTPS listener remains.'
+    } finally {
+        if (Test-Path -LiteralPath $hiddenConfigPath) {
+            Move-Item -LiteralPath $hiddenConfigPath -Destination $networkConfigPath -Force
+        }
+        if ($null -eq $oldEnvironment) { Remove-Item Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue }
+        else { $env:ASPNETCORE_ENVIRONMENT = $oldEnvironment }
+        if ($null -eq $oldDotnetEnvironment) { Remove-Item Env:DOTNET_ENVIRONMENT -ErrorAction SilentlyContinue }
+        else { $env:DOTNET_ENVIRONMENT = $oldDotnetEnvironment }
+        Remove-Item -LiteralPath $stdoutPath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $stderrPath -Force -ErrorAction SilentlyContinue
+        Start-Service -Name $serviceName
+        $restartDeadline = (Get-Date).AddSeconds(40)
+        do {
+            Start-Sleep -Milliseconds 500
+            $service = Get-Service -Name $serviceName
+        } while ($service.Status -ne 'Running' -and (Get-Date) -lt $restartDeadline)
+        if ($service.Status -ne 'Running') {
+            throw 'The API did not return to Running after the Production no-network-config test.'
+        }
+    }
+
+    Assert-ServiceReady 'production-requires-https-config-restored'
+}
+
 function Invoke-NetworkProvisioner([string] $Label) {
     $networkScript = Join-Path $installDirectory 'Configure-MDGsmNetwork.ps1'
     $output = & $powerShell51 -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $networkScript -InstallDirectory $installDirectory -RenewOnly 2>&1
@@ -947,6 +1013,9 @@ Assert-KeyProvisionedMarker 'initial-install'
 # validates successful DPAPI unprotection under NT SERVICE\MDGsmApi.
 Assert-ServiceReady 'initial-install'
 Assert-DatabaseProvisioning 'initial-install'
+
+Write-Host '== Verify Production refuses to start without HTTPS network configuration =='
+Assert-ProductionRequiresHttpsConfiguration
 
 $centralDesktopSettings = Get-Content -LiteralPath (Join-Path $installDirectory 'appsettings.json') -Raw | ConvertFrom-Json
 $initialNetwork = (Get-Content -LiteralPath (Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json') -Raw | ConvertFrom-Json).Network
