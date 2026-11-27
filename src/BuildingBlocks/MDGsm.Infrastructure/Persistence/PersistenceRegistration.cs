@@ -34,7 +34,7 @@ public static class PersistenceRegistration
         // application migrations. Do not start a table-dependent retention worker
         // until an operator explicitly enables it after the Persons schema is ready.
         if (configuration.GetValue<bool>("Persons:TemporaryWorkflowRetentionEnabled"))
-            services.AddHostedService<TemporaryWorkflowRetentionWorker>();
+            services.AddPersonsRetentionWorker();
 
         // IdentityAccess-owned adapters implement Persons-owned application ports.
         // Persons.Infrastructure has no dependency on IdentityAccess.
