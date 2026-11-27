@@ -171,6 +171,13 @@ function Get-OrCreateRootAuthority([bool] $HadPriorNetworkConfiguration) {
     if ($validRoots.Count -gt 1) {
         throw 'More than one valid MD-Gsm root CA exists in LocalMachine\My. Explicit certificate rotation/reconciliation is required.'
     }
+    if ($HadPriorNetworkConfiguration) {
+        $expectedPriorRoot = ([string]$ExpectedPriorRootThumbprint -replace '[^0-9A-Fa-f]', '').ToUpperInvariant()
+        if ($expectedPriorRoot.Length -ne 40 -or $validRoots.Count -ne 1 -or
+            -not [string]::Equals($validRoots[0].Thumbprint, $expectedPriorRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw 'The previously configured MD-Gsm root CA is missing or does not match the stored thumbprint. Silent Root CA replacement is blocked; use the approved explicit rotation and client re-pair procedure.'
+        }
+    }
     if ($validRoots.Count -eq 0 -and $existingRoots.Count -gt 0) {
         throw 'The previously provisioned MD-Gsm root CA is expired or not yet valid. Automatic root replacement is blocked; use the approved certificate rotation and client re-pair procedure.'
     }
@@ -373,7 +380,10 @@ $network = Get-PrimaryPrivateNetwork
 if ($network.Mode -eq 'Loopback') { Write-NetworkLog $network.Reason }
 else { Write-NetworkLog ('Detected network ' + $network.Cidr + ' on ' + $network.InterfaceAlias + ' using Windows profile ' + $network.Profile + '.') }
 
-$root = Get-OrCreateRootAuthority -HadPriorNetworkConfiguration ($null -ne $oldConfig -and -not [string]::IsNullOrWhiteSpace([string]$oldConfig.Network.CertificateThumbprint))
+$hadPriorNetworkConfiguration = $null -ne $oldConfig -and
+    -not [string]::IsNullOrWhiteSpace([string]$oldConfig.Network.CertificateThumbprint)
+$expectedPriorRootThumbprint = if ($null -eq $oldConfig) { '' } else { [string]$oldConfig.Network.RootCaThumbprint }
+$root = Get-OrCreateRootAuthority -HadPriorNetworkConfiguration $hadPriorNetworkConfiguration -ExpectedPriorRootThumbprint $expectedPriorRootThumbprint
 $serverCertificate = Get-OrCreateServerCertificate -Root $root -HostName $network.HostName -NameType $network.CertificateNameType
 $serverName = $network.HostName
 $apiBaseUrl = 'https://{0}:{1}/' -f $serverName, $httpsPort
