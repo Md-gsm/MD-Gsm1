@@ -132,14 +132,28 @@ internal static class ApiTlsCertificateLoader
             if (dnsBytes.Length > 253)
                 return false;
 
-            expected = new byte[dnsBytes.Length + 4];
+            var sequenceContentLength = dnsBytes.Length + 2;
+            var headerLength = sequenceContentLength < 128 ? 4 : 5;
+            expected = new byte[dnsBytes.Length + headerLength];
             expected[0] = 0x30;
-            expected[1] = checked((byte)(dnsBytes.Length + 2));
-            expected[2] = 0x82;
-            expected[3] = checked((byte)dnsBytes.Length);
-            Buffer.BlockCopy(dnsBytes, 0, expected, 4, dnsBytes.Length);
+            if (sequenceContentLength < 128)
+            {
+                expected[1] = checked((byte)sequenceContentLength);
+                expected[2] = 0x82;
+                expected[3] = checked((byte)dnsBytes.Length);
+            }
+            else
+            {
+                expected[1] = 0x81;
+                expected[2] = checked((byte)sequenceContentLength);
+                expected[3] = 0x82;
+                expected[4] = checked((byte)dnsBytes.Length);
+            }
+            Buffer.BlockCopy(dnsBytes, 0, expected, headerLength, dnsBytes.Length);
         }
 
-        return CryptographicOperations.FixedTimeEquals(sanExtensions[0].RawData, expected);
+        var actual = sanExtensions[0].RawData;
+        return actual.Length == expected.Length &&
+            CryptographicOperations.FixedTimeEquals(actual, expected);
     }
 }
