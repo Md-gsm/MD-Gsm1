@@ -90,8 +90,8 @@ function Get-PrimaryPrivateNetwork {
 
     if ($candidates.Count -eq 0) {
         return [pscustomobject]@{
-            Mode = 'Loopback'; HostName = 'localhost'; BindAddress = '127.0.0.1'
-            Cidr = $null; InterfaceAlias = $null; Profile = $null; CertificateNameType = 'DNS'
+            Mode = 'Loopback'; HostName = '127.0.0.1'; BindAddress = '127.0.0.1'
+            Cidr = $null; InterfaceAlias = $null; Profile = $null; CertificateNameType = 'IPAddress'
             Reason = 'No active Domain or Private IPv4 network with a default route was detected. Remote access remains disabled.'
         }
     }
@@ -103,8 +103,8 @@ function Get-PrimaryPrivateNetwork {
     $bestInterfaces = @($best | Select-Object -ExpandProperty InterfaceIndex -Unique)
     if ($bestInterfaces.Count -ne 1) {
         return [pscustomobject]@{
-            Mode = 'Loopback'; HostName = 'localhost'; BindAddress = '127.0.0.1'
-            Cidr = $null; InterfaceAlias = $null; Profile = $null; CertificateNameType = 'DNS'
+            Mode = 'Loopback'; HostName = '127.0.0.1'; BindAddress = '127.0.0.1'
+            Cidr = $null; InterfaceAlias = $null; Profile = $null; CertificateNameType = 'IPAddress'
             Reason = 'Several private network interfaces have the same route priority. Remote access remains disabled rather than selecting an ambiguous network.'
         }
     }
@@ -150,33 +150,51 @@ function Test-IsCertificateAuthority([System.Security.Cryptography.X509Certifica
 
 function Get-OrCreateRootAuthority {
     $subject = 'CN=MD-Gsm Internal API Root CA'
-    $root = Get-ChildItem -Path Cert:\LocalMachine\My |
-        Where-Object {
-            $_.Subject -eq $subject -and $_.HasPrivateKey -and
-            $_.NotAfter -gt (Get-Date).AddDays(180) -and (Test-IsCertificateAuthority $_)
-        } | Sort-Object -Property NotAfter -Descending | Select-Object -First 1
+    $existingRoots = @(Get-ChildItem -Path Cert:\LocalMachine\My |
+        Where-Object { $_.Subject -eq $subject -and $_.HasPrivateKey -and (Test-IsCertificateAuthority $_) })
+    $now = Get-Date
+    $validRoots = @($existingRoots | Where-Object { $_.NotBefore -le $now -and $_.NotAfter -gt $now } |
+        Sort-Object -Property NotAfter -Descending)
 
-    if ($null -eq $root) {
+    if ($validRoots.Count -gt 1) {
+        throw 'More than one valid MD-Gsm root CA exists in LocalMachine\\My. Explicit certificate rotation/reconciliation is required.'
+    }
+    if ($validRoots.Count -eq 0 -and $existingRoots.Count -gt 0) {
+        throw 'The previously provisioned MD-Gsm root CA is expired or not yet valid. Automatic root replacement is blocked; use the approved certificate rotation and client re-pair procedure.'
+    }
+
+    if ($validRoots.Count -eq 0) {
         $root = New-SelfSignedCertificate -Type Custom -Subject $subject -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 3072 -HashAlgorithm SHA256 -KeyUsage CertSign, CRLSign -KeyExportPolicy NonExportable -NotAfter (Get-Date).AddYears(10) -TextExtension @('2.5.29.19={critical}{text}ca=1&pathlength=0')
-        Write-NetworkLog 'Created a new non-exportable machine-local API root CA. Its private key is never included in the client connection bundle.'
+        Write-NetworkLog 'Created the initial non-exportable machine-local API root CA. Its private key is never included in the client connection bundle.'
+    } else {
+        $root = $validRoots[0]
     }
 
-    if (-not (Test-IsCertificateAuthority $root)) { throw 'The stored MD-Gsm root certificate is not a CA certificate.' }
+    if (-not (Test-IsCertificateAuthority $root)) {
+        throw 'The stored MD-Gsm root certificate is not a CA certificate.'
+    }
     if ($root.NotAfter -le (Get-Date).AddDays(180)) {
-        throw 'The internal root CA expires within 180 days. A planned client re-pairing is required; automatic root replacement is blocked.'
+        throw 'The MD-Gsm root CA expires within 180 days. Automatic replacement is blocked because every client must explicitly trust the replacement root.'
     }
 
-    $rootStore = New-Object System.Security.Cryptography.X509Certificates.X509Store(
+    $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
         [System.Security.Cryptography.X509Certificates.StoreName]::Root,
         [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
     try {
         $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-        $trusted = $rootStore.Certificates.Find([System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint, $root.Thumbprint, $false)
+        $trusted = $rootStore.Certificates.Find(
+            [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+            $root.Thumbprint, $false)
         if ($trusted.Count -eq 0) {
             $rootStore.Add($root)
-            Write-NetworkLog 'Installed the public root certificate into LocalMachine Root for local server-side chain validation.'
+            Write-NetworkLog 'Installed the public root certificate into LocalMachine Root for local API HTTPS validation.'
+        } elseif ($trusted.Count -gt 1) {
+            throw 'The MD-Gsm root CA thumbprint is duplicated in LocalMachine Root.'
         }
-    } finally { $rootStore.Close() }
+    } finally {
+        $rootStore.Close()
+        $rootStore.Dispose()
+    }
     return $root
 }
 
@@ -192,7 +210,7 @@ function Add-ServiceReadAccessToPrivateKey([System.Security.Cryptography.X509Cer
             throw ('Unsupported machine key provider: ' + $rsa.GetType().FullName)
         }
         if (-not (Test-Path -LiteralPath $keyFile -PathType Leaf)) { throw 'The API TLS private-key file could not be resolved in the machine key store.' }
-        $serviceSid = (New-Object System.Security.Principal.NTAccount('NT SERVICE', $serviceName)).Translate([System.Security.Principal.SecurityIdentifier])
+        $serviceSid = [System.Security.Principal.NTAccount]::new('NT SERVICE', $serviceName).Translate([System.Security.Principal.SecurityIdentifier])
         $acl = Get-Acl -LiteralPath $keyFile
         $rule = [System.Security.AccessControl.FileSystemAccessRule]::new($serviceSid, [System.Security.AccessControl.FileSystemRights]::Read, [System.Security.AccessControl.AccessControlType]::Allow)
         $acl.SetAccessRule($rule)
@@ -236,7 +254,7 @@ function Get-OrCreateServerCertificate(
 }
 
 function Set-NetworkDirectoryAcl {
-    $serviceSid = (New-Object System.Security.Principal.NTAccount('NT SERVICE', $serviceName)).Translate([System.Security.Principal.SecurityIdentifier]).Value
+    $serviceSid = [System.Security.Principal.NTAccount]::new('NT SERVICE', $serviceName).Translate([System.Security.Principal.SecurityIdentifier]).Value
     $icacls = Join-Path $env:windir 'System32\icacls.exe'
     & $icacls $networkRoot '/inheritance:r' '/grant:r' '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' ("*{0}:(OI)(CI)RX" -f $serviceSid) | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Could not restrict the API network configuration directory to SYSTEM, Administrators and the API service SID.' }
@@ -282,10 +300,10 @@ if ($network.Mode -eq 'Loopback') { Write-NetworkLog $network.Reason }
 else { Write-NetworkLog ('Detected network ' + $network.Cidr + ' on ' + $network.InterfaceAlias + ' using Windows profile ' + $network.Profile + '.') }
 
 $root = Get-OrCreateRootAuthority
-$serverCertificate = Get-OrCreateServerCertificate -Root $root -HostName $network.HostName -NameType $(if ($network.Mode -eq 'Https') { $network.CertificateNameType } else { 'DNS' })
+$serverCertificate = Get-OrCreateServerCertificate -Root $root -HostName $network.HostName -NameType $network.CertificateNameType
 $serverName = $network.HostName
 $apiBaseUrl = 'https://{0}:{1}/' -f $serverName, $httpsPort
-$allowedHosts = if ($network.Mode -eq 'Https') { $serverName + ';localhost' } else { 'localhost;127.0.0.1' }
+$allowedHosts = if ($network.Mode -eq 'Https') { $serverName + ';localhost;127.0.0.1' } else { 'localhost;127.0.0.1' }
 
 $config = [ordered]@{
     AllowedHosts = $allowedHosts
@@ -306,20 +324,20 @@ $config = [ordered]@{
 try {
     Set-ApiFirewallRule -Network $network
 } catch {
-    $network = [pscustomobject]@{ Mode = 'Loopback'; HostName = 'localhost'; BindAddress = '127.0.0.1'; Cidr = $null; InterfaceAlias = $null; Profile = $null }
-    $apiBaseUrl = 'https://localhost:5081/'
+    $network = [pscustomobject]@{ Mode = 'Loopback'; HostName = '127.0.0.1'; BindAddress = '127.0.0.1'; Cidr = $null; InterfaceAlias = $null; Profile = $null; CertificateNameType = 'IPAddress' }
+    $apiBaseUrl = 'https://127.0.0.1:5081/'
     $config = [ordered]@{
         AllowedHosts = 'localhost;127.0.0.1'
         Network = [ordered]@{
             Mode = 'Https'; BindAddress = '127.0.0.1'; Port = $httpsPort
-            ServerName = 'localhost'; CertificateThumbprint = ''
+            ServerName = '127.0.0.1'; CertificateThumbprint = ''
             InterfaceAlias = $null; NetworkCidr = $null; WindowsProfile = $null
             ApiBaseUrl = $apiBaseUrl; RemoteAccessEnabled = $false
         }
     }
     Set-ApiFirewallRule -Network $network
     Write-NetworkLog ('Firewall configuration failed. Falling back to HTTPS loopback only. Reason: ' + $_.Exception.Message)
-    $serverCertificate = Get-OrCreateServerCertificate -Root $root -HostName 'localhost' -NameType 'DNS'
+    $serverCertificate = Get-OrCreateServerCertificate -Root $root -HostName '127.0.0.1' -NameType 'IPAddress'
     $config.Network.CertificateThumbprint = $serverCertificate.Thumbprint
 }
 
