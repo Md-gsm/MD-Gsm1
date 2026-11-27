@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $rootStore = New-Object System.Security.Cryptography.X509Certificates.X509Store(
     [System.Security.Cryptography.X509Certificates.StoreName]::Root,
-    [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser)
+    [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
 $addedThumbprint = $null
 $connection = $null
 
@@ -71,7 +71,7 @@ try {
             $thumbprint, $false)
         if ($existing.Count -gt 1) { throw 'More than one root certificate has the supplied fingerprint.' }
         if ($existing.Count -eq 1) {
-            if (-not [System.Linq.Enumerable]::SequenceEqual([byte[]]$existing[0].RawData, [byte[]]$rootCertificate.RawData)) {
+            if ([BitConverter]::ToString([byte[]]$existing[0].RawData) -cne [BitConverter]::ToString([byte[]]$rootCertificate.RawData)) {
                 throw 'The existing trusted root certificate does not match the connection bundle.'
             }
         } else {
@@ -109,7 +109,7 @@ try {
         Move-Item -LiteralPath $temporarySettings -Destination $settingsPath -Force
 
         Write-Output ('PASS: central HTTPS endpoint and hostname validated: ' + $apiUri.Authority)
-        Write-Output 'PASS: public root CA trusted for the current Windows user; no private key or database credential was imported.'
+        Write-Output 'PASS: public root CA trusted for the whole Windows machine; no private key or database credential was imported.'
     } finally {
         $rootCertificate.Dispose()
         [Array]::Clear($rawCertificate, 0, $rawCertificate.Length)
