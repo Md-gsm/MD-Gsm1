@@ -40,7 +40,8 @@ if (builder.Environment.IsProduction() &&
     throw new InvalidOperationException(
         "Production API startup requires the machine-local HTTPS network configuration; refusing an HTTP fallback.");
 }
-if (string.Equals(networkMode, "Https", StringComparison.OrdinalIgnoreCase))
+if (!isLocalWorkflowKeyProvisioningCommand &&
+    string.Equals(networkMode, "Https", StringComparison.OrdinalIgnoreCase))
 {
     if (!OperatingSystem.IsWindows())
         throw new PlatformNotSupportedException("The machine certificate-store API listener is Windows-only.");
@@ -70,7 +71,7 @@ if (string.Equals(networkMode, "Https", StringComparison.OrdinalIgnoreCase))
         options.Listen(bindAddress, httpsPort, listenOptions =>
             listenOptions.UseHttps(selectedCertificate)));
 }
-else if (!string.IsNullOrWhiteSpace(networkMode))
+else if (!isLocalWorkflowKeyProvisioningCommand && !string.IsNullOrWhiteSpace(networkMode))
 {
     throw new InvalidOperationException("The configured API network mode is unsupported; refusing to start an unverified listener.");
 }
