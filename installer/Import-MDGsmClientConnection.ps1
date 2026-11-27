@@ -51,6 +51,7 @@ try {
         if ($rootCertificate.HasPrivateKey -or
             $rootCertificate.Subject -ne [string]$connection.rootCaSubject -or
             $rootCertificate.Thumbprint -ne $thumbprint -or
+            $rootCertificate.SignatureAlgorithm.Value -ne '1.2.840.113549.1.1.11' -or
             (Get-Date) -lt $rootCertificate.NotBefore -or
             (Get-Date) -ge $rootCertificate.NotAfter) {
             throw 'The public root certificate identity, fingerprint or validity period is invalid.'
