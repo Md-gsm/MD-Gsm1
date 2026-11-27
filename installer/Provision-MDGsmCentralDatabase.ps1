@@ -320,7 +320,20 @@ function Invoke-InstallPostgreSql {
     $installerPath = Join-Path $downloadRoot 'postgresql-18.6-5-windows-x64.exe'
     Write-Host 'Downloading the pinned PostgreSQL 18.6-5 installer and verifying its SHA-256...'
     Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
-    $actualHash = (Get-FileHash -LiteralPath $installerPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $installerStream = [System.IO.File]::OpenRead($installerPath)
+        try {
+            $actualHash = [System.BitConverter]::ToString(
+                $sha256.ComputeHash($installerStream)).Replace('-', '').ToLowerInvariant()
+        }
+        finally {
+            $installerStream.Dispose()
+        }
+    }
+    finally {
+        $sha256.Dispose()
+    }
     if ($actualHash -ne $expectedInstallerSha256) {
         Remove-Item -LiteralPath $installerPath -Force -ErrorAction SilentlyContinue
         throw 'The PostgreSQL installer checksum did not match the approved SHA-256.'
@@ -764,7 +777,20 @@ function Invoke-InstallPostgreSql {
     $installerPath = Join-Path $downloadRoot 'postgresql-18.6-5-windows-x64.exe'
     Write-Host 'Downloading the pinned PostgreSQL 18.6-5 installer and verifying its SHA-256...'
     Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
-    $actualHash = (Get-FileHash -LiteralPath $installerPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $installerStream = [System.IO.File]::OpenRead($installerPath)
+        try {
+            $actualHash = [System.BitConverter]::ToString(
+                $sha256.ComputeHash($installerStream)).Replace('-', '').ToLowerInvariant()
+        }
+        finally {
+            $installerStream.Dispose()
+        }
+    }
+    finally {
+        $sha256.Dispose()
+    }
     if ($actualHash -ne $expectedInstallerSha256) {
         Remove-Item -LiteralPath $installerPath -Force -ErrorAction SilentlyContinue
         throw 'The PostgreSQL installer checksum did not match the approved SHA-256.'
