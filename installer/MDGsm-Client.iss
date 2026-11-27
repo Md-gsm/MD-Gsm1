@@ -42,6 +42,7 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourcePath}\Import-MDGsmClientConnection.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourcePath}\\Uninstall-MDGsmClientTrust.ps1"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل"; Filename: "{app}\{#AppExeName}"
@@ -116,3 +117,7 @@ begin
       RaiseException('The connection file failed certificate or HTTPS verification. The client connection was not configured.');
   end;
 end;
+
+
+[UninstallRun]
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\Uninstall-MDGsmClientTrust.ps1"""; RunOnceId: "MDGsmClientTlsTrustCleanup"; Flags: runhidden waituntilterminated
