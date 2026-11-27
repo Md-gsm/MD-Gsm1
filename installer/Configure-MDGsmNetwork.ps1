@@ -5,6 +5,29 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Preserve the complete terminating PowerShell error before the parent installer
+# captures this child process. ErrorRecord.ToString() alone can truncate the
+# parameter name and conversion detail in Windows PowerShell 5.1.
+trap {
+    $failure = $_
+    $failureDetails = @(
+        'NETWORK_SCRIPT_FATAL_BEGIN'
+        ('Message: ' + [string]$failure.Exception.Message)
+        ('ExceptionType: ' + [string]$failure.Exception.GetType().FullName)
+        ('FullyQualifiedErrorId: ' + [string]$failure.FullyQualifiedErrorId)
+        ('Category: ' + [string]$failure.CategoryInfo)
+        ('TargetObjectType: ' + $(if ($null -eq $failure.TargetObject) { '<null>' } else { $failure.TargetObject.GetType().FullName }))
+        ('TargetObject: ' + [string]$failure.TargetObject)
+        ('Position: ' + [string]$failure.InvocationInfo.PositionMessage)
+        ('ScriptStack: ' + [string]$failure.ScriptStackTrace)
+        ('ErrorRecord: ' + ($failure | Format-List * -Force | Out-String -Width 4096))
+        'NETWORK_SCRIPT_FATAL_END'
+    ) -join [Environment]::NewLine
+    try { Add-Content -LiteralPath (Join-Path $networkRoot 'network-setup.log') -Value $failureDetails -Encoding UTF8 -ErrorAction SilentlyContinue } catch { }
+    [Console]::Error.WriteLine($failureDetails)
+    throw
+}
 $serviceName = 'MDGsmApi'
 $httpsPort = 5081
 $firewallRuleName = 'MDGsmApiHttps5081'
