@@ -262,21 +262,51 @@ function Write-RestrictedTextFile([string] $Path, [string] $Text) {
 
 function Invoke-Psql([string] $Database, [string] $User, [string] $Password, [string] $Sql) {
     $sqlPath = Join-Path $provisioningRoot ('sql-' + [Guid]::NewGuid().ToString('N') + '.txt')
-    $oldPassword = $env:PGPASSWORD
+    $process = $null
     try {
         Set-RestrictedDirectoryAcl $provisioningRoot $false
         Write-RestrictedTextFile $sqlPath $Sql
-        $env:PGPASSWORD = $Password
-        $output = & $psqlPath -X -w -h 127.0.0.1 -p ([string]$state.Port) -U $User -d $Database -v ON_ERROR_STOP=1 -t -A -f $sqlPath 2>&1
-        $exitCode = $LASTEXITCODE
+
+        # Keep native stderr separate from PowerShell's error stream. PostgreSQL
+        # can emit a harmless NOTICE for an existing grant; with ErrorActionPreference
+        # set to Stop, merging 2>&1 can abort before psql's exit status is checked.
+        $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $startInfo.FileName = $psqlPath
+        $startInfo.Arguments = '-X -w -h 127.0.0.1 -p ' + [string]$state.Port +
+            ' -U "' + $User.Replace('"', '\"') + '" -d "' + $Database.Replace('"', '\"') +
+            '" -v ON_ERROR_STOP=1 -t -A -f "' + $sqlPath + '"'
+        $startInfo.UseShellExecute = $false
+        $startInfo.CreateNoWindow = $true
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+        # Scope the credential to the child process, not the installer environment
+        # or command-line arguments.
+        $startInfo.EnvironmentVariables['PGPASSWORD'] = $Password
+
+        $process = New-Object System.Diagnostics.Process
+        $process.StartInfo = $startInfo
+        if (-not $process.Start()) {
+            throw 'The PostgreSQL command process could not be started.'
+        }
+
+        # Drain both pipes asynchronously to avoid blocking on a full pipe.
+        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        $process.WaitForExit()
+        $standardOutput = $stdoutTask.GetAwaiter().GetResult()
+        $standardError = $stderrTask.GetAwaiter().GetResult()
+        $exitCode = $process.ExitCode
         if ($exitCode -ne 0) {
+            # Never include SQL, passwords, or raw provider diagnostics in the error.
             throw "A PostgreSQL provisioning operation failed (psql exit $exitCode). Sensitive SQL output was suppressed."
         }
-        return (($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine).Trim()
+
+        # stderr NOTICE/WARNING output is informational when psql exits successfully.
+        # Only stdout is returned to callers that parse query results.
+        return $standardOutput.Trim()
     }
     finally {
-        if ($null -eq $oldPassword) { Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue }
-        else { $env:PGPASSWORD = $oldPassword }
+        if ($null -ne $process) { $process.Dispose() }
         Remove-Item -LiteralPath $sqlPath -Force -ErrorAction SilentlyContinue
     }
 }
@@ -489,10 +519,20 @@ try {
     $groupAttributes = Invoke-Psql 'postgres' 'postgres' $script:clusterSecrets.SuperuserPassword "SELECT (NOT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit)::text FROM pg_roles WHERE rolname = 'mdgsm_runtime';"
     if ($groupAttributes -ne 'true') { throw 'The mdgsm_runtime group role has unexpected PostgreSQL role attributes.' }
 
-    Invoke-Psql 'postgres' 'postgres' $script:clusterSecrets.SuperuserPassword "GRANT mdgsm_runtime TO mdgsm_api_runtime WITH INHERIT TRUE, SET FALSE, ADMIN FALSE;" | Out-Null
+    # Create the membership only when absent. Existing correct membership is
+    # already provisioned; repeating GRANT only produces a PostgreSQL NOTICE.
+    # An existing membership with unexpected options is rejected fail-closed.
+    $membershipQuery = "SELECT CASE WHEN count(*) = 0 THEN 'missing' WHEN bool_and(m.inherit_option AND NOT m.set_option AND NOT m.admin_option) THEN 'true' ELSE 'invalid' END FROM pg_auth_members m JOIN pg_roles parent ON parent.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE parent.rolname='mdgsm_runtime' AND member.rolname='mdgsm_api_runtime';"
+    $membership = Invoke-Psql 'postgres' 'postgres' $script:clusterSecrets.SuperuserPassword $membershipQuery
+    if ($membership -eq 'missing') {
+        Invoke-Psql 'postgres' 'postgres' $script:clusterSecrets.SuperuserPassword "GRANT mdgsm_runtime TO mdgsm_api_runtime WITH INHERIT TRUE, SET FALSE, ADMIN FALSE;" | Out-Null
+        $membership = Invoke-Psql 'postgres' 'postgres' $script:clusterSecrets.SuperuserPassword $membershipQuery
+    }
+    if ($membership -ne 'true') {
+        throw 'The API LOGIN membership is missing or has options outside the approved least-privilege runtime policy.'
+    }
+
     Invoke-Psql 'postgres' 'postgres' $script:clusterSecrets.SuperuserPassword "GRANT CONNECT ON DATABASE mdgsm TO mdgsm_api_runtime;" | Out-Null
-    $membership = Invoke-Psql 'postgres' 'postgres' $script:clusterSecrets.SuperuserPassword "SELECT (m.inherit_option AND NOT m.set_option AND NOT m.admin_option)::text FROM pg_auth_members m JOIN pg_roles parent ON parent.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE parent.rolname='mdgsm_runtime' AND member.rolname='mdgsm_api_runtime';"
-    if ($membership -ne 'true') { throw 'The API LOGIN membership options do not match the least-privilege runtime policy.' }
 
     $apiIdentity = Invoke-Psql 'mdgsm' 'mdgsm_api_runtime' $apiPassword "SELECT session_user || '|' || current_user || '|' || current_database() || '|' || (current_setting('server_version_num')::integer / 10000)::text || '|' || host(inet_server_addr());"
     $expectedApiIdentity = 'mdgsm_api_runtime|mdgsm_api_runtime|mdgsm|18|127.0.0.1'
