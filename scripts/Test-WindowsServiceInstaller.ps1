@@ -330,8 +330,23 @@ function Assert-ServiceReady([string] $Phase) {
         }
         if ($network.Mode -ne 'Https' -or [int]$network.Port -ne 5081 -or
             [string]::IsNullOrWhiteSpace([string]$network.CertificateThumbprint) -or
+            ([string]$network.RootCaThumbprint -replace '[^0-9A-Fa-f]', '').Length -ne 40 -or
             [string]::IsNullOrWhiteSpace([string]$network.ApiBaseUrl)) {
-            throw 'The installed API network configuration does not prove a selected HTTPS listener and certificate.'
+            throw 'The installed API network configuration does not prove a selected HTTPS listener, leaf certificate and pinned root CA.'
+        }
+
+        $rootSigningCertificate = Get-Item -LiteralPath ("Cert:\LocalMachine\My\" + [string]$network.RootCaThumbprint) -ErrorAction Stop
+        if (-not $rootSigningCertificate.HasPrivateKey) {
+            throw 'The pinned MD-Gsm root signing certificate is not retained in LocalMachine My.'
+        }
+        $rootTrustMatches = @(Get-ChildItem -Path Cert:\LocalMachine\Root |
+            Where-Object { $_.Thumbprint -eq [string]$network.RootCaThumbprint })
+        if ($rootTrustMatches.Count -ne 1 -or $rootTrustMatches[0].HasPrivateKey) {
+            throw 'LocalMachine Root must contain exactly one public-only copy of the pinned MD-Gsm root CA.'
+        }
+        $leafCertificate = Get-Item -LiteralPath ("Cert:\LocalMachine\My\" + [string]$network.CertificateThumbprint) -ErrorAction Stop
+        if (-not $leafCertificate.HasPrivateKey -or $leafCertificate.Issuer -ne $rootSigningCertificate.Subject) {
+            throw 'The configured API TLS leaf certificate is not held in LocalMachine My or is not issued by the pinned MD-Gsm CA.'
         }
 
         $apiUri = [Uri]$network.ApiBaseUrl
@@ -641,8 +656,9 @@ function Invoke-TlsNegativeProbes([string] $RootThumbprint) {
     $temporaryMachineThumbprints = [System.Collections.Generic.List[string]]::new()
     $temporaryUserThumbprints = [System.Collections.Generic.List[string]]::new()
     try {
-        $wrongNameCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=wrong-host.invalid' -DnsName 'wrong-host.invalid' -Signer $rootCertificate -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotAfter (Get-Date).AddDays(30)
+        $wrongNameCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=wrong-host.invalid' -DnsName 'wrong-host.invalid' -Signer $rootCertificate -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 3072 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotAfter (Get-Date).AddDays(30)
         $temporaryMachineThumbprints.Add($wrongNameCertificate.Thumbprint)
+        Assert-ApiTlsLoaderFailsClosed $wrongNameCertificate.Thumbprint 'subject alternative name does not match' 'a trusted TLS certificate with the wrong server identity'
         $wrongNameServer = [MDGsmIntegration.TemporaryTlsServer]::new([System.Net.IPAddress]::Loopback, $wrongNameCertificate)
         try {
             Assert-DefaultTlsRejected ('https://127.0.0.1:{0}/health/live' -f $wrongNameServer.Port) 'a trusted certificate with a mismatched host name'
