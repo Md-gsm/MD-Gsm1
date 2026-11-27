@@ -129,12 +129,19 @@ app.MapGet("/health/ready", async (IServiceProvider services, IConfiguration con
         var expectedDatabase = configuration["Database:ExpectedDatabaseName"] ?? "mdgsm";
         var expectedMajor = configuration.GetValue<int?>("Database:ExpectedPostgreSqlMajor") ?? 18;
         var serverMajor = serverVersion / 10000;
+        // PostgreSQL may report an IPv4 loopback peer as an IPv4-mapped IPv6 address
+        // depending on the listener/socket family. Normalize mapped addresses before
+        // enforcing the loopback-only runtime database boundary.
+        var isLoopback = System.Net.IPAddress.TryParse(serverAddress, out var parsedServerAddress)
+            && System.Net.IPAddress.IsLoopback(parsedServerAddress.IsIPv4MappedToIPv6
+                ? parsedServerAddress.MapToIPv4()
+                : parsedServerAddress);
 
         if (!string.Equals(sessionLogin, expectedLogin, StringComparison.Ordinal)
             || !string.Equals(effectiveRole, expectedLogin, StringComparison.Ordinal)
             || !string.Equals(databaseName, expectedDatabase, StringComparison.Ordinal)
             || serverMajor != expectedMajor
-            || serverAddress is not ("127.0.0.1" or "::1"))
+            || !isLoopback)
         {
             app.Logger.LogWarning(
                 "Database readiness identity check failed. LoginMatches={LoginMatches}; RoleMatches={RoleMatches}; DatabaseMatches={DatabaseMatches}; MajorMatches={MajorMatches}; Loopback={Loopback}",
@@ -142,7 +149,9 @@ app.MapGet("/health/ready", async (IServiceProvider services, IConfiguration con
                 string.Equals(effectiveRole, expectedLogin, StringComparison.Ordinal),
                 string.Equals(databaseName, expectedDatabase, StringComparison.Ordinal),
                 serverMajor == expectedMajor,
-                serverAddress is "127.0.0.1" or "::1");
+                isLoopback);
+            app.Logger.LogWarning("Database readiness server address reported by PostgreSQL: {ServerAddress}",
+                string.IsNullOrWhiteSpace(serverAddress) ? "(null)" : serverAddress);
             return (IResult)Results.Json(new { status = "not-ready", reason = "database-identity-mismatch" }, statusCode: StatusCodes.Status503ServiceUnavailable);
         }
 
