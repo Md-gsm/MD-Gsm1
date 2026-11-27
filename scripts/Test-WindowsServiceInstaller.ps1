@@ -521,6 +521,86 @@ function Invoke-SystemUninstaller([string] $Phase) {
     Write-Host ("PASS: service and Program Files removed during phase '" + $Phase + "'.")
 }
 
+function Invoke-ExpectedImporterFailure([string] $ImporterPath, [string] $BundlePath, [string] $InstallDirectory, [string] $Label) {
+    $null = & $powerShell51 -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $ImporterPath -ConnectionFile $BundlePath -InstallDirectory $InstallDirectory 2>&1
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -eq 0) {
+        throw "The client trust importer accepted a negative certificate case: $Label."
+    }
+    Write-Host ("PASS: client trust importer rejected " + $Label + ".")
+}
+
+function Assert-DefaultTlsRejected([string] $Uri, [string] $Label) {
+    $client = [System.Net.Http.HttpClient]::new()
+    $client.Timeout = [TimeSpan]::FromSeconds(6)
+    $response = $null
+    $failure = $null
+    try {
+        $response = $client.GetAsync($Uri).GetAwaiter().GetResult()
+    } catch {
+        $failure = $_.Exception
+    } finally {
+        if ($null -ne $response) { $response.Dispose() }
+        $client.Dispose()
+    }
+
+    if ($null -eq $failure) {
+        throw "The platform TLS client accepted $Label; certificate validation may have been bypassed."
+    }
+    Write-Host ("PASS: platform TLS validation rejected " + $Label + ".")
+}
+
+function Invoke-TlsNegativeProbes([string] $RootThumbprint) {
+    $rootCertificate = Get-Item -LiteralPath ("Cert:\LocalMachine\My\" + $RootThumbprint) -ErrorAction Stop
+    if (-not $rootCertificate.HasPrivateKey) {
+        throw 'The server root CA signing key is not available for disposable TLS negative probes.'
+    }
+
+    $temporaryMachineThumbprints = [System.Collections.Generic.List[string]]::new()
+    $temporaryUserThumbprints = [System.Collections.Generic.List[string]]::new()
+    try {
+        $wrongNameCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=wrong-host.invalid' -DnsName 'wrong-host.invalid' -Signer $rootCertificate -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotAfter (Get-Date).AddDays(30)
+        $temporaryMachineThumbprints.Add($wrongNameCertificate.Thumbprint)
+        $wrongNameServer = [MDGsmIntegration.TemporaryTlsServer]::new([System.Net.IPAddress]::Loopback, $wrongNameCertificate)
+        try {
+            Assert-DefaultTlsRejected ('https://localhost:{0}/health/live' -f $wrongNameServer.Port) 'a trusted certificate with a mismatched host name'
+        } finally {
+            $wrongNameServer.Dispose()
+        }
+
+        $expiredLeafCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=localhost' -DnsName 'localhost' -Signer $rootCertificate -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotBefore (Get-Date).AddDays(-30) -NotAfter (Get-Date).AddDays(-1)
+        $temporaryMachineThumbprints.Add($expiredLeafCertificate.Thumbprint)
+        $expiredServer = [MDGsmIntegration.TemporaryTlsServer]::new([System.Net.IPAddress]::Loopback, $expiredLeafCertificate)
+        try {
+            Assert-DefaultTlsRejected ('https://localhost:{0}/health/live' -f $expiredServer.Port) 'an expired TLS server certificate'
+        } finally {
+            $expiredServer.Dispose()
+        }
+
+        $untrustedCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=localhost' -DnsName 'localhost' -CertStoreLocation Cert:\CurrentUser\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotAfter (Get-Date).AddDays(30)
+        $temporaryUserThumbprints.Add($untrustedCertificate.Thumbprint)
+        $untrustedServer = [MDGsmIntegration.TemporaryTlsServer]::new([System.Net.IPAddress]::Loopback, $untrustedCertificate)
+        try {
+            Assert-DefaultTlsRejected ('https://localhost:{0}/health/live' -f $untrustedServer.Port) 'a self-signed certificate that is not trusted'
+        } finally {
+            $untrustedServer.Dispose()
+        }
+
+        $probeListener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+        $probeListener.Start()
+        $closedPort = ([System.Net.IPEndPoint]$probeListener.LocalEndpoint).Port
+        $probeListener.Stop()
+        Assert-DefaultTlsRejected ('https://127.0.0.1:{0}/health/live' -f $closedPort) 'a disconnected API endpoint'
+    } finally {
+        foreach ($thumbprint in $temporaryMachineThumbprints) {
+            Remove-Item -LiteralPath ("Cert:\LocalMachine\My\" + $thumbprint) -Force -ErrorAction SilentlyContinue
+        }
+        foreach ($thumbprint in $temporaryUserThumbprints) {
+            Remove-Item -LiteralPath ("Cert:\CurrentUser\My\" + $thumbprint) -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 function Invoke-ClientOnlyInstallerTest {
     $apiServiceBefore = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
     $postgresServiceBefore = Get-Service -Name 'MDGsmPostgreSQL18' -ErrorAction SilentlyContinue
@@ -630,6 +710,40 @@ function Invoke-ClientOnlyInstallerTest {
         if ($negativeExitCode -eq 0) {
             throw 'The client trust importer accepted an HTTP downgrade endpoint.'
         }
+        Write-Host 'PASS: client trust importer rejected an HTTP downgrade endpoint.'
+
+        # The importer must also reject malformed and expired trust anchors before
+        # changing the client endpoint or machine certificate store.
+        $importer = Join-Path $clientDirectory 'Import-MDGsmClientConnection.ps1'
+        $invalidBundle = [ordered]@{
+            schemaVersion = $bundle.schemaVersion
+            apiBaseUrl = $bundle.apiBaseUrl
+            rootCaThumbprint = $bundle.rootCaThumbprint
+            rootCaSubject = $bundle.rootCaSubject
+            rootCaCertificateBase64 = [Convert]::ToBase64String([byte[]]@(1, 2, 3, 4))
+        }
+        $invalidBundlePath = Join-Path $env:TEMP 'MD-Gsm-Invalid-Certificate-Test.json'
+        [System.IO.File]::WriteAllText($invalidBundlePath, ($invalidBundle | ConvertTo-Json -Depth 4), [System.Text.UTF8Encoding]::new($false))
+        Invoke-ExpectedImporterFailure $importer $invalidBundlePath $clientDirectory 'a malformed X.509 root certificate'
+        Remove-Item -LiteralPath $invalidBundlePath -Force -ErrorAction SilentlyContinue
+
+        $expiredRoot = New-SelfSignedCertificate -Type Custom -Subject 'CN=MD-Gsm Internal API Root CA' -CertStoreLocation Cert:\CurrentUser\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyUsage CertSign, CRLSign -KeyExportPolicy Exportable -NotBefore (Get-Date).AddDays(-30) -NotAfter (Get-Date).AddDays(-1) -TextExtension @('2.5.29.19={critical}{text}ca=1&pathlength=0')
+        $expiredBundle = [ordered]@{
+            schemaVersion = $bundle.schemaVersion
+            apiBaseUrl = $bundle.apiBaseUrl
+            rootCaThumbprint = $expiredRoot.Thumbprint
+            rootCaSubject = $expiredRoot.Subject
+            rootCaNotAfterUtc = $expiredRoot.NotAfter.ToUniversalTime().ToString('o')
+            rootCaCertificateBase64 = [Convert]::ToBase64String($expiredRoot.RawData)
+        }
+        $expiredBundlePath = Join-Path $env:TEMP 'MD-Gsm-Expired-Certificate-Test.json'
+        [System.IO.File]::WriteAllText($expiredBundlePath, ($expiredBundle | ConvertTo-Json -Depth 4), [System.Text.UTF8Encoding]::new($false))
+        Invoke-ExpectedImporterFailure $importer $expiredBundlePath $clientDirectory 'an expired root certificate'
+        Remove-Item -LiteralPath $expiredBundlePath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath ("Cert:\CurrentUser\My\" + $expiredRoot.Thumbprint) -Force -ErrorAction SilentlyContinue
+
+        # The default platform TLS stack must reject all certificate and network failures.
+        Invoke-TlsNegativeProbes ([string]$bundle.rootCaThumbprint)
 
         if (-not (Test-Path -LiteralPath $clientUninstaller -PathType Leaf)) {
             throw 'Client-only setup did not create its uninstaller.'
