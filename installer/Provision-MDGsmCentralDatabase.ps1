@@ -58,7 +58,8 @@ function Get-AccountSid([string] $Account) {
         return [Security.Principal.SecurityIdentifier]::new($sidMatch.Value)
     }
 
-    if ($Account -match '^(?:\\.|[^\\]+)\\MDGsmPgSvc
+    if ($Account -eq 'MDGsmPgSvc' -or $Account -match '^(?:\.|[^\\]+)\\MDGsmPgSvc
+}
 function Set-RestrictedDirectoryAcl([string] $Path, [bool] $AllowApiService) {
     if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
         New-Item -ItemType Directory -Path $Path -Force | Out-Null
@@ -946,12 +947,12 @@ finally {
     $connectionString = $null
     if ($null -ne $env:PGPASSWORD) { Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue }
 }
- -or $Account -eq 'MDGsmPgSvc') {
-        $localAccount = Get-LocalUser -Name 'MDGsmPgSvc' -ErrorAction Stop
-        if ($null -eq $localAccount.SID) {
-            throw 'The managed PostgreSQL local service account has no resolvable SID.'
+) {
+        $localUser = Get-LocalUser -Name 'MDGsmPgSvc' -ErrorAction Stop
+        if ($null -eq $localUser -or $null -eq $localUser.SID) {
+            throw 'The managed PostgreSQL local service account could not be resolved to a SID.'
         }
-        return [Security.Principal.SecurityIdentifier]::new([string]$localAccount.SID)
+        return [Security.Principal.SecurityIdentifier]::new([string]$localUser.SID)
     }
 
     return ([Security.Principal.NTAccount]::new($Account)).Translate([Security.Principal.SecurityIdentifier])
