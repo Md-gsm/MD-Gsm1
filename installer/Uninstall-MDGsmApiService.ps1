@@ -32,6 +32,28 @@ try {
     throw "Could not remove the MD-Gsm HTTPS firewall rule during uninstall: $($_.Exception.Message)"
 }
 Unregister-ScheduledTask -TaskName 'MD-Gsm API TLS Certificate Renewal' -Confirm:$false -ErrorAction SilentlyContinue
+
+# Remove the product-owned public trust anchor from this server machine while
+# retaining the non-exportable CA key in LocalMachine\\My for safe reinstall.
+$rootSubject = 'CN=MD-Gsm Internal API Root CA'
+$rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+    [System.Security.Cryptography.X509Certificates.StoreName]::Root,
+    [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
+try {
+    $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+    $machineRoots = Get-ChildItem -Path Cert:\LocalMachine\My |
+        Where-Object { $_.Subject -eq $rootSubject -and $_.HasPrivateKey }
+    foreach ($machineRoot in $machineRoots) {
+        $trustedRoots = $rootStore.Certificates.Find(
+            [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+            $machineRoot.Thumbprint, $false)
+        foreach ($trustedRoot in $trustedRoots) { $rootStore.Remove($trustedRoot) }
+    }
+} finally {
+    $rootStore.Close()
+    $rootStore.Dispose()
+}
+
 $networkRoot = Join-Path $env:ProgramData 'MD-Gsm\Network'
 Remove-Item -LiteralPath (Join-Path $networkRoot 'api-network.json') -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath (Join-Path $networkRoot 'MD-Gsm-Client-Connection.mdgsm.json') -Force -ErrorAction SilentlyContinue
