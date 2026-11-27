@@ -18,11 +18,12 @@ $clientIssFile = Join-Path $repoRoot 'installer\MDGsm-Client.iss'
 $centralProvisioner = Join-Path $repoRoot 'installer\Provision-MDGsmCentralDatabase.ps1'
 $networkProvisioner = Join-Path $repoRoot 'installer\Configure-MDGsmNetwork.ps1'
 $clientConnectionImporter = Join-Path $repoRoot 'installer\Import-MDGsmClientConnection.ps1'
+$clientTrustUninstaller = Join-Path $repoRoot 'installer\Uninstall-MDGsmClientTrust.ps1'
 
 if (-not $IsWindows -and $env:OS -ne 'Windows_NT') {
     throw 'The Windows installer must be built on Windows. No application or database was changed.'
 }
-foreach ($requiredPath in @($solution, $desktopProject, $apiProject, $issFile, $clientIssFile, $centralProvisioner, $networkProvisioner, $clientConnectionImporter)) {
+foreach ($requiredPath in @($solution, $desktopProject, $apiProject, $issFile, $clientIssFile, $centralProvisioner, $networkProvisioner, $clientConnectionImporter, $clientTrustUninstaller)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) { throw "Required build input was not found: $requiredPath" }
 }
 
