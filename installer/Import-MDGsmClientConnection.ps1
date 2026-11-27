@@ -90,21 +90,6 @@ try {
             throw 'The HTTPS endpoint did not return the expected MD-Gsm API identity.'
         }
 
-        $trustDirectory = Join-Path $env:ProgramData 'MD-Gsm\ClientTrust'
-        New-Item -ItemType Directory -Path $trustDirectory -Force | Out-Null
-        $trustMarkerPath = Join-Path $trustDirectory 'trusted-root.json'
-        $trustMarker = [ordered]@{
-            Thumbprint = $thumbprint
-            Subject = [string]$connection.rootCaSubject
-            AddedByMdGsm = ($existing.Count -eq 0)
-            InstalledAtUtc = [DateTime]::UtcNow.ToString('o')
-        }
-        $trustMarkerTemp = $trustMarkerPath + '.tmp'
-        [System.IO.File]::WriteAllText(
-            $trustMarkerTemp, ($trustMarker | ConvertTo-Json -Depth 4),
-            [System.Text.UTF8Encoding]::new($false))
-        Move-Item -LiteralPath $trustMarkerTemp -Destination $trustMarkerPath -Force
-
         $settingsPath = Join-Path $InstallDirectory 'appsettings.json'
         $settings = if (Test-Path -LiteralPath $settingsPath -PathType Leaf) {
             Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json
@@ -122,6 +107,26 @@ try {
         $settingsJson = $settings | ConvertTo-Json -Depth 12
         [System.IO.File]::WriteAllText($temporarySettings, $settingsJson, [System.Text.UTF8Encoding]::new($false))
         Move-Item -LiteralPath $temporarySettings -Destination $settingsPath -Force
+
+        $trustDirectory = Join-Path $env:ProgramData 'MD-Gsm\ClientTrust'
+        New-Item -ItemType Directory -Path $trustDirectory -Force | Out-Null
+        $trustMarkerPath = Join-Path $trustDirectory 'trusted-root.json'
+        $priorMarker = if (Test-Path -LiteralPath $trustMarkerPath -PathType Leaf) {
+            try { Get-Content -LiteralPath $trustMarkerPath -Raw | ConvertFrom-Json } catch { $null }
+        } else { $null }
+        $wasAddedByProduct = ($existing.Count -eq 0) -or
+            ($null -ne $priorMarker -and $priorMarker.Thumbprint -eq $thumbprint -and [bool]$priorMarker.AddedByMdGsm)
+        $trustMarker = [ordered]@{
+            Thumbprint = $thumbprint
+            Subject = [string]$connection.rootCaSubject
+            AddedByMdGsm = $wasAddedByProduct
+            InstalledAtUtc = [DateTime]::UtcNow.ToString('o')
+        }
+        $trustMarkerTemp = $trustMarkerPath + '.tmp'
+        [System.IO.File]::WriteAllText(
+            $trustMarkerTemp, ($trustMarker | ConvertTo-Json -Depth 4),
+            [System.Text.UTF8Encoding]::new($false))
+        Move-Item -LiteralPath $trustMarkerTemp -Destination $trustMarkerPath -Force
 
         Write-Output ('PASS: central HTTPS endpoint and hostname validated: ' + $apiUri.Authority)
         Write-Output 'PASS: public root CA trusted for the whole Windows machine; no private key or database credential was imported.'
