@@ -304,10 +304,10 @@ function Invoke-PreparePhase {
     Write-SetupLog 'Prepare phase completed; MDGsmApi is stopped before Inno Setup replaces Program Files files.'
 }
 
-function Remove-NewNetworkProvisioningAfterFailedFirstInstall {
-    # First-time Setup has no prior API endpoint to restore. Remove any
-    # network exposure/bundle created before the failure; keep non-exportable
-    # machine certificates so a controlled retry can reuse the same identity.
+function Remove-NetworkExposureAfterFailedInstall {
+    # A failed first install or Repair must not leave a partially configured
+    # remote endpoint. Remove firewall, trust publication and machine network config;
+    # Production then refuses to start. Preserve non-exportable machine keys and DB data.
     try {
         Get-NetFirewallRule -Name 'MDGsmApiHttps5081' -ErrorAction SilentlyContinue |
             Remove-NetFirewallRule -ErrorAction SilentlyContinue
@@ -335,7 +335,7 @@ function Remove-NewNetworkProvisioningAfterFailedFirstInstall {
             $rootStore.Close()
             $rootStore.Dispose()
         }
-        Write-SetupLog 'First-install network rollback removed the HTTPS firewall rule, renewal task, client bundle and public root trust. Non-exportable machine keys and PostgreSQL data were preserved.'
+        Write-SetupLog 'Failed-install/Repair rollback removed HTTPS firewall exposure, renewal task, client bundle, network config and public root trust. Non-exportable machine keys and PostgreSQL data were preserved.'
     } catch {
         Write-SetupLog ('WARNING: first-install network cleanup was incomplete: ' + $_.Exception.Message)
     }
@@ -499,9 +499,7 @@ function Invoke-InstallPhase {
         Write-SetupLog ("FATAL: " + $originalFailure.Exception.ToString())
         Write-SetupLog ("FATAL category: " + [string]$originalFailure.CategoryInfo)
         Write-SetupLog ("FATAL script stack: " + [string]$originalFailure.ScriptStackTrace)
-        if (-not $serviceExistedAtStart) {
-            Remove-NewNetworkProvisioningAfterFailedFirstInstall
-        }
+        Remove-NetworkExposureAfterFailedInstall
         try {
             $script:setupStage = 'restore pre-install service state'
             Restore-ServiceState
