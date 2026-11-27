@@ -86,9 +86,9 @@ begin
     RaiseException('Could not start the MD-Gsm API service setup phase: ' + Phase);
   if ResultCode <> 0 then
   begin
-    if LoadStringFromFile(ServiceSetupLogPath, NetworkConfigText) then
+    if LoadStringFromFile(ServiceSetupLogPath, SetupDiagnosticText) then
       RaiseException('MD-Gsm API service setup phase failed: ' + Phase + ' (exit ' + IntToStr(ResultCode) + ').' + #13#10 +
-        Copy(String(NetworkConfigText), 1, 12000))
+        Copy(String(SetupDiagnosticText), 1, 12000))
     else
       RaiseException('MD-Gsm API service setup phase failed: ' + Phase + ' (exit ' + IntToStr(ResultCode) + '); setup diagnostic log was not created: ' + ServiceSetupLogPath);
   end;
