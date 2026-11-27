@@ -17,16 +17,19 @@ internal static class ApiTlsCertificateLoader
 
     public static X509Certificate2 LoadFromLocalMachine(
         string thumbprint,
+        string expectedRootThumbprint,
         string expectedServerName,
         string expectedBindAddress)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(thumbprint);
+        ArgumentException.ThrowIfNullOrWhiteSpace(expectedRootThumbprint);
         ArgumentException.ThrowIfNullOrWhiteSpace(expectedServerName);
         ArgumentException.ThrowIfNullOrWhiteSpace(expectedBindAddress);
 
         var normalizedThumbprint = new string(thumbprint.Where(Uri.IsHexDigit).ToArray()).ToUpperInvariant();
-        if (normalizedThumbprint.Length != 40)
-            throw new InvalidOperationException("The configured API TLS certificate thumbprint is invalid.");
+        var normalizedRootThumbprint = new string(expectedRootThumbprint.Where(Uri.IsHexDigit).ToArray()).ToUpperInvariant();
+        if (normalizedThumbprint.Length != 40 || normalizedRootThumbprint.Length != 40)
+            throw new InvalidOperationException("The configured API or root certificate thumbprint is invalid.");
 
         if (!IPAddress.TryParse(expectedBindAddress, out var bindAddress) ||
             bindAddress.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
@@ -84,6 +87,13 @@ internal static class ApiTlsCertificateLoader
             if (!chain.Build(certificate))
                 throw new InvalidOperationException(
                     "The configured API TLS certificate does not chain to a trusted machine root certificate.");
+
+            if (chain.ChainElements.Count < 2)
+                throw new InvalidOperationException("The configured API TLS certificate chain does not contain its pinned root CA.");
+
+            var actualRootThumbprint = chain.ChainElements[^1].Certificate.Thumbprint;
+            if (!string.Equals(actualRootThumbprint, normalizedRootThumbprint, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("The configured API TLS certificate does not terminate at the pinned MD-Gsm root CA.");
 
             return certificate;
         }
