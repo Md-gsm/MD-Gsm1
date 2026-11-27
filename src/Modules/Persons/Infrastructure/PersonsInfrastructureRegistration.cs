@@ -63,7 +63,6 @@ public static class PersonsInfrastructureRegistration
         services.AddSingleton<ITemporaryWorkflowRetentionStore>(
             provider => provider.GetRequiredService<PostgresTemporaryWorkflowStore>());
         services.AddSingleton<ITemporaryWorkflowRetentionAlert, StructuredLogTemporaryWorkflowRetentionAlert>();
-        services.AddHostedService<TemporaryWorkflowRetentionWorker>();
 
         if (services.Any(descriptor => descriptor.ServiceType == typeof(ITemporaryWorkflowEncryptionKeyProvider)))
         {
