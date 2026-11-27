@@ -26,6 +26,9 @@ function Assert-CertificateProviderNoProfileBootstrap {
     $escapedHelperPath = $certificateBootstrapPath.Replace("'", "''")
     $probeScript = @'
 $ErrorActionPreference = 'Stop'
+$initialProviderCount = @(Get-PSProvider | Where-Object { $_.Name -eq 'Certificate' }).Count
+$initialSecurityModuleCount = @(Get-Module -Name Microsoft.PowerShell.Security).Count
+Write-Output ("PREBOOTSTRAP: CertificateProviderCount={0}; SecurityModuleLoaded={1}" -f $initialProviderCount, $initialSecurityModuleCount)
 . '__HELPER_PATH__'
 $existingDrive = Get-PSDrive -Name Cert -ErrorAction SilentlyContinue
 if ($null -ne $existingDrive) {
@@ -35,8 +38,14 @@ if ($null -ne (Get-PSDrive -Name Cert -ErrorAction SilentlyContinue)) {
     throw 'The test could not establish the missing-Cert-drive precondition.'
 }
 Initialize-MDGsmCertificateProvider
+Initialize-MDGsmCertificateProvider
 if (-not (Test-Path -LiteralPath 'Cert:\LocalMachine\My' -ErrorAction Stop)) {
     throw 'The LocalMachine My certificate store was not mounted after explicit provider bootstrap.'
+}
+Remove-PSDrive -Name Cert -Force -ErrorAction Stop
+Initialize-MDGsmCertificateProvider
+if (-not (Test-Path -LiteralPath 'Cert:\LocalMachine\Root' -ErrorAction Stop)) {
+    throw 'The LocalMachine Root certificate store was not remounted after a second drive removal.'
 }
 $probeCertificate = $null
 $probeStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
@@ -49,7 +58,7 @@ try {
         [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
         $probeCertificate.Thumbprint, $false)
     foreach ($match in $matches) { $probeStore.Remove($match) }
-    Write-Output 'PASS: Windows PowerShell 5.1 -NoProfile mounted Cert: and created/removed a disposable certificate.'
+    Write-Output 'PASS: Windows PowerShell 5.1 -NoProfile bootstrapped Cert: idempotently and created/removed a disposable certificate.'
 } finally {
     $probeStore.Close()
     $probeStore.Dispose()
