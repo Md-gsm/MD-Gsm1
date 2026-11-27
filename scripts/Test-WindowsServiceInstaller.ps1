@@ -12,7 +12,90 @@ $keyMarkerPath = 'HKLM:\SOFTWARE\MD-Gsm\Persons\WorkflowEncryption'
 $keyMarkerName = 'Provisioned'
 $serviceSetupScript = Join-Path $installDirectory 'Install-MDGsmApiService.ps1'
 $serviceStatePath = Join-Path $env:TEMP 'MD-Gsm-Service-Rollback-Test.json'
+
 $powerShell51 = Join-Path $env:windir 'System32\WindowsPowerShell\v1.0\powershell.exe'
+
+if (-not ('MDGsmIntegration.TemporaryTlsServer' -as [type])) {
+    Add-Type -Language CSharp -TypeDefinition @'
+using System;
+using System.Net;
+using System.Net.Security;
+using System.Net.Sockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace MDGsmIntegration
+{
+    public sealed class TemporaryTlsServer : IDisposable
+    {
+        private readonly TcpListener _listener;
+        private readonly X509Certificate2 _certificate;
+        private readonly CancellationTokenSource _stop = new CancellationTokenSource();
+        private readonly Task _acceptLoop;
+
+        public int Port { get { return ((IPEndPoint)_listener.LocalEndpoint).Port; } }
+
+        public TemporaryTlsServer(IPAddress address, X509Certificate2 certificate)
+        {
+            _certificate = certificate ?? throw new ArgumentNullException(nameof(certificate));
+            _listener = new TcpListener(address, 0);
+            _listener.Start();
+            _acceptLoop = Task.Run((Func<Task>)AcceptLoopAsync);
+        }
+
+        private async Task AcceptLoopAsync()
+        {
+            while (!_stop.IsCancellationRequested)
+            {
+                TcpClient client = null;
+                try
+                {
+                    client = await _listener.AcceptTcpClientAsync().ConfigureAwait(false);
+                }
+                catch (ObjectDisposedException) { break; }
+                catch (SocketException) { if (_stop.IsCancellationRequested) break; }
+                if (client != null)
+                    _ = Task.Run(() => HandleClientAsync(client));
+            }
+        }
+
+        private async Task HandleClientAsync(TcpClient client)
+        {
+            using (client)
+            using (var stream = new SslStream(client.GetStream(), false))
+            {
+                try
+                {
+                    await stream.AuthenticateAsServerAsync(
+                        _certificate, false, SslProtocols.Tls12, false).ConfigureAwait(false);
+                    var buffer = new byte[4096];
+                    var count = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                    if (count > 0)
+                    {
+                        var response = Encoding.ASCII.GetBytes(
+                            "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK");
+                        await stream.WriteAsync(response, 0, response.Length).ConfigureAwait(false);
+                    }
+                }
+                catch { }
+            }
+        }
+
+        public void Dispose()
+        {
+            _stop.Cancel();
+            _listener.Stop();
+            try { _acceptLoop.Wait(TimeSpan.FromSeconds(2)); } catch { }
+            _stop.Dispose();
+        }
+    }
+}
+'@
+}
+
 
 # The hosted runner is disposable. Mark only its active default-route interfaces
 # Private so the installer exercises the same scoped-LAN path used by a customer
