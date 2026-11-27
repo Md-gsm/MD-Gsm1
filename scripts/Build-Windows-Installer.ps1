@@ -16,11 +16,13 @@ $outputDir = Join-Path $repoRoot 'artifacts\installer'
 $issFile = Join-Path $repoRoot 'installer\MDGsm-Setup.iss'
 $clientIssFile = Join-Path $repoRoot 'installer\MDGsm-Client.iss'
 $centralProvisioner = Join-Path $repoRoot 'installer\Provision-MDGsmCentralDatabase.ps1'
+$networkProvisioner = Join-Path $repoRoot 'installer\Configure-MDGsmNetwork.ps1'
+$clientConnectionImporter = Join-Path $repoRoot 'installer\Import-MDGsmClientConnection.ps1'
 
 if (-not $IsWindows -and $env:OS -ne 'Windows_NT') {
     throw 'The Windows installer must be built on Windows. No application or database was changed.'
 }
-foreach ($requiredPath in @($solution, $desktopProject, $apiProject, $issFile, $clientIssFile, $centralProvisioner)) {
+foreach ($requiredPath in @($solution, $desktopProject, $apiProject, $issFile, $clientIssFile, $centralProvisioner, $networkProvisioner, $clientConnectionImporter)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) { throw "Required build input was not found: $requiredPath" }
 }
 
@@ -100,4 +102,4 @@ foreach ($installer in @($centralInstaller, $clientInstaller)) {
     Set-Content -LiteralPath ($installer + '.sha256') -Value $hashLine -Encoding ASCII
     Write-Host "PASS: Windows installer created: $installer" -ForegroundColor Green
 }
-Write-Host 'Central setup provisions PostgreSQL 18 and the API service; client setup installs only Desktop and asks for the central HTTPS API URL. Schema migrations and feature activation remain separate.' -ForegroundColor Yellow
+Write-Host 'Central setup provisions PostgreSQL 18, automatically detects an eligible private Windows network, configures scoped HTTPS and exports a public client-connection bundle. Client setup installs only Desktop and imports the bundle with normal TLS validation. Schema migrations and feature activation remain separate.' -ForegroundColor Yellow
