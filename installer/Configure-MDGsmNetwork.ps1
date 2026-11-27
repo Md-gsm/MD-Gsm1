@@ -231,7 +231,8 @@ function Get-ExpectedSubjectAlternativeNameBytes([string] $HostName, [string] $N
             throw 'Only IPv4 subject alternative names are supported by this installer.'
         }
         $bytes = $address.GetAddressBytes()
-        return [byte[]]@(0x30, 0x06, 0x87, 0x04) + $bytes
+        $header = [byte[]]@(0x30, 0x06, 0x87, 0x04)
+        return ($header + $bytes)
     }
 
     $dnsBytes = [System.Text.Encoding]::ASCII.GetBytes($HostName)
@@ -244,7 +245,7 @@ function Get-ExpectedSubjectAlternativeNameBytes([string] $HostName, [string] $N
     } else {
         $header = [byte[]]@(0x30, 0x81, [byte]$contentLength, 0x82, [byte]$dnsBytes.Length)
     }
-    return $header + $dnsBytes
+    return ($header + $dnsBytes)
 }
 
 function Test-ServerCertificateName([System.Security.Cryptography.X509Certificates.X509Certificate2] $Certificate, [string] $HostName, [string] $NameType) {
@@ -366,6 +367,7 @@ $config = [ordered]@{
         Port = $httpsPort
         ServerName = $serverName
         CertificateThumbprint = $serverCertificate.Thumbprint
+        RootCaThumbprint = $root.Thumbprint
         InterfaceAlias = $network.InterfaceAlias
         NetworkCidr = $network.Cidr
         WindowsProfile = $network.Profile
@@ -387,6 +389,7 @@ try {
         Network = [ordered]@{
             Mode = 'Https'; BindAddress = '127.0.0.1'; Port = $httpsPort
             ServerName = '127.0.0.1'; CertificateThumbprint = $null
+            RootCaThumbprint = $root.Thumbprint
             InterfaceAlias = $null; NetworkCidr = $null; WindowsProfile = $null
             ApiBaseUrl = $apiBaseUrl; RemoteAccessEnabled = $false
         }
