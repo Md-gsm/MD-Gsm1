@@ -280,6 +280,21 @@ function Get-ServiceFailureDiagnostics([string] $Phase) {
     return ($sections -join [Environment]::NewLine)
 }
 
+function Get-ExpectedIpv4Cidr([string] $Address, [int] $PrefixLength) {
+    $bytes = [System.Net.IPAddress]::Parse($Address).GetAddressBytes()
+    $networkBytes = [byte[]]::new(4)
+    for ($index = 0; $index -lt 4; $index++) {
+        $bits = [Math]::Max(0, [Math]::Min(8, $PrefixLength - (8 * $index)))
+        if ($bits -eq 0) { $networkBytes[$index] = 0 }
+        elseif ($bits -eq 8) { $networkBytes[$index] = $bytes[$index] }
+        else {
+            $mask = (0xff -shl (8 - $bits)) -band 0xff
+            $networkBytes[$index] = [byte]($bytes[$index] -band $mask)
+        }
+    }
+    return ('{0}/{1}' -f ([System.Net.IPAddress]::new($networkBytes).ToString()), $PrefixLength)
+}
+
 function Assert-ServiceReady([string] $Phase) {
     $service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
     if ($null -eq $service -or $service.State -ne 'Running') {
@@ -300,6 +315,18 @@ function Assert-ServiceReady([string] $Phase) {
         }
         $networkConfig = Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json
         $network = $networkConfig.Network
+        if ([bool]$network.RemoteAccessEnabled) {
+            $interfaceAddress = Get-NetIPAddress -IPAddress ([string]$network.BindAddress) -AddressFamily IPv4 -ErrorAction Stop |
+                Where-Object { $_.InterfaceAlias -eq [string]$network.InterfaceAlias } |
+                Select-Object -First 1
+            if ($null -eq $interfaceAddress) {
+                throw 'The selected HTTPS bind address does not belong to the recorded Windows interface.'
+            }
+            $expectedCidr = Get-ExpectedIpv4Cidr -Address ([string]$network.BindAddress) -PrefixLength ([int]$interfaceAddress.PrefixLength)
+            if ($expectedCidr -ne [string]$network.NetworkCidr) {
+                throw ("The installer calculated an incorrect network CIDR. Expected=" + $expectedCidr + "; actual=" + [string]$network.NetworkCidr)
+            }
+        }
         if ($network.Mode -ne 'Https' -or [int]$network.Port -ne 5081 -or
             [string]::IsNullOrWhiteSpace([string]$network.CertificateThumbprint) -or
             [string]::IsNullOrWhiteSpace([string]$network.ApiBaseUrl)) {
