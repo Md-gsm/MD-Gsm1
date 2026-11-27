@@ -702,13 +702,17 @@ function Invoke-PublicNetworkFallbackTest {
     if ([string]::IsNullOrWhiteSpace($interfaceAlias) -or -not [bool]$before.Network.RemoteAccessEnabled) {
         throw 'Cannot run Public-profile fallback proof because the initial setup did not select a private interface.'
     }
-    $profile = Get-NetConnectionProfile -InterfaceAlias $interfaceAlias -ErrorAction Stop | Select-Object -First 1
+    $selectedAddress = Get-NetIPAddress -IPAddress ([string]$before.Network.BindAddress) -AddressFamily IPv4 -ErrorAction Stop |
+        Where-Object { $_.InterfaceAlias -eq $interfaceAlias } | Select-Object -First 1
+    if ($null -eq $selectedAddress) { throw 'The selected network interface no longer owns the API bind address.' }
+    $interfaceIndex = [int]$selectedAddress.InterfaceIndex
+    $profile = Get-NetConnectionProfile -InterfaceIndex $interfaceIndex -ErrorAction Stop | Select-Object -First 1
     if ($null -eq $profile -or $profile.NetworkCategory -ne 'Private') {
         throw 'CI fallback test expected the selected runner interface to be Private.'
     }
 
     try {
-        Set-NetConnectionProfile -InterfaceAlias $interfaceAlias -NetworkCategory Public -ErrorAction Stop
+        Set-NetConnectionProfile -InterfaceIndex $interfaceIndex -NetworkCategory Public -ErrorAction Stop
         Invoke-NetworkProvisioner 'Public-profile fallback'
 
         $fallback = (Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json).Network
@@ -733,7 +737,7 @@ function Invoke-PublicNetworkFallbackTest {
         if ($live.StatusCode -ne 200) { throw 'The loopback-only HTTPS service did not remain healthy after Public-profile fallback.' }
         Write-Host 'PASS: Public Windows network profile automatically removed remote firewall/bundle exposure and retained loopback-only HTTPS.'
     } finally {
-        Set-NetConnectionProfile -InterfaceAlias $interfaceAlias -NetworkCategory Private -ErrorAction Stop
+        Set-NetConnectionProfile -InterfaceIndex $interfaceIndex -NetworkCategory Private -ErrorAction Stop
         Invoke-NetworkProvisioner 'Private-profile recovery'
     }
 
