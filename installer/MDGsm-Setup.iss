@@ -63,12 +63,14 @@ var
   ServiceStatePath: String;
   ServiceSetupScriptPath: String;
   ServiceSetupLogPath: String;
+  ServiceSetupOutputLogPath: String;
 
 function InitializeSetup(): Boolean;
 begin
   ServiceStatePath := ExpandConstant('{tmp}\MD-Gsm-MDGsmApi-ServiceState.json');
   ServiceSetupScriptPath := ExpandConstant('{tmp}\Install-MDGsmApiService.ps1');
   ServiceSetupLogPath := ExpandConstant('{tmp}\MD-Gsm-ApiServiceSetup.log');
+  ServiceSetupOutputLogPath := ExpandConstant('{tmp}\MD-Gsm-ApiServiceSetup-console.log');
   ExtractTemporaryFile('Install-MDGsmApiService.ps1');
   Result := True;
 end;
@@ -77,22 +79,32 @@ procedure RunApiServicePhase(const Phase: String);
 var
   ResultCode: Integer;
   PowerShellPath: String;
+  CommandInterpreter: String;
   Parameters: String;
+  SetupDiagnosticText: AnsiString;
+  ConsoleDiagnosticText: AnsiString;
   SetupDiagnosticText: AnsiString;
 begin
   PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
-  Parameters := '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
+  CommandInterpreter := ExpandConstant('{cmd}');
+  SaveStringToFile(ServiceSetupOutputLogPath, 'Starting PowerShell service setup phase: ' + Phase + #13#10, False);
+  Parameters := '/D /S /C ""' + PowerShellPath + '" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
     ServiceSetupScriptPath + '" -InstallDirectory "' + ExpandConstant('{app}') +
-    '" -ServiceStatePath "' + ServiceStatePath + '" -SetupLogPath "' + ServiceSetupLogPath + '" -Phase "' + Phase + '"';
-  if not Exec(PowerShellPath, Parameters, ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    '" -ServiceStatePath "' + ServiceStatePath + '" -SetupLogPath "' + ServiceSetupLogPath + '" -Phase "' + Phase +
+    '" > "' + ServiceSetupOutputLogPath + '" 2>&1"';
+  if not Exec(CommandInterpreter, Parameters, ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
     RaiseException('Could not start the MD-Gsm API service setup phase: ' + Phase);
   if ResultCode <> 0 then
   begin
+    SetupDiagnosticText := '';
+    ConsoleDiagnosticText := '';
     if LoadStringFromFile(ServiceSetupLogPath, SetupDiagnosticText) then
-      RaiseException('MD-Gsm API service setup phase failed: ' + Phase + ' (exit ' + IntToStr(ResultCode) + ').' + #13#10 +
-        Copy(String(SetupDiagnosticText), 1, 12000))
-    else
-      RaiseException('MD-Gsm API service setup phase failed: ' + Phase + ' (exit ' + IntToStr(ResultCode) + '); setup diagnostic log was not created: ' + ServiceSetupLogPath);
+      SetupDiagnosticText := Copy(String(SetupDiagnosticText), 1, 8000);
+    if LoadStringFromFile(ServiceSetupOutputLogPath, ConsoleDiagnosticText) then
+      ConsoleDiagnosticText := Copy(String(ConsoleDiagnosticText), 1, 8000);
+    RaiseException('MD-Gsm API service setup phase failed: ' + Phase + ' (exit ' + IntToStr(ResultCode) + ').' + #13#10 +
+      '=== PowerShell stdout/stderr ===' + #13#10 + String(ConsoleDiagnosticText) + #13#10 +
+      '=== Service setup log ===' + #13#10 + String(SetupDiagnosticText));
   end;
 end;
 
