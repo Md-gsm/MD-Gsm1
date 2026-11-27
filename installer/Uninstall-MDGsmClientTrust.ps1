@@ -40,7 +40,7 @@ if ($null -eq $apiService -and [bool]$marker.AddedByMdGsm) {
 
 Remove-Item -LiteralPath $markerPath -Force
 $markerDirectory = Split-Path -Parent $markerPath
-if (Test-Path -LiteralPath $markerDirectory -PathType Container -and
-    @(Get-ChildItem -LiteralPath $markerDirectory -Force).Count -eq 0) {
+if ((Test-Path -LiteralPath $markerDirectory -PathType Container) -and
+    (@(Get-ChildItem -LiteralPath $markerDirectory -Force).Count -eq 0)) {
     Remove-Item -LiteralPath $markerDirectory -Force
 }
