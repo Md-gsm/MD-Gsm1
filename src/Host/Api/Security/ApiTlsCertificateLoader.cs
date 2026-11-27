@@ -38,6 +38,23 @@ internal static class ApiTlsCertificateLoader
                 "The configured API TLS certificate is not currently valid or its private key is unavailable.");
         }
 
+        using (var rsaPrivateKey = certificate.GetRSAPrivateKey())
+        {
+            if (rsaPrivateKey is null || rsaPrivateKey.KeySize < 2048)
+            {
+                certificate.Dispose();
+                throw new InvalidOperationException(
+                    "The configured API TLS certificate must have an accessible RSA private key of at least 2048 bits.");
+            }
+        }
+
+        if (!string.Equals(certificate.SignatureAlgorithm.Value, "1.2.840.113549.1.1.11", StringComparison.Ordinal))
+        {
+            certificate.Dispose();
+            throw new InvalidOperationException(
+                "The configured API TLS certificate must use an approved SHA-256 RSA signature.");
+        }
+
         var basicConstraints = certificate.Extensions
             .OfType<X509BasicConstraintsExtension>()
             .SingleOrDefault();
