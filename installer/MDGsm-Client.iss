@@ -76,7 +76,7 @@ begin
   ConnectionPage := CreateInputFilePage(wpSelectDir,
     'Central server connection', 'Connect this client to the central MD-Gsm server',
     'Select the connection file exported by the central server. Copy it using trusted physical media or an already authenticated channel. The file contains no database password.');
-  ConnectionPage.Add('MD-Gsm connection file', '*.mdgsm.json');
+  ConnectionPage.Add('MD-Gsm connection file', 'MD-Gsm connection files (*.mdgsm.json)|*.mdgsm.json|All files (*.*)|*.*', '.json');
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
