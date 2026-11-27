@@ -56,6 +56,16 @@ try {
             throw 'The public root certificate identity, fingerprint or validity period is invalid.'
         }
 
+        if ($rootCertificate.Issuer -ne $rootCertificate.Subject) {
+            throw 'The supplied MD-Gsm root certificate is not self-issued.'
+        }
+        $rootRsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPublicKey($rootCertificate)
+        if ($null -eq $rootRsa -or $rootRsa.KeySize -lt 3072) {
+            if ($null -ne $rootRsa) { $rootRsa.Dispose() }
+            throw 'The supplied MD-Gsm root certificate must use an RSA-3072-or-stronger public key.'
+        }
+        $rootRsa.Dispose()
+
         $basic = $rootCertificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.19' } | Select-Object -First 1
         if ($null -eq $basic -or
             -not ([System.Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]$basic).CertificateAuthority) {
