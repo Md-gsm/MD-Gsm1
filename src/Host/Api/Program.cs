@@ -76,13 +76,12 @@ else if (!isLocalWorkflowKeyProvisioningCommand && !string.IsNullOrWhiteSpace(ne
     throw new InvalidOperationException("The configured API network mode is unsupported; refusing to start an unverified listener.");
 }
 
-// Registration is needed by the one-shot DPAPI command, but loading the protected
-// database connection file is not. On a fresh install that file does not exist until
-// the PostgreSQL provisioner runs later in the installer sequence.
-builder.Services.AddMdGsmPersistence(builder.Configuration);
-
+// The one-shot DPAPI key command only needs the Persons key provisioner. On a
+// fresh install the database connection file is not created until PostgreSQL
+// provisioning runs later, so do not load or register database services here.
 if (isLocalWorkflowKeyProvisioningCommand)
 {
+    builder.Services.AddMdGsmPersistence(builder.Configuration);
     if (args.Length != 3)
         throw new ArgumentException("Expected the protected key path and service name for one-time provisioning.");
     if (!OperatingSystem.IsWindows())
@@ -98,11 +97,15 @@ if (isLocalWorkflowKeyProvisioningCommand)
     return;
 }
 
+// For the real API process, the protected provider must be added before
+// AddMdGsmPersistence because that registration reads the connection string
+// immediately to decide whether to register the DbContext and adapters.
 var protectedDatabaseConnectionFile = builder.Configuration["Database:ProtectedConnectionFile"];
 if (!string.IsNullOrWhiteSpace(protectedDatabaseConnectionFile))
 {
     builder.Configuration.AddProtectedDatabaseConnectionString(protectedDatabaseConnectionFile);
 }
+builder.Services.AddMdGsmPersistence(builder.Configuration);
 builder.Host.UseWindowsService(options =>
     options.ServiceName = PersonsApiServiceIdentity.ApiServiceName);
 builder.Logging.ClearProviders();
