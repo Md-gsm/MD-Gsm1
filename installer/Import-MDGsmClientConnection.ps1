@@ -5,7 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$rootStore = New-Object System.Security.Cryptography.X509Certificates.X509Store(
+$rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
     [System.Security.Cryptography.X509Certificates.StoreName]::Root,
     [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
 $addedThumbprint = $null
@@ -89,6 +89,21 @@ try {
             $health.scope -ne 'process-liveness-only') {
             throw 'The HTTPS endpoint did not return the expected MD-Gsm API identity.'
         }
+
+        $trustDirectory = Join-Path $env:ProgramData 'MD-Gsm\ClientTrust'
+        New-Item -ItemType Directory -Path $trustDirectory -Force | Out-Null
+        $trustMarkerPath = Join-Path $trustDirectory 'trusted-root.json'
+        $trustMarker = [ordered]@{
+            Thumbprint = $thumbprint
+            Subject = [string]$connection.rootCaSubject
+            AddedByMdGsm = ($existing.Count -eq 0)
+            InstalledAtUtc = [DateTime]::UtcNow.ToString('o')
+        }
+        $trustMarkerTemp = $trustMarkerPath + '.tmp'
+        [System.IO.File]::WriteAllText(
+            $trustMarkerTemp, ($trustMarker | ConvertTo-Json -Depth 4),
+            [System.Text.UTF8Encoding]::new($false))
+        Move-Item -LiteralPath $trustMarkerTemp -Destination $trustMarkerPath -Force
 
         $settingsPath = Join-Path $InstallDirectory 'appsettings.json'
         $settings = if (Test-Path -LiteralPath $settingsPath -PathType Leaf) {
