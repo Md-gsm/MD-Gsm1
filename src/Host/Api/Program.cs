@@ -51,9 +51,11 @@ if (string.Equals(networkMode, "Https", StringComparison.OrdinalIgnoreCase))
         throw new InvalidOperationException("The configured API HTTPS port is invalid.");
 
     var thumbprint = builder.Configuration["Network:CertificateThumbprint"];
+    var rootThumbprint = builder.Configuration["Network:RootCaThumbprint"];
     var serverName = builder.Configuration["Network:ServerName"];
     var selectedCertificate = ApiTlsCertificateLoader.LoadFromLocalMachine(
         thumbprint ?? string.Empty,
+        rootThumbprint ?? string.Empty,
         serverName ?? string.Empty,
         bindAddress.ToString());
     apiTlsCertificate = selectedCertificate;
