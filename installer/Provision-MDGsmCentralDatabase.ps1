@@ -33,8 +33,33 @@ function Get-CurrentAdminSid {
 }
 
 function Get-AccountSid([string] $Account) {
-    if ($Account -match '^NT SERVICE\\([^\\]+)
+    if ([string]::IsNullOrWhiteSpace($Account)) {
+        throw 'Account name is empty.'
+    }
 
+    $servicePrefix = 'NT SERVICE\'
+    if ($Account.StartsWith($servicePrefix, [StringComparison]::OrdinalIgnoreCase)) {
+        $serviceName = $Account.Substring($servicePrefix.Length)
+        if ([string]::IsNullOrWhiteSpace($serviceName)) {
+            throw 'Service account name is empty.'
+        }
+
+        $scOutput = & sc.exe showsid $serviceName 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            throw "Service Control Manager could not resolve service SID for '$serviceName'."
+        }
+
+        $outputText = $scOutput -join [Environment]::NewLine
+        $sidMatch = [regex]::Match($outputText, 'S-1-5-80-(?:[0-9]+-){4}[0-9]+')
+        if (-not $sidMatch.Success) {
+            throw "Service Control Manager returned no valid service SID for '$serviceName'."
+        }
+
+        return [Security.Principal.SecurityIdentifier]::new($sidMatch.Value)
+    }
+
+    return ([Security.Principal.NTAccount]::new($Account)).Translate([Security.Principal.SecurityIdentifier])
+}
 function Set-RestrictedDirectoryAcl([string] $Path, [bool] $AllowApiService) {
     if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
         New-Item -ItemType Directory -Path $Path -Force | Out-Null
