@@ -107,7 +107,7 @@ function Get-PrimaryPrivateNetwork {
         if ($candidateDnsName.Length -le 253 -and $candidateDnsName -match '^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$') {
             try {
                 $resolvedAddresses = @([System.Net.Dns]::GetHostAddresses($candidateDnsName) | ForEach-Object { $_.ToString() })
-                if ($resolvedAddresses -contains [string]$selected.Address) {
+                if ($resolvedAddresses.Count -eq 1 -and $resolvedAddresses[0] -eq [string]$selected.Address) {
                     $hostName = $candidateDnsName
                     $certificateNameType = 'DNS'
                 } else {
