@@ -95,9 +95,36 @@ begin
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
+var
+  NetworkConfigText: AnsiString;
+  NetworkConfigPath: String;
 begin
   if CurStep = ssPostInstall then
+  begin
     RunApiServicePhase('Install');
+    if not WizardSilent then
+    begin
+      NetworkConfigPath := ExpandConstant('{commonappdata}\\MD-Gsm\\Network\\api-network.json');
+      if LoadStringFromFile(NetworkConfigPath, NetworkConfigText) and
+         (Pos('"RemoteAccessEnabled": true', NetworkConfigText) > 0) then
+      begin
+        MsgBox(
+          'نصب سرور مرکزی و HTTPS انجام شد.' + #13#10 + #13#10 +
+          'برای اتصال رایانه‌های دیگر، فایل اتصال زیر را از طریق فلش مورد اعتماد یا مسیر امن به آن رایانه منتقل کنید و در نصب‌کنندهٔ Client انتخاب کنید:' + #13#10 +
+          'C:\Users\Public\Documents\MD-Gsm-Client-Connection.mdgsm.json' + #13#10 + #13#10 +
+          'هیچ رمز دیتابیس یا کلید خصوصی در این فایل وجود ندارد.',
+          mbInformation, MB_OK);
+      end
+      else
+      begin
+        MsgBox(
+          'نصب سرور با HTTPS محلی انجام شد، اما Windows یک شبکهٔ خصوصی مناسب و یکتا تشخیص نداد.' + #13#10 + #13#10 +
+          'برای جلوگیری از دسترسی ناخواسته، اتصال رایانه‌های دیگر فعال نشد. اگر شبکهٔ فعلی، شبکهٔ داخلی و مورد اعتماد شماست، آن را در تنظیمات Windows روی Private قرار دهید و سپس نصب‌کننده را با گزینهٔ Repair دوباره اجرا کنید.' + #13#10 + #13#10 +
+          'پایگاه داده PostgreSQL همچنان فقط روی همین رایانه قابل دسترسی است.',
+          mbInformation, MB_OK);
+      end;
+    end;
+  end;
 end;
 
 procedure DeinitializeSetup();
