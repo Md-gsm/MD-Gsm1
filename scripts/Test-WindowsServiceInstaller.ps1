@@ -684,6 +684,68 @@ function Invoke-TlsNegativeProbes([string] $RootThumbprint) {
     }
 }
 
+function Invoke-NetworkProvisioner([string] $Label) {
+    $networkScript = Join-Path $installDirectory 'Configure-MDGsmNetwork.ps1'
+    $output = & $powerShell51 -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $networkScript -InstallDirectory $installDirectory -RenewOnly 2>&1
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+        throw ("Network provisioner failed during " + $Label + " (exit " + $exitCode + ")." +
+            [Environment]::NewLine + ($output -join [Environment]::NewLine))
+    }
+    Write-Host ("PASS: automatic network provisioner completed during " + $Label + ".")
+}
+
+function Invoke-PublicNetworkFallbackTest {
+    $networkConfigPath = Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json'
+    $before = Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json
+    $interfaceAlias = [string]$before.Network.InterfaceAlias
+    if ([string]::IsNullOrWhiteSpace($interfaceAlias) -or -not [bool]$before.Network.RemoteAccessEnabled) {
+        throw 'Cannot run Public-profile fallback proof because the initial setup did not select a private interface.'
+    }
+    $profile = Get-NetConnectionProfile -InterfaceAlias $interfaceAlias -ErrorAction Stop | Select-Object -First 1
+    if ($null -eq $profile -or $profile.NetworkCategory -ne 'Private') {
+        throw 'CI fallback test expected the selected runner interface to be Private.'
+    }
+
+    try {
+        Set-NetConnectionProfile -InterfaceAlias $interfaceAlias -NetworkCategory Public -ErrorAction Stop
+        Invoke-NetworkProvisioner 'Public-profile fallback'
+
+        $fallback = (Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json).Network
+        if ([bool]$fallback.RemoteAccessEnabled -or $fallback.BindAddress -ne '127.0.0.1' -or
+            $fallback.ServerName -ne '127.0.0.1' -or
+            -not [string]::IsNullOrWhiteSpace([string]$fallback.NetworkCidr)) {
+            throw 'The installer did not fail closed to HTTPS loopback on a Public network profile.'
+        }
+        if (Get-NetFirewallRule -Name 'MDGsmApiHttps5081' -ErrorAction SilentlyContinue) {
+            throw 'The installer retained an inbound HTTPS firewall rule on a Public network.'
+        }
+        if (Test-Path -LiteralPath (Join-Path $env:PUBLIC 'Documents\MD-Gsm-Client-Connection.mdgsm.json')) {
+            throw 'The installer exported a client connection bundle while the selected network was Public.'
+        }
+
+        $listener = @(Get-NetTCPConnection -LocalPort 5081 -State Listen -ErrorAction Stop)
+        if ($listener.Count -ne 1 -or $listener[0].LocalAddress -ne '127.0.0.1') {
+            throw 'The Public-profile fallback left a non-loopback HTTPS listener active.'
+        }
+        $fallbackUri = [Uri]$fallback.ApiBaseUrl
+        $live = Invoke-WebRequest -UseBasicParsing -Uri ([Uri]::new($fallbackUri, 'health/live').AbsoluteUri) -TimeoutSec 8
+        if ($live.StatusCode -ne 200) { throw 'The loopback-only HTTPS service did not remain healthy after Public-profile fallback.' }
+        Write-Host 'PASS: Public Windows network profile automatically removed remote firewall/bundle exposure and retained loopback-only HTTPS.'
+    } finally {
+        Set-NetConnectionProfile -InterfaceAlias $interfaceAlias -NetworkCategory Private -ErrorAction Stop
+        Invoke-NetworkProvisioner 'Private-profile recovery'
+    }
+
+    $restored = (Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json).Network
+    if (-not [bool]$restored.RemoteAccessEnabled -or
+        $restored.BindAddress -ne [string]$before.Network.BindAddress -or
+        $restored.NetworkCidr -ne [string]$before.Network.NetworkCidr -or
+        -not (Test-Path -LiteralPath (Join-Path $env:PUBLIC 'Documents\MD-Gsm-Client-Connection.mdgsm.json'))) {
+        throw 'The installer did not restore the original scoped HTTPS configuration after returning to a Private network.'
+    }
+    Assert-ServiceReady 'private-profile-recovery'
+}
 function Invoke-ClientOnlyInstallerTest {
     $apiServiceBefore = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
     $postgresServiceBefore = Get-Service -Name 'MDGsmPostgreSQL18' -ErrorAction SilentlyContinue
@@ -865,9 +927,19 @@ Assert-KeyProvisionedMarker 'initial-install'
 Assert-ServiceReady 'initial-install'
 Assert-DatabaseProvisioning 'initial-install'
 
+$centralDesktopSettings = Get-Content -LiteralPath (Join-Path $installDirectory 'appsettings.json') -Raw | ConvertFrom-Json
+$initialNetwork = (Get-Content -LiteralPath (Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json') -Raw | ConvertFrom-Json).Network
+if ($centralDesktopSettings.Api.BaseUrl -ne [string]$initialNetwork.ApiBaseUrl -or
+    $centralDesktopSettings.Api.BaseUrl -notlike 'https://*:5081/*') {
+    throw 'The central Desktop shell did not receive the exact verified HTTPS API endpoint.'
+}
+Write-Host 'PASS: central Desktop shell and API service use the same verified HTTPS endpoint.'
+
 Write-Host '== Verify automatic client discovery, CA trust and client-only installation =='
 Invoke-ClientOnlyInstallerTest
 Assert-ServiceReady 'after-client-install'
+Write-Host '== Prove Public-profile fail-closed behavior and Private-profile recovery =='
+Invoke-PublicNetworkFallbackTest
 $unexpectedKeyRead = $false
 $keyBytes = $null
 try {
