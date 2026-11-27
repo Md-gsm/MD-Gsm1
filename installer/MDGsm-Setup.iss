@@ -62,6 +62,7 @@ Name: "{autodesktop}\نرم‌افزار جامع مدیریت و حسابدار
 var
   ServiceStatePath: String;
   ServiceSetupScriptPath: String;
+  ServiceSetupLogPath: String;
 
 function InitializeSetup(): Boolean;
 begin
@@ -80,11 +81,17 @@ begin
   PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
   Parameters := '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
     ServiceSetupScriptPath + '" -InstallDirectory "' + ExpandConstant('{app}') +
-    '" -ServiceStatePath "' + ServiceStatePath + '" -Phase "' + Phase + '"';
+    '" -ServiceStatePath "' + ServiceStatePath + '" -SetupLogPath "' + ServiceSetupLogPath + '" -Phase "' + Phase + '"';
   if not Exec(PowerShellPath, Parameters, ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
     RaiseException('Could not start the MD-Gsm API service setup phase: ' + Phase);
   if ResultCode <> 0 then
-    RaiseException('MD-Gsm API service setup phase failed: ' + Phase);
+  begin
+    if LoadStringFromFile(ServiceSetupLogPath, NetworkConfigText) then
+      RaiseException('MD-Gsm API service setup phase failed: ' + Phase + ' (exit ' + IntToStr(ResultCode) + ').' + #13#10 +
+        Copy(String(NetworkConfigText), 1, 12000))
+    else
+      RaiseException('MD-Gsm API service setup phase failed: ' + Phase + ' (exit ' + IntToStr(ResultCode) + '); setup diagnostic log was not created: ' + ServiceSetupLogPath);
+  end;
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
