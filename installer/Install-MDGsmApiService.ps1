@@ -137,7 +137,8 @@ function Get-ConfiguredApiBaseUrl {
 }
 
 function Wait-ApiLiveness {
-    $healthUri = [Uri]::new([Uri](Get-ConfiguredApiBaseUrl), 'health/live').AbsoluteUri
+    $baseUri = [Uri](Get-ConfiguredApiBaseUrl)
+    $healthUri = [Uri]::new($baseUri, 'health/live').AbsoluteUri
     $deadline = (Get-Date).AddSeconds(40)
     $healthy = $false
     while (-not $healthy -and (Get-Date) -lt $deadline) {
@@ -152,7 +153,8 @@ function Wait-ApiLiveness {
 }
 
 function Wait-ApiReadiness {
-    $healthUri = [Uri]::new([Uri](Get-ConfiguredApiBaseUrl), 'health/ready').AbsoluteUri
+    $baseUri = [Uri](Get-ConfiguredApiBaseUrl)
+    $healthUri = [Uri]::new($baseUri, 'health/ready').AbsoluteUri
     $deadline = (Get-Date).AddSeconds(90)
     $healthy = $false
     while (-not $healthy -and (Get-Date) -lt $deadline) {
