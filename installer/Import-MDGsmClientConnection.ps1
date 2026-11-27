@@ -136,8 +136,9 @@ try {
     }
 } catch {
     if ($null -ne $addedThumbprint) {
+        # The store is still open from the Add operation. Re-open is deliberately
+        # avoided here so a failed endpoint probe cannot strand a newly added CA.
         try {
-            $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
             $added = $rootStore.Certificates.Find(
                 [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
                 $addedThumbprint, $false)
