@@ -127,8 +127,8 @@ function Get-PrimaryPrivateNetwork {
     if ($certificateNameType -eq 'DNS' -and
         ($hostName.Length -gt 253 -or $hostName -notmatch '^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$')) {
         return [pscustomobject]@{
-            Mode = 'Loopback'; HostName = 'localhost'; BindAddress = '127.0.0.1'
-            Cidr = $null; InterfaceAlias = $null; Profile = $null; CertificateNameType = 'DNS'
+            Mode = 'Loopback'; HostName = '127.0.0.1'; BindAddress = '127.0.0.1'
+            Cidr = $null; InterfaceAlias = $null; Profile = $null; CertificateNameType = 'IPAddress'
             Reason = 'Windows did not provide a usable domain DNS host name. Remote access remains disabled.'
         }
     }
