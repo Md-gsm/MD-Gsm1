@@ -550,6 +550,39 @@ function Assert-DefaultTlsRejected([string] $Uri, [string] $Label) {
     Write-Host ("PASS: platform TLS validation rejected " + $Label + ".")
 }
 
+function Assert-ApiTlsLoaderFailsClosed([string] $Thumbprint, [string] $ExpectedText, [string] $Label) {
+    $networkConfigPath = Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json'
+    $originalConfig = [System.IO.File]::ReadAllText($networkConfigPath, [System.Text.Encoding]::UTF8)
+    $log = Join-Path $env:TEMP ('MD-Gsm-TlsLoader-' + [Guid]::NewGuid().ToString('N') + '.log')
+    $temporaryConfig = $networkConfigPath + '.test-tmp'
+    try {
+        $config = $originalConfig | ConvertFrom-Json
+        $config.Network.CertificateThumbprint = $Thumbprint
+        [System.IO.File]::WriteAllText($temporaryConfig, ($config | ConvertTo-Json -Depth 8), [System.Text.UTF8Encoding]::new($false))
+        Move-Item -LiteralPath $temporaryConfig -Destination $networkConfigPath -Force
+
+        $apiExe = Join-Path $env:ProgramFiles 'MD-Gsm\Api\MDGsm.Api.exe'
+        $process = Start-Process -FilePath $apiExe -PassThru -RedirectStandardOutput $log -RedirectStandardError ($log + '.err')
+        if (-not $process.WaitForExit(12000)) {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            throw "The API accepted $Label and continued starting instead of rejecting its TLS certificate configuration."
+        }
+
+        $combinedOutput = ''
+        if (Test-Path -LiteralPath $log) { $combinedOutput += Get-Content -LiteralPath $log -Raw }
+        if (Test-Path -LiteralPath ($log + '.err')) { $combinedOutput += Get-Content -LiteralPath ($log + '.err') -Raw }
+        if ($process.ExitCode -eq 0 -or $combinedOutput -notlike ('*' + $ExpectedText + '*')) {
+            throw ("API TLS certificate loader did not fail closed for " + $Label + ". ExitCode=" + $process.ExitCode + "; output=" + $combinedOutput)
+        }
+        Write-Host ("PASS: API startup rejected " + $Label + " before opening its HTTPS listener.")
+    } finally {
+        if (Test-Path -LiteralPath $temporaryConfig) { Remove-Item -LiteralPath $temporaryConfig -Force -ErrorAction SilentlyContinue }
+        [System.IO.File]::WriteAllText($networkConfigPath, $originalConfig, [System.Text.UTF8Encoding]::new($false))
+        Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath ($log + '.err') -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Invoke-TlsNegativeProbes([string] $RootThumbprint) {
     $rootCertificate = Get-Item -LiteralPath ("Cert:\LocalMachine\My\" + $RootThumbprint) -ErrorAction Stop
     if (-not $rootCertificate.HasPrivateKey) {
@@ -570,6 +603,8 @@ function Invoke-TlsNegativeProbes([string] $RootThumbprint) {
 
         $expiredLeafCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=127.0.0.1' -Signer $rootCertificate -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotBefore (Get-Date).AddDays(-30) -NotAfter (Get-Date).AddDays(-1) -TextExtension @('2.5.29.17={text}IPAddress=127.0.0.1')
         $temporaryMachineThumbprints.Add($expiredLeafCertificate.Thumbprint)
+        Assert-ApiTlsLoaderFailsClosed $expiredLeafCertificate.Thumbprint 'configured API TLS certificate is not currently valid' 'an expired machine-store server certificate'
+        Assert-ApiTlsLoaderFailsClosed ('0000000000000000000000000000000000000000') 'configured API TLS certificate is missing or ambiguous' 'a missing machine-store certificate thumbprint'
         $expiredServer = [MDGsmIntegration.TemporaryTlsServer]::new([System.Net.IPAddress]::Loopback, $expiredLeafCertificate)
         try {
             Assert-DefaultTlsRejected ('https://127.0.0.1:{0}/health/live' -f $expiredServer.Port) 'an expired TLS server certificate'
