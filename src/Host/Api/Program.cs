@@ -30,7 +30,11 @@ builder.Configuration.AddJsonFile(networkSettingsPath, optional: true, reloadOnC
 
 X509Certificate2? apiTlsCertificate = null;
 var networkMode = builder.Configuration["Network:Mode"];
+var isLocalWorkflowKeyProvisioningCommand =
+    args.Length > 0 &&
+    string.Equals(args[0], "--provision-persons-workflow-key", StringComparison.Ordinal);
 if (builder.Environment.IsProduction() &&
+    !isLocalWorkflowKeyProvisioningCommand &&
     !string.Equals(networkMode, "Https", StringComparison.OrdinalIgnoreCase))
 {
     throw new InvalidOperationException(
