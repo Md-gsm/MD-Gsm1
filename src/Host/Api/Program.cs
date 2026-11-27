@@ -114,7 +114,7 @@ app.MapGet("/health/ready", async (IServiceProvider services, IConfiguration con
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var command = new NpgsqlCommand(
-            "SELECT session_user, current_user, current_database(), current_setting('server_version_num')::integer, inet_server_addr()::text",
+            "SELECT session_user, current_user, current_database(), current_setting('server_version_num')::integer, host(inet_server_addr())",
             connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
