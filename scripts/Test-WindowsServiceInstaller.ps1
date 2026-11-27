@@ -563,25 +563,25 @@ function Invoke-TlsNegativeProbes([string] $RootThumbprint) {
         $temporaryMachineThumbprints.Add($wrongNameCertificate.Thumbprint)
         $wrongNameServer = [MDGsmIntegration.TemporaryTlsServer]::new([System.Net.IPAddress]::Loopback, $wrongNameCertificate)
         try {
-            Assert-DefaultTlsRejected ('https://localhost:{0}/health/live' -f $wrongNameServer.Port) 'a trusted certificate with a mismatched host name'
+            Assert-DefaultTlsRejected ('https://127.0.0.1:{0}/health/live' -f $wrongNameServer.Port) 'a trusted certificate with a mismatched host name'
         } finally {
             $wrongNameServer.Dispose()
         }
 
-        $expiredLeafCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=localhost' -DnsName 'localhost' -Signer $rootCertificate -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotBefore (Get-Date).AddDays(-30) -NotAfter (Get-Date).AddDays(-1)
+        $expiredLeafCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=127.0.0.1' -Signer $rootCertificate -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotBefore (Get-Date).AddDays(-30) -NotAfter (Get-Date).AddDays(-1) -TextExtension @('2.5.29.17={text}IPAddress=127.0.0.1')
         $temporaryMachineThumbprints.Add($expiredLeafCertificate.Thumbprint)
         $expiredServer = [MDGsmIntegration.TemporaryTlsServer]::new([System.Net.IPAddress]::Loopback, $expiredLeafCertificate)
         try {
-            Assert-DefaultTlsRejected ('https://localhost:{0}/health/live' -f $expiredServer.Port) 'an expired TLS server certificate'
+            Assert-DefaultTlsRejected ('https://127.0.0.1:{0}/health/live' -f $expiredServer.Port) 'an expired TLS server certificate'
         } finally {
             $expiredServer.Dispose()
         }
 
-        $untrustedCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=localhost' -DnsName 'localhost' -CertStoreLocation Cert:\CurrentUser\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotAfter (Get-Date).AddDays(30)
+        $untrustedCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=127.0.0.1' -CertStoreLocation Cert:\CurrentUser\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotAfter (Get-Date).AddDays(30) -TextExtension @('2.5.29.17={text}IPAddress=127.0.0.1')
         $temporaryUserThumbprints.Add($untrustedCertificate.Thumbprint)
         $untrustedServer = [MDGsmIntegration.TemporaryTlsServer]::new([System.Net.IPAddress]::Loopback, $untrustedCertificate)
         try {
-            Assert-DefaultTlsRejected ('https://localhost:{0}/health/live' -f $untrustedServer.Port) 'a self-signed certificate that is not trusted'
+            Assert-DefaultTlsRejected ('https://127.0.0.1:{0}/health/live' -f $untrustedServer.Port) 'a self-signed certificate that is not trusted'
         } finally {
             $untrustedServer.Dispose()
         }
