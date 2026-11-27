@@ -224,13 +224,44 @@ function Test-ServerAuthenticationUsage($Certificate) {
     return (@($parsed.EnhancedKeyUsages | Where-Object { $_.Value -eq '1.3.6.1.5.5.7.3.1' }).Count -gt 0)
 }
 
+function Get-ExpectedSubjectAlternativeNameBytes([string] $HostName, [string] $NameType) {
+    if ($NameType -eq 'IPAddress') {
+        $address = [System.Net.IPAddress]::Parse($HostName)
+        if ($address.AddressFamily -ne [System.Net.Sockets.AddressFamily]::InterNetwork) {
+            throw 'Only IPv4 subject alternative names are supported by this installer.'
+        }
+        $bytes = $address.GetAddressBytes()
+        return [byte[]]@(0x30, 0x06, 0x87, 0x04) + $bytes
+    }
+
+    $dnsBytes = [System.Text.Encoding]::ASCII.GetBytes($HostName)
+    if ($dnsBytes.Length -lt 1 -or $dnsBytes.Length -gt 253) {
+        throw 'The TLS server DNS name is outside the supported length.'
+    }
+    $contentLength = $dnsBytes.Length + 2
+    if ($contentLength -lt 128) {
+        $header = [byte[]]@(0x30, [byte]$contentLength, 0x82, [byte]$dnsBytes.Length)
+    } else {
+        $header = [byte[]]@(0x30, 0x81, [byte]$contentLength, 0x82, [byte]$dnsBytes.Length)
+    }
+    return $header + $dnsBytes
+}
+
+function Test-ServerCertificateName([System.Security.Cryptography.X509Certificates.X509Certificate2] $Certificate, [string] $HostName, [string] $NameType) {
+    $sanExtensions = @($Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.17' })
+    if ($sanExtensions.Count -ne 1) { return $false }
+    $expected = Get-ExpectedSubjectAlternativeNameBytes -HostName $HostName -NameType $NameType
+    return ([BitConverter]::ToString([byte[]]$sanExtensions[0].RawData) -ceq
+        [BitConverter]::ToString([byte[]]$expected))
+}
+
 function Get-OrCreateServerCertificate([System.Security.Cryptography.X509Certificates.X509Certificate2] $Root, [string] $HostName, [ValidateSet('DNS', 'IPAddress')][string] $NameType) {
     $expectedSubject = 'CN={0}' -f $HostName
     $certificate = Get-ChildItem -Path Cert:\LocalMachine\My |
         Where-Object {
             $_.Subject -eq $expectedSubject -and $_.Issuer -eq $Root.Subject -and $_.HasPrivateKey -and
             $_.NotAfter -gt (Get-Date).AddDays(45) -and (Test-ServerAuthenticationUsage $_) -and
-            ($_.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.17' }).Count -gt 0
+            (Test-ServerCertificateName -Certificate $_ -HostName $HostName -NameType $NameType)
         } | Sort-Object -Property NotAfter -Descending | Select-Object -First 1
 
     if ($null -eq $certificate) {
