@@ -62,7 +62,7 @@ namespace MDGsmIntegration
         public TemporaryTlsServer(IPAddress address, X509Certificate2 certificate)
         {
             _certificate = certificate;
-            if (certificate == null) throw new ArgumentNullException("certificate");;
+            if (certificate == null) throw new ArgumentNullException("certificate");
             _listener = new TcpListener(address, 0);
             _listener.Start();
             _acceptLoop = Task.Run((Func<Task>)AcceptLoopAsync);
@@ -80,7 +80,7 @@ namespace MDGsmIntegration
                 catch (ObjectDisposedException) { break; }
                 catch (SocketException) { if (_stop.IsCancellationRequested) break; }
                 if (client != null)
-                    Task.Run(() => HandleClientAsync(client));
+                    GC.KeepAlive(Task.Run(() => HandleClientAsync(client)));
             }
         }
 
