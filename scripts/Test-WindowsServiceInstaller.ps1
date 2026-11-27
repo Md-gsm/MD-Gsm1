@@ -47,12 +47,12 @@ Initialize-MDGsmCertificateProvider
 Initialize-MDGsmCertificateProvider
 $securityModule = Get-Module -Name Microsoft.PowerShell.Security
 $pkiModule = Get-Module -Name PKI
-$expectedSecurityModuleBase = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $PSHOME 'Modules') 'Microsoft.PowerShell.Security')).TrimEnd('\\', '/')
-$expectedPkiModuleBase = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $PSHOME 'Modules') 'PKI')).TrimEnd('\\', '/')
-if (-not [string]::Equals([System.IO.Path]::GetFullPath([string]$securityModule.ModuleBase).TrimEnd('\\', '/'), $expectedSecurityModuleBase, [System.StringComparison]::OrdinalIgnoreCase)) {
+$expectedSecurityModuleBase = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $PSHOME 'Modules') 'Microsoft.PowerShell.Security')).TrimEnd('\', '/')
+$expectedPkiModuleBase = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $PSHOME 'Modules') 'PKI')).TrimEnd('\', '/')
+if (-not [string]::Equals([System.IO.Path]::GetFullPath([string]$securityModule.ModuleBase).TrimEnd('\', '/'), $expectedSecurityModuleBase, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw ("Security module was not loaded from the Windows PowerShell host: " + $securityModule.ModuleBase)
 }
-if (-not [string]::Equals([System.IO.Path]::GetFullPath([string]$pkiModule.ModuleBase).TrimEnd('\\', '/'), $expectedPkiModuleBase, [System.StringComparison]::OrdinalIgnoreCase)) {
+if (-not [string]::Equals([System.IO.Path]::GetFullPath([string]$pkiModule.ModuleBase).TrimEnd('\', '/'), $expectedPkiModuleBase, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw ("PKI module was not loaded from the Windows PowerShell host: " + $pkiModule.ModuleBase)
 }
 Write-Output ("LOADED_MODULES: Security={0}; PKI={1}" -f $securityModule.ModuleBase, $pkiModule.ModuleBase)
