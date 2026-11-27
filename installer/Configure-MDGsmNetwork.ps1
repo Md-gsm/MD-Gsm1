@@ -48,6 +48,17 @@ function Get-Ipv4Cidr([string] $Address, [int] $PrefixLength) {
     return ('{0}/{1}' -f ([System.Net.IPAddress]::new($networkBytes).ToString()), $PrefixLength)
 }
 
+function Test-IsPrivateIpv4([string] $Address) {
+    $parsed = [System.Net.IPAddress]::Parse($Address)
+    if ($parsed.AddressFamily -ne [System.Net.Sockets.AddressFamily]::InterNetwork) { return $false }
+    $bytes = $parsed.GetAddressBytes()
+    return (
+        $bytes[0] -eq 10 -or
+        ($bytes[0] -eq 172 -and $bytes[1] -ge 16 -and $bytes[1] -le 31) -or
+        ($bytes[0] -eq 192 -and $bytes[1] -eq 168)
+    )
+}
+
 function Get-PrimaryPrivateNetwork {
     $routes = @(Get-NetRoute -AddressFamily IPv4 -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue |
         Where-Object { -not [string]::IsNullOrWhiteSpace($_.NextHop) -and $_.NextHop -ne '0.0.0.0' })
@@ -60,7 +71,7 @@ function Get-PrimaryPrivateNetwork {
         $addresses = @(Get-NetIPAddress -InterfaceIndex $route.InterfaceIndex -AddressFamily IPv4 -AddressState Preferred -ErrorAction SilentlyContinue |
             Where-Object {
                 $_.PrefixLength -ge 1 -and $_.PrefixLength -le 30 -and
-                $_.IPAddress -notmatch '^(127\.|169\.254\.|0\.)' -and -not $_.SkipAsSource
+                (Test-IsPrivateIpv4 -Address ([string]$_.IPAddress)) -and -not $_.SkipAsSource
             } | Sort-Object -Property SkipAsSource, IPAddress)
         if ($addresses.Count -eq 0) { continue }
         $address = $addresses[0]
@@ -134,12 +145,19 @@ function Test-IsCertificateAuthority([System.Security.Cryptography.X509Certifica
     return ([System.Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]$extension).CertificateAuthority
 }
 
-function Get-OrCreateRootAuthority {
+function Get-OrCreateRootAuthority([bool] $HadPriorNetworkConfiguration) {
     $subject = 'CN=MD-Gsm Internal API Root CA'
-    $existingRoots = @(Get-ChildItem -Path Cert:\LocalMachine\My |
-        Where-Object { $_.Subject -eq $subject -and $_.HasPrivateKey -and (Test-IsCertificateAuthority $_) })
+    $namedRootCertificates = @(Get-ChildItem -Path Cert:\LocalMachine\My |
+        Where-Object { $_.Subject -eq $subject -and (Test-IsCertificateAuthority $_) })
+    $existingRoots = @($namedRootCertificates | Where-Object { $_.HasPrivateKey })
     $now = Get-Date
     $validRoots = @($existingRoots | Where-Object { $_.NotBefore -le $now -and $_.NotAfter -gt $now } | Sort-Object -Property NotAfter -Descending)
+    if ($namedRootCertificates.Count -gt 0 -and $validRoots.Count -eq 0) {
+        throw 'The previously provisioned MD-Gsm root CA is missing its private key or is no longer valid. Automatic root replacement is blocked.'
+    }
+    if ($validRoots.Count -eq 0 -and $HadPriorNetworkConfiguration) {
+        throw 'An existing API network configuration references a root CA that is no longer present. Restore the original root certificate or perform an approved explicit client re-pair/rotation; refusing silent trust replacement.'
+    }
     if ($validRoots.Count -gt 1) {
         throw 'More than one valid MD-Gsm root CA exists in LocalMachine\My. Explicit certificate rotation/reconciliation is required.'
     }
@@ -303,7 +321,7 @@ $network = Get-PrimaryPrivateNetwork
 if ($network.Mode -eq 'Loopback') { Write-NetworkLog $network.Reason }
 else { Write-NetworkLog ('Detected network ' + $network.Cidr + ' on ' + $network.InterfaceAlias + ' using Windows profile ' + $network.Profile + '.') }
 
-$root = Get-OrCreateRootAuthority
+$root = Get-OrCreateRootAuthority -HadPriorNetworkConfiguration ($null -ne $oldConfig -and -not [string]::IsNullOrWhiteSpace([string]$oldConfig.Network.CertificateThumbprint))
 $serverCertificate = Get-OrCreateServerCertificate -Root $root -HostName $network.HostName -NameType $network.CertificateNameType
 $serverName = $network.HostName
 $apiBaseUrl = 'https://{0}:{1}/' -f $serverName, $httpsPort
