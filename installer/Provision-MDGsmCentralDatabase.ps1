@@ -486,7 +486,7 @@ try {
     $membership = Invoke-Psql 'postgres' 'postgres' $script:clusterSecrets.SuperuserPassword "SELECT (m.inherit_option AND NOT m.set_option AND NOT m.admin_option)::text FROM pg_auth_members m JOIN pg_roles parent ON parent.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE parent.rolname='mdgsm_runtime' AND member.rolname='mdgsm_api_runtime';"
     if ($membership -ne 'true') { throw 'The API LOGIN membership options do not match the least-privilege runtime policy.' }
 
-    $apiIdentity = Invoke-Psql 'mdgsm' 'mdgsm_api_runtime' $apiPassword "SELECT session_user || '|' || current_user || '|' || current_database() || '|' || (current_setting('server_version_num')::integer / 10000)::text || '|' || inet_server_addr()::text;"
+    $apiIdentity = Invoke-Psql 'mdgsm' 'mdgsm_api_runtime' $apiPassword "SELECT session_user || '|' || current_user || '|' || current_database() || '|' || (current_setting('server_version_num')::integer / 10000)::text || '|' || host(inet_server_addr());"
     $expectedApiIdentity = 'mdgsm_api_runtime|mdgsm_api_runtime|mdgsm|18|127.0.0.1'
     if ($apiIdentity -cne $expectedApiIdentity) {
         throw ("The generated API LOGIN identity proof did not match. Actual safe identity tuple: [{0}]. Expected: [{1}]." -f $apiIdentity, $expectedApiIdentity)
