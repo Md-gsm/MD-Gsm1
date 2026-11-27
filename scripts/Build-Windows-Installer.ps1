@@ -19,12 +19,24 @@ $centralProvisioner = Join-Path $repoRoot 'installer\Provision-MDGsmCentralDatab
 $networkProvisioner = Join-Path $repoRoot 'installer\Configure-MDGsmNetwork.ps1'
 $clientConnectionImporter = Join-Path $repoRoot 'installer\Import-MDGsmClientConnection.ps1'
 $clientTrustUninstaller = Join-Path $repoRoot 'installer\Uninstall-MDGsmClientTrust.ps1'
+$desktopSettingsFile = Join-Path $repoRoot 'src\Host\Desktop\appsettings.json'
+$apiProductionSettingsFile = Join-Path $repoRoot 'src\Host\Api\appsettings.Production.json'
 
 if (-not $IsWindows -and $env:OS -ne 'Windows_NT') {
     throw 'The Windows installer must be built on Windows. No application or database was changed.'
 }
-foreach ($requiredPath in @($solution, $desktopProject, $apiProject, $issFile, $clientIssFile, $centralProvisioner, $networkProvisioner, $clientConnectionImporter, $clientTrustUninstaller)) {
+foreach ($requiredPath in @($solution, $desktopProject, $apiProject, $issFile, $clientIssFile, $centralProvisioner, $networkProvisioner, $clientConnectionImporter, $clientTrustUninstaller, $desktopSettingsFile, $apiProductionSettingsFile)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) { throw "Required build input was not found: $requiredPath" }
+}
+
+$desktopSettings = Get-Content -LiteralPath $desktopSettingsFile -Raw | ConvertFrom-Json
+$desktopBaseUrl = [string]$desktopSettings.Api.BaseUrl
+if (-not [string]::IsNullOrWhiteSpace($desktopBaseUrl)) {
+    throw 'The packaged Desktop default must not contain a server endpoint. Client and central installers must inject the verified endpoint from the public trust bundle/network provisioner.'
+}
+$productionApiSettings = Get-Content -LiteralPath $apiProductionSettingsFile -Raw | ConvertFrom-Json
+if ($null -ne $productionApiSettings.PSObject.Properties['Urls']) {
+    throw 'Production API settings must not declare a static HTTP URL. The HTTPS network provisioner exclusively owns Kestrel endpoint binding.'
 }
 
 $sdks = & dotnet --list-sdks 2>&1
