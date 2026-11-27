@@ -503,16 +503,6 @@ finally {
     $connectionString = $null
     if ($null -ne $env:PGPASSWORD) { Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue }
 }
-) {
-        $serviceName = $Matches[1]
-        $scOutput = & sc.exe showsid $serviceName 2>&1
-        if ($LASTEXITCODE -ne 0) { throw "Service Control Manager could not provide the SID for service '$serviceName'." }
-        $sidMatch = [regex]::Match(($scOutput -join [Environment]::NewLine), 'S-1-5-80-(?:[0-9]+-){4}[0-9]+')
-        if (-not $sidMatch.Success) { throw "Service Control Manager returned no valid service SID for '$serviceName'." }
-        return [Security.Principal.SecurityIdentifier]::new($sidMatch.Value)
-    }
-    return ([Security.Principal.NTAccount]::new($Account)).Translate([Security.Principal.SecurityIdentifier])
-}
 
 function Set-RestrictedDirectoryAcl([string] $Path, [bool] $AllowApiService) {
     if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
