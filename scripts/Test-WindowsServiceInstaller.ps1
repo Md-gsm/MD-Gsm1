@@ -465,7 +465,7 @@ function Invoke-ClientOnlyInstallerTest {
     # Exercise first-time client trust establishment: remove only the public CA
     # trust entry (the non-exportable signing private key remains in LocalMachine\\My).
     $rootBytes = [Convert]::FromBase64String([string]$bundle.rootCaCertificateBase64)
-    $rootCertificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(,$rootBytes)
+    $rootCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([byte[]]$rootBytes)
     $rootStore = New-Object System.Security.Cryptography.X509Certificates.X509Store(
         [System.Security.Cryptography.X509Certificates.StoreName]::Root,
         [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
