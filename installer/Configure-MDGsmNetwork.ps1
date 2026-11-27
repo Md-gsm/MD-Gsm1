@@ -370,6 +370,15 @@ try {
     throw 'The existing MD-Gsm HTTPS firewall rule could not be removed before reconfiguration; refusing to continue.'
 }
 
+# Setup and the daily renewal task run with -NoProfile. Remove stale exposure first,
+# then explicitly initialize the Certificate provider before any certificate access.
+$certificateProviderBootstrapPath = Join-Path $PSScriptRoot 'Initialize-MDGsmCertificateProvider.ps1'
+if (-not (Test-Path -LiteralPath $certificateProviderBootstrapPath -PathType Leaf)) {
+    throw 'The Windows certificate-provider bootstrap script is missing from the installation.'
+}
+. $certificateProviderBootstrapPath
+Initialize-MDGsmCertificateProvider
+
 $oldConfig = $null
 if (Test-Path -LiteralPath $networkConfigPath -PathType Leaf) {
     try { $oldConfig = Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json }

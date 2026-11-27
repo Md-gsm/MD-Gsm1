@@ -15,6 +15,67 @@ $serviceStatePath = Join-Path $env:TEMP 'MD-Gsm-Service-Rollback-Test.json'
 
 
 $powerShell51 = Join-Path $env:windir 'System32\WindowsPowerShell\v1.0\powershell.exe'
+$certificateBootstrapPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\installer\Initialize-MDGsmCertificateProvider.ps1'))
+if (-not (Test-Path -LiteralPath $certificateBootstrapPath -PathType Leaf)) {
+    throw 'The certificate-provider bootstrap script is missing from the source checkout.'
+}
+. $certificateBootstrapPath
+Initialize-MDGsmCertificateProvider
+
+function Assert-CertificateProviderNoProfileBootstrap {
+    $escapedHelperPath = $certificateBootstrapPath.Replace("'", "''")
+    $probeScript = @'
+$ErrorActionPreference = 'Stop'
+. '__HELPER_PATH__'
+$existingDrive = Get-PSDrive -Name Cert -ErrorAction SilentlyContinue
+if ($null -ne $existingDrive) {
+    Remove-PSDrive -Name Cert -Force -ErrorAction Stop
+}
+if ($null -ne (Get-PSDrive -Name Cert -ErrorAction SilentlyContinue)) {
+    throw 'The test could not establish the missing-Cert-drive precondition.'
+}
+Initialize-MDGsmCertificateProvider
+if (-not (Test-Path -LiteralPath 'Cert:\LocalMachine\My' -ErrorAction Stop)) {
+    throw 'The LocalMachine My certificate store was not mounted after explicit provider bootstrap.'
+}
+$probeCertificate = $null
+$probeStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+    [System.Security.Cryptography.X509Certificates.StoreName]::My,
+    [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser)
+try {
+    $probeCertificate = New-SelfSignedCertificate -Type Custom -Subject 'CN=MD-Gsm Certificate Provider Bootstrap Probe' -CertStoreLocation 'Cert:\CurrentUser\My' -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotAfter (Get-Date).AddDays(1)
+    $probeStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+    $matches = $probeStore.Certificates.Find(
+        [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+        $probeCertificate.Thumbprint, $false)
+    foreach ($match in $matches) { $probeStore.Remove($match) }
+    Write-Output 'PASS: Windows PowerShell 5.1 -NoProfile mounted Cert: and created/removed a disposable certificate.'
+} finally {
+    $probeStore.Close()
+    $probeStore.Dispose()
+    if ($null -ne $probeCertificate) { $probeCertificate.Dispose() }
+}
+'@
+    $probeScript = $probeScript.Replace('__HELPER_PATH__', $escapedHelperPath)
+    $encodedProbe = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($probeScript))
+    $probeLog = Join-Path $env:TEMP 'MD-Gsm-CertificateProvider-NoProfile.log'
+    $probeErrorLog = $probeLog + '.err'
+    try {
+        $probeProcess = Start-Process -FilePath $powerShell51 -ArgumentList ('-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ' + $encodedProbe) -PassThru -Wait -WindowStyle Hidden -RedirectStandardOutput $probeLog -RedirectStandardError $probeErrorLog
+        if ($probeProcess.ExitCode -ne 0) {
+            $details = ''
+            if (Test-Path -LiteralPath $probeLog) { $details += Get-Content -LiteralPath $probeLog -Raw }
+            if (Test-Path -LiteralPath $probeErrorLog) { $details += Get-Content -LiteralPath $probeErrorLog -Raw }
+            throw ("Windows PowerShell 5.1 -NoProfile certificate-provider bootstrap failed. " + $details)
+        }
+        Write-Host 'PASS: Windows PowerShell 5.1 -NoProfile certificate-provider bootstrap.'
+    } finally {
+        Remove-Item -LiteralPath $probeLog -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $probeErrorLog -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Assert-CertificateProviderNoProfileBootstrap
 
 # The hosted runner is disposable. Mark only default-route Public interfaces Private
 # so CI exercises the eligible private-LAN code path. Production installation never

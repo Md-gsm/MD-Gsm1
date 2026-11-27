@@ -36,13 +36,21 @@ Unregister-ScheduledTask -TaskName 'MD-Gsm API TLS Certificate Renewal' -Confirm
 # Remove the product-owned public trust anchor from this server machine while
 # retaining the non-exportable CA key in LocalMachine\\My for safe reinstall.
 $rootSubject = 'CN=MD-Gsm Internal API Root CA'
+$machineStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+    [System.Security.Cryptography.X509Certificates.StoreName]::My,
+    [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
 $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
     [System.Security.Cryptography.X509Certificates.StoreName]::Root,
     [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
+$machineStoreOpened = $false
+$rootStoreOpened = $false
 try {
+    $machineStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+    $machineStoreOpened = $true
     $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-    $machineRoots = Get-ChildItem -Path Cert:\LocalMachine\My |
-        Where-Object { $_.Subject -eq $rootSubject -and $_.HasPrivateKey }
+    $rootStoreOpened = $true
+    $machineRoots = @($machineStore.Certificates |
+        Where-Object { $_.Subject -eq $rootSubject -and $_.HasPrivateKey })
     foreach ($machineRoot in $machineRoots) {
         $trustedRoots = $rootStore.Certificates.Find(
             [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
@@ -50,8 +58,10 @@ try {
         foreach ($trustedRoot in $trustedRoots) { $rootStore.Remove($trustedRoot) }
     }
 } finally {
-    $rootStore.Close()
+    if ($rootStoreOpened) { $rootStore.Close() }
+    if ($machineStoreOpened) { $machineStore.Close() }
     $rootStore.Dispose()
+    $machineStore.Dispose()
 }
 
 $networkRoot = Join-Path $env:ProgramData 'MD-Gsm\Network'

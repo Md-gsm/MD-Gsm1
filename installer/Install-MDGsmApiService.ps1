@@ -318,13 +318,21 @@ function Remove-NetworkExposureAfterFailedInstall {
         Remove-Item -LiteralPath (Join-Path $networkRoot 'MD-Gsm-Client-Connection.mdgsm.json') -Force -ErrorAction SilentlyContinue
         Remove-Item -LiteralPath (Join-Path $env:PUBLIC 'Documents\MD-Gsm-Client-Connection.mdgsm.json') -Force -ErrorAction SilentlyContinue
 
+        $machineStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+            [System.Security.Cryptography.X509Certificates.StoreName]::My,
+            [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
         $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
             [System.Security.Cryptography.X509Certificates.StoreName]::Root,
             [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
+        $machineStoreOpened = $false
+        $rootStoreOpened = $false
         try {
+            $machineStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+            $machineStoreOpened = $true
             $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-            $machineRoots = Get-ChildItem -Path Cert:\LocalMachine\My |
-                Where-Object { $_.Subject -eq 'CN=MD-Gsm Internal API Root CA' -and $_.HasPrivateKey }
+            $rootStoreOpened = $true
+            $machineRoots = @($machineStore.Certificates |
+                Where-Object { $_.Subject -eq 'CN=MD-Gsm Internal API Root CA' -and $_.HasPrivateKey })
             foreach ($machineRoot in $machineRoots) {
                 $trusted = $rootStore.Certificates.Find(
                     [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
@@ -332,8 +340,10 @@ function Remove-NetworkExposureAfterFailedInstall {
                 foreach ($certificate in $trusted) { $rootStore.Remove($certificate) }
             }
         } finally {
-            $rootStore.Close()
+            if ($rootStoreOpened) { $rootStore.Close() }
+            if ($machineStoreOpened) { $machineStore.Close() }
             $rootStore.Dispose()
+            $machineStore.Dispose()
         }
         Write-SetupLog 'Failed-install/Repair rollback removed HTTPS firewall exposure, renewal task, client bundle, network config and public root trust. Non-exportable machine keys and PostgreSQL data were preserved.'
     } catch {
