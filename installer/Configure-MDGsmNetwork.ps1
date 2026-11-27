@@ -141,8 +141,18 @@ function Get-PrimaryPrivateNetwork {
 
 function Test-IsCertificateAuthority([System.Security.Cryptography.X509Certificates.X509Certificate2] $Certificate) {
     $extension = $Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.19' } | Select-Object -First 1
-    if ($null -eq $extension) { return $false }
-    return ([System.Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]$extension).CertificateAuthority
+    $usageExtension = $Certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.15' } | Select-Object -First 1
+    if ($null -eq $extension -or $null -eq $usageExtension) { return $false }
+    $isCa = ([System.Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]$extension).CertificateAuthority
+    $usage = [System.Security.Cryptography.X509Certificates.X509KeyUsageExtension]$usageExtension
+    return ($isCa -and (($usage.KeyUsages -band [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::KeyCertSign) -ne 0))
+}
+
+function Test-Rsa3072OrStronger([System.Security.Cryptography.X509Certificates.X509Certificate2] $Certificate) {
+    $rsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPublicKey($Certificate)
+    if ($null -eq $rsa) { return $false }
+    try { return ($rsa.KeySize -ge 3072) }
+    finally { $rsa.Dispose() }
 }
 
 function Get-OrCreateRootAuthority([bool] $HadPriorNetworkConfiguration) {
@@ -262,6 +272,7 @@ function Get-OrCreateServerCertificate([System.Security.Cryptography.X509Certifi
         Where-Object {
             $_.Subject -eq $expectedSubject -and $_.Issuer -eq $Root.Subject -and $_.HasPrivateKey -and
             $_.NotAfter -gt (Get-Date).AddDays(45) -and (Test-ServerAuthenticationUsage $_) -and
+            (Test-Rsa3072OrStronger $_) -and
             (Test-ServerCertificateName -Certificate $_ -HostName $HostName -NameType $NameType)
         } | Sort-Object -Property NotAfter -Descending | Select-Object -First 1
 
