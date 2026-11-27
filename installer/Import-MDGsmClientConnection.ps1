@@ -10,6 +10,9 @@ $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
     [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
 $addedThumbprint = $null
 $connection = $null
+$settingsPath = $null
+$settingsOriginalContent = $null
+$settingsUpdated = $false
 
 try {
     if (-not (Test-Path -LiteralPath $ConnectionFile -PathType Leaf)) {
@@ -91,10 +94,11 @@ try {
         }
 
         $settingsPath = Join-Path $InstallDirectory 'appsettings.json'
-        $settings = if (Test-Path -LiteralPath $settingsPath -PathType Leaf) {
-            Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json
+        if (Test-Path -LiteralPath $settingsPath -PathType Leaf) {
+            $settingsOriginalContent = [System.IO.File]::ReadAllText($settingsPath, [System.Text.Encoding]::UTF8)
+            $settings = $settingsOriginalContent | ConvertFrom-Json
         } else {
-            [pscustomobject]@{}
+            $settings = [pscustomobject]@{}
         }
         $apiSettings = [pscustomobject]@{ BaseUrl = $apiUri.AbsoluteUri; TimeoutSeconds = 8 }
         if ($null -ne $settings.PSObject.Properties['Api']) {
@@ -107,6 +111,7 @@ try {
         $settingsJson = $settings | ConvertTo-Json -Depth 12
         [System.IO.File]::WriteAllText($temporarySettings, $settingsJson, [System.Text.UTF8Encoding]::new($false))
         Move-Item -LiteralPath $temporarySettings -Destination $settingsPath -Force
+        $settingsUpdated = $true
 
         $trustDirectory = Join-Path $env:ProgramData 'MD-Gsm\ClientTrust'
         New-Item -ItemType Directory -Path $trustDirectory -Force | Out-Null
@@ -135,6 +140,17 @@ try {
         [Array]::Clear($rawCertificate, 0, $rawCertificate.Length)
     }
 } catch {
+    if ($settingsUpdated -and -not [string]::IsNullOrWhiteSpace($settingsPath)) {
+        try {
+            if ($null -eq $settingsOriginalContent) {
+                Remove-Item -LiteralPath $settingsPath -Force -ErrorAction SilentlyContinue
+            } else {
+                $restorePath = $settingsPath + '.rollback.tmp'
+                [System.IO.File]::WriteAllText($restorePath, $settingsOriginalContent, [System.Text.UTF8Encoding]::new($false))
+                Move-Item -LiteralPath $restorePath -Destination $settingsPath -Force
+            }
+        } catch { }
+    }
     if ($null -ne $addedThumbprint) {
         # The store is still open from the Add operation. Re-open is deliberately
         # avoided here so a failed endpoint probe cannot strand a newly added CA.
