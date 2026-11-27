@@ -41,6 +41,7 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourcePath}\Import-MDGsmClientConnection.ps1"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\نرم‌افزار جامع مدیریت و حسابداری تعمیرگاه موبایل"; Filename: "{app}\{#AppExeName}"
@@ -48,55 +49,8 @@ Name: "{autodesktop}\نرم‌افزار جامع مدیریت و حسابدار
 
 [Code]
 var
-  ApiPage: TInputQueryWizardPage;
-  ApiBaseUrl: String;
-
-function IsSafeHttpsBaseUrl(const Value: String): Boolean;
-var
-  I: Integer;
-  C: Char;
-  LowerValue: String;
-  Remainder: String;
-  Authority: String;
-  SlashPos: Integer;
-begin
-  LowerValue := LowerCase(Trim(Value));
-  if Copy(LowerValue, 1, 8) <> 'https://' then
-    Result := False
-  else if (Pos('@', Copy(Value, 9, Length(Value))) > 0) or
-          (Pos('?', Value) > 0) or (Pos('#', Value) > 0) or
-          (Pos(' ', Value) > 0) or (Pos('\\', Value) > 0) then
-    Result := False
-  else
-  begin
-    Remainder := Copy(Trim(Value), 9, Length(Trim(Value)));
-    SlashPos := Pos('/', Remainder);
-    if SlashPos > 0 then
-      Authority := Copy(Remainder, 1, SlashPos - 1)
-    else
-      Authority := Remainder;
-    if (Authority = '') or (Authority = '.') or (Authority = '..') then
-    begin
-      Result := False;
-      Exit;
-    end;
-
-    Result := True;
-    for I := 1 to Length(Value) do
-    begin
-      C := Value[I];
-      if not ((C >= 'a') and (C <= 'z')) and
-         not ((C >= 'A') and (C <= 'Z')) and
-         not ((C >= '0') and (C <= '9')) and
-         (C <> ':') and (C <> '/') and (C <> '.') and
-         (C <> '-') and (C <> '_') and (C <> '[') and (C <> ']') and (C <> '%') then
-      begin
-        Result := False;
-        Exit;
-      end;
-    end;
-  end;
-end;
+  ConnectionPage: TInputFileWizardPage;
+  ConnectionFilePath: String;
 
 function InitializeSetup: Boolean;
 var
@@ -105,26 +59,23 @@ begin
   Result := True;
   if WizardSilent then
   begin
-    Candidate := Trim(GetEnv('MDGSM_CLIENT_API_BASEURL'));
-    if not IsSafeHttpsBaseUrl(Candidate) then
+    Candidate := Trim(GetEnv('MDGSM_CLIENT_CONNECTION_FILE'));
+    if (Candidate = '') or (not FileExists(Candidate)) then
     begin
-      MsgBox('Silent client setup requires a valid MDGSM_CLIENT_API_BASEURL HTTPS value.', mbError, MB_OK);
+      MsgBox('Silent client setup requires MDGSM_CLIENT_CONNECTION_FILE pointing to a trusted central connection bundle.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
-    if Candidate[Length(Candidate)] <> '/' then
-      Candidate := Candidate + '/';
-    ApiBaseUrl := Candidate;
+    ConnectionFilePath := Candidate;
   end;
 end;
 
 procedure InitializeWizard;
 begin
-  ApiPage := CreateInputQueryPage(wpSelectDir,
-    'Central API address', 'Connect this client to the central MD-Gsm API',
-    'Enter the HTTPS base address of the central server. PostgreSQL credentials are never requested on a client.');
-  ApiPage.Add('Central API HTTPS URL', False);
-  ApiPage.Values[0] := 'https://central-server:5081/';
+  ConnectionPage := CreateInputFilePage(wpSelectDir,
+    'Central server connection', 'Connect this client to the central MD-Gsm server',
+    'Select the connection file exported by the central server. Copy it using trusted physical media or an already authenticated channel. The file contains no database password.');
+  ConnectionPage.Add('MD-Gsm connection file', 'mdgsm-connection.json');
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
@@ -132,33 +83,36 @@ var
   Candidate: String;
 begin
   Result := True;
-  if CurPageID = ApiPage.ID then
+  if CurPageID = ConnectionPage.ID then
   begin
-    Candidate := Trim(ApiPage.Values[0]);
+    Candidate := Trim(ConnectionPage.Values[0]);
     if WizardSilent then
-      Candidate := GetEnv('MDGSM_CLIENT_API_BASEURL');
-    if not IsSafeHttpsBaseUrl(Candidate) then
+      Candidate := GetEnv('MDGSM_CLIENT_CONNECTION_FILE');
+    if (Candidate = '') or (not FileExists(Candidate)) then
     begin
-      MsgBox('A valid HTTPS central API address is required. HTTP is not allowed for remote clients.', mbError, MB_OK);
+      MsgBox('Select a valid MD-Gsm connection file exported by the central server.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
-    if Candidate[Length(Candidate)] <> '/' then
-      Candidate := Candidate + '/';
-    ApiBaseUrl := Candidate;
+    ConnectionFilePath := Candidate;
   end;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  ConfigPath: String;
-  ConfigText: String;
+  ResultCode: Integer;
+  PowerShellPath: String;
+  Parameters: String;
 begin
   if CurStep = ssPostInstall then
   begin
-    ConfigPath := ExpandConstant('{app}\appsettings.json');
-    ConfigText := '{"Api":{"BaseUrl":"' + ApiBaseUrl + '","TimeoutSeconds":5}}' + #13#10;
-    if not SaveStringToFile(ConfigPath, ConfigText, False) then
-      RaiseException('Could not save the central API address for this client.');
+    PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
+    Parameters := '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
+      ExpandConstant('{app}\Import-MDGsmClientConnection.ps1') + '" -ConnectionFile "' +
+      ConnectionFilePath + '" -InstallDirectory "' + ExpandConstant('{app}') + '"';
+    if not Exec(PowerShellPath, Parameters, ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+      RaiseException('Could not start the central HTTPS connection import.');
+    if ResultCode <> 0 then
+      RaiseException('The connection file failed certificate or HTTPS verification. The client connection was not configured.');
   end;
 end;
