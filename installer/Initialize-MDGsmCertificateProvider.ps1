@@ -22,10 +22,10 @@ function Assert-MDGsmModuleFromCurrentHost {
         throw ("Expected exactly one loaded Windows PowerShell module " + $ModuleName + "; found " + $modules.Count + ".")
     }
 
-    $expectedDirectory = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $PSHOME 'Modules') $ModuleName)).TrimEnd('\', '/') 
-    $actualDirectory = [System.IO.Path]::GetFullPath([string]$modules[0].ModuleBase).TrimEnd('\', '/')
-    if (-not [string]::Equals($actualDirectory, $expectedDirectory, [System.StringComparison]::OrdinalIgnoreCase)) {
-        throw ("Refusing to use " + $ModuleName + " loaded outside the current Windows PowerShell host module directory. Actual: " + $actualDirectory + "; expected: " + $expectedDirectory)
+    $expectedManifestPath = Get-MDGsmModuleManifestPath -ModuleName $ModuleName
+    $actualModulePath = [System.IO.Path]::GetFullPath([string]$modules[0].Path)
+    if (-not [string]::Equals($actualModulePath, $expectedManifestPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw ("Refusing to use " + $ModuleName + " loaded from a path other than the current Windows PowerShell host manifest. Actual: " + $actualModulePath + "; expected: " + $expectedManifestPath)
     }
 }
 
