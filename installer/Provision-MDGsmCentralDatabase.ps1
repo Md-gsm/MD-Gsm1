@@ -220,7 +220,15 @@ function Write-State($State) {
     [System.IO.File]::WriteAllText($tempPath, $json, [System.Text.UTF8Encoding]::new($false))
     Set-RestrictedFileAcl $tempPath $false
     if (Test-Path -LiteralPath $statePath) {
-        [System.IO.File]::Replace($tempPath, $statePath, $null, $true)
+        $backupPath = $statePath + '.' + [Guid]::NewGuid().ToString('N') + '.bak'
+        try {
+            [System.IO.File]::Replace($tempPath, $statePath, $backupPath, $true)
+        }
+        finally {
+            if (Test-Path -LiteralPath $backupPath) {
+                Remove-Item -LiteralPath $backupPath -Force -ErrorAction SilentlyContinue
+            }
+        }
     } else {
         [System.IO.File]::Move($tempPath, $statePath)
     }
