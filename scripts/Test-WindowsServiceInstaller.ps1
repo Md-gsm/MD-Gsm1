@@ -61,7 +61,8 @@ namespace MDGsmIntegration
 
         public TemporaryTlsServer(IPAddress address, X509Certificate2 certificate)
         {
-            _certificate = certificate ?? throw new ArgumentNullException(nameof(certificate));
+            _certificate = certificate;
+            if (certificate == null) throw new ArgumentNullException("certificate");;
             _listener = new TcpListener(address, 0);
             _listener.Start();
             _acceptLoop = Task.Run((Func<Task>)AcceptLoopAsync);
@@ -79,7 +80,7 @@ namespace MDGsmIntegration
                 catch (ObjectDisposedException) { break; }
                 catch (SocketException) { if (_stop.IsCancellationRequested) break; }
                 if (client != null)
-                    _ = Task.Run(() => HandleClientAsync(client));
+                    Task.Run(() => HandleClientAsync(client));
             }
         }
 
@@ -93,12 +94,12 @@ namespace MDGsmIntegration
                     await stream.AuthenticateAsServerAsync(
                         _certificate, false, SslProtocols.Tls12, false).ConfigureAwait(false);
                     var buffer = new byte[4096];
-                    var count = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                    var count = await stream.ReadAsync(buffer, 0, buffer.Length, CancellationToken.None).ConfigureAwait(false);
                     if (count > 0)
                     {
                         var response = Encoding.ASCII.GetBytes(
                             "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK");
-                        await stream.WriteAsync(response, 0, response.Length).ConfigureAwait(false);
+                        await stream.WriteAsync(response, 0, response.Length, CancellationToken.None).ConfigureAwait(false);
                     }
                 }
                 catch { }
