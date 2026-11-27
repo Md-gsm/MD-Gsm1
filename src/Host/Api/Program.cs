@@ -30,6 +30,12 @@ builder.Configuration.AddJsonFile(networkSettingsPath, optional: true, reloadOnC
 
 X509Certificate2? apiTlsCertificate = null;
 var networkMode = builder.Configuration["Network:Mode"];
+if (builder.Environment.IsProduction() &&
+    !string.Equals(networkMode, "Https", StringComparison.OrdinalIgnoreCase))
+{
+    throw new InvalidOperationException(
+        "Production API startup requires the machine-local HTTPS network configuration; refusing an HTTP fallback.");
+}
 if (string.Equals(networkMode, "Https", StringComparison.OrdinalIgnoreCase))
 {
     if (!OperatingSystem.IsWindows())
@@ -45,7 +51,11 @@ if (string.Equals(networkMode, "Https", StringComparison.OrdinalIgnoreCase))
         throw new InvalidOperationException("The configured API HTTPS port is invalid.");
 
     var thumbprint = builder.Configuration["Network:CertificateThumbprint"];
-    var selectedCertificate = ApiTlsCertificateLoader.LoadFromLocalMachine(thumbprint ?? string.Empty);
+    var serverName = builder.Configuration["Network:ServerName"];
+    var selectedCertificate = ApiTlsCertificateLoader.LoadFromLocalMachine(
+        thumbprint ?? string.Empty,
+        serverName ?? string.Empty,
+        bindAddress.ToString());
     apiTlsCertificate = selectedCertificate;
 
     // Listen() defines the only endpoint in central-server mode. The production
