@@ -345,6 +345,29 @@ $changed = $oldJson -cne $configJson
 Write-JsonAtomically -Path $networkConfigPath -Value $config
 Set-NetworkDirectoryAcl
 
+# The central-server package also installs its own Desktop shell. Keep that
+# local UI pointed at the exact same HTTPS endpoint as remote client packages.
+$desktopSettingsPath = Join-Path $InstallDirectory 'appsettings.json'
+if (Test-Path -LiteralPath $desktopSettingsPath -PathType Leaf) {
+    $desktopSettings = Get-Content -LiteralPath $desktopSettingsPath -Raw | ConvertFrom-Json
+    $desktopApiSettings = [pscustomobject]@{
+        BaseUrl = $apiBaseUrl
+        TimeoutSeconds = 8
+    }
+    if ($null -ne $desktopSettings.PSObject.Properties['Api']) {
+        $desktopSettings.Api = $desktopApiSettings
+    } else {
+        $desktopSettings | Add-Member -MemberType NoteProperty -Name Api -Value $desktopApiSettings
+    }
+    $desktopSettingsTemp = $desktopSettingsPath + '.tmp'
+    [System.IO.File]::WriteAllText(
+        $desktopSettingsTemp,
+        ($desktopSettings | ConvertTo-Json -Depth 12),
+        [System.Text.UTF8Encoding]::new($false))
+    Move-Item -LiteralPath $desktopSettingsTemp -Destination $desktopSettingsPath -Force
+    Write-NetworkLog ('Central Desktop client configured to use the verified HTTPS endpoint ' + $apiBaseUrl + '.')
+}
+
 if ($config.Network.RemoteAccessEnabled) {
     $bundle = [ordered]@{
         schemaVersion = 1
