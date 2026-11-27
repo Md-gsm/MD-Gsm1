@@ -1,4 +1,7 @@
+using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Cryptography.X509Certificates;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using MDGsm.Api.Security;
@@ -17,6 +20,45 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// The central installer writes this machine-local, non-secret endpoint configuration.
+// It is not shipped in the application package and contains no private key material.
+var networkSettingsPath = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+    "MD-Gsm", "Network", "api-network.json");
+builder.Configuration.AddJsonFile(networkSettingsPath, optional: true, reloadOnChange: false);
+
+X509Certificate2? apiTlsCertificate = null;
+var networkMode = builder.Configuration["Network:Mode"];
+if (string.Equals(networkMode, "Https", StringComparison.OrdinalIgnoreCase))
+{
+    if (!OperatingSystem.IsWindows())
+        throw new PlatformNotSupportedException("The machine certificate-store API listener is Windows-only.");
+
+    var bindAddressText = builder.Configuration["Network:BindAddress"];
+    if (!IPAddress.TryParse(bindAddressText, out var bindAddress) ||
+        bindAddress.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
+        throw new InvalidOperationException("The configured API HTTPS bind address is invalid.");
+
+    if (!int.TryParse(builder.Configuration["Network:Port"], out var httpsPort) ||
+        httpsPort is < 1024 or > 65535)
+        throw new InvalidOperationException("The configured API HTTPS port is invalid.");
+
+    var thumbprint = builder.Configuration["Network:CertificateThumbprint"];
+    var selectedCertificate = ApiTlsCertificateLoader.LoadFromLocalMachine(thumbprint ?? string.Empty);
+    apiTlsCertificate = selectedCertificate;
+
+    // Listen() defines the only endpoint in central-server mode. The production
+    // loopback HTTP Urls setting is therefore not also exposed as a downgrade path.
+    builder.WebHost.ConfigureKestrel(options =>
+        options.Listen(bindAddress, httpsPort, listenOptions =>
+            listenOptions.UseHttps(selectedCertificate)));
+}
+else if (!string.IsNullOrWhiteSpace(networkMode))
+{
+    throw new InvalidOperationException("The configured API network mode is unsupported; refusing to start an unverified listener.");
+}
+
 var protectedDatabaseConnectionFile = builder.Configuration["Database:ProtectedConnectionFile"];
 if (!string.IsNullOrWhiteSpace(protectedDatabaseConnectionFile))
 {
@@ -88,6 +130,8 @@ var personsPersistenceAvailable =
     builder.Services.Any(descriptor => descriptor.ServiceType == typeof(IPartyRepository));
 
 var app = builder.Build();
+if (apiTlsCertificate is not null)
+    app.Lifetime.ApplicationStopped.Register(apiTlsCertificate.Dispose);
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseMiddleware<SessionAuthenticationMiddleware>();
