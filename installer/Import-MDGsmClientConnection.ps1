@@ -39,7 +39,7 @@ try {
 
     try {
         $rawCertificate = [Convert]::FromBase64String([string]$connection.rootCaCertificateBase64)
-        $rootCertificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(,$rawCertificate)
+        $rootCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([byte[]]$rawCertificate)
     } catch {
         throw 'The root certificate in the connection file is not valid base64-encoded X.509 data.'
     }
