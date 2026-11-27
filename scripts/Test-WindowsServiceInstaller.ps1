@@ -13,7 +13,28 @@ $keyMarkerName = 'Provisioned'
 $serviceSetupScript = Join-Path $installDirectory 'Install-MDGsmApiService.ps1'
 $serviceStatePath = Join-Path $env:TEMP 'MD-Gsm-Service-Rollback-Test.json'
 
+
 $powerShell51 = Join-Path $env:windir 'System32\WindowsPowerShell\v1.0\powershell.exe'
+
+# The hosted runner is disposable. Mark only default-route Public interfaces Private
+# so CI exercises the eligible private-LAN code path. Production installation never
+# changes a customer's Public network profile.
+$script:originalNetworkCategories = @()
+$defaultRouteIndexes = @(Get-NetRoute -AddressFamily IPv4 -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue |
+    Select-Object -ExpandProperty InterfaceIndex -Unique)
+foreach ($interfaceIndex in $defaultRouteIndexes) {
+    $profile = Get-NetConnectionProfile -InterfaceIndex $interfaceIndex -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($null -ne $profile -and $profile.NetworkCategory -eq 'Public') {
+        $script:originalNetworkCategories += [pscustomobject]@{
+            InterfaceIndex = [int]$interfaceIndex
+            NetworkCategory = [string]$profile.NetworkCategory
+        }
+        Set-NetConnectionProfile -InterfaceIndex $interfaceIndex -NetworkCategory Private -ErrorAction Stop
+        Write-Host ("CI-only: marked default-route interface {0} as Private for HTTPS installer integration testing." -f $interfaceIndex)
+    }
+}
+
 
 if (-not ('MDGsmIntegration.TemporaryTlsServer' -as [type])) {
     Add-Type -Language CSharp -TypeDefinition @'
@@ -664,7 +685,7 @@ function Invoke-ClientOnlyInstallerTest {
     # trust entry (the non-exportable signing private key remains in LocalMachine\\My).
     $rootBytes = [Convert]::FromBase64String([string]$bundle.rootCaCertificateBase64)
     $rootCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([byte[]]$rootBytes)
-    $rootStore = New-Object System.Security.Cryptography.X509Certificates.X509Store(
+    $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
         [System.Security.Cryptography.X509Certificates.StoreName]::Root,
         [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
     try {
