@@ -122,18 +122,27 @@ function Set-KeyProvisionedMarker {
 function Get-ConfiguredApiBaseUrl {
     $networkConfigPath = Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json'
     if (-not (Test-Path -LiteralPath $networkConfigPath -PathType Leaf)) {
-        # Compatibility path used only to attest a pre-network-configuration service
-        # before a repair replaces it. New installations never fall back to HTTP.
-        return 'http://127.0.0.1:5080/'
+        throw 'The machine-local HTTPS network configuration is missing; HTTP compatibility fallback is disabled.'
     }
     $networkConfig = Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json
-    if ($networkConfig.Network.Mode -ne 'Https' -or
-        $networkConfig.Network.Port -ne 5081 -or
-        [string]::IsNullOrWhiteSpace([string]$networkConfig.Network.ApiBaseUrl) -or
-        [string]::IsNullOrWhiteSpace([string]$networkConfig.Network.CertificateThumbprint)) {
-        throw 'The installed API network configuration is incomplete or does not enforce HTTPS.'
+    $network = $networkConfig.Network
+    $rootThumbprint = ([string]$network.RootCaThumbprint -replace '[^0-9A-Fa-f]', '')
+    if ($network.Mode -ne 'Https' -or
+        [int]$network.Port -ne 5081 -or
+        [string]::IsNullOrWhiteSpace([string]$network.ApiBaseUrl) -or
+        [string]::IsNullOrWhiteSpace([string]$network.CertificateThumbprint) -or
+        $rootThumbprint.Length -ne 40) {
+        throw 'The installed API network configuration is incomplete or does not pin HTTPS and its Root CA.'
     }
-    return [string]$networkConfig.Network.ApiBaseUrl
+
+    $apiUri = $null
+    if (-not [Uri]::TryCreate([string]$network.ApiBaseUrl, [UriKind]::Absolute, [ref]$apiUri) -or
+        $apiUri.Scheme -ne 'https' -or $apiUri.Port -ne 5081 -or
+        $apiUri.Host -ne [string]$network.ServerName -or
+        $apiUri.AbsolutePath -ne '/') {
+        throw 'The configured API endpoint does not match the pinned HTTPS server name and port.'
+    }
+    return $apiUri.AbsoluteUri
 }
 
 function Wait-ApiLiveness {
