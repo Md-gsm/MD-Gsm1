@@ -666,6 +666,10 @@ function Invoke-TlsNegativeProbes([string] $RootThumbprint) {
             $wrongNameServer.Dispose()
         }
 
+        $sha1LeafCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=127.0.0.1' -Signer $rootCertificate -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 3072 -HashAlgorithm SHA1 -KeyExportPolicy Exportable -NotAfter (Get-Date).AddDays(30) -TextExtension @('2.5.29.17={text}IPAddress=127.0.0.1')
+        $temporaryMachineThumbprints.Add($sha1LeafCertificate.Thumbprint)
+        Assert-ApiTlsLoaderFailsClosed $sha1LeafCertificate.Thumbprint 'signature algorithm is not SHA-256 with RSA' 'a SHA-1-signed TLS server certificate'
+
         $expiredLeafCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=127.0.0.1' -Signer $rootCertificate -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotBefore (Get-Date).AddDays(-30) -NotAfter (Get-Date).AddDays(-1) -TextExtension @('2.5.29.17={text}IPAddress=127.0.0.1')
         $temporaryMachineThumbprints.Add($expiredLeafCertificate.Thumbprint)
         Assert-ApiTlsLoaderFailsClosed $expiredLeafCertificate.Thumbprint 'configured API TLS certificate is not currently valid' 'an expired machine-store server certificate'
