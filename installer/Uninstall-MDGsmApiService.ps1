@@ -23,5 +23,19 @@ if ($null -ne $service) {
     if ($LASTEXITCODE -ne 0) { throw "Could not remove the MD-Gsm API service registration." }
 }
 
+# Remove only the network exposure owned by this product. Preserve PostgreSQL, DPAPI
+# secrets, the non-exportable root CA private key and service data for a safe reinstall.
+try {
+    Get-NetFirewallRule -Name 'MDGsmApiHttps5081' -ErrorAction SilentlyContinue |
+        Remove-NetFirewallRule -ErrorAction Stop
+} catch {
+    throw "Could not remove the MD-Gsm HTTPS firewall rule during uninstall: $($_.Exception.Message)"
+}
+Unregister-ScheduledTask -TaskName 'MD-Gsm API TLS Certificate Renewal' -Confirm:$false -ErrorAction SilentlyContinue
+$networkRoot = Join-Path $env:ProgramData 'MD-Gsm\Network'
+Remove-Item -LiteralPath (Join-Path $networkRoot 'api-network.json') -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath (Join-Path $networkRoot 'MD-Gsm-Client-Connection.mdgsm.json') -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath (Join-Path $env:PUBLIC 'Documents\MD-Gsm-Client-Connection.mdgsm.json') -Force -ErrorAction SilentlyContinue
+
 # Intentionally preserve ProgramData key material and all user/database data.
 Write-Host 'MD-Gsm API service removed. The protected Persons workflow key was preserved.'
