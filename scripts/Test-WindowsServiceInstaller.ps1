@@ -279,9 +279,15 @@ function Assert-DatabaseProvisioning([string] $Phase) {
         }
 
         $env:PGPASSWORD = $runtimePassword
-        $identity = & $psql -X -w -h 127.0.0.1 -p ([string]$state.Port) -U mdgsm_api_runtime -d mdgsm -t -A -c "SELECT session_user || '|' || current_user || '|' || current_database() || '|' || (current_setting('server_version_num')::integer / 10000)::text || '|' || inet_server_addr()::text;"
-        if ($LASTEXITCODE -ne 0 -or "$identity".Trim() -ne 'mdgsm_api_runtime|mdgsm_api_runtime|mdgsm|18|127.0.0.1') {
-            throw 'The API PostgreSQL LOGIN failed the exact identity, version and loopback proof.'
+        # inet_server_addr() is inet and its text form can include a /32 mask.
+        # host() returns only the address, matching the API readiness query.
+        $identity = & $psql -X -w -h 127.0.0.1 -p ([string]$state.Port) -U mdgsm_api_runtime -d mdgsm -t -A -c "SELECT session_user || '|' || current_user || '|' || current_database() || '|' || (current_setting('server_version_num')::integer / 10000)::text || '|' || host(inet_server_addr());"
+        $identityExitCode = $LASTEXITCODE
+        $identityText = (@($identity) -join '').Trim()
+        $expectedIdentity = 'mdgsm_api_runtime|mdgsm_api_runtime|mdgsm|18|127.0.0.1'
+        if ($identityExitCode -ne 0 -or $identityText -ne $expectedIdentity) {
+            $observedIdentity = if ([string]::IsNullOrWhiteSpace($identityText)) { '(empty)' } else { $identityText }
+            throw "The API PostgreSQL LOGIN failed the exact identity, version and loopback proof. ExitCode=$identityExitCode; observed='$observedIdentity'."
         }
     }
     finally {
