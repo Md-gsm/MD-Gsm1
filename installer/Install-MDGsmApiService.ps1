@@ -2,6 +2,7 @@
 param(
     [Parameter(Mandatory = $true)][string] $InstallDirectory,
     [Parameter(Mandatory = $true)][string] $ServiceStatePath,
+    [string] $SetupLogPath = (Join-Path $env:TEMP 'MD-Gsm-ApiServiceSetup.log'),
     [ValidateSet('Prepare', 'Install', 'Restore')][string] $Phase = 'Install'
 )
 
@@ -15,7 +16,11 @@ $keyFile = Join-Path (Join-Path $env:ProgramData 'MD-Gsm\Keys\Persons\MDGsmApi')
 $keyMarkerPath = 'HKLM:\SOFTWARE\MD-Gsm\Persons\WorkflowEncryption'
 $keyMarkerName = 'Provisioned'
 
-$script:setupLogPath = Join-Path $env:TEMP 'MD-Gsm-ApiServiceSetup.log'
+$script:setupLogPath = [System.IO.Path]::GetFullPath($SetupLogPath)
+$setupLogDirectory = [System.IO.Path]::GetDirectoryName($script:setupLogPath)
+if (-not [System.IO.Directory]::Exists($setupLogDirectory)) {
+    [System.IO.Directory]::CreateDirectory($setupLogDirectory) | Out-Null
+}
 $script:setupStage = 'initializing'
 try {
     Set-Content -LiteralPath $script:setupLogPath -Value ("{0:o} setup script started; phase={1}" -f (Get-Date), $Phase) -Encoding UTF8
