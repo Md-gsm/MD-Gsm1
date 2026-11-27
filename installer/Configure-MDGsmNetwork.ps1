@@ -186,8 +186,9 @@ function Get-OrCreateRootAuthority {
             [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
             $root.Thumbprint, $false)
         if ($trusted.Count -eq 0) {
-            $rootStore.Add($root)
-            Write-NetworkLog 'Installed the public root certificate into LocalMachine Root for local API HTTPS validation.'
+            $publicRoot = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([byte[]]$root.RawData)
+            try { $rootStore.Add($publicRoot) } finally { $publicRoot.Dispose() }
+            Write-NetworkLog 'Installed only the public root certificate into LocalMachine Root; the non-exportable signing key remains in LocalMachine My.'
         } elseif ($trusted.Count -gt 1) {
             throw 'The MD-Gsm root CA thumbprint is duplicated in LocalMachine Root.'
         }
