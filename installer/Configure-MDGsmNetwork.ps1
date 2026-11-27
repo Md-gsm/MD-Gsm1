@@ -354,6 +354,15 @@ if (-not (Test-Path -LiteralPath $apiExe -PathType Leaf)) {
 New-Item -ItemType Directory -Path $networkRoot -Force | Out-Null
 Set-NetworkDirectoryAcl
 
+# Fail closed during every Repair/renewal attempt: a stale allow rule must not
+# survive a failed certificate, configuration, client-bundle or task update.
+try {
+    Get-NetFirewallRule -Name $firewallRuleName -ErrorAction SilentlyContinue |
+        Remove-NetFirewallRule -ErrorAction Stop
+} catch {
+    throw 'The existing MD-Gsm HTTPS firewall rule could not be removed before reconfiguration; refusing to continue.'
+}
+
 $oldConfig = $null
 if (Test-Path -LiteralPath $networkConfigPath -PathType Leaf) {
     try { $oldConfig = Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json }
@@ -387,29 +396,6 @@ $config = [ordered]@{
     }
 }
 
-try {
-    Set-ApiFirewallRule -Network $network
-} catch {
-    $network = [pscustomobject]@{
-        Mode = 'Loopback'; HostName = '127.0.0.1'; BindAddress = '127.0.0.1'
-        Cidr = $null; InterfaceAlias = $null; Profile = $null; CertificateNameType = 'IPAddress'
-    }
-    $apiBaseUrl = 'https://127.0.0.1:5081/'
-    $config = [ordered]@{
-        AllowedHosts = 'localhost;127.0.0.1'
-        Network = [ordered]@{
-            Mode = 'Https'; BindAddress = '127.0.0.1'; Port = $httpsPort
-            ServerName = '127.0.0.1'; CertificateThumbprint = $null
-            RootCaThumbprint = $root.Thumbprint
-            InterfaceAlias = $null; NetworkCidr = $null; WindowsProfile = $null
-            ApiBaseUrl = $apiBaseUrl; RemoteAccessEnabled = $false
-        }
-    }
-    Set-ApiFirewallRule -Network $network
-    Write-NetworkLog ('Firewall configuration failed. Falling back to HTTPS loopback only. Reason: ' + $_.Exception.Message)
-    $serverCertificate = Get-OrCreateServerCertificate -Root $root -HostName '127.0.0.1' -NameType 'IPAddress'
-    $config.Network.CertificateThumbprint = $serverCertificate.Thumbprint
-}
 
 $configJson = $config | ConvertTo-Json -Depth 12
 $oldJson = if ($null -eq $oldConfig) { '' } else { $oldConfig | ConvertTo-Json -Depth 12 }
@@ -442,33 +428,73 @@ if ($config.Network.RemoteAccessEnabled) {
 
 if (-not $RenewOnly) {
     Register-CertificateRenewalTask
-} elseif ($changed) {
+}
+
+# Open inbound HTTPS only after every preceding local setting and client bundle
+# has been written successfully. If the Firewall rule cannot be made exact,
+# degrade to loopback-only rather than leave a partially exposed installation.
+try {
+    Set-ApiFirewallRule -Network $network
+} catch {
+    $firewallFailure = $_.Exception.Message
+    $network = [pscustomobject]@{
+        Mode = 'Loopback'; HostName = '127.0.0.1'; BindAddress = '127.0.0.1'
+        Cidr = $null; InterfaceAlias = $null; Profile = $null; CertificateNameType = 'IPAddress'
+    }
+    $apiBaseUrl = 'https://127.0.0.1:5081/'
+    $serverCertificate = Get-OrCreateServerCertificate -Root $root -HostName '127.0.0.1' -NameType 'IPAddress'
+    $config = [ordered]@{
+        AllowedHosts = 'localhost;127.0.0.1'
+        Network = [ordered]@{
+            Mode = 'Https'; BindAddress = '127.0.0.1'; Port = $httpsPort
+            ServerName = '127.0.0.1'; CertificateThumbprint = $serverCertificate.Thumbprint
+            RootCaThumbprint = $root.Thumbprint
+            InterfaceAlias = $null; NetworkCidr = $null; WindowsProfile = $null
+            ApiBaseUrl = $apiBaseUrl; RemoteAccessEnabled = $false
+        }
+    }
+    Write-JsonAtomically -Path $networkConfigPath -Value $config
+    Set-NetworkDirectoryAcl
+    Set-DesktopApiBaseUrl -BaseUrl $apiBaseUrl
+    Remove-Item -LiteralPath $bundlePath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $publicBundlePath -Force -ErrorAction SilentlyContinue
+    Set-ApiFirewallRule -Network $network
+    Write-NetworkLog ('Firewall configuration failed; remote exposure was removed and the API remains HTTPS loopback-only. Reason: ' + $firewallFailure)
+}
+
+if ($RenewOnly -and $changed) {
     $service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
     if ($null -ne $service -and $service.Status -eq 'Running') {
-        Restart-Service -Name $serviceName -Force
-        $deadline = (Get-Date).AddSeconds(40)
-        do {
-            Start-Sleep -Milliseconds 500
-            $service.Refresh()
-        } while ($service.Status -ne 'Running' -and (Get-Date) -lt $deadline)
-        if ($service.Status -ne 'Running') {
-            throw 'MDGsmApi did not return to Running after the TLS/network configuration changed.'
-        }
-        $healthUri = [Uri]::new([Uri]$apiBaseUrl, 'health/live').AbsoluteUri
-        $healthy = $false
-        $healthDeadline = (Get-Date).AddSeconds(30)
-        while (-not $healthy -and (Get-Date) -lt $healthDeadline) {
-            try {
-                $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUri -TimeoutSec 4
-                $healthy = ($response.StatusCode -eq 200)
-            } catch {
+        try {
+            Restart-Service -Name $serviceName -Force
+            $deadline = (Get-Date).AddSeconds(40)
+            do {
                 Start-Sleep -Milliseconds 500
+                $service.Refresh()
+            } while ($service.Status -ne 'Running' -and (Get-Date) -lt $deadline)
+            if ($service.Status -ne 'Running') {
+                throw 'MDGsmApi did not return to Running after the TLS/network configuration changed.'
             }
+            $healthUri = [Uri]::new([Uri]$apiBaseUrl, 'health/live').AbsoluteUri
+            $healthy = $false
+            $healthDeadline = (Get-Date).AddSeconds(30)
+            while (-not $healthy -and (Get-Date) -lt $healthDeadline) {
+                try {
+                    $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUri -TimeoutSec 4
+                    $healthy = ($response.StatusCode -eq 200)
+                } catch {
+                    Start-Sleep -Milliseconds 500
+                }
+            }
+            if (-not $healthy) {
+                throw 'MDGsmApi failed the HTTPS liveness check after its network/certificate update.'
+            }
+            Write-NetworkLog 'The updated HTTPS listener returned to Running and passed its liveness probe.'
+        } catch {
+            Get-NetFirewallRule -Name $firewallRuleName -ErrorAction SilentlyContinue |
+                Remove-NetFirewallRule -ErrorAction SilentlyContinue
+            throw
         }
-        if (-not $healthy) {
-            throw 'MDGsmApi failed the HTTPS liveness check after its network/certificate update.'
-        }
-        Write-NetworkLog 'The updated HTTPS listener returned to Running and passed its liveness probe.'
     }
 }
 
