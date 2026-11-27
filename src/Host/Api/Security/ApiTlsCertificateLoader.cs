@@ -1,22 +1,36 @@
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace MDGsm.Api.Security;
 
 /// <summary>
 /// Loads one explicitly selected TLS server certificate from the machine certificate
-/// store. The API never accepts a certificate path/password from appsettings or a client.
+/// store. It fails closed unless the certificate identity, key usage and trust chain
+/// match the machine-local API network configuration.
 /// </summary>
 internal static class ApiTlsCertificateLoader
 {
     private const string ServerAuthenticationOid = "1.3.6.1.5.5.7.3.1";
+    private const string SubjectAlternativeNameOid = "2.5.29.17";
 
-    public static X509Certificate2 LoadFromLocalMachine(string thumbprint)
+    public static X509Certificate2 LoadFromLocalMachine(
+        string thumbprint,
+        string expectedServerName,
+        string expectedBindAddress)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(thumbprint);
+        ArgumentException.ThrowIfNullOrWhiteSpace(expectedServerName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(expectedBindAddress);
+
         var normalizedThumbprint = new string(thumbprint.Where(Uri.IsHexDigit).ToArray()).ToUpperInvariant();
         if (normalizedThumbprint.Length != 40)
             throw new InvalidOperationException("The configured API TLS certificate thumbprint is invalid.");
+
+        if (!IPAddress.TryParse(expectedBindAddress, out var bindAddress) ||
+            bindAddress.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
+            throw new InvalidOperationException("The configured API TLS bind address is not a valid IPv4 address.");
 
         using var store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
         store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
@@ -28,64 +42,104 @@ internal static class ApiTlsCertificateLoader
                 "The configured API TLS certificate is missing or ambiguous in LocalMachine\\My.");
 
         var certificate = matches[0];
-        var now = DateTime.UtcNow;
-        if (!certificate.HasPrivateKey ||
-            now < certificate.NotBefore.ToUniversalTime() ||
-            now >= certificate.NotAfter.ToUniversalTime())
+        try
         {
-            certificate.Dispose();
-            throw new InvalidOperationException(
-                "The configured API TLS certificate is not currently valid or its private key is unavailable.");
-        }
-
-        using (var rsaPrivateKey = certificate.GetRSAPrivateKey())
-        {
-            if (rsaPrivateKey is null || rsaPrivateKey.KeySize < 2048)
-            {
-                certificate.Dispose();
+            var now = DateTime.UtcNow;
+            if (!certificate.HasPrivateKey ||
+                now < certificate.NotBefore.ToUniversalTime() ||
+                now >= certificate.NotAfter.ToUniversalTime())
                 throw new InvalidOperationException(
-                    "The configured API TLS certificate must have an accessible RSA private key of at least 2048 bits.");
-            }
-        }
+                    "The configured API TLS certificate is not currently valid or its private key is unavailable.");
 
-        if (!string.Equals(certificate.SignatureAlgorithm.Value, "1.2.840.113549.1.1.11", StringComparison.Ordinal))
+            var basicConstraints = certificate.Extensions
+                .OfType<X509BasicConstraintsExtension>()
+                .SingleOrDefault();
+            if (basicConstraints?.CertificateAuthority == true)
+                throw new InvalidOperationException("A CA certificate cannot be used as the API TLS server certificate.");
+
+            var eku = certificate.Extensions
+                .OfType<X509EnhancedKeyUsageExtension>()
+                .SingleOrDefault();
+            if (eku is null || !eku.EnhancedKeyUsages.Cast<Oid>()
+                    .Any(oid => string.Equals(oid.Value, ServerAuthenticationOid, StringComparison.Ordinal)))
+                throw new InvalidOperationException(
+                    "The configured API TLS certificate does not permit TLS server authentication.");
+
+            var keyUsage = certificate.Extensions
+                .OfType<X509KeyUsageExtension>()
+                .SingleOrDefault();
+            if (keyUsage is null ||
+                (keyUsage.KeyUsages & X509KeyUsageFlags.DigitalSignature) == 0)
+                throw new InvalidOperationException(
+                    "The configured API TLS certificate does not permit digital signatures.");
+
+            if (!HasExpectedSubjectAlternativeName(certificate, expectedServerName, bindAddress))
+                throw new InvalidOperationException(
+                    "The configured API TLS certificate subject alternative name does not match the selected API server name.");
+
+            using var chain = new X509Chain();
+            chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+            chain.ChainPolicy.VerificationFlags = X509VerificationFlags.NoFlag;
+            chain.ChainPolicy.VerificationTime = now;
+            if (!chain.Build(certificate))
+                throw new InvalidOperationException(
+                    "The configured API TLS certificate does not chain to a trusted machine root certificate.");
+
+            return certificate;
+        }
+        catch
         {
             certificate.Dispose();
-            throw new InvalidOperationException(
-                "The configured API TLS certificate must use an approved SHA-256 RSA signature.");
+            throw;
         }
+    }
 
-        var basicConstraints = certificate.Extensions
-            .OfType<X509BasicConstraintsExtension>()
-            .SingleOrDefault();
-        if (basicConstraints?.CertificateAuthority == true)
+    private static bool HasExpectedSubjectAlternativeName(
+        X509Certificate2 certificate,
+        string expectedServerName,
+        IPAddress bindAddress)
+    {
+        var sanExtensions = certificate.Extensions
+            .OfType<X509Extension>()
+            .Where(extension => string.Equals(
+                extension.Oid?.Value, SubjectAlternativeNameOid, StringComparison.Ordinal))
+            .ToArray();
+
+        if (sanExtensions.Length != 1)
+            return false;
+
+        byte[] expected;
+        if (IPAddress.TryParse(expectedServerName, out var expectedIp))
         {
-            certificate.Dispose();
-            throw new InvalidOperationException("A CA certificate cannot be used as the API TLS server certificate.");
-        }
+            if (!expectedIp.Equals(bindAddress) ||
+                expectedIp.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
+                return false;
 
-        var eku = certificate.Extensions
-            .OfType<X509EnhancedKeyUsageExtension>()
-            .SingleOrDefault();
-        if (eku is null || !eku.EnhancedKeyUsages.Cast<Oid>()
-                .Any(oid => string.Equals(oid.Value, ServerAuthenticationOid, StringComparison.Ordinal)))
+            var addressBytes = expectedIp.GetAddressBytes();
+            expected = new byte[] { 0x30, 0x06, 0x87, 0x04 }
+                .Concat(addressBytes)
+                .ToArray();
+        }
+        else
         {
-            certificate.Dispose();
-            throw new InvalidOperationException(
-                "The configured API TLS certificate does not permit TLS server authentication.");
+            if (expectedServerName.Length is 0 or > 253 ||
+                expectedServerName.Any(character => character > 0x7f) ||
+                expectedServerName.Any(character =>
+                    !(char.IsAsciiLetterOrDigit(character) || character is '-' or '.')))
+                return false;
+
+            var dnsBytes = Encoding.ASCII.GetBytes(expectedServerName);
+            if (dnsBytes.Length > 253)
+                return false;
+
+            expected = new byte[dnsBytes.Length + 4];
+            expected[0] = 0x30;
+            expected[1] = checked((byte)(dnsBytes.Length + 2));
+            expected[2] = 0x82;
+            expected[3] = checked((byte)dnsBytes.Length);
+            Buffer.BlockCopy(dnsBytes, 0, expected, 4, dnsBytes.Length);
         }
 
-        var keyUsage = certificate.Extensions
-            .OfType<X509KeyUsageExtension>()
-            .SingleOrDefault();
-        if (keyUsage is null ||
-            (keyUsage.KeyUsages & X509KeyUsageFlags.DigitalSignature) == 0)
-        {
-            certificate.Dispose();
-            throw new InvalidOperationException(
-                "The configured API TLS certificate does not permit digital signatures.");
-        }
-
-        return certificate;
+        return CryptographicOperations.FixedTimeEquals(sanExtensions[0].RawData, expected);
     }
 }
