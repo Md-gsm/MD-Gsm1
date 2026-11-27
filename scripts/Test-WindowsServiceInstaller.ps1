@@ -509,7 +509,6 @@ function Invoke-ClientOnlyInstallerTest {
         if ($clientConfig.Api.BaseUrl -ne [string]$network.ApiBaseUrl) {
             throw 'Client-only setup did not persist the verified central HTTPS API endpoint.'
         }
-        $trustedAfterImport = $rootStore.Certificates
         $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
         $trustedAfterImport = $rootStore.Certificates.Find(
             [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
@@ -564,7 +563,7 @@ function Invoke-ClientOnlyInstallerTest {
         if (Test-Path -LiteralPath $clientUninstaller) {
             Start-Process -FilePath $clientUninstaller -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -Wait -PassThru | Out-Null
         }
-        if ($rootStore.IsOpen) { $rootStore.Close() }
+        try { $rootStore.Close() } catch { }
         $rootStore.Dispose()
     }
 }
