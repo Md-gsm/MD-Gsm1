@@ -267,6 +267,14 @@ function Set-DesktopApiBaseUrl([string] $BaseUrl) {
     Write-NetworkLog ('Central Desktop client configured to use HTTPS endpoint ' + $BaseUrl + '.')
 }
 
+function Set-PublicBundleAcl([string] $Path) {
+    $icacls = Join-Path $env:windir 'System32\icacls.exe'
+    & $icacls $Path '/inheritance:r' '/grant:r' '*S-1-5-18:F' '*S-1-5-32-544:F' '*S-1-5-32-545:R' | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Could not restrict the public client bundle to SYSTEM/Administrators write access and Users read access.'
+    }
+}
+
 function Register-CertificateRenewalTask {
     $scriptPath = Join-Path $InstallDirectory 'Configure-MDGsmNetwork.ps1'
     if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) { throw 'The network certificate renewal script is missing from Program Files.' }
@@ -361,7 +369,8 @@ if ($config.Network.RemoteAccessEnabled) {
     $publicDirectory = Split-Path -Parent $publicBundlePath
     New-Item -ItemType Directory -Path $publicDirectory -Force | Out-Null
     Copy-Item -LiteralPath $bundlePath -Destination $publicBundlePath -Force
-    Write-NetworkLog ('Client connection bundle written to ' + $publicBundlePath + '. It contains only the public root certificate and API URL.')
+    Set-PublicBundleAcl -Path $publicBundlePath
+    Write-NetworkLog ('Client connection bundle written to ' + $publicBundlePath + '. It contains only the public root certificate and API URL; ordinary users have read-only access.')
 } else {
     Remove-Item -LiteralPath $bundlePath -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $publicBundlePath -Force -ErrorAction SilentlyContinue
