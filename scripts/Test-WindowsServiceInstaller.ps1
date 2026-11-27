@@ -349,7 +349,7 @@ function Assert-ServiceReady([string] $Phase) {
             throw 'The liveness endpoint did not return the expected MD-Gsm process identity payload.'
         }
 
-        $systemUri = [Uri]::new($apiUri, 'api/v1/system/info').AbsoluteUri
+        $systemUri = [Uri]::new($apiUri, '/api/v1/system/info').AbsoluteUri
         $systemResponse = Invoke-WebRequest -UseBasicParsing -Uri $systemUri -TimeoutSec 8
         if ($systemResponse.StatusCode -ne 200) {
             throw "The independent system-info route returned HTTP $($systemResponse.StatusCode)."
