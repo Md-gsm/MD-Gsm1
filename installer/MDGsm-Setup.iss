@@ -104,7 +104,7 @@ begin
     RunApiServicePhase('Install');
     if not WizardSilent then
     begin
-      NetworkConfigPath := ExpandConstant('{commonappdata}\\MD-Gsm\\Network\\api-network.json');
+      NetworkConfigPath := ExpandConstant('{commonappdata}\MD-Gsm\Network\api-network.json');
       if LoadStringFromFile(NetworkConfigPath, NetworkConfigText) and
          (Pos('"RemoteAccessEnabled": true', NetworkConfigText) > 0) then
       begin
