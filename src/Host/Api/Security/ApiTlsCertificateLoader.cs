@@ -54,6 +54,12 @@ internal static class ApiTlsCertificateLoader
                 throw new InvalidOperationException(
                     "The configured API TLS certificate is not currently valid or its private key is unavailable.");
 
+            using (var publicKey = certificate.GetRSAPublicKey())
+            {
+                if (publicKey is null || publicKey.KeySize < 3072)
+                    throw new InvalidOperationException("The configured API TLS certificate must use an RSA-3072-or-stronger public key.");
+            }
+
             var basicConstraints = certificate.Extensions
                 .OfType<X509BasicConstraintsExtension>()
                 .SingleOrDefault();
@@ -91,9 +97,25 @@ internal static class ApiTlsCertificateLoader
             if (chain.ChainElements.Count < 2)
                 throw new InvalidOperationException("The configured API TLS certificate chain does not contain its pinned root CA.");
 
-            var actualRootThumbprint = chain.ChainElements[^1].Certificate.Thumbprint;
+            var rootCertificate = chain.ChainElements[^1].Certificate;
+            var actualRootThumbprint = rootCertificate.Thumbprint;
             if (!string.Equals(actualRootThumbprint, normalizedRootThumbprint, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("The configured API TLS certificate does not terminate at the pinned MD-Gsm root CA.");
+
+            using (var rootPublicKey = rootCertificate.GetRSAPublicKey())
+            {
+                var rootConstraints = rootCertificate.Extensions
+                    .OfType<X509BasicConstraintsExtension>()
+                    .SingleOrDefault();
+                var rootUsage = rootCertificate.Extensions
+                    .OfType<X509KeyUsageExtension>()
+                    .SingleOrDefault();
+                if (rootPublicKey is null || rootPublicKey.KeySize < 3072 ||
+                    rootConstraints?.CertificateAuthority != true ||
+                    rootUsage is null ||
+                    (rootUsage.KeyUsages & X509KeyUsageFlags.KeyCertSign) == 0)
+                    throw new InvalidOperationException("The pinned MD-Gsm root CA does not meet the approved key and CA constraints.");
+            }
 
             return certificate;
         }
