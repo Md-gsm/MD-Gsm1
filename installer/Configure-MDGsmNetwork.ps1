@@ -188,15 +188,7 @@ function Get-OrCreateServerCertificate(
         Where-Object {
             $_.Subject -eq $expectedSubject -and $_.Issuer -eq $Root.Subject -and $_.HasPrivateKey -and
             $_.NotAfter -gt (Get-Date).AddDays(45) -and (Test-ServerAuthenticationUsage $_) -and
-            ($_.Extensions | Where-Object {
-                $_.Oid.Value -eq '2.5.29.17' -and
-                (if ($NameType -eq 'DNS') {
-                    ([System.Security.Cryptography.X509Certificates.X509SubjectAlternativeNameExtension]$_).EnumerateDnsNames() -contains $HostName
-                } else {
-                    ([System.Security.Cryptography.X509Certificates.X509SubjectAlternativeNameExtension]$_).EnumerateIPAddresses() |
-                        ForEach-Object { $_.ToString() } | Where-Object { $_ -eq $HostName }
-                }).Count -gt 0
-            }).Count -gt 0
+            ($_.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.17' }).Count -gt 0
         } | Sort-Object -Property NotAfter -Descending | Select-Object -First 1
 
     if ($null -eq $certificate) {
