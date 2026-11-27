@@ -295,6 +295,43 @@ function Invoke-PreparePhase {
     Write-SetupLog 'Prepare phase completed; MDGsmApi is stopped before Inno Setup replaces Program Files files.'
 }
 
+function Remove-NewNetworkProvisioningAfterFailedFirstInstall {
+    # First-time Setup has no prior API endpoint to restore. Remove any
+    # network exposure/bundle created before the failure; keep non-exportable
+    # machine certificates so a controlled retry can reuse the same identity.
+    try {
+        Get-NetFirewallRule -Name 'MDGsmApiHttps5081' -ErrorAction SilentlyContinue |
+            Remove-NetFirewallRule -ErrorAction SilentlyContinue
+        Unregister-ScheduledTask -TaskName 'MD-Gsm API TLS Certificate Renewal' -Confirm:$false -ErrorAction SilentlyContinue
+
+        $networkRoot = Join-Path $env:ProgramData 'MD-Gsm\Network'
+        Remove-Item -LiteralPath (Join-Path $networkRoot 'api-network.json') -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath (Join-Path $networkRoot 'MD-Gsm-Client-Connection.mdgsm.json') -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath (Join-Path $env:PUBLIC 'Documents\MD-Gsm-Client-Connection.mdgsm.json') -Force -ErrorAction SilentlyContinue
+
+        $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+            [System.Security.Cryptography.X509Certificates.StoreName]::Root,
+            [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
+        try {
+            $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+            $machineRoots = Get-ChildItem -Path Cert:\LocalMachine\My |
+                Where-Object { $_.Subject -eq 'CN=MD-Gsm Internal API Root CA' -and $_.HasPrivateKey }
+            foreach ($machineRoot in $machineRoots) {
+                $trusted = $rootStore.Certificates.Find(
+                    [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+                    $machineRoot.Thumbprint, $false)
+                foreach ($certificate in $trusted) { $rootStore.Remove($certificate) }
+            }
+        } finally {
+            $rootStore.Close()
+            $rootStore.Dispose()
+        }
+        Write-SetupLog 'First-install network rollback removed the HTTPS firewall rule, renewal task, client bundle and public root trust. Non-exportable machine keys and PostgreSQL data were preserved.'
+    } catch {
+        Write-SetupLog ('WARNING: first-install network cleanup was incomplete: ' + $_.Exception.Message)
+    }
+}
+
 function Invoke-InstallPhase {
     $state = Read-ServiceState
     $serviceExistedAtStart = [bool]$state.ServiceExisted
@@ -453,6 +490,9 @@ function Invoke-InstallPhase {
         Write-SetupLog ("FATAL: " + $originalFailure.Exception.ToString())
         Write-SetupLog ("FATAL category: " + [string]$originalFailure.CategoryInfo)
         Write-SetupLog ("FATAL script stack: " + [string]$originalFailure.ScriptStackTrace)
+        if (-not $serviceExistedAtStart) {
+            Remove-NewNetworkProvisioningAfterFailedFirstInstall
+        }
         try {
             $script:setupStage = 'restore pre-install service state'
             Restore-ServiceState
