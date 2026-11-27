@@ -47,15 +47,15 @@ Initialize-MDGsmCertificateProvider
 Initialize-MDGsmCertificateProvider
 $securityModule = Get-Module -Name Microsoft.PowerShell.Security
 $pkiModule = Get-Module -Name PKI
-$expectedSecurityModuleBase = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $PSHOME 'Modules') 'Microsoft.PowerShell.Security')).TrimEnd('\', '/')
-$expectedPkiModuleBase = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $PSHOME 'Modules') 'PKI')).TrimEnd('\', '/')
-if (-not [string]::Equals([System.IO.Path]::GetFullPath([string]$securityModule.ModuleBase).TrimEnd('\', '/'), $expectedSecurityModuleBase, [System.StringComparison]::OrdinalIgnoreCase)) {
-    throw ("Security module was not loaded from the Windows PowerShell host: " + $securityModule.ModuleBase)
+$expectedSecurityManifest = [System.IO.Path]::GetFullPath((Join-Path (Join-Path (Join-Path $PSHOME 'Modules') 'Microsoft.PowerShell.Security') 'Microsoft.PowerShell.Security.psd1'))
+$expectedPkiManifest = [System.IO.Path]::GetFullPath((Join-Path (Join-Path (Join-Path $PSHOME 'Modules') 'PKI') 'PKI.psd1'))
+if (-not [string]::Equals([System.IO.Path]::GetFullPath([string]$securityModule.Path), $expectedSecurityManifest, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw ("Security module was not loaded from the Windows PowerShell host manifest. Actual: " + $securityModule.Path + "; expected: " + $expectedSecurityManifest)
 }
-if (-not [string]::Equals([System.IO.Path]::GetFullPath([string]$pkiModule.ModuleBase).TrimEnd('\', '/'), $expectedPkiModuleBase, [System.StringComparison]::OrdinalIgnoreCase)) {
-    throw ("PKI module was not loaded from the Windows PowerShell host: " + $pkiModule.ModuleBase)
+if (-not [string]::Equals([System.IO.Path]::GetFullPath([string]$pkiModule.Path), $expectedPkiManifest, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw ("PKI module was not loaded from the Windows PowerShell host manifest. Actual: " + $pkiModule.Path + "; expected: " + $expectedPkiManifest)
 }
-Write-Output ("LOADED_MODULES: Security={0}; PKI={1}" -f $securityModule.ModuleBase, $pkiModule.ModuleBase)
+Write-Output ("LOADED_MODULES: Security={0}; PKI={1}" -f $securityModule.Path, $pkiModule.Path)
 if (-not (Test-Path -LiteralPath 'Cert:\LocalMachine\My' -ErrorAction Stop)) {
     throw 'The LocalMachine My certificate store was not mounted after explicit provider bootstrap.'
 }
