@@ -119,23 +119,40 @@ function Set-KeyProvisionedMarker {
     Write-SetupLog 'Non-secret HKLM key-provisioned marker was committed. The DPAPI blob remains under ProgramData and is never read by Setup.'
 }
 
+function Get-ConfiguredApiBaseUrl {
+    $networkConfigPath = Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json'
+    if (-not (Test-Path -LiteralPath $networkConfigPath -PathType Leaf)) {
+        # Compatibility path used only to attest a pre-network-configuration service
+        # before a repair replaces it. New installations never fall back to HTTP.
+        return 'http://127.0.0.1:5080/'
+    }
+    $networkConfig = Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json
+    if ($networkConfig.Network.Mode -ne 'Https' -or
+        $networkConfig.Network.Port -ne 5081 -or
+        [string]::IsNullOrWhiteSpace([string]$networkConfig.Network.ApiBaseUrl) -or
+        [string]::IsNullOrWhiteSpace([string]$networkConfig.Network.CertificateThumbprint)) {
+        throw 'The installed API network configuration is incomplete or does not enforce HTTPS.'
+    }
+    return [string]$networkConfig.Network.ApiBaseUrl
+}
+
 function Wait-ApiLiveness {
-    $healthUri = 'http://127.0.0.1:5080/health/live'
-    $deadline = (Get-Date).AddSeconds(30)
+    $healthUri = [Uri]::new([Uri](Get-ConfiguredApiBaseUrl), 'health/live').AbsoluteUri
+    $deadline = (Get-Date).AddSeconds(40)
     $healthy = $false
     while (-not $healthy -and (Get-Date) -lt $deadline) {
         try {
-            $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUri -TimeoutSec 3
+            $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUri -TimeoutSec 4
             $healthy = ($response.StatusCode -eq 200)
         } catch {
             Start-Sleep -Milliseconds 500
         }
     }
-    if (-not $healthy) { throw "MDGsmApi did not return HTTP 200 from its loopback liveness endpoint." }
+    if (-not $healthy) { throw 'MDGsmApi did not return HTTP 200 from its configured API liveness endpoint.' }
 }
 
 function Wait-ApiReadiness {
-    $healthUri = 'http://127.0.0.1:5080/health/ready'
+    $healthUri = [Uri]::new([Uri](Get-ConfiguredApiBaseUrl), 'health/ready').AbsoluteUri
     $deadline = (Get-Date).AddSeconds(90)
     $healthy = $false
     while (-not $healthy -and (Get-Date) -lt $deadline) {
@@ -153,7 +170,7 @@ function Wait-ApiReadiness {
         }
     }
     if (-not $healthy) {
-        throw "MDGsmApi did not prove PostgreSQL 18 readiness under the configured runtime LOGIN within 90 seconds."
+        throw 'MDGsmApi did not prove PostgreSQL 18 readiness over the configured HTTPS listener within 90 seconds.'
     }
 }
 
@@ -388,6 +405,28 @@ function Invoke-InstallPhase {
         }
         if ($provisionExitCode -ne 0) {
             throw "Central PostgreSQL provisioning failed (exit $provisionExitCode); API service start is blocked."
+        }
+
+        $script:setupStage = 'discover private network and provision API HTTPS'
+        $networkScriptPath = Join-Path $InstallDirectory 'Configure-MDGsmNetwork.ps1'
+        if (-not (Test-Path -LiteralPath $networkScriptPath -PathType Leaf)) {
+            throw 'The central HTTPS network configuration script is missing from the installation package.'
+        }
+        Write-SetupLog 'Automatically inspecting Windows network profiles, selecting the lowest-metric private network, provisioning a machine-local TLS certificate and scoping Windows Firewall. Public profiles and ambiguous interfaces remain loopback-only.'
+        $networkOutput = & $provisionPowerShell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $networkScriptPath -InstallDirectory $InstallDirectory 2>&1
+        $networkExitCode = $LASTEXITCODE
+        foreach ($line in @($networkOutput)) {
+            $text = [string]$line
+            if ($text -match '^MDGSM_CLIENT_CONNECTION_BUNDLE=') {
+                Write-SetupLog ('Client connection bundle created: ' + ($text -replace '^MDGSM_CLIENT_CONNECTION_BUNDLE=', ''))
+            } elseif ($text -match '^MDGSM_REMOTE_API_URL=') {
+                Write-SetupLog ('API network endpoint: ' + ($text -replace '^MDGSM_REMOTE_API_URL=', ''))
+            } else {
+                Write-SetupLog ('Network provisioner: ' + $text)
+            }
+        }
+        if ($networkExitCode -ne 0) {
+            throw "Central API HTTPS network provisioning failed (exit $networkExitCode); the service will not be started."
         }
 
         $script:setupStage = 'validate service account and start service'
