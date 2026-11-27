@@ -978,6 +978,21 @@ function Invoke-ClientOnlyInstallerTest {
         Remove-Item -LiteralPath $expiredBundlePath -Force -ErrorAction SilentlyContinue
         Remove-Item -LiteralPath ("Cert:\CurrentUser\My\" + $expiredRoot.Thumbprint) -Force -ErrorAction SilentlyContinue
 
+        $sha1Root = New-SelfSignedCertificate -Type Custom -Subject 'CN=MD-Gsm Internal API Root CA' -CertStoreLocation Cert:\CurrentUser\My -KeyAlgorithm RSA -KeyLength 3072 -HashAlgorithm SHA1 -KeyUsage CertSign, CRLSign -KeyExportPolicy Exportable -NotAfter (Get-Date).AddYears(5) -TextExtension @('2.5.29.19={critical}{text}ca=1&pathlength=0')
+        $sha1RootBundle = [ordered]@{
+            schemaVersion = $bundle.schemaVersion
+            apiBaseUrl = $bundle.apiBaseUrl
+            rootCaThumbprint = $sha1Root.Thumbprint
+            rootCaSubject = $sha1Root.Subject
+            rootCaNotAfterUtc = $sha1Root.NotAfter.ToUniversalTime().ToString('o')
+            rootCaCertificateBase64 = [Convert]::ToBase64String($sha1Root.RawData)
+        }
+        $sha1RootBundlePath = Join-Path $env:TEMP 'MD-Gsm-SHA1-Root-Test.json'
+        [System.IO.File]::WriteAllText($sha1RootBundlePath, ($sha1RootBundle | ConvertTo-Json -Depth 4), [System.Text.UTF8Encoding]::new($false))
+        Invoke-ExpectedImporterFailure $importer $sha1RootBundlePath $clientDirectory 'a SHA-1-signed Root CA'
+        Remove-Item -LiteralPath $sha1RootBundlePath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath ("Cert:\CurrentUser\My\" + $sha1Root.Thumbprint) -Force -ErrorAction SilentlyContinue
+
         # The default platform TLS stack must reject all certificate and network failures.
         Invoke-TlsNegativeProbes ([string]$bundle.rootCaThumbprint)
 
