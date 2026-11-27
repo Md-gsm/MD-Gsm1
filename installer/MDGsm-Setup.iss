@@ -68,6 +68,7 @@ function InitializeSetup(): Boolean;
 begin
   ServiceStatePath := ExpandConstant('{tmp}\MD-Gsm-MDGsmApi-ServiceState.json');
   ServiceSetupScriptPath := ExpandConstant('{tmp}\Install-MDGsmApiService.ps1');
+  ServiceSetupLogPath := ExpandConstant('{tmp}\MD-Gsm-ApiServiceSetup.log');
   ExtractTemporaryFile('Install-MDGsmApiService.ps1');
   Result := True;
 end;
@@ -77,6 +78,7 @@ var
   ResultCode: Integer;
   PowerShellPath: String;
   Parameters: String;
+  SetupDiagnosticText: AnsiString;
 begin
   PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
   Parameters := '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
