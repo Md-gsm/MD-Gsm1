@@ -26,6 +26,12 @@ function Assert-CertificateProviderNoProfileBootstrap {
     $escapedHelperPath = $certificateBootstrapPath.Replace("'", "''")
     $probeScript = @'
 $ErrorActionPreference = 'Stop'
+Write-Output ("CHILD_HOST: PSVersion={0}; PSEdition={1}; PSHOME={2}; PSModulePath={3}" -f $PSVersionTable.PSVersion, $PSVersionTable.PSEdition, $PSHOME, $env:PSModulePath)
+$injectedCoreModulePath = '__POISON_MODULE_PATH__'
+$childModulePaths = @($env:PSModulePath -split [regex]::Escape([string][System.IO.Path]::PathSeparator))
+if (-not ($childModulePaths | Where-Object { [string]::Equals($_, $injectedCoreModulePath, [System.StringComparison]::OrdinalIgnoreCase) })) {
+    throw 'The test did not preserve the injected PowerShell 7 module path in the child process environment.'
+}
 $initialProviderCount = @(Get-PSProvider | Where-Object { $_.Name -eq 'Certificate' }).Count
 $initialSecurityModuleCount = @(Get-Module -Name Microsoft.PowerShell.Security).Count
 Write-Output ("PREBOOTSTRAP: CertificateProviderCount={0}; SecurityModuleLoaded={1}" -f $initialProviderCount, $initialSecurityModuleCount)
@@ -39,6 +45,17 @@ if ($null -ne (Get-PSDrive -Name Cert -ErrorAction SilentlyContinue)) {
 }
 Initialize-MDGsmCertificateProvider
 Initialize-MDGsmCertificateProvider
+$securityModule = Get-Module -Name Microsoft.PowerShell.Security
+$pkiModule = Get-Module -Name PKI
+$expectedSecurityModuleBase = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $PSHOME 'Modules') 'Microsoft.PowerShell.Security')).TrimEnd('\\', '/')
+$expectedPkiModuleBase = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $PSHOME 'Modules') 'PKI')).TrimEnd('\\', '/')
+if (-not [string]::Equals([System.IO.Path]::GetFullPath([string]$securityModule.ModuleBase).TrimEnd('\\', '/'), $expectedSecurityModuleBase, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw ("Security module was not loaded from the Windows PowerShell host: " + $securityModule.ModuleBase)
+}
+if (-not [string]::Equals([System.IO.Path]::GetFullPath([string]$pkiModule.ModuleBase).TrimEnd('\\', '/'), $expectedPkiModuleBase, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw ("PKI module was not loaded from the Windows PowerShell host: " + $pkiModule.ModuleBase)
+}
+Write-Output ("LOADED_MODULES: Security={0}; PKI={1}" -f $securityModule.ModuleBase, $pkiModule.ModuleBase)
 if (-not (Test-Path -LiteralPath 'Cert:\LocalMachine\My' -ErrorAction Stop)) {
     throw 'The LocalMachine My certificate store was not mounted after explicit provider bootstrap.'
 }
@@ -58,19 +75,32 @@ try {
         [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
         $probeCertificate.Thumbprint, $false)
     foreach ($match in $matches) { $probeStore.Remove($match) }
-    Write-Output 'PASS: Windows PowerShell 5.1 -NoProfile bootstrapped Cert: idempotently and created/removed a disposable certificate.'
+    Write-Output 'PASS: Windows PowerShell 5.1 -NoProfile ignored the injected PowerShell 7 module path, loaded its own Security/PKI modules, recreated Cert: idempotently and created/removed a disposable certificate.'
 } finally {
     $probeStore.Close()
     $probeStore.Dispose()
     if ($null -ne $probeCertificate) { $probeCertificate.Dispose() }
 }
 '@
+    $escapedCoreModulePath = (Join-Path $PSHOME 'Modules').Replace("'", "''")
+    if (-not (Test-Path -LiteralPath $escapedCoreModulePath -PathType Container)) {
+        throw 'The current PowerShell 7 module directory could not be located for the cross-runtime isolation regression test.'
+    }
     $probeScript = $probeScript.Replace('__HELPER_PATH__', $escapedHelperPath)
+    $probeScript = $probeScript.Replace('__POISON_MODULE_PATH__', $escapedCoreModulePath)
     $encodedProbe = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($probeScript))
     $probeLog = Join-Path $env:TEMP 'MD-Gsm-CertificateProvider-NoProfile.log'
     $probeErrorLog = $probeLog + '.err'
     try {
-        $probeProcess = Start-Process -FilePath $powerShell51 -ArgumentList ('-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ' + $encodedProbe) -PassThru -Wait -WindowStyle Hidden -RedirectStandardOutput $probeLog -RedirectStandardError $probeErrorLog
+        $originalPSModulePath = $env:PSModulePath
+        try {
+            $inheritedModulePaths = @($escapedCoreModulePath) + @($originalPSModulePath -split [regex]::Escape([string][System.IO.Path]::PathSeparator) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and -not [string]::Equals($_, $escapedCoreModulePath, [System.StringComparison]::OrdinalIgnoreCase) })
+            $env:PSModulePath = $inheritedModulePaths -join [string][System.IO.Path]::PathSeparator
+            Write-Host ("CI regression: injected PowerShell 7 module directory first in child PSModulePath: " + $escapedCoreModulePath)
+            $probeProcess = Start-Process -FilePath $powerShell51 -ArgumentList ('-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ' + $encodedProbe) -PassThru -Wait -WindowStyle Hidden -RedirectStandardOutput $probeLog -RedirectStandardError $probeErrorLog
+        } finally {
+            $env:PSModulePath = $originalPSModulePath
+        }
         if ($probeProcess.ExitCode -ne 0) {
             $details = ''
             if (Test-Path -LiteralPath $probeLog) { $details += Get-Content -LiteralPath $probeLog -Raw }
