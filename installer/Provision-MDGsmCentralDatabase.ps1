@@ -487,8 +487,9 @@ try {
     if ($membership -ne 'true') { throw 'The API LOGIN membership options do not match the least-privilege runtime policy.' }
 
     $apiIdentity = Invoke-Psql 'mdgsm' 'mdgsm_api_runtime' $apiPassword "SELECT session_user || '|' || current_user || '|' || current_database() || '|' || (current_setting('server_version_num')::integer / 10000)::text || '|' || inet_server_addr()::text;"
-    if ($apiIdentity -ne 'mdgsm_api_runtime|mdgsm_api_runtime|mdgsm|18|127.0.0.1') {
-        throw 'The generated API LOGIN failed the exact PostgreSQL identity/version/loopback proof.'
+    $expectedApiIdentity = 'mdgsm_api_runtime|mdgsm_api_runtime|mdgsm|18|127.0.0.1'
+    if ($apiIdentity -cne $expectedApiIdentity) {
+        throw ("The generated API LOGIN identity proof did not match. Actual safe identity tuple: [{0}]. Expected: [{1}]." -f $apiIdentity, $expectedApiIdentity)
     }
 
     $state.Status = 'ready'
