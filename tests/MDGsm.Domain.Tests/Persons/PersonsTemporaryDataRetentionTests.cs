@@ -33,7 +33,7 @@ public sealed class PersonsTemporaryDataRetentionTests
     public async Task AC32_worker_is_registered_drains_all_due_batches_and_uses_the_fifteen_minute_default()
     {
         var services = new ServiceCollection();
-        services.AddPersonsInfrastructure();
+        services.AddPersonsInfrastructure().AddPersonsRetentionWorker();
         var registration = Assert.Single(services, descriptor =>
             descriptor.ServiceType == typeof(IHostedService) &&
             descriptor.ImplementationType == typeof(TemporaryWorkflowRetentionWorker));
