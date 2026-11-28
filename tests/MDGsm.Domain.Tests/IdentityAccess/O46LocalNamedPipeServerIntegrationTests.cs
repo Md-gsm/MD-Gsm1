@@ -48,6 +48,7 @@ public sealed class O46LocalNamedPipeServerIntegrationTests
             var request = server.ReadAuthenticatedRequest();
             Assert.Equal(new byte[] { 0x4f, 0x34, 0x36, 0x01 }, request.Payload);
             firstBinding = request.ClientBinding;
+            Assert.Throws<InvalidOperationException>(() => server.ReadAuthenticatedRequest());
         }
 
         Assert.Equal(expectedSid, firstBinding.UserSid);
@@ -70,6 +71,35 @@ public sealed class O46LocalNamedPipeServerIntegrationTests
             Assert.True(reconnect.ClientBinding.IsExactContinuationOf(firstBinding));
         }
 
+        server.DisconnectClient();
+    }
+
+    [Theory]
+    [InlineData(0u)]
+    [InlineData((uint)(O46LocalNamedPipeServer.DefaultMaximumPayloadBytes + 1))]
+    [Trait("Category", "Integration")]
+    public async Task Invalid_frame_lengths_are_rejected_before_client_identity_is_accepted(uint payloadLength)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var serviceInstanceId = Guid.NewGuid();
+        using var server = O46LocalNamedPipeServer.Create(serviceInstanceId);
+        var accept = Task.Run(server.WaitForClient);
+
+        using var client = new NamedPipeClientStream(
+            ".", O46LocalNamedPipeServer.PipeName, PipeDirection.Out, PipeOptions.None);
+        client.Connect(10_000);
+        await accept.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var header = new byte[sizeof(uint)];
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(header, payloadLength);
+        await client.WriteAsync(header);
+        await client.FlushAsync();
+
+        Assert.Throws<InvalidDataException>(() => server.ReadAuthenticatedRequest());
         server.DisconnectClient();
     }
 
