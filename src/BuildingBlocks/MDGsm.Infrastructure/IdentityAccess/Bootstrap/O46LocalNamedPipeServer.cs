@@ -21,7 +21,9 @@ public sealed class O46LocalNamedPipeServer : IDisposable
     public const int DefaultMaximumPayloadBytes = 64 * 1024;
 
     private const string PipePath = @"\\.\pipe\" + PipeName;
-    private const string PipeSecuritySddl = "D:P(A;;GA;;;SY)(A;;GA;;;BA)";
+    // The Setup Service owns the server handle; only an elevated local
+    // administrator needs client access. Do not grant SYSTEM client access.
+    private const string PipeSecuritySddl = "D:P(A;;GA;;;BA)";
     private const uint PipeAccessDuplex = 0x00000003;
     private const uint FileFlagFirstPipeInstance = 0x00080000;
     private const uint PipeRejectRemoteClients = 0x00000008;
@@ -42,9 +44,9 @@ public sealed class O46LocalNamedPipeServer : IDisposable
     }
 
     /// <summary>
-    /// Creates the fixed O-46 endpoint with a protected DACL. Only LocalSystem
-    /// and members of the local Administrators group may connect. A caller that
-    /// is not elevated as an administrator is intentionally denied.
+    /// Creates the fixed O-46 endpoint with a protected DACL granting client
+    /// access only to the local Administrators group. The service retains its
+    /// server handle; SYSTEM is not authorized as a pipe client.
     /// </summary>
     public static O46LocalNamedPipeServer Create(Guid serviceInstanceId)
     {
