@@ -8,6 +8,7 @@ using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Contracts;
 using MDGsm.IdentityAccess.Domain;
 using MDGsm.Infrastructure.IdentityAccess;
+using MDGsm.Infrastructure.IdentityAccess.Bootstrap;
 using MDGsm.Finance.Contracts;
 using MDGsm.Finance.Infrastructure.Accounts;
 using MDGsm.Persons.Contracts;
@@ -18,6 +19,12 @@ using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMdGsmPersistence(builder.Configuration);
+
+// A DI singleton is created once per API process. O-46 can bind every local
+// bootstrap request to this immutable process-lifetime identifier. Registering
+// it does not start the pipe or enable the bootstrap workflow.
+if (OperatingSystem.IsWindows())
+    builder.Services.AddSingleton<O46ServiceProcessIdentity>();
 
 if (args.Length > 0 && string.Equals(args[0], "--provision-persons-workflow-key", StringComparison.Ordinal))
 {
