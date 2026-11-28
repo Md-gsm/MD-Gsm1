@@ -187,6 +187,7 @@ public sealed class O46LocalNamedPipeServer : IDisposable
     public void DisconnectClient()
     {
         ThrowIfDisposed();
+        _workerState.ThrowIfQuarantined();
 
         if (Interlocked.Exchange(ref _connected, 0) == 0)
         {
