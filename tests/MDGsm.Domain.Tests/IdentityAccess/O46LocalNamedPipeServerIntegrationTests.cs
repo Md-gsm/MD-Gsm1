@@ -2,11 +2,13 @@ using System.IO.Pipes;
 using System.Security.Principal;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using MDGsm.Infrastructure.IdentityAccess.Bootstrap;
 using Xunit;
 
 namespace MDGsm.Domain.Tests.IdentityAccess;
 
+[SupportedOSPlatform("windows")]
 public sealed class O46LocalNamedPipeServerIntegrationTests
 {
     [Fact]
