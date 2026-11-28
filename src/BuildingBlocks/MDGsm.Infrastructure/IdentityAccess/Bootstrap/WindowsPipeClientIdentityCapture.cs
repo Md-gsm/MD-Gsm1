@@ -32,11 +32,26 @@ public readonly record struct WindowsLogonSessionBinding(
     /// Continuation is allowed only for the exact same logon session and the same
     /// service process lifetime. A matching SID alone is deliberately insufficient.
     /// </summary>
-    public bool IsExactContinuationOf(WindowsLogonSessionBinding original) =>
-        UserSid.Equals(original.UserSid, StringComparison.Ordinal) &&
-        AuthenticationId == original.AuthenticationId &&
-        TerminalServicesSessionId == original.TerminalServicesSessionId &&
-        ServiceInstanceId == original.ServiceInstanceId;
+    public bool IsExactContinuationOf(WindowsLogonSessionBinding original)
+    {
+        // A default/partially deserialized binding must never match another
+        // default value. Treat invalid evidence as a denial, not an exception
+        // and never use SID-only equality as a fallback.
+        try
+        {
+            Validate();
+            original.Validate();
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+
+        return string.Equals(UserSid, original.UserSid, StringComparison.Ordinal) &&
+            AuthenticationId == original.AuthenticationId &&
+            TerminalServicesSessionId == original.TerminalServicesSessionId &&
+            ServiceInstanceId == original.ServiceInstanceId;
+    }
 }
 
 /// <summary>
