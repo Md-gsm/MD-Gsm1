@@ -133,8 +133,11 @@ public static class WindowsPipeClientIdentityCapture
 
             using (token)
             {
+                var statistics = ReadTokenStatistics(token);
+                ValidateElevatedClientToken(token, statistics);
+
                 var sid = ReadUserSid(token);
-                var authenticationId = ReadAuthenticationId(token);
+                var authenticationId = ReadAuthenticationId(statistics);
                 var sessionId = ReadSessionId(token);
                 binding = new WindowsLogonSessionBinding(
                     sid, authenticationId, sessionId, serviceInstanceId).Validate();
@@ -179,10 +182,14 @@ public static class WindowsPipeClientIdentityCapture
         return new SecurityIdentifier(user.User.Sid).Value;
     }
 
-    private static ulong ReadAuthenticationId(SafeAccessTokenHandle token)
+    private static TokenStatistics ReadTokenStatistics(SafeAccessTokenHandle token)
     {
         using var buffer = GetTokenInformationBuffer(token, TokenInformationClass.TokenStatistics);
-        var statistics = Marshal.PtrToStructure<TokenStatistics>(buffer.DangerousGetHandle());
+        return Marshal.PtrToStructure<TokenStatistics>(buffer.DangerousGetHandle());
+    }
+
+    private static ulong ReadAuthenticationId(TokenStatistics statistics)
+    {
         var value = unchecked(((ulong)(uint)statistics.AuthenticationId.HighPart << 32) |
             statistics.AuthenticationId.LowPart);
         if (value == 0)
@@ -191,6 +198,44 @@ public static class WindowsPipeClientIdentityCapture
         }
 
         return value;
+    }
+
+    private static void ValidateElevatedClientToken(
+        SafeAccessTokenHandle token,
+        TokenStatistics statistics)
+    {
+        const int TokenImpersonation = 2;
+        const int SecurityImpersonation = 2;
+        const int TokenElevationTypeLimited = 3;
+
+        if (statistics.TokenType != TokenImpersonation ||
+            statistics.ImpersonationLevel != SecurityImpersonation)
+        {
+            throw new UnauthorizedAccessException(
+                "The pipe client token is not a local SecurityImpersonation token; the request was rejected.");
+        }
+
+        var elevationType = ReadTokenDword(token, TokenInformationClass.TokenElevationType);
+        var isElevated = ReadTokenDword(token, TokenInformationClass.TokenElevation);
+        var hasRestrictions = ReadTokenDword(token, TokenInformationClass.TokenHasRestrictions);
+        var isAppContainer = ReadTokenDword(token, TokenInformationClass.TokenIsAppContainer);
+
+        if (isElevated == 0 ||
+            elevationType == TokenElevationTypeLimited ||
+            hasRestrictions != 0 ||
+            isAppContainer != 0)
+        {
+            throw new UnauthorizedAccessException(
+                "The O-46 client must use an unrestricted elevated local-administrator token.");
+        }
+    }
+
+    private static uint ReadTokenDword(
+        SafeAccessTokenHandle token,
+        TokenInformationClass informationClass)
+    {
+        using var buffer = GetTokenInformationBuffer(token, informationClass);
+        return unchecked((uint)Marshal.ReadInt32(buffer.DangerousGetHandle()));
     }
 
     private static uint ReadSessionId(SafeAccessTokenHandle token)
@@ -243,7 +288,11 @@ public static class WindowsPipeClientIdentityCapture
     {
         TokenUser = 1,
         TokenStatistics = 10,
-        TokenSessionId = 12
+        TokenSessionId = 12,
+        TokenElevationType = 18,
+        TokenElevation = 20,
+        TokenHasRestrictions = 21,
+        TokenIsAppContainer = 29
     }
 
     [StructLayout(LayoutKind.Sequential)]
