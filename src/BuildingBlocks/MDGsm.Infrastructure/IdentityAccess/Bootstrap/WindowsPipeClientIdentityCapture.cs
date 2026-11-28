@@ -137,6 +137,7 @@ public static class WindowsPipeClientIdentityCapture
                 ValidateElevatedClientToken(token, statistics);
 
                 var sid = ReadUserSid(token);
+                ValidateOwnerUserSid(sid);
                 var authenticationId = ReadAuthenticationId(statistics);
                 var sessionId = ReadSessionId(token);
                 binding = new WindowsLogonSessionBinding(
@@ -180,6 +181,23 @@ public static class WindowsPipeClientIdentityCapture
         }
 
         return new SecurityIdentifier(user.User.Sid).Value;
+    }
+
+    private static void ValidateOwnerUserSid(string sid)
+    {
+        var serviceSids = new[]
+        {
+            new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null).Value,
+            new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null).Value,
+            new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null).Value
+        };
+
+        if (serviceSids.Contains(sid, StringComparer.Ordinal) ||
+            sid.StartsWith("S-1-5-80-", StringComparison.Ordinal))
+        {
+            throw new UnauthorizedAccessException(
+                "A Windows service identity cannot be bound as the initial Product Owner.");
+        }
     }
 
     private static TokenStatistics ReadTokenStatistics(SafeAccessTokenHandle token)
@@ -297,7 +315,7 @@ public static class WindowsPipeClientIdentityCapture
                     $"Windows token information '{informationClass}' could not be read.");
             }
 
-            if (returnedLength == 0 || returnedLength > fixedSize)
+            if (returnedLength != (uint)fixedSize)
             {
                 fixedBuffer.Dispose();
                 throw new InvalidOperationException(
@@ -326,7 +344,7 @@ public static class WindowsPipeClientIdentityCapture
             throw exception;
         }
 
-        if (actualLength == 0 || actualLength > required)
+        if (actualLength < (uint)Marshal.SizeOf<TokenUser>() || actualLength > required)
         {
             buffer.Dispose();
             throw new InvalidOperationException("Windows returned an invalid TOKEN_USER size.");
