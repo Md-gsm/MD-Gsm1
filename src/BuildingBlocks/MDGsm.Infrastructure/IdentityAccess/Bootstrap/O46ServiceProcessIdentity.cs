@@ -1,12 +1,14 @@
 namespace MDGsm.Infrastructure.IdentityAccess.Bootstrap;
 
 /// <summary>
-/// Immutable identifier created once by the API host's DI singleton for the
-/// current Windows service process. A new process constructs a new instance and
-/// therefore receives a new ServiceInstanceId; callers cannot supply or restore
-/// a prior value.
+/// Process-wide immutable identifier for one API service process lifetime.
+/// The static value is created once by CLR type initialization, so every
+/// consumer in this process observes the same identifier even if it creates
+/// another wrapper instance. A restarted process initializes a new value.
 /// </summary>
 public sealed class O46ServiceProcessIdentity
 {
-    public Guid ServiceInstanceId { get; } = Guid.NewGuid();
+    private static readonly Guid ProcessServiceInstanceId = Guid.NewGuid();
+
+    public Guid ServiceInstanceId => ProcessServiceInstanceId;
 }
