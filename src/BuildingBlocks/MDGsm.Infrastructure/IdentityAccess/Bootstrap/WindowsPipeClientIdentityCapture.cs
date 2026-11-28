@@ -248,20 +248,63 @@ public static class WindowsPipeClientIdentityCapture
         SafeAccessTokenHandle token,
         TokenInformationClass informationClass)
     {
-        _ = GetTokenInformation(token, informationClass, IntPtr.Zero, 0, out var required);
-        var error = Marshal.GetLastWin32Error();
-        if (required == 0 || error != ErrorInsufficientBuffer)
+        // Most queried token-information classes in this binding are fixed-size
+        // DWORDs (or the fixed TOKEN_STATISTICS structure). Querying their size
+        // first is unnecessary and can be rejected by some impersonation-token
+        // implementations. Allocate the documented structure size directly.
+        var fixedSize = informationClass switch
         {
-            throw new Win32Exception(error, "Windows did not provide the required token-information buffer size.");
+            TokenInformationClass.TokenStatistics => Marshal.SizeOf<TokenStatistics>(),
+            TokenInformationClass.TokenUser => 0,
+            _ => sizeof(uint)
+        };
+
+        if (fixedSize > 0)
+        {
+            var fixedBuffer = new SafeHGlobalBuffer(fixedSize);
+            if (!GetTokenInformation(
+                    token, informationClass, fixedBuffer.DangerousGetHandle(),
+                    checked((uint)fixedSize), out var returnedLength))
+            {
+                var error = Marshal.GetLastWin32Error();
+                fixedBuffer.Dispose();
+                throw new Win32Exception(error,
+                    $"Windows token information '{informationClass}' could not be read.");
+            }
+
+            if (returnedLength == 0 || returnedLength > fixedSize)
+            {
+                fixedBuffer.Dispose();
+                throw new InvalidOperationException(
+                    $"Windows returned an invalid size for token information '{informationClass}'.");
+            }
+
+            return fixedBuffer;
+        }
+
+        // TOKEN_USER is variable-sized because it embeds a SID. Use the
+        // documented insufficient-buffer sizing call only for this structure.
+        _ = GetTokenInformation(token, informationClass, IntPtr.Zero, 0, out var required);
+        var sizingError = Marshal.GetLastWin32Error();
+        if (required == 0 || required > 64 * 1024 || sizingError != ErrorInsufficientBuffer)
+        {
+            throw new Win32Exception(sizingError,
+                $"Windows did not provide a valid TOKEN_USER buffer size (required={required}).");
         }
 
         var buffer = new SafeHGlobalBuffer(checked((int)required));
-        if (!GetTokenInformation(token, informationClass, buffer.DangerousGetHandle(), required, out _))
+        if (!GetTokenInformation(token, informationClass, buffer.DangerousGetHandle(), required, out var actualLength))
         {
             var exception = new Win32Exception(Marshal.GetLastWin32Error(),
-                "Windows token information could not be read.");
+                "Windows TOKEN_USER information could not be read.");
             buffer.Dispose();
             throw exception;
+        }
+
+        if (actualLength == 0 || actualLength > required)
+        {
+            buffer.Dispose();
+            throw new InvalidOperationException("Windows returned an invalid TOKEN_USER size.");
         }
 
         return buffer;
