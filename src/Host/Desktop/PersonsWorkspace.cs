@@ -32,7 +32,7 @@ public partial class MainWindow
     private void InitializePersonsWorkspace()
     {
         _apiHttpClient = new HttpClient();
-        var baseUrl = "http://127.0.0.1:5080/";
+        var baseUrl = string.Empty;
         var timeoutSeconds = 5;
         var settingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
         try
@@ -52,13 +52,15 @@ public partial class MainWindow
                 }
             }
 
-            if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri) ||
+            if (string.IsNullOrWhiteSpace(baseUrl))
+                _apiConfigurationError = "نشانی سرور تنظیم نشده است. برای اتصال امن، نصب Client را با فایل اتصال معتبر صادرشده از سرور اجرا کنید.";
+            else if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri) ||
                 (!string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) &&
                  !(string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) && uri.IsLoopback)) ||
                 !string.IsNullOrEmpty(uri.UserInfo) ||
                 !string.IsNullOrEmpty(uri.Query) ||
                 !string.IsNullOrEmpty(uri.Fragment))
-                _apiConfigurationError = "نشانی API نامعتبر است. برای سیستم‌های راه‌دور HTTPS لازم است؛ HTTP فقط برای اتصال Loopback مجاز است.";
+                _apiConfigurationError = "نشانی API نامعتبر است. برای سیستم‌های راه‌دور HTTPS لازم است؛ HTTP فقط برای اتصال Loopback توسعه و با تنظیم صریح مجاز است.";
             else if (timeoutSeconds is < 1 or > 60)
                 _apiConfigurationError = "TimeoutSeconds در appsettings.json باید بین ۱ تا ۶۰ باشد.";
             else

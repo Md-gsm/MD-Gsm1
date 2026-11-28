@@ -12,7 +12,231 @@ $keyMarkerPath = 'HKLM:\SOFTWARE\MD-Gsm\Persons\WorkflowEncryption'
 $keyMarkerName = 'Provisioned'
 $serviceSetupScript = Join-Path $installDirectory 'Install-MDGsmApiService.ps1'
 $serviceStatePath = Join-Path $env:TEMP 'MD-Gsm-Service-Rollback-Test.json'
+
+
 $powerShell51 = Join-Path $env:windir 'System32\WindowsPowerShell\v1.0\powershell.exe'
+$certificateBootstrapPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\installer\Initialize-MDGsmCertificateProvider.ps1'))
+if (-not (Test-Path -LiteralPath $certificateBootstrapPath -PathType Leaf)) {
+    throw 'The certificate-provider bootstrap script is missing from the source checkout.'
+}
+. $certificateBootstrapPath
+Initialize-MDGsmCertificateProvider
+
+function Assert-CertificateProviderNoProfileBootstrap {
+    $escapedHelperPath = $certificateBootstrapPath.Replace("'", "''")
+    $probeScript = @'
+$ErrorActionPreference = 'Stop'
+Write-Output ("CHILD_HOST: PSVersion={0}; PSEdition={1}; PSHOME={2}; PSModulePath={3}" -f $PSVersionTable.PSVersion, $PSVersionTable.PSEdition, $PSHOME, $env:PSModulePath)
+$injectedCoreModulePath = '__POISON_MODULE_PATH__'
+$childModulePaths = @($env:PSModulePath -split [regex]::Escape([string][System.IO.Path]::PathSeparator))
+if (-not ($childModulePaths | Where-Object { [string]::Equals($_, $injectedCoreModulePath, [System.StringComparison]::OrdinalIgnoreCase) })) {
+    throw 'The test did not preserve the injected PowerShell 7 module path in the child process environment.'
+}
+$initialProviderCount = @(Get-PSProvider | Where-Object { $_.Name -eq 'Certificate' }).Count
+$initialSecurityModuleCount = @(Get-Module -Name Microsoft.PowerShell.Security).Count
+Write-Output ("PREBOOTSTRAP: CertificateProviderCount={0}; SecurityModuleLoaded={1}" -f $initialProviderCount, $initialSecurityModuleCount)
+. '__HELPER_PATH__'
+$existingDrive = Get-PSDrive -Name Cert -ErrorAction SilentlyContinue
+if ($null -ne $existingDrive) {
+    Remove-PSDrive -Name Cert -Force -ErrorAction Stop
+}
+if ($null -ne (Get-PSDrive -Name Cert -ErrorAction SilentlyContinue)) {
+    throw 'The test could not establish the missing-Cert-drive precondition.'
+}
+Initialize-MDGsmCertificateProvider
+Initialize-MDGsmCertificateProvider
+$securityModule = Get-Module -Name Microsoft.PowerShell.Security
+$pkiModule = Get-Module -Name PKI
+$expectedSecurityManifest = [System.IO.Path]::GetFullPath((Join-Path (Join-Path (Join-Path $PSHOME 'Modules') 'Microsoft.PowerShell.Security') 'Microsoft.PowerShell.Security.psd1'))
+$expectedPkiManifest = [System.IO.Path]::GetFullPath((Join-Path (Join-Path (Join-Path $PSHOME 'Modules') 'PKI') 'PKI.psd1'))
+if (-not [string]::Equals([System.IO.Path]::GetFullPath([string]$securityModule.Path), $expectedSecurityManifest, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw ("Security module was not loaded from the Windows PowerShell host manifest. Actual: " + $securityModule.Path + "; expected: " + $expectedSecurityManifest)
+}
+if (-not [string]::Equals([System.IO.Path]::GetFullPath([string]$pkiModule.Path), $expectedPkiManifest, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw ("PKI module was not loaded from the Windows PowerShell host manifest. Actual: " + $pkiModule.Path + "; expected: " + $expectedPkiManifest)
+}
+Write-Output ("LOADED_MODULES: Security={0}; PKI={1}" -f $securityModule.Path, $pkiModule.Path)
+if (-not (Test-Path -LiteralPath 'Cert:\LocalMachine\My' -ErrorAction Stop)) {
+    throw 'The LocalMachine My certificate store was not mounted after explicit provider bootstrap.'
+}
+Remove-PSDrive -Name Cert -Force -ErrorAction Stop
+Initialize-MDGsmCertificateProvider
+if (-not (Test-Path -LiteralPath 'Cert:\LocalMachine\Root' -ErrorAction Stop)) {
+    throw 'The LocalMachine Root certificate store was not remounted after a second drive removal.'
+}
+$probeCertificate = $null
+$probeStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+    [System.Security.Cryptography.X509Certificates.StoreName]::My,
+    [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser)
+try {
+    $probeCertificate = New-SelfSignedCertificate -Type Custom -Subject 'CN=MD-Gsm Certificate Provider Bootstrap Probe' -CertStoreLocation 'Cert:\CurrentUser\My' -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotAfter (Get-Date).AddDays(1)
+    $probeStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+    $matches = $probeStore.Certificates.Find(
+        [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+        $probeCertificate.Thumbprint, $false)
+    foreach ($match in $matches) { $probeStore.Remove($match) }
+    Write-Output 'PASS: Windows PowerShell 5.1 -NoProfile ignored the injected PowerShell 7 module path, loaded its own Security/PKI modules, recreated Cert: idempotently and created/removed a disposable certificate.'
+} finally {
+    $probeStore.Close()
+    $probeStore.Dispose()
+    if ($null -ne $probeCertificate) { $probeCertificate.Dispose() }
+}
+'@
+    $escapedCoreModulePath = (Join-Path $PSHOME 'Modules').Replace("'", "''")
+    if (-not (Test-Path -LiteralPath $escapedCoreModulePath -PathType Container)) {
+        throw 'The current PowerShell 7 module directory could not be located for the cross-runtime isolation regression test.'
+    }
+    $probeScript = $probeScript.Replace('__HELPER_PATH__', $escapedHelperPath)
+    $probeScript = $probeScript.Replace('__POISON_MODULE_PATH__', $escapedCoreModulePath)
+    $encodedProbe = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($probeScript))
+    $probeLog = Join-Path $env:TEMP 'MD-Gsm-CertificateProvider-NoProfile.log'
+    $probeErrorLog = $probeLog + '.err'
+    try {
+        $originalPSModulePath = $env:PSModulePath
+        try {
+            $inheritedModulePaths = @($escapedCoreModulePath) + @($originalPSModulePath -split [regex]::Escape([string][System.IO.Path]::PathSeparator) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and -not [string]::Equals($_, $escapedCoreModulePath, [System.StringComparison]::OrdinalIgnoreCase) })
+            $env:PSModulePath = $inheritedModulePaths -join [string][System.IO.Path]::PathSeparator
+            Write-Host ("CI regression: injected PowerShell 7 module directory first in child PSModulePath: " + $escapedCoreModulePath)
+            $probeProcess = Start-Process -FilePath $powerShell51 -ArgumentList ('-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ' + $encodedProbe) -PassThru -Wait -WindowStyle Hidden -RedirectStandardOutput $probeLog -RedirectStandardError $probeErrorLog
+        } finally {
+            $env:PSModulePath = $originalPSModulePath
+        }
+        if ($probeProcess.ExitCode -ne 0) {
+            $details = ''
+            if (Test-Path -LiteralPath $probeLog) { $details += Get-Content -LiteralPath $probeLog -Raw }
+            if (Test-Path -LiteralPath $probeErrorLog) { $details += Get-Content -LiteralPath $probeErrorLog -Raw }
+            throw ("Windows PowerShell 5.1 -NoProfile certificate-provider bootstrap failed. " + $details)
+        }
+        Write-Host 'PASS: Windows PowerShell 5.1 -NoProfile certificate-provider bootstrap.'
+    } finally {
+        Remove-Item -LiteralPath $probeLog -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $probeErrorLog -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Assert-CertificateProviderNoProfileBootstrap
+
+# The hosted runner is disposable. Mark only default-route Public interfaces Private
+# so CI exercises the eligible private-LAN code path. Production installation never
+# changes a customer's Public network profile.
+$script:originalNetworkCategories = @()
+$defaultRouteIndexes = @(Get-NetRoute -AddressFamily IPv4 -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue |
+    Select-Object -ExpandProperty InterfaceIndex -Unique)
+foreach ($interfaceIndex in $defaultRouteIndexes) {
+    $profile = Get-NetConnectionProfile -InterfaceIndex $interfaceIndex -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($null -ne $profile -and $profile.NetworkCategory -eq 'Public') {
+        $script:originalNetworkCategories += [pscustomobject]@{
+            InterfaceIndex = [int]$interfaceIndex
+            NetworkCategory = [string]$profile.NetworkCategory
+        }
+        Set-NetConnectionProfile -InterfaceIndex $interfaceIndex -NetworkCategory Private -ErrorAction Stop
+        Write-Host ("CI-only: marked default-route interface {0} as Private for HTTPS installer integration testing." -f $interfaceIndex)
+    }
+}
+
+
+if (-not ('MDGsmIntegration.TemporaryTlsServer' -as [type])) {
+    Add-Type -Language CSharp -TypeDefinition @'
+using System;
+using System.Net;
+using System.Net.Security;
+using System.Net.Sockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace MDGsmIntegration
+{
+    public sealed class TemporaryTlsServer : IDisposable
+    {
+        private readonly TcpListener _listener;
+        private readonly X509Certificate2 _certificate;
+        private readonly CancellationTokenSource _stop = new CancellationTokenSource();
+        private readonly Task _acceptLoop;
+
+        public int Port { get { return ((IPEndPoint)_listener.LocalEndpoint).Port; } }
+
+        public TemporaryTlsServer(IPAddress address, X509Certificate2 certificate)
+        {
+            _certificate = certificate;
+            if (certificate == null) throw new ArgumentNullException("certificate");
+            _listener = new TcpListener(address, 0);
+            _listener.Start();
+            _acceptLoop = Task.Run((Func<Task>)AcceptLoopAsync);
+        }
+
+        private async Task AcceptLoopAsync()
+        {
+            while (!_stop.IsCancellationRequested)
+            {
+                TcpClient client = null;
+                try
+                {
+                    client = await _listener.AcceptTcpClientAsync().ConfigureAwait(false);
+                }
+                catch (ObjectDisposedException) { break; }
+                catch (SocketException) { if (_stop.IsCancellationRequested) break; }
+                if (client != null)
+                    GC.KeepAlive(Task.Run(() => HandleClientAsync(client)));
+            }
+        }
+
+        private async Task HandleClientAsync(TcpClient client)
+        {
+            using (client)
+            using (var stream = new SslStream(client.GetStream(), false))
+            {
+                try
+                {
+                    await stream.AuthenticateAsServerAsync(
+                        _certificate, false, SslProtocols.Tls12, false).ConfigureAwait(false);
+                    var buffer = new byte[4096];
+                    var count = await stream.ReadAsync(buffer, 0, buffer.Length, CancellationToken.None).ConfigureAwait(false);
+                    if (count > 0)
+                    {
+                        var response = Encoding.ASCII.GetBytes(
+                            "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK");
+                        await stream.WriteAsync(response, 0, response.Length, CancellationToken.None).ConfigureAwait(false);
+                    }
+                }
+                catch { }
+            }
+        }
+
+        public void Dispose()
+        {
+            _stop.Cancel();
+            _listener.Stop();
+            try { _acceptLoop.Wait(TimeSpan.FromSeconds(2)); } catch { }
+            _stop.Dispose();
+        }
+    }
+}
+'@
+}
+
+
+# The hosted runner is disposable. Mark only its active default-route interfaces
+# Private so the installer exercises the same scoped-LAN path used by a customer
+# office network. The production installer itself never promotes Public profiles.
+$script:originalNetworkCategories = @()
+$defaultRouteIndexes = @(Get-NetRoute -AddressFamily IPv4 -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue |
+    Select-Object -ExpandProperty InterfaceIndex -Unique)
+foreach ($interfaceIndex in $defaultRouteIndexes) {
+    $profile = Get-NetConnectionProfile -InterfaceIndex $interfaceIndex -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($null -ne $profile -and $profile.NetworkCategory -eq 'Public') {
+        $script:originalNetworkCategories += [pscustomobject]@{
+            InterfaceIndex = [int]$interfaceIndex
+            NetworkCategory = [string]$profile.NetworkCategory
+        }
+        Set-NetConnectionProfile -InterfaceIndex $interfaceIndex -NetworkCategory Private -ErrorAction Stop
+        Write-Host ("CI-only: changed disposable runner interface {0} to Private for scoped HTTPS integration testing." -f $interfaceIndex)
+    }
+}
 
 if (-not (Test-Path -LiteralPath $InstallerPath -PathType Leaf)) {
     throw 'Installer file not found.'
@@ -61,8 +285,16 @@ function Invoke-SystemInstaller([string] $Phase) {
             'Inno Setup did not create an installation log.'
         }
         $code = if ($null -eq $process) { 'no-process-result' } else { [string]$process.ExitCode }
+        $diagnostics = ''
+        try {
+            $diagnostics = Get-ServiceFailureDiagnostics $Phase
+        } catch {
+            $diagnostics = "Could not collect service setup diagnostics: " + $_.Exception.ToString()
+        }
         throw ("Installer phase '" + $Phase + "' failed with exit code " + $code + "." +
-            [Environment]::NewLine + $tail)
+            [Environment]::NewLine + $tail +
+            [Environment]::NewLine + "=== PREPARE / SERVICE SETUP DIAGNOSTICS ===" +
+            [Environment]::NewLine + $diagnostics)
     }
     if (-not (Test-Path -LiteralPath $log -PathType Leaf)) {
         throw "Installer phase '$Phase' returned success without an Inno Setup log."
@@ -88,13 +320,13 @@ function Get-ServiceFailureDiagnostics([string] $Phase) {
     $sections.Add((& $scExe qc $serviceName 2>&1 | Out-String))
 
     try {
-        $listeners = @(Get-NetTCPConnection -LocalPort 5080 -State Listen -ErrorAction Stop)
+        $listeners = @(Get-NetTCPConnection -LocalPort 5081 -State Listen -ErrorAction Stop)
         if ($listeners.Count -eq 0) {
-            $sections.Add("TCP listener: no process is listening on port 5080.")
+            $sections.Add("TCP listener: no process is listening on HTTPS port 5081.")
         }
         foreach ($listener in $listeners) {
             $owner = Get-CimInstance Win32_Process -Filter ("ProcessId={0}" -f $listener.OwningProcess)
-            $sections.Add(("TCP listener: Address={0}; Port={1}; PID={2}; Process={3}; Executable={4}" -f
+            $sections.Add(("HTTPS listener: Address={0}; Port={1}; PID={2}; Process={3}; Executable={4}" -f
                 $listener.LocalAddress, $listener.LocalPort, $listener.OwningProcess, $owner.Name, $owner.ExecutablePath))
         }
     } catch {
@@ -157,6 +389,81 @@ function Get-ServiceFailureDiagnostics([string] $Phase) {
     return ($sections -join [Environment]::NewLine)
 }
 
+function Get-ExpectedIpv4Cidr([string] $Address, [int] $PrefixLength) {
+    $bytes = [System.Net.IPAddress]::Parse($Address).GetAddressBytes()
+    $networkBytes = [byte[]]::new(4)
+    for ($index = 0; $index -lt 4; $index++) {
+        $bits = [Math]::Max(0, [Math]::Min(8, $PrefixLength - (8 * $index)))
+        if ($bits -eq 0) { $networkBytes[$index] = 0 }
+        elseif ($bits -eq 8) { $networkBytes[$index] = $bytes[$index] }
+        else {
+            $mask = (0xff -shl (8 - $bits)) -band 0xff
+            $networkBytes[$index] = [byte]($bytes[$index] -band $mask)
+        }
+    }
+    return ('{0}/{1}' -f ([System.Net.IPAddress]::new($networkBytes).ToString()), $PrefixLength)
+}
+
+# Normalize the equivalent IPv4 subnet formats exposed by Windows Firewall.
+# An address without a prefix represents one exact host (/32).
+function ConvertTo-CanonicalIpv4Network([string] $AddressSpecification) {
+    if ([string]::IsNullOrWhiteSpace($AddressSpecification)) {
+        throw 'A firewall address filter contains an empty address specification.'
+    }
+
+    $parts = $AddressSpecification.Trim() -split '/', 2
+    $address = [System.Net.IPAddress]::Parse($parts[0].Trim())
+    if ($address.AddressFamily -ne [System.Net.Sockets.AddressFamily]::InterNetwork) {
+        throw ("Firewall address is not IPv4: " + $AddressSpecification)
+    }
+
+    if ($parts.Count -eq 1) {
+        $prefixLength = 32
+    } else {
+        $prefixText = $parts[1].Trim()
+        if ($prefixText -match '^\d{1,2}$') {
+            $prefixLength = [int]$prefixText
+            if ($prefixLength -lt 0 -or $prefixLength -gt 32) {
+                throw ("Firewall IPv4 prefix is outside 0..32: " + $AddressSpecification)
+            }
+        } else {
+            $maskAddress = [System.Net.IPAddress]::Parse($prefixText)
+            if ($maskAddress.AddressFamily -ne [System.Net.Sockets.AddressFamily]::InterNetwork) {
+                throw ("Firewall subnet mask is not IPv4: " + $AddressSpecification)
+            }
+            $prefixLength = 0
+            $zeroBitSeen = $false
+            foreach ($octet in $maskAddress.GetAddressBytes()) {
+                for ($bit = 7; $bit -ge 0; $bit--) {
+                    $isSet = (($octet -band (1 -shl $bit)) -ne 0)
+                    if ($isSet) {
+                        if ($zeroBitSeen) {
+                            throw ("Firewall subnet mask is not contiguous: " + $AddressSpecification)
+                        }
+                        $prefixLength++
+                    } else {
+                        $zeroBitSeen = $true
+                    }
+                }
+            }
+        }
+    }
+
+    $addressBytes = $address.GetAddressBytes()
+    $networkBytes = [byte[]]::new(4)
+    for ($index = 0; $index -lt 4; $index++) {
+        $bits = [Math]::Max(0, [Math]::Min(8, $prefixLength - (8 * $index)))
+        if ($bits -eq 0) { $networkBytes[$index] = 0 }
+        elseif ($bits -eq 8) { $networkBytes[$index] = $addressBytes[$index] }
+        else {
+            $mask = (0xff -shl (8 - $bits)) -band 0xff
+            $networkBytes[$index] = [byte]($addressBytes[$index] -band $mask)
+        }
+    }
+
+    return ('{0}/{1}' -f ([System.Net.IPAddress]::new($networkBytes).ToString()), $prefixLength)
+}
+
 function Assert-ServiceReady([string] $Phase) {
     $service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
     if ($null -eq $service -or $service.State -ne 'Running') {
@@ -169,35 +476,74 @@ function Assert-ServiceReady([string] $Phase) {
         Write-Host ("SERVICE IDENTITY DIAGNOSTICS after phase '$Phase':" + [Environment]::NewLine + $diagnostics)
         throw "MDGsmApi is not running as LocalService after phase '$Phase'."
     }
+
     try {
-        $response = Invoke-WebRequest -UseBasicParsing -SkipHttpErrorCheck -Uri 'http://127.0.0.1:5080/health/live' -TimeoutSec 5
+        $networkConfigPath = Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json'
+        if (-not (Test-Path -LiteralPath $networkConfigPath -PathType Leaf)) {
+            throw 'The machine-local HTTPS network configuration is missing.'
+        }
+        $networkConfig = Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json
+        $network = $networkConfig.Network
+        if ([bool]$network.RemoteAccessEnabled) {
+            $interfaceAddress = Get-NetIPAddress -IPAddress ([string]$network.BindAddress) -AddressFamily IPv4 -ErrorAction Stop |
+                Where-Object { $_.InterfaceAlias -eq [string]$network.InterfaceAlias } |
+                Select-Object -First 1
+            if ($null -eq $interfaceAddress) {
+                throw 'The selected HTTPS bind address does not belong to the recorded Windows interface.'
+            }
+            $expectedCidr = Get-ExpectedIpv4Cidr -Address ([string]$network.BindAddress) -PrefixLength ([int]$interfaceAddress.PrefixLength)
+            if ($expectedCidr -ne [string]$network.NetworkCidr) {
+                throw ("The installer calculated an incorrect network CIDR. Expected=" + $expectedCidr + "; actual=" + [string]$network.NetworkCidr)
+            }
+        }
+        if ($network.Mode -ne 'Https' -or [int]$network.Port -ne 5081 -or
+            [string]::IsNullOrWhiteSpace([string]$network.CertificateThumbprint) -or
+            ([string]$network.RootCaThumbprint -replace '[^0-9A-Fa-f]', '').Length -ne 40 -or
+            [string]::IsNullOrWhiteSpace([string]$network.ApiBaseUrl)) {
+            throw 'The installed API network configuration does not prove a selected HTTPS listener, leaf certificate and pinned root CA.'
+        }
+
+        $rootSigningCertificate = Get-Item -LiteralPath ("Cert:\LocalMachine\My\" + [string]$network.RootCaThumbprint) -ErrorAction Stop
+        if (-not $rootSigningCertificate.HasPrivateKey) {
+            throw 'The pinned MD-Gsm root signing certificate is not retained in LocalMachine My.'
+        }
+        $rootTrustMatches = @(Get-ChildItem -Path Cert:\LocalMachine\Root |
+            Where-Object { $_.Thumbprint -eq [string]$network.RootCaThumbprint })
+        if ($rootTrustMatches.Count -ne 1 -or $rootTrustMatches[0].HasPrivateKey) {
+            throw 'LocalMachine Root must contain exactly one public-only copy of the pinned MD-Gsm root CA.'
+        }
+        $leafCertificate = Get-Item -LiteralPath ("Cert:\LocalMachine\My\" + [string]$network.CertificateThumbprint) -ErrorAction Stop
+        if (-not $leafCertificate.HasPrivateKey -or $leafCertificate.Issuer -ne $rootSigningCertificate.Subject) {
+            throw 'The configured API TLS leaf certificate is not held in LocalMachine My or is not issued by the pinned MD-Gsm CA.'
+        }
+
+        $apiUri = [Uri]$network.ApiBaseUrl
+        if ($apiUri.Scheme -ne 'https' -or $apiUri.Port -ne 5081) {
+            throw 'The central API base URL is not HTTPS on the approved port 5081.'
+        }
+        $healthUri = [Uri]::new($apiUri, 'health/live').AbsoluteUri
+        $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUri -TimeoutSec 8
         if ($response.StatusCode -ne 200) {
-            $body = [string]$response.Content
-            if ($body.Length -gt 2048) { $body = $body.Substring(0, 2048) }
-            $diagnostics = Get-ServiceFailureDiagnostics $Phase
-            Write-Host ("LIVENESS HTTP RESPONSE: Status=$($response.StatusCode); Body=$body")
-            Write-Host ("SERVICE LIVENESS DIAGNOSTICS after phase '$Phase':" + [Environment]::NewLine + $diagnostics)
-            throw "MDGsmApi liveness returned HTTP $($response.StatusCode): $body"
+            throw "MDGsmApi liveness returned HTTP $($response.StatusCode)."
         }
-
         $payload = $response.Content | ConvertFrom-Json
-        if ($payload.product -ne 'MD-Gsm' -or $payload.status -ne 'alive' -or $payload.scope -ne 'process-liveness-only') {
-            throw "The liveness endpoint did not return the expected MD-Gsm process identity payload."
+        if ($payload.product -ne 'MD-Gsm' -or $payload.status -ne 'alive' -or
+            $payload.scope -ne 'process-liveness-only') {
+            throw 'The liveness endpoint did not return the expected MD-Gsm process identity payload.'
         }
 
-        # Compare a second lightweight route using the same middleware pipeline.
-        $systemResponse = Invoke-WebRequest -UseBasicParsing -SkipHttpErrorCheck -Uri 'http://127.0.0.1:5080/api/v1/system/info' -TimeoutSec 5
+        $systemUri = [Uri]::new($apiUri, '/api/v1/system/info').AbsoluteUri
+        $systemResponse = Invoke-WebRequest -UseBasicParsing -Uri $systemUri -TimeoutSec 8
         if ($systemResponse.StatusCode -ne 200) {
-            $systemBody = [string]$systemResponse.Content
-            if ($systemBody.Length -gt 2048) { $systemBody = $systemBody.Substring(0, 2048) }
-            throw "The independent system-info route returned HTTP $($systemResponse.StatusCode): $systemBody"
+            throw "The independent system-info route returned HTTP $($systemResponse.StatusCode)."
         }
         $systemPayload = $systemResponse.Content | ConvertFrom-Json
         if ($systemPayload.data.product -ne 'MD-Gsm') {
-            throw "The independent system-info route did not identify MD-Gsm."
+            throw 'The independent system-info route did not identify MD-Gsm.'
         }
 
-        $readyResponse = Invoke-WebRequest -UseBasicParsing -SkipHttpErrorCheck -Uri 'http://127.0.0.1:5080/health/ready' -TimeoutSec 10
+        $readyUri = [Uri]::new($apiUri, 'health/ready').AbsoluteUri
+        $readyResponse = Invoke-WebRequest -UseBasicParsing -Uri $readyUri -TimeoutSec 10
         if ($readyResponse.StatusCode -ne 200) {
             throw "The API readiness endpoint returned HTTP $($readyResponse.StatusCode); the installer must not report success without PostgreSQL."
         }
@@ -207,16 +553,102 @@ function Assert-ServiceReady([string] $Phase) {
             throw 'The API readiness response did not prove PostgreSQL 18 runtime identity.'
         }
 
-        $listeners = @(Get-NetTCPConnection -LocalPort 5080 -State Listen -ErrorAction Stop)
+        # Two independent PowerShell client processes issue requests at the same
+        # time. This proves the central HTTPS listener accepts concurrent clients.
+        $parallelJobs = @(
+            Start-Job -ScriptBlock {
+                param($Target)
+                (Invoke-WebRequest -UseBasicParsing -Uri $Target -TimeoutSec 12).StatusCode
+            } -ArgumentList $healthUri
+            Start-Job -ScriptBlock {
+                param($Target)
+                (Invoke-WebRequest -UseBasicParsing -Uri $Target -TimeoutSec 12).StatusCode
+            } -ArgumentList $healthUri
+        )
+        try {
+            $null = Wait-Job -Job $parallelJobs -Timeout 20
+            if (@($parallelJobs | Where-Object { $_.State -ne 'Completed' }).Count -gt 0) {
+                throw 'Two concurrent HTTPS clients did not both complete within 20 seconds.'
+            }
+            $parallelStatuses = @($parallelJobs | Receive-Job -ErrorAction Stop)
+            if ($parallelStatuses.Count -ne 2 -or @($parallelStatuses | Where-Object { [int]$_ -ne 200 }).Count -gt 0) {
+                throw 'The two concurrent HTTPS clients did not both receive HTTP 200.'
+            }
+        } finally {
+            $parallelJobs | Remove-Job -Force -ErrorAction SilentlyContinue
+        }
+
+        $listeners = @(Get-NetTCPConnection -LocalPort ([int]$network.Port) -State Listen -ErrorAction Stop)
         if (-not ($listeners.OwningProcess -contains [uint32]$service.ProcessId)) {
-            throw "Port 5080 is not owned by the registered MDGsmApi service process (service PID $($service.ProcessId))."
+            throw "HTTPS port $($network.Port) is not owned by the registered MDGsmApi service process (service PID $($service.ProcessId))."
+        }
+        if (-not ($listeners.LocalAddress -contains [string]$network.BindAddress)) {
+            throw 'The HTTPS listener is not bound to the exact address selected from Windows network configuration.'
+        }
+
+        $legacyHttpListeners = @(Get-NetTCPConnection -LocalPort 5080 -State Listen -ErrorAction SilentlyContinue)
+        if ($legacyHttpListeners.Count -gt 0) {
+            throw 'The legacy HTTP API listener on port 5080 is still active; an HTTP downgrade path remains.'
+        }
+
+        $firewallRule = Get-NetFirewallRule -Name 'MDGsmApiHttps5081' -ErrorAction SilentlyContinue
+        if ([bool]$network.RemoteAccessEnabled) {
+            if ($null -eq $firewallRule -or $firewallRule.Enabled -ne 'True' -or
+                $network.BindAddress -in @('127.0.0.1', '::1') -or
+                [string]::IsNullOrWhiteSpace([string]$network.NetworkCidr)) {
+                throw 'Remote HTTPS is enabled without an exact private-interface and CIDR-scoped firewall rule.'
+            }
+            $addressFilter = @(Get-NetFirewallAddressFilter -AssociatedNetFirewallRule $firewallRule)
+            $actualLocalRaw = @($addressFilter | ForEach-Object { $_.LocalAddress } | ForEach-Object { [string]$_ })
+            $actualRemoteRaw = @($addressFilter | ForEach-Object { $_.RemoteAddress } | ForEach-Object { [string]$_ })
+            $expectedLocalCanonical = ConvertTo-CanonicalIpv4Network -AddressSpecification ([string]$network.BindAddress)
+            $expectedRemoteCanonical = ConvertTo-CanonicalIpv4Network -AddressSpecification ([string]$network.NetworkCidr)
+            try {
+                $actualLocalCanonical = @($actualLocalRaw | ForEach-Object {
+                    ConvertTo-CanonicalIpv4Network -AddressSpecification $_
+                } | Sort-Object -Unique)
+                $actualRemoteCanonical = @($actualRemoteRaw | ForEach-Object {
+                    ConvertTo-CanonicalIpv4Network -AddressSpecification $_
+                } | Sort-Object -Unique)
+            } catch {
+                throw ("The HTTPS firewall address filter could not be normalized safely. " +
+                    "ExpectedLocal=$expectedLocalCanonical; ActualLocalRaw=$($actualLocalRaw -join ', '); " +
+                    "ExpectedRemote=$expectedRemoteCanonical; ActualRemoteRaw=$($actualRemoteRaw -join ', '); " +
+                    "Reason=$($_.Exception.Message)")
+            }
+
+            # Require exactly one local host and one remote subnet. A correct
+            # entry accompanied by Any or another broader range must still fail.
+            if ($actualLocalCanonical.Count -ne 1 -or
+                $actualLocalCanonical[0] -ne $expectedLocalCanonical -or
+                $actualRemoteCanonical.Count -ne 1 -or
+                $actualRemoteCanonical[0] -ne $expectedRemoteCanonical) {
+                throw ("The HTTPS firewall scope is not exact. " +
+                    "ExpectedLocal=$expectedLocalCanonical; ActualLocalRaw=$($actualLocalRaw -join ', '); " +
+                    "ActualLocalCanonical=$($actualLocalCanonical -join ', '); " +
+                    "ExpectedRemote=$expectedRemoteCanonical; ActualRemoteRaw=$($actualRemoteRaw -join ', '); " +
+                    "ActualRemoteCanonical=$($actualRemoteCanonical -join ', ').")
+            }
+            $interfaceFilter = Get-NetFirewallInterfaceFilter -AssociatedNetFirewallRule $firewallRule
+            if (-not (@($interfaceFilter.InterfaceAlias) -contains [string]$network.InterfaceAlias)) {
+                throw 'The HTTPS firewall rule is not restricted to the detected Windows network interface.'
+            }
+            $portFilter = Get-NetFirewallPortFilter -AssociatedNetFirewallRule $firewallRule
+            if ([int]$portFilter.LocalPort -ne 5081 -or $portFilter.Protocol -ne 'TCP') {
+                throw 'The HTTPS firewall rule is not limited to TCP 5081.'
+            }
+        } else {
+            if ($null -ne $firewallRule -or $network.BindAddress -ne '127.0.0.1' -or
+                -not [string]::IsNullOrWhiteSpace([string]$network.NetworkCidr)) {
+                throw 'Loopback fallback unexpectedly exposed a network firewall rule or non-loopback binding.'
+            }
         }
     } catch {
         $diagnostics = Get-ServiceFailureDiagnostics $Phase
-        Write-Host ("SERVICE LIVENESS DIAGNOSTICS after phase '$Phase':" + [Environment]::NewLine + $diagnostics)
-        throw "MDGsmApi liveness failed after phase '$Phase': $($_.Exception.Message)"
+        Write-Host ("SERVICE HTTPS DIAGNOSTICS after phase '$Phase':" + [Environment]::NewLine + $diagnostics)
+        throw "MDGsmApi HTTPS/readiness failed after phase '$Phase': $($_.Exception.Message)"
     }
-    Write-Host ("PASS: MDGsmApi is running as LocalService after phase '$Phase'.")
+    Write-Host ("PASS: MDGsmApi is running as LocalService after phase '$Phase' with verified HTTPS, PostgreSQL readiness and two concurrent clients.")
 }
 function Assert-DatabaseProvisioning([string] $Phase) {
     $pgService = Get-Service -Name 'MDGsmPostgreSQL18' -ErrorAction SilentlyContinue
@@ -347,49 +779,416 @@ function Invoke-SystemUninstaller([string] $Phase) {
     Write-Host ("PASS: service and Program Files removed during phase '" + $Phase + "'.")
 }
 
-function Invoke-ClientOnlyInstallerTest {
-    if (Get-Service -Name 'MDGsmApi' -ErrorAction SilentlyContinue) {
-        throw 'The clean Windows runner unexpectedly already has MDGsmApi installed.'
+function Invoke-ExpectedImporterFailure([string] $ImporterPath, [string] $BundlePath, [string] $InstallDirectory, [string] $Label) {
+    $null = & $powerShell51 -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $ImporterPath -ConnectionFile $BundlePath -InstallDirectory $InstallDirectory 2>&1
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -eq 0) {
+        throw "The client trust importer accepted a negative certificate case: $Label."
     }
-    if (Get-Service -Name 'MDGsmPostgreSQL18' -ErrorAction SilentlyContinue) {
-        throw 'The clean Windows runner unexpectedly already has the product PostgreSQL service.'
+    Write-Host ("PASS: client trust importer rejected " + $Label + ".")
+}
+
+function Assert-DefaultTlsRejected([string] $Uri, [string] $Label) {
+    $client = [System.Net.Http.HttpClient]::new()
+    $client.Timeout = [TimeSpan]::FromSeconds(6)
+    $response = $null
+    $failure = $null
+    try {
+        $response = $client.GetAsync($Uri).GetAwaiter().GetResult()
+    } catch {
+        $failure = $_.Exception
+    } finally {
+        if ($null -ne $response) { $response.Dispose() }
+        $client.Dispose()
+    }
+
+    if ($null -eq $failure) {
+        throw "The platform TLS client accepted $Label; certificate validation may have been bypassed."
+    }
+    Write-Host ("PASS: platform TLS validation rejected " + $Label + ".")
+}
+
+function Assert-ApiTlsLoaderFailsClosed([string] $Thumbprint, [string] $ExpectedText, [string] $Label) {
+    $networkConfigPath = Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json'
+    $originalConfig = [System.IO.File]::ReadAllText($networkConfigPath, [System.Text.Encoding]::UTF8)
+    $log = Join-Path $env:TEMP ('MD-Gsm-TlsLoader-' + [Guid]::NewGuid().ToString('N') + '.log')
+    $temporaryConfig = $networkConfigPath + '.test-tmp'
+    try {
+        $config = $originalConfig | ConvertFrom-Json
+        $config.Network.CertificateThumbprint = $Thumbprint
+        [System.IO.File]::WriteAllText($temporaryConfig, ($config | ConvertTo-Json -Depth 8), [System.Text.UTF8Encoding]::new($false))
+        Move-Item -LiteralPath $temporaryConfig -Destination $networkConfigPath -Force
+
+        $apiExe = Join-Path $env:ProgramFiles 'MD-Gsm\Api\MDGsm.Api.exe'
+        $process = Start-Process -FilePath $apiExe -PassThru -RedirectStandardOutput $log -RedirectStandardError ($log + '.err')
+        if (-not $process.WaitForExit(12000)) {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            throw "The API accepted $Label and continued starting instead of rejecting its TLS certificate configuration."
+        }
+
+        $combinedOutput = ''
+        if (Test-Path -LiteralPath $log) { $combinedOutput += Get-Content -LiteralPath $log -Raw }
+        if (Test-Path -LiteralPath ($log + '.err')) { $combinedOutput += Get-Content -LiteralPath ($log + '.err') -Raw }
+        if ($process.ExitCode -eq 0 -or $combinedOutput -notlike ('*' + $ExpectedText + '*')) {
+            throw ("API TLS certificate loader did not fail closed for " + $Label + ". ExitCode=" + $process.ExitCode + "; output=" + $combinedOutput)
+        }
+        Write-Host ("PASS: API startup rejected " + $Label + " before opening its HTTPS listener.")
+    } finally {
+        if (Test-Path -LiteralPath $temporaryConfig) { Remove-Item -LiteralPath $temporaryConfig -Force -ErrorAction SilentlyContinue }
+        [System.IO.File]::WriteAllText($networkConfigPath, $originalConfig, [System.Text.UTF8Encoding]::new($false))
+        Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath ($log + '.err') -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Invoke-TlsNegativeProbes([string] $RootThumbprint) {
+    $rootCertificate = Get-Item -LiteralPath ("Cert:\LocalMachine\My\" + $RootThumbprint) -ErrorAction Stop
+    if (-not $rootCertificate.HasPrivateKey) {
+        throw 'The server root CA signing key is not available for disposable TLS negative probes.'
+    }
+
+    $temporaryMachineThumbprints = [System.Collections.Generic.List[string]]::new()
+    $temporaryUserThumbprints = [System.Collections.Generic.List[string]]::new()
+    try {
+        $wrongNameCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=wrong-host.invalid' -DnsName 'wrong-host.invalid' -Signer $rootCertificate -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 3072 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotAfter (Get-Date).AddDays(30)
+        $temporaryMachineThumbprints.Add($wrongNameCertificate.Thumbprint)
+        Assert-ApiTlsLoaderFailsClosed $wrongNameCertificate.Thumbprint 'subject alternative name does not match' 'a trusted TLS certificate with the wrong server identity'
+        $wrongNameServer = [MDGsmIntegration.TemporaryTlsServer]::new([System.Net.IPAddress]::Loopback, $wrongNameCertificate)
+        try {
+            Assert-DefaultTlsRejected ('https://127.0.0.1:{0}/health/live' -f $wrongNameServer.Port) 'a trusted certificate with a mismatched host name'
+        } finally {
+            $wrongNameServer.Dispose()
+        }
+
+        $sha1LeafCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=127.0.0.1' -Signer $rootCertificate -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 3072 -HashAlgorithm SHA1 -KeyExportPolicy Exportable -NotAfter (Get-Date).AddDays(30) -TextExtension @('2.5.29.17={text}IPAddress=127.0.0.1')
+        $temporaryMachineThumbprints.Add($sha1LeafCertificate.Thumbprint)
+        Assert-ApiTlsLoaderFailsClosed $sha1LeafCertificate.Thumbprint 'signature algorithm is not SHA-256 with RSA' 'a SHA-1-signed TLS server certificate'
+
+        $expiredLeafCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=127.0.0.1' -Signer $rootCertificate -CertStoreLocation Cert:\LocalMachine\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotBefore (Get-Date).AddDays(-30) -NotAfter (Get-Date).AddDays(-1) -TextExtension @('2.5.29.17={text}IPAddress=127.0.0.1')
+        $temporaryMachineThumbprints.Add($expiredLeafCertificate.Thumbprint)
+        Assert-ApiTlsLoaderFailsClosed $expiredLeafCertificate.Thumbprint 'configured API TLS certificate is not currently valid' 'an expired machine-store server certificate'
+        Assert-ApiTlsLoaderFailsClosed ('0000000000000000000000000000000000000000') 'configured API TLS certificate is missing or ambiguous' 'a missing machine-store certificate thumbprint'
+        $expiredServer = [MDGsmIntegration.TemporaryTlsServer]::new([System.Net.IPAddress]::Loopback, $expiredLeafCertificate)
+        try {
+            Assert-DefaultTlsRejected ('https://127.0.0.1:{0}/health/live' -f $expiredServer.Port) 'an expired TLS server certificate'
+        } finally {
+            $expiredServer.Dispose()
+        }
+
+        $untrustedCertificate = New-SelfSignedCertificate -Type SSLServerAuthentication -Subject 'CN=127.0.0.1' -CertStoreLocation Cert:\CurrentUser\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyExportPolicy Exportable -NotAfter (Get-Date).AddDays(30) -TextExtension @('2.5.29.17={text}IPAddress=127.0.0.1')
+        $temporaryUserThumbprints.Add($untrustedCertificate.Thumbprint)
+        $untrustedServer = [MDGsmIntegration.TemporaryTlsServer]::new([System.Net.IPAddress]::Loopback, $untrustedCertificate)
+        try {
+            Assert-DefaultTlsRejected ('https://127.0.0.1:{0}/health/live' -f $untrustedServer.Port) 'a self-signed certificate that is not trusted'
+        } finally {
+            $untrustedServer.Dispose()
+        }
+
+        $probeListener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+        $probeListener.Start()
+        $closedPort = ([System.Net.IPEndPoint]$probeListener.LocalEndpoint).Port
+        $probeListener.Stop()
+        Assert-DefaultTlsRejected ('https://127.0.0.1:{0}/health/live' -f $closedPort) 'a disconnected API endpoint'
+    } finally {
+        foreach ($thumbprint in $temporaryMachineThumbprints) {
+            Remove-Item -LiteralPath ("Cert:\LocalMachine\My\" + $thumbprint) -Force -ErrorAction SilentlyContinue
+        }
+        foreach ($thumbprint in $temporaryUserThumbprints) {
+            Remove-Item -LiteralPath ("Cert:\CurrentUser\My\" + $thumbprint) -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Assert-ProductionRequiresHttpsConfiguration {
+    $networkConfigPath = Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json'
+    $hiddenConfigPath = $networkConfigPath + '.production-negative-test'
+    $apiExe = Join-Path $installDirectory 'Api\MDGsm.Api.exe'
+    $stdoutPath = Join-Path $env:TEMP 'MD-Gsm-NoNetworkConfig.stdout.log'
+    $stderrPath = Join-Path $env:TEMP 'MD-Gsm-NoNetworkConfig.stderr.log'
+    $oldEnvironment = $env:ASPNETCORE_ENVIRONMENT
+    $oldDotnetEnvironment = $env:DOTNET_ENVIRONMENT
+
+    Stop-Service -Name $serviceName -Force
+    $deadline = (Get-Date).AddSeconds(30)
+    do {
+        Start-Sleep -Milliseconds 500
+        $service = Get-Service -Name $serviceName
+    } while ($service.Status -ne 'Stopped' -and (Get-Date) -lt $deadline)
+    if ($service.Status -ne 'Stopped') {
+        throw 'Could not stop the API before the production no-network-config test.'
+    }
+
+    try {
+        Move-Item -LiteralPath $networkConfigPath -Destination $hiddenConfigPath -Force
+        $env:ASPNETCORE_ENVIRONMENT = 'Production'
+        $env:DOTNET_ENVIRONMENT = 'Production'
+        $process = Start-Process -FilePath $apiExe -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+        if (-not $process.WaitForExit(12000)) {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            throw 'The Production API continued running when its HTTPS network configuration was absent.'
+        }
+
+        $output = ''
+        if (Test-Path -LiteralPath $stdoutPath) { $output += Get-Content -LiteralPath $stdoutPath -Raw }
+        if (Test-Path -LiteralPath $stderrPath) { $output += Get-Content -LiteralPath $stderrPath -Raw }
+        if ($process.ExitCode -eq 0 -or
+            $output -notlike '*Production API startup requires the machine-local HTTPS network configuration*') {
+            throw ('Production API did not fail closed with the expected startup error. ExitCode=' + $process.ExitCode + '; output=' + $output)
+        }
+
+        if (@(Get-NetTCPConnection -LocalPort 5080 -State Listen -ErrorAction SilentlyContinue).Count -gt 0 -or
+            @(Get-NetTCPConnection -LocalPort 5081 -State Listen -ErrorAction SilentlyContinue).Count -gt 0) {
+            throw 'An API TCP listener remained active after the Production HTTPS configuration was removed.'
+        }
+        Write-Host 'PASS: Production API refuses to start without machine-local HTTPS configuration; no HTTP or HTTPS listener remains.'
+    } finally {
+        if (Test-Path -LiteralPath $hiddenConfigPath) {
+            Move-Item -LiteralPath $hiddenConfigPath -Destination $networkConfigPath -Force
+        }
+        if ($null -eq $oldEnvironment) { Remove-Item Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue }
+        else { $env:ASPNETCORE_ENVIRONMENT = $oldEnvironment }
+        if ($null -eq $oldDotnetEnvironment) { Remove-Item Env:DOTNET_ENVIRONMENT -ErrorAction SilentlyContinue }
+        else { $env:DOTNET_ENVIRONMENT = $oldDotnetEnvironment }
+        Remove-Item -LiteralPath $stdoutPath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $stderrPath -Force -ErrorAction SilentlyContinue
+        Start-Service -Name $serviceName
+        $restartDeadline = (Get-Date).AddSeconds(40)
+        do {
+            Start-Sleep -Milliseconds 500
+            $service = Get-Service -Name $serviceName
+        } while ($service.Status -ne 'Running' -and (Get-Date) -lt $restartDeadline)
+        if ($service.Status -ne 'Running') {
+            throw 'The API did not return to Running after the Production no-network-config test.'
+        }
+    }
+
+    Assert-ServiceReady 'production-requires-https-config-restored'
+}
+
+function Invoke-NetworkProvisioner([string] $Label) {
+    $networkScript = Join-Path $installDirectory 'Configure-MDGsmNetwork.ps1'
+    $output = & $powerShell51 -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $networkScript -InstallDirectory $installDirectory -RenewOnly 2>&1
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+        throw ("Network provisioner failed during " + $Label + " (exit " + $exitCode + ")." +
+            [Environment]::NewLine + ($output -join [Environment]::NewLine))
+    }
+    Write-Host ("PASS: automatic network provisioner completed during " + $Label + ".")
+}
+
+function Invoke-PublicNetworkFallbackTest {
+    $networkConfigPath = Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json'
+    $before = Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json
+    $interfaceAlias = [string]$before.Network.InterfaceAlias
+    if ([string]::IsNullOrWhiteSpace($interfaceAlias) -or -not [bool]$before.Network.RemoteAccessEnabled) {
+        throw 'Cannot run Public-profile fallback proof because the initial setup did not select a private interface.'
+    }
+    $selectedAddress = Get-NetIPAddress -IPAddress ([string]$before.Network.BindAddress) -AddressFamily IPv4 -ErrorAction Stop |
+        Where-Object { $_.InterfaceAlias -eq $interfaceAlias } | Select-Object -First 1
+    if ($null -eq $selectedAddress) { throw 'The selected network interface no longer owns the API bind address.' }
+    $interfaceIndex = [int]$selectedAddress.InterfaceIndex
+    $profile = Get-NetConnectionProfile -InterfaceIndex $interfaceIndex -ErrorAction Stop | Select-Object -First 1
+    if ($null -eq $profile -or $profile.NetworkCategory -ne 'Private') {
+        throw 'CI fallback test expected the selected runner interface to be Private.'
+    }
+
+    try {
+        Set-NetConnectionProfile -InterfaceIndex $interfaceIndex -NetworkCategory Public -ErrorAction Stop
+        Invoke-NetworkProvisioner 'Public-profile fallback'
+
+        $fallback = (Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json).Network
+        if ([bool]$fallback.RemoteAccessEnabled -or $fallback.BindAddress -ne '127.0.0.1' -or
+            $fallback.ServerName -ne '127.0.0.1' -or
+            -not [string]::IsNullOrWhiteSpace([string]$fallback.NetworkCidr)) {
+            throw 'The installer did not fail closed to HTTPS loopback on a Public network profile.'
+        }
+        if (Get-NetFirewallRule -Name 'MDGsmApiHttps5081' -ErrorAction SilentlyContinue) {
+            throw 'The installer retained an inbound HTTPS firewall rule on a Public network.'
+        }
+        if (Test-Path -LiteralPath (Join-Path $env:PUBLIC 'Documents\MD-Gsm-Client-Connection.mdgsm.json')) {
+            throw 'The installer exported a client connection bundle while the selected network was Public.'
+        }
+
+        $listener = @(Get-NetTCPConnection -LocalPort 5081 -State Listen -ErrorAction Stop)
+        if ($listener.Count -ne 1 -or $listener[0].LocalAddress -ne '127.0.0.1') {
+            throw 'The Public-profile fallback left a non-loopback HTTPS listener active.'
+        }
+        $fallbackUri = [Uri]$fallback.ApiBaseUrl
+        $live = Invoke-WebRequest -UseBasicParsing -Uri ([Uri]::new($fallbackUri, 'health/live').AbsoluteUri) -TimeoutSec 8
+        if ($live.StatusCode -ne 200) { throw 'The loopback-only HTTPS service did not remain healthy after Public-profile fallback.' }
+        Write-Host 'PASS: Public Windows network profile automatically removed remote firewall/bundle exposure and retained loopback-only HTTPS.'
+    } finally {
+        Set-NetConnectionProfile -InterfaceIndex $interfaceIndex -NetworkCategory Private -ErrorAction Stop
+        Invoke-NetworkProvisioner 'Private-profile recovery'
+    }
+
+    $restored = (Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json).Network
+    if (-not [bool]$restored.RemoteAccessEnabled -or
+        $restored.BindAddress -ne [string]$before.Network.BindAddress -or
+        $restored.NetworkCidr -ne [string]$before.Network.NetworkCidr -or
+        -not (Test-Path -LiteralPath (Join-Path $env:PUBLIC 'Documents\MD-Gsm-Client-Connection.mdgsm.json'))) {
+        throw 'The installer did not restore the original scoped HTTPS configuration after returning to a Private network.'
+    }
+    Assert-ServiceReady 'private-profile-recovery'
+}
+function Invoke-ClientOnlyInstallerTest {
+    $apiServiceBefore = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
+    $postgresServiceBefore = Get-Service -Name 'MDGsmPostgreSQL18' -ErrorAction SilentlyContinue
+    if ($null -eq $apiServiceBefore -or $apiServiceBefore.State -ne 'Running' -or
+        $null -eq $postgresServiceBefore -or $postgresServiceBefore.Status -ne 'Running') {
+        throw 'The central API and PostgreSQL must be running before the client-only installation test.'
+    }
+
+    $networkConfigPath = Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json'
+    $network = (Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json).Network
+    if (-not [bool]$network.RemoteAccessEnabled) {
+        throw 'CI did not provide one unambiguous Private/Domain network; remote HTTPS client acceptance cannot be proven.'
+    }
+
+    $bundlePath = Join-Path $env:PUBLIC 'Documents\MD-Gsm-Client-Connection.mdgsm.json'
+    if (-not (Test-Path -LiteralPath $bundlePath -PathType Leaf)) {
+        throw 'The central server did not export its public client connection bundle.'
+    }
+    $bundle = Get-Content -LiteralPath $bundlePath -Raw | ConvertFrom-Json
+    if ($bundle.apiBaseUrl -ne $network.ApiBaseUrl -or
+        [string]::IsNullOrWhiteSpace([string]$bundle.rootCaCertificateBase64)) {
+        throw 'The client bundle does not match the detected central HTTPS endpoint or its public root CA.'
+    }
+
+    # Exercise first-time client trust establishment: remove only the public CA
+    # trust entry (the non-exportable signing private key remains in LocalMachine\\My).
+    $rootBytes = [Convert]::FromBase64String([string]$bundle.rootCaCertificateBase64)
+    $rootCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([byte[]]$rootBytes)
+    $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+        [System.Security.Cryptography.X509Certificates.StoreName]::Root,
+        [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
+    try {
+        $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+        $trusted = $rootStore.Certificates.Find(
+            [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+            [string]$bundle.rootCaThumbprint, $false)
+        if ($trusted.Count -ne 1) { throw 'The central server root CA was not installed exactly once before client bootstrap testing.' }
+        $rootStore.Remove($trusted[0])
+    } finally {
+        $rootStore.Close()
+        $rootCertificate.Dispose()
+        [Array]::Clear($rootBytes, 0, $rootBytes.Length)
     }
 
     $clientDirectory = Join-Path $env:ProgramFiles 'MD-Gsm-ClientTest'
     $clientUninstaller = Join-Path $clientDirectory 'unins000.exe'
     $resolvedClientInstaller = (Resolve-Path -LiteralPath $ClientInstallerPath).Path
     $log = Join-Path $env:TEMP 'MD-Gsm-Client-Install.log'
-    $oldEndpoint = $env:MDGSM_CLIENT_API_BASEURL
+    $oldConnectionFile = $env:MDGSM_CLIENT_CONNECTION_FILE
+    $oldApiServicePid = [uint32]$apiServiceBefore.ProcessId
+    $oldDatabaseConnectionHash = (Get-FileHash -LiteralPath (Join-Path $env:ProgramData 'MD-Gsm\Secrets\Api\database-connection.dpapi') -Algorithm SHA256).Hash
     try {
-        $env:MDGSM_CLIENT_API_BASEURL = 'https://central-test.example:5081/'
+        $env:MDGSM_CLIENT_CONNECTION_FILE = $bundlePath
         $arguments = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR="' +
             $clientDirectory + '" /LOG="' + $log + '"'
         $process = Start-Process -FilePath $resolvedClientInstaller -ArgumentList $arguments -Wait -PassThru
         if ($null -eq $process -or $process.ExitCode -ne 0) {
-            throw 'The client-only installer failed in unattended CI mode.'
+            $tail = if (Test-Path -LiteralPath $log) { (Get-Content -LiteralPath $log -Tail 80) -join [Environment]::NewLine } else { 'No Inno Setup log was created.' }
+            throw ("The client-only installer failed in unattended CI mode." + [Environment]::NewLine + $tail)
         }
         if (-not (Test-Path -LiteralPath (Join-Path $clientDirectory 'MDGsm.Desktop.exe') -PathType Leaf)) {
             throw 'Client-only setup did not install the Desktop executable.'
         }
         if (Test-Path -LiteralPath (Join-Path $clientDirectory 'Api')) {
-            throw 'Client-only setup incorrectly installed the central API files.'
+            throw 'Client-only setup incorrectly installed central API files.'
         }
-        $clientConfig = Get-Content -LiteralPath (Join-Path $clientDirectory 'appsettings.json') -Raw
-        if ($clientConfig -notmatch '"BaseUrl":"https://central-test\.example:5081/"') {
-            throw 'Client-only setup did not persist the HTTPS central API endpoint.'
+
+        $clientConfig = Get-Content -LiteralPath (Join-Path $clientDirectory 'appsettings.json') -Raw | ConvertFrom-Json
+        if ($clientConfig.Api.BaseUrl -ne [string]$network.ApiBaseUrl) {
+            throw 'Client-only setup did not persist the verified central HTTPS API endpoint.'
         }
-        if (Get-Service -Name 'MDGsmApi' -ErrorAction SilentlyContinue) {
-            throw 'Client-only setup incorrectly registered the MDGsmApi service.'
+        $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+        $trustedAfterImport = $rootStore.Certificates.Find(
+            [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+            [string]$bundle.rootCaThumbprint, $false)
+        if ($trustedAfterImport.Count -ne 1) {
+            throw 'Client setup did not install the exact public root CA into LocalMachine Root.'
         }
-        if (Get-Service -Name 'MDGsmPostgreSQL18' -ErrorAction SilentlyContinue) {
-            throw 'Client-only setup incorrectly installed PostgreSQL.'
+        $rootStore.Close()
+
+        $apiServiceAfter = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
+        $postgresServiceAfter = Get-Service -Name 'MDGsmPostgreSQL18' -ErrorAction SilentlyContinue
+        if ($null -eq $apiServiceAfter -or $apiServiceAfter.State -ne 'Running' -or
+            [uint32]$apiServiceAfter.ProcessId -ne $oldApiServicePid -or
+            $null -eq $postgresServiceAfter -or $postgresServiceAfter.Status -ne 'Running') {
+            throw 'Client-only installation changed or stopped the central API or PostgreSQL service.'
         }
-        if (Test-Path -LiteralPath (Join-Path $env:ProgramData 'MD-Gsm\Provisioning\PostgreSQL\cluster-state.json')) {
-            throw 'Client-only setup incorrectly created central PostgreSQL state.'
+        if ((Get-FileHash -LiteralPath (Join-Path $env:ProgramData 'MD-Gsm\Secrets\Api\database-connection.dpapi') -Algorithm SHA256).Hash -ne $oldDatabaseConnectionHash) {
+            throw 'Client-only installation changed the central database credential.'
         }
-        if (Test-Path -LiteralPath (Join-Path $env:ProgramData 'MD-Gsm\Secrets\Api\database-connection.dpapi')) {
-            throw 'Client-only setup incorrectly created a PostgreSQL credential.'
+
+        # HTTP downgrade must be rejected before trust/configuration changes.
+        $downgradeBundle = [ordered]@{
+            schemaVersion = $bundle.schemaVersion
+            apiBaseUrl = ([string]$bundle.apiBaseUrl -replace '^https:', 'http:')
+            rootCaThumbprint = $bundle.rootCaThumbprint
+            rootCaSubject = $bundle.rootCaSubject
+            rootCaNotAfterUtc = $bundle.rootCaNotAfterUtc
+            rootCaCertificateBase64 = $bundle.rootCaCertificateBase64
         }
+        $downgradePath = Join-Path $env:TEMP 'MD-Gsm-Client-Downgrade-Test.json'
+        [System.IO.File]::WriteAllText($downgradePath, ($downgradeBundle | ConvertTo-Json -Depth 4), [System.Text.UTF8Encoding]::new($false))
+        $importer = Join-Path $clientDirectory 'Import-MDGsmClientConnection.ps1'
+        $negativeOutput = & $powerShell51 -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $importer -ConnectionFile $downgradePath -InstallDirectory $clientDirectory 2>&1
+        $negativeExitCode = $LASTEXITCODE
+        Remove-Item -LiteralPath $downgradePath -Force -ErrorAction SilentlyContinue
+        if ($negativeExitCode -eq 0) {
+            throw 'The client trust importer accepted an HTTP downgrade endpoint.'
+        }
+        Write-Host 'PASS: client trust importer rejected an HTTP downgrade endpoint.'
+
+        # The importer must also reject malformed and expired trust anchors before
+        # changing the client endpoint or machine certificate store.
+        $importer = Join-Path $clientDirectory 'Import-MDGsmClientConnection.ps1'
+        $invalidBundle = [ordered]@{
+            schemaVersion = $bundle.schemaVersion
+            apiBaseUrl = $bundle.apiBaseUrl
+            rootCaThumbprint = $bundle.rootCaThumbprint
+            rootCaSubject = $bundle.rootCaSubject
+            rootCaCertificateBase64 = [Convert]::ToBase64String([byte[]]@(1, 2, 3, 4))
+        }
+        $invalidBundlePath = Join-Path $env:TEMP 'MD-Gsm-Invalid-Certificate-Test.json'
+        [System.IO.File]::WriteAllText($invalidBundlePath, ($invalidBundle | ConvertTo-Json -Depth 4), [System.Text.UTF8Encoding]::new($false))
+        Invoke-ExpectedImporterFailure $importer $invalidBundlePath $clientDirectory 'a malformed X.509 root certificate'
+        Remove-Item -LiteralPath $invalidBundlePath -Force -ErrorAction SilentlyContinue
+
+        $expiredRoot = New-SelfSignedCertificate -Type Custom -Subject 'CN=MD-Gsm Internal API Root CA' -CertStoreLocation Cert:\CurrentUser\My -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -KeyUsage CertSign, CRLSign -KeyExportPolicy Exportable -NotBefore (Get-Date).AddDays(-30) -NotAfter (Get-Date).AddDays(-1) -TextExtension @('2.5.29.19={critical}{text}ca=1&pathlength=0')
+        $expiredBundle = [ordered]@{
+            schemaVersion = $bundle.schemaVersion
+            apiBaseUrl = $bundle.apiBaseUrl
+            rootCaThumbprint = $expiredRoot.Thumbprint
+            rootCaSubject = $expiredRoot.Subject
+            rootCaNotAfterUtc = $expiredRoot.NotAfter.ToUniversalTime().ToString('o')
+            rootCaCertificateBase64 = [Convert]::ToBase64String($expiredRoot.RawData)
+        }
+        $expiredBundlePath = Join-Path $env:TEMP 'MD-Gsm-Expired-Certificate-Test.json'
+        [System.IO.File]::WriteAllText($expiredBundlePath, ($expiredBundle | ConvertTo-Json -Depth 4), [System.Text.UTF8Encoding]::new($false))
+        Invoke-ExpectedImporterFailure $importer $expiredBundlePath $clientDirectory 'an expired root certificate'
+        Remove-Item -LiteralPath $expiredBundlePath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath ("Cert:\CurrentUser\My\" + $expiredRoot.Thumbprint) -Force -ErrorAction SilentlyContinue
+
+        $sha1Root = New-SelfSignedCertificate -Type Custom -Subject 'CN=MD-Gsm Internal API Root CA' -CertStoreLocation Cert:\CurrentUser\My -KeyAlgorithm RSA -KeyLength 3072 -HashAlgorithm SHA1 -KeyUsage CertSign, CRLSign -KeyExportPolicy Exportable -NotAfter (Get-Date).AddYears(5) -TextExtension @('2.5.29.19={critical}{text}ca=1&pathlength=0')
+        $sha1RootBundle = [ordered]@{
+            schemaVersion = $bundle.schemaVersion
+            apiBaseUrl = $bundle.apiBaseUrl
+            rootCaThumbprint = $sha1Root.Thumbprint
+            rootCaSubject = $sha1Root.Subject
+            rootCaNotAfterUtc = $sha1Root.NotAfter.ToUniversalTime().ToString('o')
+            rootCaCertificateBase64 = [Convert]::ToBase64String($sha1Root.RawData)
+        }
+        $sha1RootBundlePath = Join-Path $env:TEMP 'MD-Gsm-SHA1-Root-Test.json'
+        [System.IO.File]::WriteAllText($sha1RootBundlePath, ($sha1RootBundle | ConvertTo-Json -Depth 4), [System.Text.UTF8Encoding]::new($false))
+        Invoke-ExpectedImporterFailure $importer $sha1RootBundlePath $clientDirectory 'a SHA-1-signed Root CA'
+        Remove-Item -LiteralPath $sha1RootBundlePath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath ("Cert:\CurrentUser\My\" + $sha1Root.Thumbprint) -Force -ErrorAction SilentlyContinue
+
+        # The default platform TLS stack must reject all certificate and network failures.
+        Invoke-TlsNegativeProbes ([string]$bundle.rootCaThumbprint)
 
         if (-not (Test-Path -LiteralPath $clientUninstaller -PathType Leaf)) {
             throw 'Client-only setup did not create its uninstaller.'
@@ -398,16 +1197,18 @@ function Invoke-ClientOnlyInstallerTest {
         if ($null -eq $uninstall -or $uninstall.ExitCode -ne 0 -or (Test-Path -LiteralPath $clientDirectory)) {
             throw 'Client-only uninstall did not remove its Program Files client directory.'
         }
-        Write-Host 'PASS: client-only install accepts HTTPS central API configuration and installs no API service, PostgreSQL, or DB secret.'
+        Write-Host 'PASS: client-only install imported public CA trust, verified HTTPS hostname and API identity, rejected HTTP downgrade, and left central services/database untouched.'
     }
     finally {
-        if ($null -eq $oldEndpoint) { Remove-Item Env:MDGSM_CLIENT_API_BASEURL -ErrorAction SilentlyContinue }
-        else { $env:MDGSM_CLIENT_API_BASEURL = $oldEndpoint }
+        if ($null -eq $oldConnectionFile) { Remove-Item Env:MDGSM_CLIENT_CONNECTION_FILE -ErrorAction SilentlyContinue }
+        else { $env:MDGSM_CLIENT_CONNECTION_FILE = $oldConnectionFile }
+        if (Test-Path -LiteralPath $clientUninstaller) {
+            Start-Process -FilePath $clientUninstaller -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -Wait -PassThru | Out-Null
+        }
+        try { $rootStore.Close() } catch { }
+        $rootStore.Dispose()
     }
 }
-
-Write-Host '== Verify client-only install before central server setup =='
-Invoke-ClientOnlyInstallerTest
 
 Write-Host '== Initial system-wide installation =='
 Invoke-SystemInstaller 'initial-install'
@@ -425,6 +1226,23 @@ Assert-KeyProvisionedMarker 'initial-install'
 # validates successful DPAPI unprotection under NT SERVICE\MDGsmApi.
 Assert-ServiceReady 'initial-install'
 Assert-DatabaseProvisioning 'initial-install'
+
+Write-Host '== Verify Production refuses to start without HTTPS network configuration =='
+Assert-ProductionRequiresHttpsConfiguration
+
+$centralDesktopSettings = Get-Content -LiteralPath (Join-Path $installDirectory 'appsettings.json') -Raw | ConvertFrom-Json
+$initialNetwork = (Get-Content -LiteralPath (Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json') -Raw | ConvertFrom-Json).Network
+if ($centralDesktopSettings.Api.BaseUrl -ne [string]$initialNetwork.ApiBaseUrl -or
+    $centralDesktopSettings.Api.BaseUrl -notlike 'https://*:5081/*') {
+    throw 'The central Desktop shell did not receive the exact verified HTTPS API endpoint.'
+}
+Write-Host 'PASS: central Desktop shell and API service use the same verified HTTPS endpoint.'
+
+Write-Host '== Verify automatic client discovery, CA trust and client-only installation =='
+Invoke-ClientOnlyInstallerTest
+Assert-ServiceReady 'after-client-install'
+Write-Host '== Prove Public-profile fail-closed behavior and Private-profile recovery =='
+Invoke-PublicNetworkFallbackTest
 $unexpectedKeyRead = $false
 $keyBytes = $null
 try {
@@ -504,4 +1322,7 @@ if (-not (Test-Path -LiteralPath $setupLogAfterReinstall -PathType Leaf) -or
 
 Write-Host '== Final cleanup of the disposable Windows runner =='
 Invoke-SystemUninstaller 'final-cleanup'
-Write-Host 'PASS: Program Files install, service-token owner/DACL/DPAPI validation, non-service read denial, Running and Stopped rollback restoration, repair, uninstall marker preservation, and post-uninstall reinstall without reprovisioning.'
+foreach ($originalProfile in $script:originalNetworkCategories) {
+    Set-NetConnectionProfile -InterfaceIndex $originalProfile.InterfaceIndex -NetworkCategory $originalProfile.NetworkCategory -ErrorAction SilentlyContinue
+}
+Write-Host 'PASS: Program Files install, service-token owner/DACL/DPAPI validation, scoped HTTPS and certificate trust, concurrent clients, HTTP downgrade rejection, no PostgreSQL network exposure, Running and Stopped rollback restoration, repair, uninstall marker preservation, and post-uninstall reinstall without reprovisioning.'
