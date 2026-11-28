@@ -1,4 +1,7 @@
+using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Cryptography.X509Certificates;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using MDGsm.Api.Security;
@@ -17,10 +20,68 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddMdGsmPersistence(builder.Configuration);
 
-if (args.Length > 0 && string.Equals(args[0], "--provision-persons-workflow-key", StringComparison.Ordinal))
+// The central installer writes this machine-local, non-secret endpoint configuration.
+// It is not shipped in the application package and contains no private key material.
+var networkSettingsPath = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+    "MD-Gsm", "Network", "api-network.json");
+builder.Configuration.AddJsonFile(networkSettingsPath, optional: true, reloadOnChange: false);
+
+X509Certificate2? apiTlsCertificate = null;
+var networkMode = builder.Configuration["Network:Mode"];
+var isLocalWorkflowKeyProvisioningCommand =
+    args.Length > 0 &&
+    string.Equals(args[0], "--provision-persons-workflow-key", StringComparison.Ordinal);
+if (builder.Environment.IsProduction() &&
+    !isLocalWorkflowKeyProvisioningCommand &&
+    !string.Equals(networkMode, "Https", StringComparison.OrdinalIgnoreCase))
 {
+    throw new InvalidOperationException(
+        "Production API startup requires the machine-local HTTPS network configuration; refusing an HTTP fallback.");
+}
+if (!isLocalWorkflowKeyProvisioningCommand &&
+    string.Equals(networkMode, "Https", StringComparison.OrdinalIgnoreCase))
+{
+    if (!OperatingSystem.IsWindows())
+        throw new PlatformNotSupportedException("The machine certificate-store API listener is Windows-only.");
+
+    var bindAddressText = builder.Configuration["Network:BindAddress"];
+    if (!IPAddress.TryParse(bindAddressText, out var bindAddress) ||
+        bindAddress.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
+        throw new InvalidOperationException("The configured API HTTPS bind address is invalid.");
+
+    if (!int.TryParse(builder.Configuration["Network:Port"], out var httpsPort) ||
+        httpsPort is < 1024 or > 65535)
+        throw new InvalidOperationException("The configured API HTTPS port is invalid.");
+
+    var thumbprint = builder.Configuration["Network:CertificateThumbprint"];
+    var rootThumbprint = builder.Configuration["Network:RootCaThumbprint"];
+    var serverName = builder.Configuration["Network:ServerName"];
+    var selectedCertificate = ApiTlsCertificateLoader.LoadFromLocalMachine(
+        thumbprint ?? string.Empty,
+        rootThumbprint ?? string.Empty,
+        serverName ?? string.Empty,
+        bindAddress.ToString());
+    apiTlsCertificate = selectedCertificate;
+
+    // Listen() defines the only endpoint in central-server mode. The production
+    // loopback HTTP Urls setting is therefore not also exposed as a downgrade path.
+    builder.WebHost.ConfigureKestrel(options =>
+        options.Listen(bindAddress, httpsPort, listenOptions =>
+            listenOptions.UseHttps(selectedCertificate)));
+}
+else if (!isLocalWorkflowKeyProvisioningCommand && !string.IsNullOrWhiteSpace(networkMode))
+{
+    throw new InvalidOperationException("The configured API network mode is unsupported; refusing to start an unverified listener.");
+}
+
+// The one-shot DPAPI key command only needs the Persons key provisioner. On a
+// fresh install the database connection file is not created until PostgreSQL
+// provisioning runs later, so do not load or register database services here.
+if (isLocalWorkflowKeyProvisioningCommand)
+{
+    builder.Services.AddMdGsmPersistence(builder.Configuration);
     if (args.Length != 3)
         throw new ArgumentException("Expected the protected key path and service name for one-time provisioning.");
     if (!OperatingSystem.IsWindows())
@@ -35,6 +96,16 @@ if (args.Length > 0 && string.Equals(args[0], "--provision-persons-workflow-key"
 #pragma warning restore ASP0000
     return;
 }
+
+// For the real API process, the protected provider must be added before
+// AddMdGsmPersistence because that registration reads the connection string
+// immediately to decide whether to register the DbContext and adapters.
+var protectedDatabaseConnectionFile = builder.Configuration["Database:ProtectedConnectionFile"];
+if (!string.IsNullOrWhiteSpace(protectedDatabaseConnectionFile))
+{
+    builder.Configuration.AddProtectedDatabaseConnectionString(protectedDatabaseConnectionFile);
+}
+builder.Services.AddMdGsmPersistence(builder.Configuration);
 builder.Host.UseWindowsService(options =>
     options.ServiceName = PersonsApiServiceIdentity.ApiServiceName);
 builder.Logging.ClearProviders();
@@ -83,6 +154,8 @@ var personsPersistenceAvailable =
     builder.Services.Any(descriptor => descriptor.ServiceType == typeof(IPartyRepository));
 
 var app = builder.Build();
+if (apiTlsCertificate is not null)
+    app.Lifetime.ApplicationStopped.Register(apiTlsCertificate.Dispose);
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseMiddleware<SessionAuthenticationMiddleware>();
@@ -101,16 +174,56 @@ app.MapGet("/health/ready", async (IServiceProvider services, IConfiguration con
     if (string.IsNullOrWhiteSpace(configuration.GetConnectionString(PersistenceRegistration.ConnectionStringName)))
         return (IResult)Results.Json(new { status = "not-ready", reason = "database-not-configured" }, statusCode: StatusCodes.Status503ServiceUnavailable);
 
-    var db = services.GetService<MdGsmDbContext>();
-    if (db is null)
+    var dataSource = services.GetService<NpgsqlDataSource>();
+    if (dataSource is null)
         return (IResult)Results.Json(new { status = "not-ready", reason = "database-service-not-registered" }, statusCode: StatusCodes.Status503ServiceUnavailable);
 
     try
     {
-        var canConnect = await db.Database.CanConnectAsync(cancellationToken);
-        return canConnect
-            ? (IResult)Results.Ok(new { status = "ready", dependency = "postgresql" })
-            : Results.Json(new { status = "not-ready", reason = "database-unreachable" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(
+            "SELECT session_user, current_user, current_database(), current_setting('server_version_num')::integer, host(inet_server_addr())",
+            connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            return (IResult)Results.Json(new { status = "not-ready", reason = "database-identity-unverified" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+
+        var sessionLogin = reader.GetString(0);
+        var effectiveRole = reader.GetString(1);
+        var databaseName = reader.GetString(2);
+        var serverVersion = reader.GetInt32(3);
+        var serverAddress = reader.IsDBNull(4) ? string.Empty : reader.GetString(4);
+        var expectedLogin = configuration["Database:ExpectedRuntimeLogin"] ?? "mdgsm_api_runtime";
+        var expectedDatabase = configuration["Database:ExpectedDatabaseName"] ?? "mdgsm";
+        var expectedMajor = configuration.GetValue<int?>("Database:ExpectedPostgreSqlMajor") ?? 18;
+        var serverMajor = serverVersion / 10000;
+        // PostgreSQL may report an IPv4 loopback peer as an IPv4-mapped IPv6 address
+        // depending on the listener/socket family. Normalize mapped addresses before
+        // enforcing the loopback-only runtime database boundary.
+        var isLoopback = System.Net.IPAddress.TryParse(serverAddress, out var parsedServerAddress)
+            && System.Net.IPAddress.IsLoopback(parsedServerAddress.IsIPv4MappedToIPv6
+                ? parsedServerAddress.MapToIPv4()
+                : parsedServerAddress);
+
+        if (!string.Equals(sessionLogin, expectedLogin, StringComparison.Ordinal)
+            || !string.Equals(effectiveRole, expectedLogin, StringComparison.Ordinal)
+            || !string.Equals(databaseName, expectedDatabase, StringComparison.Ordinal)
+            || serverMajor != expectedMajor
+            || !isLoopback)
+        {
+            app.Logger.LogWarning(
+                "Database readiness identity check failed. LoginMatches={LoginMatches}; RoleMatches={RoleMatches}; DatabaseMatches={DatabaseMatches}; MajorMatches={MajorMatches}; Loopback={Loopback}",
+                string.Equals(sessionLogin, expectedLogin, StringComparison.Ordinal),
+                string.Equals(effectiveRole, expectedLogin, StringComparison.Ordinal),
+                string.Equals(databaseName, expectedDatabase, StringComparison.Ordinal),
+                serverMajor == expectedMajor,
+                isLoopback);
+            app.Logger.LogWarning("Database readiness server address reported by PostgreSQL: {ServerAddress}",
+                string.IsNullOrWhiteSpace(serverAddress) ? "(null)" : serverAddress);
+            return (IResult)Results.Json(new { status = "not-ready", reason = "database-identity-mismatch" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(new { status = "ready", dependency = "postgresql", serverMajor, identity = "verified" });
     }
     catch (Exception ex) when (ex is not OperationCanceledException)
     {

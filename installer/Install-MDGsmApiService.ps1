@@ -2,6 +2,7 @@
 param(
     [Parameter(Mandatory = $true)][string] $InstallDirectory,
     [Parameter(Mandatory = $true)][string] $ServiceStatePath,
+    [string] $SetupLogPath = (Join-Path $env:TEMP 'MD-Gsm-ApiServiceSetup.log'),
     [ValidateSet('Prepare', 'Install', 'Restore')][string] $Phase = 'Install'
 )
 
@@ -15,7 +16,11 @@ $keyFile = Join-Path (Join-Path $env:ProgramData 'MD-Gsm\Keys\Persons\MDGsmApi')
 $keyMarkerPath = 'HKLM:\SOFTWARE\MD-Gsm\Persons\WorkflowEncryption'
 $keyMarkerName = 'Provisioned'
 
-$script:setupLogPath = Join-Path $env:TEMP 'MD-Gsm-ApiServiceSetup.log'
+$script:setupLogPath = [System.IO.Path]::GetFullPath($SetupLogPath)
+$setupLogDirectory = [System.IO.Path]::GetDirectoryName($script:setupLogPath)
+if (-not [System.IO.Directory]::Exists($setupLogDirectory)) {
+    [System.IO.Directory]::CreateDirectory($setupLogDirectory) | Out-Null
+}
 $script:setupStage = 'initializing'
 try {
     Set-Content -LiteralPath $script:setupLogPath -Value ("{0:o} setup script started; phase={1}" -f (Get-Date), $Phase) -Encoding UTF8
@@ -119,19 +124,70 @@ function Set-KeyProvisionedMarker {
     Write-SetupLog 'Non-secret HKLM key-provisioned marker was committed. The DPAPI blob remains under ProgramData and is never read by Setup.'
 }
 
+function Get-ConfiguredApiBaseUrl {
+    $networkConfigPath = Join-Path $env:ProgramData 'MD-Gsm\Network\api-network.json'
+    if (-not (Test-Path -LiteralPath $networkConfigPath -PathType Leaf)) {
+        throw 'The machine-local HTTPS network configuration is missing; HTTP compatibility fallback is disabled.'
+    }
+    $networkConfig = Get-Content -LiteralPath $networkConfigPath -Raw | ConvertFrom-Json
+    $network = $networkConfig.Network
+    $rootThumbprint = ([string]$network.RootCaThumbprint -replace '[^0-9A-Fa-f]', '')
+    if ($network.Mode -ne 'Https' -or
+        [int]$network.Port -ne 5081 -or
+        [string]::IsNullOrWhiteSpace([string]$network.ApiBaseUrl) -or
+        [string]::IsNullOrWhiteSpace([string]$network.CertificateThumbprint) -or
+        $rootThumbprint.Length -ne 40) {
+        throw 'The installed API network configuration is incomplete or does not pin HTTPS and its Root CA.'
+    }
+
+    $apiUri = $null
+    if (-not [Uri]::TryCreate([string]$network.ApiBaseUrl, [UriKind]::Absolute, [ref]$apiUri) -or
+        $apiUri.Scheme -ne 'https' -or $apiUri.Port -ne 5081 -or
+        $apiUri.Host -ne [string]$network.ServerName -or
+        $apiUri.AbsolutePath -ne '/') {
+        throw 'The configured API endpoint does not match the pinned HTTPS server name and port.'
+    }
+    return $apiUri.AbsoluteUri
+}
+
 function Wait-ApiLiveness {
-    $healthUri = 'http://127.0.0.1:5080/health/live'
-    $deadline = (Get-Date).AddSeconds(30)
+    $baseUri = [Uri](Get-ConfiguredApiBaseUrl)
+    $healthUri = [Uri]::new($baseUri, 'health/live').AbsoluteUri
+    $deadline = (Get-Date).AddSeconds(40)
     $healthy = $false
     while (-not $healthy -and (Get-Date) -lt $deadline) {
         try {
-            $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUri -TimeoutSec 3
+            $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUri -TimeoutSec 4
             $healthy = ($response.StatusCode -eq 200)
         } catch {
             Start-Sleep -Milliseconds 500
         }
     }
-    if (-not $healthy) { throw "MDGsmApi did not return HTTP 200 from its loopback liveness endpoint." }
+    if (-not $healthy) { throw 'MDGsmApi did not return HTTP 200 from its configured API liveness endpoint.' }
+}
+
+function Wait-ApiReadiness {
+    $baseUri = [Uri](Get-ConfiguredApiBaseUrl)
+    $healthUri = [Uri]::new($baseUri, 'health/ready').AbsoluteUri
+    $deadline = (Get-Date).AddSeconds(90)
+    $healthy = $false
+    while (-not $healthy -and (Get-Date) -lt $deadline) {
+        try {
+            $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUri -TimeoutSec 5
+            if ($response.StatusCode -eq 200) {
+                $payload = $response.Content | ConvertFrom-Json
+                $healthy = ($payload.status -eq 'ready' -and
+                    $payload.dependency -eq 'postgresql' -and
+                    $payload.identity -eq 'verified' -and
+                    $payload.serverMajor -eq 18)
+            }
+        } catch {
+            Start-Sleep -Milliseconds 1000
+        }
+    }
+    if (-not $healthy) {
+        throw 'MDGsmApi did not prove PostgreSQL 18 readiness over the configured HTTPS listener within 90 seconds.'
+    }
 }
 
 function Restore-ServiceState {
@@ -253,6 +309,53 @@ function Invoke-PreparePhase {
     Write-SetupLog 'Prepare phase completed; MDGsmApi is stopped before Inno Setup replaces Program Files files.'
 }
 
+function Remove-NetworkExposureAfterFailedInstall {
+    # A failed first install or Repair must not leave a partially configured
+    # remote endpoint. Remove firewall, trust publication and machine network config;
+    # Production then refuses to start. Preserve non-exportable machine keys and DB data.
+    try {
+        Get-NetFirewallRule -Name 'MDGsmApiHttps5081' -ErrorAction SilentlyContinue |
+            Remove-NetFirewallRule -ErrorAction SilentlyContinue
+        Unregister-ScheduledTask -TaskName 'MD-Gsm API TLS Certificate Renewal' -Confirm:$false -ErrorAction SilentlyContinue
+
+        $networkRoot = Join-Path $env:ProgramData 'MD-Gsm\Network'
+        Remove-Item -LiteralPath (Join-Path $networkRoot 'api-network.json') -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath (Join-Path $networkRoot 'MD-Gsm-Client-Connection.mdgsm.json') -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath (Join-Path $env:PUBLIC 'Documents\MD-Gsm-Client-Connection.mdgsm.json') -Force -ErrorAction SilentlyContinue
+
+        $machineStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+            [System.Security.Cryptography.X509Certificates.StoreName]::My,
+            [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
+        $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+            [System.Security.Cryptography.X509Certificates.StoreName]::Root,
+            [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
+        $machineStoreOpened = $false
+        $rootStoreOpened = $false
+        try {
+            $machineStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+            $machineStoreOpened = $true
+            $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+            $rootStoreOpened = $true
+            $machineRoots = @($machineStore.Certificates |
+                Where-Object { $_.Subject -eq 'CN=MD-Gsm Internal API Root CA' -and $_.HasPrivateKey })
+            foreach ($machineRoot in $machineRoots) {
+                $trusted = $rootStore.Certificates.Find(
+                    [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+                    $machineRoot.Thumbprint, $false)
+                foreach ($certificate in $trusted) { $rootStore.Remove($certificate) }
+            }
+        } finally {
+            if ($rootStoreOpened) { $rootStore.Close() }
+            if ($machineStoreOpened) { $machineStore.Close() }
+            $rootStore.Dispose()
+            $machineStore.Dispose()
+        }
+        Write-SetupLog 'Failed-install/Repair rollback removed HTTPS firewall exposure, renewal task, client bundle, network config and public root trust. Non-exportable machine keys and PostgreSQL data were preserved.'
+    } catch {
+        Write-SetupLog ('WARNING: first-install network cleanup was incomplete: ' + $_.Exception.Message)
+    }
+}
+
 function Invoke-InstallPhase {
     $state = Read-ServiceState
     $serviceExistedAtStart = [bool]$state.ServiceExisted
@@ -329,6 +432,111 @@ function Invoke-InstallPhase {
             Write-SetupLog 'Application Event Log source was created by elevated Setup.'
         }
 
+        $script:setupStage = 'provision central PostgreSQL database and API LOGIN'
+        $provisionerPath = Join-Path $InstallDirectory 'Provision-MDGsmCentralDatabase.ps1'
+        if (-not (Test-Path -LiteralPath $provisionerPath -PathType Leaf)) {
+            throw "The central PostgreSQL provisioner is missing from the installation package."
+        }
+        Write-SetupLog 'Running central PostgreSQL 18 provision-or-verify. This step does not apply application schema migrations.'
+        $provisionStdout = Join-Path $env:TEMP ('MDGsm-Postgres-Provision-' + [Guid]::NewGuid().ToString('N') + '.out.log')
+        $provisionStderr = Join-Path $env:TEMP ('MDGsm-Postgres-Provision-' + [Guid]::NewGuid().ToString('N') + '.err.log')
+        $provisionPowerShell = Join-Path $PSHOME 'powershell.exe'
+        $provisionArguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
+            $provisionerPath + '" -InstallDirectory "' + $InstallDirectory + '"'
+        $provisionStart = @{
+            FilePath = $provisionPowerShell
+            ArgumentList = $provisionArguments
+            Wait = $true
+            PassThru = $true
+            NoNewWindow = $true
+            RedirectStandardOutput = $provisionStdout
+            RedirectStandardError = $provisionStderr
+        }
+        try {
+            $provisionProcess = Start-Process @provisionStart
+            $provisionExitCode = $provisionProcess.ExitCode
+        }
+        finally {
+            foreach ($provisionLog in @($provisionStdout, $provisionStderr)) {
+                if (Test-Path -LiteralPath $provisionLog -PathType Leaf) {
+                    foreach ($line in Get-Content -LiteralPath $provisionLog) {
+                        Write-SetupLog ('Database provisioner: ' + [string]$line)
+                    }
+                    Remove-Item -LiteralPath $provisionLog -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+        if ($provisionExitCode -ne 0) {
+            throw "Central PostgreSQL provisioning failed (exit $provisionExitCode); API service start is blocked."
+        }
+
+        $script:setupStage = 'discover private network and provision API HTTPS'
+        $networkScriptPath = Join-Path $InstallDirectory 'Configure-MDGsmNetwork.ps1'
+        if (-not (Test-Path -LiteralPath $networkScriptPath -PathType Leaf)) {
+            throw 'The central HTTPS network configuration script is missing from the installation package.'
+        }
+        Write-SetupLog 'Automatically inspecting Windows network profiles, selecting the lowest-metric private network, provisioning a machine-local TLS certificate and scoping Windows Firewall. Public profiles and ambiguous interfaces remain loopback-only.'
+        $networkStdout = Join-Path $env:TEMP ('MDGsm-Network-Provision-' + [Guid]::NewGuid().ToString('N') + '.out.log')
+        $networkStderr = Join-Path $env:TEMP ('MDGsm-Network-Provision-' + [Guid]::NewGuid().ToString('N') + '.err.log')
+        $networkArguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
+            $networkScriptPath + '" -InstallDirectory "' + $InstallDirectory + '"'
+        $networkStart = @{
+            FilePath = $provisionPowerShell
+            ArgumentList = $networkArguments
+            Wait = $true
+            PassThru = $true
+            NoNewWindow = $true
+            RedirectStandardOutput = $networkStdout
+            RedirectStandardError = $networkStderr
+        }
+        $networkOutput = [System.Collections.Generic.List[string]]::new()
+        try {
+            $networkProcess = Start-Process @networkStart
+            $networkExitCode = $networkProcess.ExitCode
+        }
+        finally {
+            foreach ($networkLog in @($networkStdout, $networkStderr)) {
+                if (Test-Path -LiteralPath $networkLog -PathType Leaf) {
+                    foreach ($line in Get-Content -LiteralPath $networkLog) {
+                        $networkOutput.Add([string]$line)
+                    }
+                    Remove-Item -LiteralPath $networkLog -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+        $insideNetworkFatal = $false
+        foreach ($line in $networkOutput) {
+            $text = [string]$line
+            if ($text -eq 'NETWORK_SCRIPT_FATAL_BEGIN') {
+                $insideNetworkFatal = $true
+                Write-SetupLog 'Network provisioner emitted a structured fatal diagnostic:'
+                continue
+            } elseif ($text -eq 'NETWORK_SCRIPT_FATAL_END') {
+                $insideNetworkFatal = $false
+                Write-SetupLog 'Network provisioner structured fatal diagnostic ended.'
+                continue
+            } elseif ($insideNetworkFatal) {
+                Write-SetupLog ('Network provisioner FATAL: ' + $text)
+                continue
+            } elseif ($text -match '^MDGSM_CLIENT_CONNECTION_BUNDLE=') {
+                Write-SetupLog ('Client connection bundle created: ' + ($text -replace '^MDGSM_CLIENT_CONNECTION_BUNDLE=', ''))
+            } elseif ($text -match '^MDGSM_REMOTE_API_URL=') {
+                Write-SetupLog ('API network endpoint: ' + ($text -replace '^MDGSM_REMOTE_API_URL=', ''))
+            } else {
+                Write-SetupLog ('Network provisioner: ' + $text)
+            }
+        }
+        if ($networkExitCode -ne 0) {
+            $networkSetupLog = Join-Path $env:ProgramData 'MD-Gsm\Network\network-setup.log'
+            if (Test-Path -LiteralPath $networkSetupLog -PathType Leaf) {
+                Write-SetupLog 'Network provisioner persistent diagnostic log (tail):'
+                foreach ($line in Get-Content -LiteralPath $networkSetupLog -Tail 100) {
+                    Write-SetupLog ('Network setup log: ' + [string]$line)
+                }
+            }
+            throw "Central API HTTPS network provisioning failed (exit $networkExitCode); the service will not be started."
+        }
+
         $script:setupStage = 'validate service account and start service'
         $service = Get-ServiceRecord
         if ($service.StartName -ne $serviceAccount) {
@@ -340,7 +548,9 @@ function Invoke-InstallPhase {
 
         $script:setupStage = 'verify loopback API liveness'
         Wait-ApiLiveness
-        Write-SetupLog 'Installation completed successfully; service running and loopback liveness verified.'
+        $script:setupStage = 'verify actual PostgreSQL runtime readiness'
+        Wait-ApiReadiness
+        Write-SetupLog 'Installation completed successfully; API liveness and PostgreSQL 18 runtime identity/readiness verified.'
         Remove-Item -LiteralPath $ServiceStatePath -Force -ErrorAction Stop
         Write-Host 'MD-Gsm API service is running as LocalService with the MDGsmApi service SID.'
         Write-Host 'The DPAPI key remains under ProgramData; Setup did not read the protected key file.'
@@ -349,6 +559,7 @@ function Invoke-InstallPhase {
         Write-SetupLog ("FATAL: " + $originalFailure.Exception.ToString())
         Write-SetupLog ("FATAL category: " + [string]$originalFailure.CategoryInfo)
         Write-SetupLog ("FATAL script stack: " + [string]$originalFailure.ScriptStackTrace)
+        Remove-NetworkExposureAfterFailedInstall
         try {
             $script:setupStage = 'restore pre-install service state'
             Restore-ServiceState

@@ -14,12 +14,29 @@ $desktopPublishDir = Join-Path $publishRoot 'desktop'
 $apiPublishDir = Join-Path $publishRoot 'api'
 $outputDir = Join-Path $repoRoot 'artifacts\installer'
 $issFile = Join-Path $repoRoot 'installer\MDGsm-Setup.iss'
+$clientIssFile = Join-Path $repoRoot 'installer\MDGsm-Client.iss'
+$centralProvisioner = Join-Path $repoRoot 'installer\Provision-MDGsmCentralDatabase.ps1'
+$networkProvisioner = Join-Path $repoRoot 'installer\Configure-MDGsmNetwork.ps1'
+$clientConnectionImporter = Join-Path $repoRoot 'installer\Import-MDGsmClientConnection.ps1'
+$clientTrustUninstaller = Join-Path $repoRoot 'installer\Uninstall-MDGsmClientTrust.ps1'
+$desktopSettingsFile = Join-Path $repoRoot 'src\Host\Desktop\appsettings.json'
+$apiProductionSettingsFile = Join-Path $repoRoot 'src\Host\Api\appsettings.Production.json'
 
 if (-not $IsWindows -and $env:OS -ne 'Windows_NT') {
     throw 'The Windows installer must be built on Windows. No application or database was changed.'
 }
-foreach ($requiredPath in @($solution, $desktopProject, $apiProject, $issFile)) {
+foreach ($requiredPath in @($solution, $desktopProject, $apiProject, $issFile, $clientIssFile, $centralProvisioner, $networkProvisioner, $clientConnectionImporter, $clientTrustUninstaller, $desktopSettingsFile, $apiProductionSettingsFile)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) { throw "Required build input was not found: $requiredPath" }
+}
+
+$desktopSettings = Get-Content -LiteralPath $desktopSettingsFile -Raw | ConvertFrom-Json
+$desktopBaseUrl = [string]$desktopSettings.Api.BaseUrl
+if (-not [string]::IsNullOrWhiteSpace($desktopBaseUrl)) {
+    throw 'The packaged Desktop default must not contain a server endpoint. Client and central installers must inject the verified endpoint from the public trust bundle/network provisioner.'
+}
+$productionApiSettings = Get-Content -LiteralPath $apiProductionSettingsFile -Raw | ConvertFrom-Json
+if ($null -ne $productionApiSettings.PSObject.Properties['Urls']) {
+    throw 'Production API settings must not declare a static HTTP URL. The HTTPS network provisioner exclusively owns Kestrel endpoint binding.'
 }
 
 $sdks = & dotnet --list-sdks 2>&1
@@ -81,13 +98,21 @@ foreach ($requiredFile in @(
 
 Write-Host '== Compile system-wide Windows installer =='
 & $InnoSetupPath "/DPublishDir=$desktopPublishDir" "/DApiPublishDir=$apiPublishDir" "/DOutputDir=$outputDir" $issFile
-if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compilation failed.' }
+if ($LASTEXITCODE -ne 0) { throw 'Central-server Inno Setup compilation failed.' }
 
-$installer = Join-Path $outputDir 'MD-Gsm-Setup-v0.3.0.exe'
-if (-not (Test-Path -LiteralPath $installer)) { throw 'Installer EXE was not produced.' }
+$centralInstaller = Join-Path $outputDir 'MD-Gsm-Setup-v0.3.0.exe'
+if (-not (Test-Path -LiteralPath $centralInstaller)) { throw 'Central-server installer EXE was not produced.' }
 
-$hash = Get-FileHash -LiteralPath $installer -Algorithm SHA256
-$hashLine = '{0}  {1}' -f $hash.Hash.ToLowerInvariant(), (Split-Path -Leaf $installer)
-Set-Content -LiteralPath ($installer + '.sha256') -Value $hashLine -Encoding ASCII
-Write-Host "PASS: Windows installer created: $installer" -ForegroundColor Green
-Write-Host 'Program files are installed under Program Files\MD-Gsm; the DPAPI key remains under ProgramData\MD-Gsm\Keys\Persons. No database migration or feature activation is performed.' -ForegroundColor Yellow
+& $InnoSetupPath "/DPublishDir=$desktopPublishDir" "/DOutputDir=$outputDir" $clientIssFile
+if ($LASTEXITCODE -ne 0) { throw 'Client-only Inno Setup compilation failed.' }
+
+$clientInstaller = Join-Path $outputDir 'MD-Gsm-Client-Setup-v0.3.0.exe'
+if (-not (Test-Path -LiteralPath $clientInstaller)) { throw 'Client-only installer EXE was not produced.' }
+
+foreach ($installer in @($centralInstaller, $clientInstaller)) {
+    $hash = Get-FileHash -LiteralPath $installer -Algorithm SHA256
+    $hashLine = '{0}  {1}' -f $hash.Hash.ToLowerInvariant(), (Split-Path -Leaf $installer)
+    Set-Content -LiteralPath ($installer + '.sha256') -Value $hashLine -Encoding ASCII
+    Write-Host "PASS: Windows installer created: $installer" -ForegroundColor Green
+}
+Write-Host 'Central setup provisions PostgreSQL 18, automatically detects an eligible private Windows network, configures scoped HTTPS and exports a public client-connection bundle. Client setup installs only Desktop and imports the bundle with normal TLS validation. Schema migrations and feature activation remain separate.' -ForegroundColor Yellow

@@ -23,5 +23,51 @@ if ($null -ne $service) {
     if ($LASTEXITCODE -ne 0) { throw "Could not remove the MD-Gsm API service registration." }
 }
 
+# Remove only the network exposure owned by this product. Preserve PostgreSQL, DPAPI
+# secrets, the non-exportable root CA private key and service data for a safe reinstall.
+try {
+    Get-NetFirewallRule -Name 'MDGsmApiHttps5081' -ErrorAction SilentlyContinue |
+        Remove-NetFirewallRule -ErrorAction Stop
+} catch {
+    throw "Could not remove the MD-Gsm HTTPS firewall rule during uninstall: $($_.Exception.Message)"
+}
+Unregister-ScheduledTask -TaskName 'MD-Gsm API TLS Certificate Renewal' -Confirm:$false -ErrorAction SilentlyContinue
+
+# Remove the product-owned public trust anchor from this server machine while
+# retaining the non-exportable CA key in LocalMachine\\My for safe reinstall.
+$rootSubject = 'CN=MD-Gsm Internal API Root CA'
+$machineStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+    [System.Security.Cryptography.X509Certificates.StoreName]::My,
+    [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
+$rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+    [System.Security.Cryptography.X509Certificates.StoreName]::Root,
+    [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
+$machineStoreOpened = $false
+$rootStoreOpened = $false
+try {
+    $machineStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+    $machineStoreOpened = $true
+    $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+    $rootStoreOpened = $true
+    $machineRoots = @($machineStore.Certificates |
+        Where-Object { $_.Subject -eq $rootSubject -and $_.HasPrivateKey })
+    foreach ($machineRoot in $machineRoots) {
+        $trustedRoots = $rootStore.Certificates.Find(
+            [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+            $machineRoot.Thumbprint, $false)
+        foreach ($trustedRoot in $trustedRoots) { $rootStore.Remove($trustedRoot) }
+    }
+} finally {
+    if ($rootStoreOpened) { $rootStore.Close() }
+    if ($machineStoreOpened) { $machineStore.Close() }
+    $rootStore.Dispose()
+    $machineStore.Dispose()
+}
+
+$networkRoot = Join-Path $env:ProgramData 'MD-Gsm\Network'
+Remove-Item -LiteralPath (Join-Path $networkRoot 'api-network.json') -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath (Join-Path $networkRoot 'MD-Gsm-Client-Connection.mdgsm.json') -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath (Join-Path $env:PUBLIC 'Documents\MD-Gsm-Client-Connection.mdgsm.json') -Force -ErrorAction SilentlyContinue
+
 # Intentionally preserve ProgramData key material and all user/database data.
 Write-Host 'MD-Gsm API service removed. The protected Persons workflow key was preserved.'

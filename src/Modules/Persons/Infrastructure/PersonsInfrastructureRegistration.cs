@@ -2,6 +2,7 @@ using MDGsm.Persons.Application;
 using MDGsm.Persons.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Npgsql;
 
 namespace MDGsm.Persons.Infrastructure;
@@ -34,6 +35,25 @@ public static class PersonsInfrastructureRegistration
     /// Explicitly opts a host into the one-batch dispatcher after it has supplied
     /// an approved transport adapter. This does not register a timer or hosted worker.
     /// </summary>
+    /// <summary>
+    /// Explicitly opts a host into the retention background worker. Call this only
+    /// after the Persons application schema has been applied and verified.
+    /// </summary>
+    public static IServiceCollection AddPersonsRetentionWorker(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        if (!services.Any(descriptor => descriptor.ServiceType == typeof(ITemporaryWorkflowRetentionStore)))
+            throw new InvalidOperationException(
+                "Call AddPersonsInfrastructure before enabling the Persons retention worker.");
+        if (!services.Any(descriptor =>
+            descriptor.ServiceType == typeof(IHostedService) &&
+            descriptor.ImplementationType == typeof(TemporaryWorkflowRetentionWorker)))
+        {
+            services.AddHostedService<TemporaryWorkflowRetentionWorker>();
+        }
+        return services;
+    }
+
     public static IServiceCollection AddPersonsOutboxDispatcher(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -63,7 +83,6 @@ public static class PersonsInfrastructureRegistration
         services.AddSingleton<ITemporaryWorkflowRetentionStore>(
             provider => provider.GetRequiredService<PostgresTemporaryWorkflowStore>());
         services.AddSingleton<ITemporaryWorkflowRetentionAlert, StructuredLogTemporaryWorkflowRetentionAlert>();
-        services.AddHostedService<TemporaryWorkflowRetentionWorker>();
 
         if (services.Any(descriptor => descriptor.ServiceType == typeof(ITemporaryWorkflowEncryptionKeyProvider)))
         {

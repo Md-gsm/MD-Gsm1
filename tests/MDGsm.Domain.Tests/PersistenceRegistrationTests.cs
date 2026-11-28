@@ -68,6 +68,26 @@ public sealed class PersistenceRegistrationTests
         Assert.Contains(services, descriptor =>
             descriptor.ServiceType == typeof(ITemporaryWorkflowRetentionStore) &&
             descriptor.Lifetime == ServiceLifetime.Singleton);
+        // A newly provisioned database intentionally has no application schema yet.
+        // The retention worker must remain dormant until an explicit post-migration opt-in.
+        Assert.DoesNotContain(services, descriptor =>
+            descriptor.ServiceType == typeof(IHostedService) &&
+            descriptor.ImplementationType == typeof(TemporaryWorkflowRetentionWorker));
+    }
+
+    [Fact]
+    public void Registers_retention_worker_only_after_explicit_schema_ready_opt_in()
+    {
+        var values = new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:MDGsmDatabase"] = "Host=127.0.0.1;Port=5432;Database=mdgsm_stage6_test;Username=mdgsm_test",
+            ["Persons:TemporaryWorkflowRetentionEnabled"] = "true"
+        };
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+        var services = new ServiceCollection();
+
+        services.AddMdGsmPersistence(configuration);
+
         Assert.Contains(services, descriptor =>
             descriptor.ServiceType == typeof(IHostedService) &&
             descriptor.ImplementationType == typeof(TemporaryWorkflowRetentionWorker));

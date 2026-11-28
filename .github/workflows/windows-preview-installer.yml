@@ -42,10 +42,12 @@ jobs:
         run: .\scripts\Build-Windows-Installer.ps1
       - name: Exercise actual service install, repair, and uninstall
         shell: pwsh
-        run: .\scripts\Test-WindowsServiceInstaller.ps1 -InstallerPath artifacts/installer/MD-Gsm-Setup-v0.3.0.exe
+        run: .\scripts\Test-WindowsServiceInstaller.ps1 -InstallerPath artifacts/installer/MD-Gsm-Setup-v0.3.0.exe -ClientInstallerPath artifacts/installer/MD-Gsm-Client-Setup-v0.3.0.exe
       - name: Upload Windows installer
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: MD-Gsm-Windows-Installer-v0.3.0
-          path: artifacts/installer/MD-Gsm-Setup-v0.3.0.exe*
+          path: |
+            artifacts/installer/MD-Gsm-Setup-v0.3.0.exe*
+            artifacts/installer/MD-Gsm-Client-Setup-v0.3.0.exe*
           if-no-files-found: error

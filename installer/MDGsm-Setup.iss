@@ -48,6 +48,9 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#ApiPublishDir}\*"; DestDir: "{app}\Api"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourcePath}\Install-MDGsmApiService.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourcePath}\Provision-MDGsmCentralDatabase.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourcePath}\Configure-MDGsmNetwork.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourcePath}\Initialize-MDGsmCertificateProvider.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourcePath}\Install-MDGsmApiService.ps1"; Flags: dontcopy
 Source: "{#SourcePath}\Uninstall-MDGsmApiService.ps1"; DestDir: "{app}"; Flags: ignoreversion
 
@@ -59,11 +62,20 @@ Name: "{autodesktop}\نرم‌افزار جامع مدیریت و حسابدار
 var
   ServiceStatePath: String;
   ServiceSetupScriptPath: String;
+  ServiceSetupLogPath: String;
+  ServiceSetupOutputLogPath: String;
 
 function InitializeSetup(): Boolean;
 begin
   ServiceStatePath := ExpandConstant('{tmp}\MD-Gsm-MDGsmApi-ServiceState.json');
   ServiceSetupScriptPath := ExpandConstant('{tmp}\Install-MDGsmApiService.ps1');
+  // Keep the non-secret service setup evidence outside Inno Setup's
+  // disposable extraction directory so post-install CI checks can read it.
+  ServiceSetupLogPath := GetEnv('TEMP');
+  if ServiceSetupLogPath = '' then
+    ServiceSetupLogPath := ExpandConstant('{tmp}');
+  ServiceSetupLogPath := AddBackslash(ServiceSetupLogPath) + 'MD-Gsm-ApiServiceSetup.log';
+  ServiceSetupOutputLogPath := ExpandConstant('{tmp}\MD-Gsm-ApiServiceSetup-console.log');
   ExtractTemporaryFile('Install-MDGsmApiService.ps1');
   Result := True;
 end;
@@ -72,16 +84,32 @@ procedure RunApiServicePhase(const Phase: String);
 var
   ResultCode: Integer;
   PowerShellPath: String;
+  CommandInterpreter: String;
   Parameters: String;
+  SetupDiagnosticText: AnsiString;
+  ConsoleDiagnosticText: AnsiString;
 begin
   PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
-  Parameters := '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
+  CommandInterpreter := ExpandConstant('{cmd}');
+  SaveStringToFile(ServiceSetupOutputLogPath, 'Starting PowerShell service setup phase: ' + Phase + #13#10, False);
+  Parameters := '/D /S /C ""' + PowerShellPath + '" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
     ServiceSetupScriptPath + '" -InstallDirectory "' + ExpandConstant('{app}') +
-    '" -ServiceStatePath "' + ServiceStatePath + '" -Phase "' + Phase + '"';
-  if not Exec(PowerShellPath, Parameters, ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    '" -ServiceStatePath "' + ServiceStatePath + '" -SetupLogPath "' + ServiceSetupLogPath + '" -Phase "' + Phase +
+    '" > "' + ServiceSetupOutputLogPath + '" 2>&1"';
+  if not Exec(CommandInterpreter, Parameters, ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, ResultCode) then
     RaiseException('Could not start the MD-Gsm API service setup phase: ' + Phase);
   if ResultCode <> 0 then
-    RaiseException('MD-Gsm API service setup phase failed: ' + Phase);
+  begin
+    SetupDiagnosticText := '';
+    ConsoleDiagnosticText := '';
+    if LoadStringFromFile(ServiceSetupLogPath, SetupDiagnosticText) then
+      SetupDiagnosticText := Copy(String(SetupDiagnosticText), 1, 8000);
+    if LoadStringFromFile(ServiceSetupOutputLogPath, ConsoleDiagnosticText) then
+      ConsoleDiagnosticText := Copy(String(ConsoleDiagnosticText), 1, 8000);
+    RaiseException('MD-Gsm API service setup phase failed: ' + Phase + ' (exit ' + IntToStr(ResultCode) + ').' + #13#10 +
+      '=== PowerShell stdout/stderr ===' + #13#10 + String(ConsoleDiagnosticText) + #13#10 +
+      '=== Service setup log ===' + #13#10 + String(SetupDiagnosticText));
+  end;
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
@@ -93,9 +121,36 @@ begin
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
+var
+  NetworkConfigText: AnsiString;
+  NetworkConfigPath: String;
 begin
   if CurStep = ssPostInstall then
+  begin
     RunApiServicePhase('Install');
+    if not WizardSilent then
+    begin
+      NetworkConfigPath := ExpandConstant('{commonappdata}\MD-Gsm\Network\api-network.json');
+      if LoadStringFromFile(NetworkConfigPath, NetworkConfigText) and
+         (Pos('"RemoteAccessEnabled": true', NetworkConfigText) > 0) then
+      begin
+        MsgBox(
+          'نصب سرور مرکزی و HTTPS انجام شد.' + #13#10 + #13#10 +
+          'برای اتصال رایانه‌های دیگر، فایل اتصال زیر را از طریق فلش مورد اعتماد یا مسیر امن به آن رایانه منتقل کنید و در نصب‌کنندهٔ Client انتخاب کنید:' + #13#10 +
+          'C:\Users\Public\Documents\MD-Gsm-Client-Connection.mdgsm.json' + #13#10 + #13#10 +
+          'هیچ رمز دیتابیس یا کلید خصوصی در این فایل وجود ندارد.',
+          mbInformation, MB_OK);
+      end
+      else
+      begin
+        MsgBox(
+          'نصب سرور با HTTPS محلی انجام شد، اما Windows یک شبکهٔ خصوصی مناسب و یکتا تشخیص نداد.' + #13#10 + #13#10 +
+          'برای جلوگیری از دسترسی ناخواسته، اتصال رایانه‌های دیگر فعال نشد. اگر شبکهٔ فعلی، شبکهٔ داخلی و مورد اعتماد شماست، آن را در تنظیمات Windows روی Private قرار دهید و سپس نصب‌کننده را با گزینهٔ Repair دوباره اجرا کنید.' + #13#10 + #13#10 +
+          'پایگاه داده PostgreSQL همچنان فقط روی همین رایانه قابل دسترسی است.',
+          mbInformation, MB_OK);
+      end;
+    end;
+  end;
 end;
 
 procedure DeinitializeSetup();
