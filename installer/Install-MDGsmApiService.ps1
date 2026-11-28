@@ -498,6 +498,7 @@ function Invoke-InstallPhase {
                 Write-SetupLog ('Network provisioner FATAL: ' + $text)
                 continue
             } elseif ($text -match '^MDGSM_CLIENT_CONNECTION_BUNDLE=') {
+                Write-SetupLog ('Client connection bundle created: ' + ($text -replace '^MDGSM_CLIENT_CONNECTION_BUNDLE=', ''))
             } elseif ($text -match '^MDGSM_REMOTE_API_URL=') {
                 Write-SetupLog ('API network endpoint: ' + ($text -replace '^MDGSM_REMOTE_API_URL=', ''))
             } else {
