@@ -69,7 +69,12 @@ function InitializeSetup(): Boolean;
 begin
   ServiceStatePath := ExpandConstant('{tmp}\MD-Gsm-MDGsmApi-ServiceState.json');
   ServiceSetupScriptPath := ExpandConstant('{tmp}\Install-MDGsmApiService.ps1');
-  ServiceSetupLogPath := ExpandConstant('{tmp}\MD-Gsm-ApiServiceSetup.log');
+  // Keep the non-secret service setup evidence outside Inno Setup's
+  // disposable extraction directory so post-install CI checks can read it.
+  ServiceSetupLogPath := GetEnv('TEMP');
+  if ServiceSetupLogPath = '' then
+    ServiceSetupLogPath := ExpandConstant('{tmp}');
+  ServiceSetupLogPath := AddBackslash(ServiceSetupLogPath) + 'MD-Gsm-ApiServiceSetup.log';
   ServiceSetupOutputLogPath := ExpandConstant('{tmp}\MD-Gsm-ApiServiceSetup-console.log');
   ExtractTemporaryFile('Install-MDGsmApiService.ps1');
   Result := True;
