@@ -8,6 +8,7 @@ using MDGsm.IdentityAccess.Application;
 using MDGsm.IdentityAccess.Contracts;
 using MDGsm.IdentityAccess.Domain;
 using MDGsm.Infrastructure.IdentityAccess;
+using MDGsm.Infrastructure.IdentityAccess.Bootstrap;
 using MDGsm.Finance.Contracts;
 using MDGsm.Finance.Infrastructure.Accounts;
 using MDGsm.Persons.Contracts;
@@ -18,6 +19,15 @@ using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMdGsmPersistence(builder.Configuration);
+
+// The O-46 endpoint is tied to the real Windows Service process lifetime.
+// Startup creates only the protected local pipe object; no accept loop, request
+// dispatch, Owner binding, challenge issuance, or Bootstrap activation is enabled.
+if (OperatingSystem.IsWindows())
+{
+    builder.Services.AddSingleton(new O46ServiceProcessIdentity());
+    builder.Services.AddHostedService<O46PipeEndpointLifecycleService>();
+}
 
 if (args.Length > 0 && string.Equals(args[0], "--provision-persons-workflow-key", StringComparison.Ordinal))
 {
