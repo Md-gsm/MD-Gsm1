@@ -52,4 +52,16 @@ public sealed class O46WindowsLogonSessionBindingTests
         Assert.Throws<InvalidOperationException>(() =>
             new WindowsLogonSessionBinding("", 0, 0, Guid.Empty).Validate());
     }
+
+    [Fact]
+    public void Incomplete_bindings_never_match_even_themselves()
+    {
+        var incomplete = default(WindowsLogonSessionBinding);
+        var valid = new WindowsLogonSessionBinding("S-1-5-21-100-200-300-1001",
+            0x0000000100000042, 3, ServiceInstance);
+
+        Assert.False(incomplete.IsExactContinuationOf(incomplete));
+        Assert.False(valid.IsExactContinuationOf(incomplete));
+        Assert.False(incomplete.IsExactContinuationOf(valid));
+    }
 }
