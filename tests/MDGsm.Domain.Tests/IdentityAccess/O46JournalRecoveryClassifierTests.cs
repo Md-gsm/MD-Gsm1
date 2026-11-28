@@ -24,6 +24,38 @@ public sealed class O46JournalRecoveryClassifierTests
     }
 
     [Fact]
+    public void Complete_committed_chain_with_matching_hash_links_is_healthy()
+    {
+        var first = Committed(6, "record-6", "anchor");
+        var second = Committed(7, "record-7", first.RecordHash);
+
+        var decision = O46JournalRecoveryClassifier.Classify(new(7, [second, first], []));
+
+        Assert.Equal(O46JournalRecoveryDisposition.Healthy, decision.Disposition);
+    }
+
+    [Fact]
+    public void Committed_chain_with_broken_previous_hash_is_blocked()
+    {
+        var first = Committed(6, "record-6", "anchor");
+        var second = Committed(7, "record-7", "not-record-6");
+
+        var decision = O46JournalRecoveryClassifier.Classify(new(7, [first, second], []));
+
+        Assert.Equal(O46JournalRecoveryDisposition.Blocked, decision.Disposition);
+    }
+
+    [Fact]
+    public void A_prepared_state_cannot_be_smuggled_into_the_committed_record_set()
+    {
+        var wrongState = Committed(7, "record-7") with { State = O46JournalRecordState.Prepared };
+
+        var decision = O46JournalRecoveryClassifier.Classify(new(7, [wrongState], []));
+
+        Assert.Equal(O46JournalRecoveryDisposition.Blocked, decision.Disposition);
+    }
+
+    [Fact]
     public void Counter_not_incremented_allows_only_exact_pending_transition_retry()
     {
         var committed = Committed(7, "record-7");
@@ -84,5 +116,39 @@ public sealed class O46JournalRecoveryClassifierTests
             O46JournalRecoveryClassifier.Classify(new(7, [committed], [unauthenticated])).Disposition);
         Assert.Equal(O46JournalRecoveryDisposition.Blocked,
             O46JournalRecoveryClassifier.Classify(new(7, [committed], [wrongParent])).Disposition);
+    }
+
+    [Fact]
+    public void Empty_operation_identifier_or_fingerprint_is_blocked()
+    {
+        var committed = Committed(7, "record-7");
+        var missingOperation = Prepared(8, committed.RecordHash) with { SetupOperationId = Guid.Empty };
+        var missingFingerprint = Prepared(8, committed.RecordHash) with { RequestFingerprint = " " };
+
+        Assert.Equal(O46JournalRecoveryDisposition.Blocked,
+            O46JournalRecoveryClassifier.Classify(new(7, [committed], [missingOperation])).Disposition);
+        Assert.Equal(O46JournalRecoveryDisposition.Blocked,
+            O46JournalRecoveryClassifier.Classify(new(7, [committed], [missingFingerprint])).Disposition);
+    }
+
+    [Fact]
+    public void Sequence_overflow_cannot_wrap_to_a_negative_pending_sequence()
+    {
+        var committed = Committed(long.MaxValue, "record-max");
+        var wrappedPending = Prepared(long.MinValue, committed.RecordHash);
+
+        var decision = O46JournalRecoveryClassifier.Classify(new(
+            (ulong)long.MaxValue + 1UL, [committed], [wrappedPending]));
+
+        Assert.Equal(O46JournalRecoveryDisposition.Blocked, decision.Disposition);
+    }
+
+    [Fact]
+    public void Negative_committed_sequence_is_blocked()
+    {
+        var decision = O46JournalRecoveryClassifier.Classify(new(
+            0, [Committed(-1, "negative")], []));
+
+        Assert.Equal(O46JournalRecoveryDisposition.Blocked, decision.Disposition);
     }
 }
