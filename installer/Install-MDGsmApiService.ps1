@@ -478,6 +478,7 @@ function Invoke-InstallPhase {
         Write-SetupLog 'Automatically inspecting Windows network profiles, selecting the lowest-metric private network, provisioning a machine-local TLS certificate and scoping Windows Firewall. Public profiles and ambiguous interfaces remain loopback-only.'
         $networkOutput = & $provisionPowerShell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $networkScriptPath -InstallDirectory $InstallDirectory 2>&1
         $networkExitCode = $LASTEXITCODE
+        $insideNetworkFatal = $false
         foreach ($line in @($networkOutput)) {
             if ($line -is [System.Management.Automation.ErrorRecord]) {
                 $text = ($line | Format-List * -Force | Out-String -Width 4096).TrimEnd()
@@ -485,84 +486,18 @@ function Invoke-InstallPhase {
                 continue
             }
             $text = [string]$line
-            if ($text -match '^NETWORK_SCRIPT_FATAL_BEGIN                Write-SetupLog ('Client connection bundle created: ' + ($text -replace '^MDGSM_CLIENT_CONNECTION_BUNDLE=', ''))
-            } elseif ($text -match '^MDGSM_REMOTE_API_URL=') {
-                Write-SetupLog ('API network endpoint: ' + ($text -replace '^MDGSM_REMOTE_API_URL=', ''))
-            } else {
-                Write-SetupLog ('Network provisioner: ' + $text)
-            }
-        }
-        if ($networkExitCode -ne 0) {
-            throw "Central API HTTPS network provisioning failed (exit $networkExitCode); the service will not be started."
-        }
-
-        $script:setupStage = 'validate service account and start service'
-        $service = Get-ServiceRecord
-        if ($service.StartName -ne $serviceAccount) {
-            throw "MDGsmApi is not configured to run as the approved LocalService account."
-        }
-        Write-SetupLog 'Requesting MDGsmApi start through Service Control Manager.'
-        Invoke-Sc @('start', $serviceName)
-        Wait-ServiceState 'Running' 40
-
-        $script:setupStage = 'verify loopback API liveness'
-        Wait-ApiLiveness
-        $script:setupStage = 'verify actual PostgreSQL runtime readiness'
-        Wait-ApiReadiness
-        Write-SetupLog 'Installation completed successfully; API liveness and PostgreSQL 18 runtime identity/readiness verified.'
-        Remove-Item -LiteralPath $ServiceStatePath -Force -ErrorAction Stop
-        Write-Host 'MD-Gsm API service is running as LocalService with the MDGsmApi service SID.'
-        Write-Host 'The DPAPI key remains under ProgramData; Setup did not read the protected key file.'
-    } catch {
-        $originalFailure = $_
-        Write-SetupLog ("FATAL: " + $originalFailure.Exception.ToString())
-        Write-SetupLog ("FATAL category: " + [string]$originalFailure.CategoryInfo)
-        Write-SetupLog ("FATAL script stack: " + [string]$originalFailure.ScriptStackTrace)
-        Remove-NetworkExposureAfterFailedInstall
-        try {
-            $script:setupStage = 'restore pre-install service state'
-            Restore-ServiceState
-        } catch {
-            Write-SetupLog ("Rollback failed; original installation error is preserved. Rollback error: " + $_.Exception.ToString())
-        }
-        throw
-    }
-}
-
-try {
-    switch ($Phase) {
-        'Prepare' {
-            try {
-                Invoke-PreparePhase
-                exit 0
-            } catch {
-                Write-SetupLog ("PREPARE FATAL: " + $_.Exception.ToString())
-                throw
-            }
-        }
-        'Restore' {
-            try {
-                $script:setupStage = 'restore service after interrupted Setup'
-                Restore-ServiceState
-                Write-SetupLog 'Setup interruption rollback completed.'
-                exit 0
-            } catch {
-                Write-SetupLog ("RESTORE FATAL: " + $_.Exception.ToString())
-                throw
-            }
-        }
-        'Install' {
-            Invoke-InstallPhase
-        }
-    }
-} catch {
-    throw
-}
-) {
+            if ($text -eq 'NETWORK_SCRIPT_FATAL_BEGIN') {
+                $insideNetworkFatal = $true
                 Write-SetupLog 'Network provisioner emitted a structured fatal diagnostic:'
-                Write-SetupLog $text
+                continue
+            } elseif ($text -eq 'NETWORK_SCRIPT_FATAL_END') {
+                $insideNetworkFatal = $false
+                Write-SetupLog 'Network provisioner structured fatal diagnostic ended.'
+                continue
+            } elseif ($insideNetworkFatal) {
+                Write-SetupLog ('Network provisioner FATAL: ' + $text)
+                continue
             } elseif ($text -match '^MDGSM_CLIENT_CONNECTION_BUNDLE=') {
-                Write-SetupLog ('Client connection bundle created: ' + ($text -replace '^MDGSM_CLIENT_CONNECTION_BUNDLE=', ''))
             } elseif ($text -match '^MDGSM_REMOTE_API_URL=') {
                 Write-SetupLog ('API network endpoint: ' + ($text -replace '^MDGSM_REMOTE_API_URL=', ''))
             } else {
