@@ -41,6 +41,58 @@ function Assert-KeyProvisionedMarker([string] $Phase) {
     }
 }
 
+function Get-O46PipeNames {
+    try {
+        return @([System.IO.Directory]::GetFiles('\\.\pipe\') |
+            ForEach-Object { [System.IO.Path]::GetFileName($_) })
+    } catch {
+        throw "Could not enumerate the Windows named-pipe namespace while checking O-46: $($_.Exception.Message)"
+    }
+}
+
+function Assert-O46PipeHosted([string] $Phase) {
+    $service = Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue
+    if ($null -eq $service -or $service.State -ne 'Running' -or
+        $service.StartName -ne 'NT AUTHORITY\LocalService' -or $service.ProcessId -eq 0) {
+        throw "O-46 lifecycle proof requires a running MDGsmApi service under LocalService after '$Phase'."
+    }
+
+    $process = Get-CimInstance Win32_Process -Filter ("ProcessId={0}" -f $service.ProcessId) -ErrorAction Stop
+    if ($null -eq $process) {
+        throw "The running MDGsmApi process was not found while checking O-46 after '$Phase'."
+    }
+    $owner = Invoke-CimMethod -InputObject $process -MethodName GetOwner
+    if ($owner.ReturnValue -ne 0 -or $owner.Domain -ne 'NT AUTHORITY' -or $owner.User -ne 'LOCAL SERVICE') {
+        throw "The MDGsmApi process token owner is not NT AUTHORITY\LOCAL SERVICE after '$Phase'."
+    }
+
+    $deadline = (Get-Date).AddSeconds(15)
+    $present = $false
+    do {
+        $present = (Get-O46PipeNames) -contains 'MDGsm.O46.OwnerBootstrap.v1'
+        if (-not $present) { Start-Sleep -Milliseconds 250 }
+    } while (-not $present -and (Get-Date) -lt $deadline)
+
+    if (-not $present) {
+        throw "The O-46 pipe endpoint was not created by the LocalService-hosted API process after '$Phase'."
+    }
+    Write-Host "PASS: O-46 named-pipe object is present while PID $($service.ProcessId) runs as NT AUTHORITY\LOCAL SERVICE after '$Phase'; request admission and Bootstrap dispatch remain disabled."
+}
+
+function Assert-O46PipeAbsent([string] $Phase) {
+    $deadline = (Get-Date).AddSeconds(15)
+    $present = $true
+    do {
+        $present = (Get-O46PipeNames) -contains 'MDGsm.O46.OwnerBootstrap.v1'
+        if ($present) { Start-Sleep -Milliseconds 250 }
+    } while ($present -and (Get-Date) -lt $deadline)
+
+    if ($present) {
+        throw "The O-46 pipe endpoint remained present after the API service stopped during '$Phase'."
+    }
+    Write-Host "PASS: O-46 named-pipe object was released after service stop during '$Phase'."
+}
+
 function Invoke-SystemInstaller([string] $Phase) {
     $log = Join-Path $env:TEMP ("MD-Gsm-Setup-" + $Phase + ".log")
     if (Test-Path -LiteralPath $log) { Remove-Item -LiteralPath $log -Force }
@@ -199,6 +251,7 @@ function Assert-ServiceReady([string] $Phase) {
         Write-Host ("SERVICE LIVENESS DIAGNOSTICS after phase '$Phase':" + [Environment]::NewLine + $diagnostics)
         throw "MDGsmApi liveness failed after phase '$Phase': $($_.Exception.Message)"
     }
+    Assert-O46PipeHosted $Phase
     Write-Host ("PASS: MDGsmApi is running as LocalService after phase '$Phase'.")
 }
 function Invoke-SystemUninstaller([string] $Phase) {
@@ -218,6 +271,7 @@ function Invoke-SystemUninstaller([string] $Phase) {
     } while ($null -ne $service -and (Get-Date) -lt $deadline)
     if ($null -ne $service) { throw "Windows service registration remains after uninstall phase '$Phase'." }
     if (Test-Path -LiteralPath $installDirectory) { throw "Program Files directory remains after uninstall phase '$Phase'." }
+    Assert-O46PipeAbsent $Phase
     Write-Host ("PASS: service and Program Files removed during phase '" + $Phase + "'.")
 }
 
@@ -256,6 +310,7 @@ if ($unexpectedKeyRead) {
 
 Write-Host '== Verify explicit Prepare/Restore preserves the prior Running state =='
 Invoke-ServiceSetupPhase 'Prepare'
+Assert-O46PipeAbsent 'Prepare stopped service'
 $preparedService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
 if ($null -eq $preparedService -or $preparedService.State -ne 'Stopped') {
     throw 'Prepare did not stop the running service before file replacement.'
@@ -273,6 +328,7 @@ do {
     $stoppedService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
 } while ($stoppedService.State -ne 'Stopped' -and (Get-Date) -lt $stopDeadline)
 if ($stoppedService.State -ne 'Stopped') { throw 'MDGsmApi did not stop for the stopped-state rollback test.' }
+Assert-O46PipeAbsent 'manual stop'
 Invoke-ServiceSetupPhase 'Prepare'
 Invoke-ServiceSetupPhase 'Restore'
 $restoredService = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
@@ -306,4 +362,4 @@ if (-not (Test-Path -LiteralPath $setupLogAfterReinstall -PathType Leaf) -or
 
 Write-Host '== Final cleanup of the disposable Windows runner =='
 Invoke-SystemUninstaller 'final-cleanup'
-Write-Host 'PASS: Program Files install, service-token owner/DACL/DPAPI validation, non-service read denial, Running and Stopped rollback restoration, repair, uninstall marker preservation, and post-uninstall reinstall without reprovisioning.'
+Write-Host 'PASS: Program Files install, LocalService process-token verification, O-46 pipe creation/release across real service start/stop, service-token owner/DACL/DPAPI validation, non-service read denial, Running and Stopped rollback restoration, repair, uninstall marker preservation, and post-uninstall reinstall without reprovisioning.'
