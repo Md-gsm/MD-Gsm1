@@ -31,16 +31,18 @@ public sealed class O46LocalNamedPipeServer : IDisposable
     private const uint PipeBufferBytes = 4096;
 
     private readonly SafePipeHandle _pipeHandle;
-    private readonly Guid _serviceInstanceId;
+    private readonly O46ServiceProcessIdentity _serviceProcessIdentity;
     private readonly WindowsPipeWorkerState _workerState = new();
     private int _connected;
     private int _frameConsumed;
     private int _disposed;
 
-    private O46LocalNamedPipeServer(SafePipeHandle pipeHandle, Guid serviceInstanceId)
+    private O46LocalNamedPipeServer(
+        SafePipeHandle pipeHandle,
+        O46ServiceProcessIdentity serviceProcessIdentity)
     {
         _pipeHandle = pipeHandle;
-        _serviceInstanceId = serviceInstanceId;
+        _serviceProcessIdentity = serviceProcessIdentity;
     }
 
     /// <summary>
@@ -48,16 +50,17 @@ public sealed class O46LocalNamedPipeServer : IDisposable
     /// access only to the local Administrators group. The service retains its
     /// server handle; SYSTEM is not authorized as a pipe client.
     /// </summary>
-    public static O46LocalNamedPipeServer Create(Guid serviceInstanceId)
+    public static O46LocalNamedPipeServer Create(O46ServiceProcessIdentity serviceProcessIdentity)
     {
         if (!OperatingSystem.IsWindows())
         {
             throw new PlatformNotSupportedException("O-46 local bootstrap IPC is Windows-only.");
         }
 
-        if (serviceInstanceId == Guid.Empty)
+        ArgumentNullException.ThrowIfNull(serviceProcessIdentity);
+        if (serviceProcessIdentity.ServiceInstanceId == Guid.Empty)
         {
-            throw new ArgumentException("A non-empty service-instance identifier is required.", nameof(serviceInstanceId));
+            throw new InvalidOperationException("The current service process has no valid ServiceInstanceId.");
         }
 
         if (!ConvertStringSecurityDescriptorToSecurityDescriptor(
@@ -94,7 +97,7 @@ public sealed class O46LocalNamedPipeServer : IDisposable
                     "The first-instance O-46 local Named Pipe could not be created. The request was not exposed.");
             }
 
-            return new O46LocalNamedPipeServer(handle, serviceInstanceId);
+            return new O46LocalNamedPipeServer(handle, serviceProcessIdentity);
         }
         finally
         {
@@ -177,7 +180,7 @@ public sealed class O46LocalNamedPipeServer : IDisposable
         // This method must run on a clean worker thread after the complete client
         // frame has been read. RevertToSelf is mandatory inside the capture path.
         var binding = WindowsPipeClientIdentityCapture.Capture(
-            _pipeHandle, _serviceInstanceId, _workerState);
+            _pipeHandle, _serviceProcessIdentity, _workerState);
 
         return new O46AuthenticatedPipeRequest(payload, binding);
     }
