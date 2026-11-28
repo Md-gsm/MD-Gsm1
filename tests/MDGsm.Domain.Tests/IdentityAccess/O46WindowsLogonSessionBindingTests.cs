@@ -8,6 +8,18 @@ public sealed class O46WindowsLogonSessionBindingTests
     private static readonly Guid ServiceInstance = Guid.Parse("7d0f96c6-1b1d-4c8f-a5ab-1db5d2f15a90");
 
     [Fact]
+    public void Service_process_identity_is_stable_and_a_new_process_gets_a_new_identifier()
+    {
+        var currentProcessIdentity = new O46ServiceProcessIdentity();
+        var capturedServiceInstanceId = currentProcessIdentity.ServiceInstanceId;
+        var simulatedRestartIdentity = new O46ServiceProcessIdentity();
+
+        Assert.NotEqual(Guid.Empty, capturedServiceInstanceId);
+        Assert.Equal(capturedServiceInstanceId, currentProcessIdentity.ServiceInstanceId);
+        Assert.NotEqual(capturedServiceInstanceId, simulatedRestartIdentity.ServiceInstanceId);
+    }
+
+    [Fact]
     public void Exact_same_logon_session_and_service_instance_is_the_only_continuation()
     {
         var original = new WindowsLogonSessionBinding("S-1-5-21-100-200-300-1001",
