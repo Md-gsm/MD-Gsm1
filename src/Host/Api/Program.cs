@@ -24,7 +24,7 @@ builder.Services.AddMdGsmPersistence(builder.Configuration);
 // bootstrap request to this immutable process-lifetime identifier. Registering
 // it does not start the pipe or enable the bootstrap workflow.
 if (OperatingSystem.IsWindows())
-    builder.Services.AddSingleton<O46ServiceProcessIdentity>();
+    builder.Services.AddSingleton(new O46ServiceProcessIdentity());
 
 if (args.Length > 0 && string.Equals(args[0], "--provision-persons-workflow-key", StringComparison.Ordinal))
 {
