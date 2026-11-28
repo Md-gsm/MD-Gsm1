@@ -26,13 +26,13 @@ public sealed class O46LocalNamedPipeServerIntegrationTests
             O46LocalNamedPipeServer.PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte))
         {
             var exception = Assert.Throws<Win32Exception>(() =>
-                O46LocalNamedPipeServer.Create(Guid.NewGuid()));
+                O46LocalNamedPipeServer.Create(new O46ServiceProcessIdentity()));
             Assert.True(exception.NativeErrorCode is 5 or 231,
                 $"Expected pipe-name collision to reject the first instance; Win32 error was {exception.NativeErrorCode}."); // ACCESS_DENIED / PIPE_BUSY
         }
 
-        var serviceInstanceId = Guid.NewGuid();
-        using var server = O46LocalNamedPipeServer.Create(serviceInstanceId);
+        var serviceProcessIdentity = new O46ServiceProcessIdentity();
+        using var server = O46LocalNamedPipeServer.Create(serviceProcessIdentity);
         var expectedSid = WindowsIdentity.GetCurrent().User?.Value;
         Assert.False(string.IsNullOrWhiteSpace(expectedSid));
 
@@ -54,7 +54,7 @@ public sealed class O46LocalNamedPipeServerIntegrationTests
         Assert.Equal(expectedSid, firstBinding.UserSid);
         Assert.NotEqual(0UL, firstBinding.AuthenticationId);
         Assert.Equal((uint)Process.GetCurrentProcess().SessionId, firstBinding.TerminalServicesSessionId);
-        Assert.Equal(serviceInstanceId, firstBinding.ServiceInstanceId);
+        Assert.Equal(serviceProcessIdentity.ServiceInstanceId, firstBinding.ServiceInstanceId);
 
         server.DisconnectClient();
 
@@ -85,8 +85,8 @@ public sealed class O46LocalNamedPipeServerIntegrationTests
             return;
         }
 
-        var serviceInstanceId = Guid.NewGuid();
-        using var server = O46LocalNamedPipeServer.Create(serviceInstanceId);
+        var serviceProcessIdentity = new O46ServiceProcessIdentity();
+        using var server = O46LocalNamedPipeServer.Create(serviceProcessIdentity);
         var accept = Task.Run(server.WaitForClient);
 
         using var client = new NamedPipeClientStream(
