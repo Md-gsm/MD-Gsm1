@@ -41,7 +41,9 @@ $powerShellExe = Join-Path $PSHOME 'powershell.exe'
 
 function Write-NetworkLog([string] $Message) {
     $line = '{0:o} [MDGsmNetwork] {1}' -f (Get-Date), $Message
-    Write-Output $line
+    # Write directly to the child process stream: pipeline output from this logger
+    # must never contaminate certificate/configuration function return values.
+    [Console]::Out.WriteLine($line)
     try {
         if (Test-Path -LiteralPath $networkRoot -PathType Container) {
             Add-Content -LiteralPath (Join-Path $networkRoot 'network-setup.log') -Value $line -Encoding UTF8
