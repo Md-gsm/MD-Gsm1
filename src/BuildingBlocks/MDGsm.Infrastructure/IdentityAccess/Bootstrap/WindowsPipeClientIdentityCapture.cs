@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Runtime.Versioning;
 using Microsoft.Win32.SafeHandles;
 
 namespace MDGsm.Infrastructure.IdentityAccess.Bootstrap;
@@ -68,6 +69,7 @@ public sealed class PipeWorkerQuarantinedException(string message, Exception? in
 /// Impersonation is always reverted before this method returns. No operation is
 /// performed under the service identity as a fallback for a failed capture.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public static class WindowsPipeClientIdentityCapture
 {
     private const uint TokenQuery = 0x0008;
