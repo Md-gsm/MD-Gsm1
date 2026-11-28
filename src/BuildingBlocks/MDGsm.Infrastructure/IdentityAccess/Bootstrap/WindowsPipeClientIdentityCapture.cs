@@ -206,7 +206,6 @@ public static class WindowsPipeClientIdentityCapture
     {
         const int TokenImpersonation = 2;
         const int SecurityImpersonation = 2;
-        const int TokenElevationTypeLimited = 3;
 
         if (statistics.TokenType != TokenImpersonation ||
             statistics.ImpersonationLevel != SecurityImpersonation)
@@ -215,18 +214,46 @@ public static class WindowsPipeClientIdentityCapture
                 "The pipe client token is not a local SecurityImpersonation token; the request was rejected.");
         }
 
-        var elevationType = ReadTokenDword(token, TokenInformationClass.TokenElevationType);
-        var isElevated = ReadTokenDword(token, TokenInformationClass.TokenElevation);
+        // Check the effective group membership, not TOKEN_ELEVATION. The
+        // protected pipe DACL grants access to the local Administrators SID;
+        // CheckTokenMembership rejects UAC deny-only/filtered group entries.
+        if (!IsEnabledAdministratorMember(token))
+        {
+            throw new UnauthorizedAccessException(
+                "The O-46 client token does not have enabled local Administrators membership.");
+        }
+
         var hasRestrictions = ReadTokenDword(token, TokenInformationClass.TokenHasRestrictions);
         var isAppContainer = ReadTokenDword(token, TokenInformationClass.TokenIsAppContainer);
 
-        if (isElevated == 0 ||
-            elevationType == TokenElevationTypeLimited ||
-            hasRestrictions != 0 ||
-            isAppContainer != 0)
+        if (hasRestrictions != 0 || isAppContainer != 0)
         {
             throw new UnauthorizedAccessException(
-                "The O-46 client must use an unrestricted elevated local-administrator token.");
+                "The O-46 client token is restricted or belongs to an AppContainer.");
+        }
+    }
+
+    private static bool IsEnabledAdministratorMember(SafeAccessTokenHandle token)
+    {
+        var administratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        var sidBytes = new byte[administratorsSid.BinaryLength];
+        administratorsSid.GetBinaryForm(sidBytes, 0);
+        var sidPointer = Marshal.AllocHGlobal(sidBytes.Length);
+
+        try
+        {
+            Marshal.Copy(sidBytes, 0, sidPointer, sidBytes.Length);
+            if (!CheckTokenMembership(token, sidPointer, out var isMember))
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(),
+                    "Effective local Administrators membership could not be verified.");
+            }
+
+            return isMember;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(sidPointer);
         }
     }
 
@@ -332,8 +359,6 @@ public static class WindowsPipeClientIdentityCapture
         TokenUser = 1,
         TokenStatistics = 10,
         TokenSessionId = 12,
-        TokenElevationType = 18,
-        TokenElevation = 20,
         TokenHasRestrictions = 21,
         TokenIsAppContainer = 29
     }
@@ -387,6 +412,13 @@ public static class WindowsPipeClientIdentityCapture
         uint desiredAccess,
         [MarshalAs(UnmanagedType.Bool)] bool openAsSelf,
         out SafeAccessTokenHandle token);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool CheckTokenMembership(
+        SafeAccessTokenHandle tokenHandle,
+        IntPtr sidToCheck,
+        [MarshalAs(UnmanagedType.Bool)] out bool isMember);
 
     [DllImport("advapi32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
