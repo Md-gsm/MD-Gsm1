@@ -92,10 +92,11 @@ public static class WindowsPipeClientIdentityCapture
 
     public static WindowsLogonSessionBinding Capture(
         SafePipeHandle pipeHandle,
-        Guid serviceInstanceId,
+        O46ServiceProcessIdentity serviceProcessIdentity,
         WindowsPipeWorkerState worker)
     {
         ArgumentNullException.ThrowIfNull(pipeHandle);
+        ArgumentNullException.ThrowIfNull(serviceProcessIdentity);
         ArgumentNullException.ThrowIfNull(worker);
         worker.ThrowIfQuarantined();
 
@@ -104,9 +105,10 @@ public static class WindowsPipeClientIdentityCapture
             throw new PlatformNotSupportedException("O-46 local bootstrap IPC is Windows-only.");
         }
 
+        var serviceInstanceId = serviceProcessIdentity.ServiceInstanceId;
         if (serviceInstanceId == Guid.Empty)
         {
-            throw new ArgumentException("A non-empty service-instance identifier is required.", nameof(serviceInstanceId));
+            throw new InvalidOperationException("The current service process has no valid ServiceInstanceId.");
         }
 
         if (pipeHandle.IsInvalid || pipeHandle.IsClosed)
