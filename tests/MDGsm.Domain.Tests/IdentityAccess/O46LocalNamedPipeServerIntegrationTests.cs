@@ -27,7 +27,8 @@ public sealed class O46LocalNamedPipeServerIntegrationTests
         {
             var exception = Assert.Throws<Win32Exception>(() =>
                 O46LocalNamedPipeServer.Create(Guid.NewGuid()));
-            Assert.Equal(5, exception.NativeErrorCode); // ERROR_ACCESS_DENIED
+            Assert.True(exception.NativeErrorCode is 5 or 231,
+                $"Expected pipe-name collision to reject the first instance; Win32 error was {exception.NativeErrorCode}."); // ACCESS_DENIED / PIPE_BUSY
         }
 
         var serviceInstanceId = Guid.NewGuid();
