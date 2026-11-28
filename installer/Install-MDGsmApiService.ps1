@@ -476,15 +476,36 @@ function Invoke-InstallPhase {
             throw 'The central HTTPS network configuration script is missing from the installation package.'
         }
         Write-SetupLog 'Automatically inspecting Windows network profiles, selecting the lowest-metric private network, provisioning a machine-local TLS certificate and scoping Windows Firewall. Public profiles and ambiguous interfaces remain loopback-only.'
-        $networkOutput = & $provisionPowerShell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $networkScriptPath -InstallDirectory $InstallDirectory 2>&1
-        $networkExitCode = $LASTEXITCODE
-        $insideNetworkFatal = $false
-        foreach ($line in @($networkOutput)) {
-            if ($line -is [System.Management.Automation.ErrorRecord]) {
-                $text = ($line | Format-List * -Force | Out-String -Width 4096).TrimEnd()
-                Write-SetupLog ('Network provisioner ErrorRecord:' + [Environment]::NewLine + $text)
-                continue
+        $networkStdout = Join-Path $env:TEMP ('MDGsm-Network-Provision-' + [Guid]::NewGuid().ToString('N') + '.out.log')
+        $networkStderr = Join-Path $env:TEMP ('MDGsm-Network-Provision-' + [Guid]::NewGuid().ToString('N') + '.err.log')
+        $networkArguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' +
+            $networkScriptPath + '" -InstallDirectory "' + $InstallDirectory + '"'
+        $networkStart = @{
+            FilePath = $provisionPowerShell
+            ArgumentList = $networkArguments
+            Wait = $true
+            PassThru = $true
+            NoNewWindow = $true
+            RedirectStandardOutput = $networkStdout
+            RedirectStandardError = $networkStderr
+        }
+        $networkOutput = [System.Collections.Generic.List[string]]::new()
+        try {
+            $networkProcess = Start-Process @networkStart
+            $networkExitCode = $networkProcess.ExitCode
+        }
+        finally {
+            foreach ($networkLog in @($networkStdout, $networkStderr)) {
+                if (Test-Path -LiteralPath $networkLog -PathType Leaf) {
+                    foreach ($line in Get-Content -LiteralPath $networkLog) {
+                        $networkOutput.Add([string]$line)
+                    }
+                    Remove-Item -LiteralPath $networkLog -Force -ErrorAction SilentlyContinue
+                }
             }
+        }
+        $insideNetworkFatal = $false
+        foreach ($line in $networkOutput) {
             $text = [string]$line
             if ($text -eq 'NETWORK_SCRIPT_FATAL_BEGIN') {
                 $insideNetworkFatal = $true
@@ -506,6 +527,13 @@ function Invoke-InstallPhase {
             }
         }
         if ($networkExitCode -ne 0) {
+            $networkSetupLog = Join-Path $env:ProgramData 'MD-Gsm\Network\network-setup.log'
+            if (Test-Path -LiteralPath $networkSetupLog -PathType Leaf) {
+                Write-SetupLog 'Network provisioner persistent diagnostic log (tail):'
+                foreach ($line in Get-Content -LiteralPath $networkSetupLog -Tail 100) {
+                    Write-SetupLog ('Network setup log: ' + [string]$line)
+                }
+            }
             throw "Central API HTTPS network provisioning failed (exit $networkExitCode); the service will not be started."
         }
 
