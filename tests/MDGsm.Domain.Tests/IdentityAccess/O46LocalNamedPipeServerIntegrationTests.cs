@@ -72,9 +72,9 @@ public sealed class O46LocalNamedPipeServerIntegrationTests
 
     private static async Task WriteFrameAsync(Stream client, byte[] payload)
     {
-        var header = System.Buffers.Binary.BinaryPrimitives.ReverseEndianness((uint)payload.Length);
-        var bytes = BitConverter.GetBytes(header);
-        await client.WriteAsync(bytes);
+        var header = new byte[sizeof(uint)];
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(header, (uint)payload.Length);
+        await client.WriteAsync(header);
         await client.WriteAsync(payload);
         await client.FlushAsync();
     }
