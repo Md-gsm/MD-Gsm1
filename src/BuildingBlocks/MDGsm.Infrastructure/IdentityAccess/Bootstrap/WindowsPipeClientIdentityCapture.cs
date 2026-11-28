@@ -223,13 +223,11 @@ public static class WindowsPipeClientIdentityCapture
                 "The O-46 client token does not have enabled local Administrators membership.");
         }
 
-        var hasRestrictions = ReadTokenDword(token, TokenInformationClass.TokenHasRestrictions);
         var isAppContainer = ReadTokenDword(token, TokenInformationClass.TokenIsAppContainer);
-
-        if (hasRestrictions != 0 || isAppContainer != 0)
+        if (isAppContainer != 0)
         {
             throw new UnauthorizedAccessException(
-                "The O-46 client token is restricted or belongs to an AppContainer.");
+                "The O-46 client token belongs to an AppContainer.");
         }
     }
 
@@ -359,7 +357,6 @@ public static class WindowsPipeClientIdentityCapture
         TokenUser = 1,
         TokenStatistics = 10,
         TokenSessionId = 12,
-        TokenHasRestrictions = 21,
         TokenIsAppContainer = 29
     }
 
