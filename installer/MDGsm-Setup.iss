@@ -83,7 +83,6 @@ var
   Parameters: String;
   SetupDiagnosticText: AnsiString;
   ConsoleDiagnosticText: AnsiString;
-  SetupDiagnosticText: AnsiString;
 begin
   PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
   CommandInterpreter := ExpandConstant('{cmd}');
